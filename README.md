@@ -31,7 +31,18 @@ Le script :
 5. pousse vers GitHub via un token saisi en invisible, jamais écrit dans
    `.git/config`.
 
-> **Mettez le dépôt en privé avant cette étape.**
+### Sans clé SSH (console Oracle, « Run Command »)
+
+« Run Command » ne peut pas poser de questions. Le script accepte alors un mode
+automatique, où le scan de sécurité reste bloquant :
+
+```bash
+YES=1 GH_TOKEN=github_pat_xxx BOT_PATH=/home/ubuntu/mon-bot bash push-bot.sh
+```
+
+> **Ordre important :** téléchargez le script *avant* de passer le dépôt en privé
+> (l'URL brute cesse d'être accessible sans authentification ensuite), puis
+> mettez-le en privé *avant* d'y envoyer le code du bot.
 > GitHub › Settings › General › Change repository visibility › Private.
 
 ## Boucle de travail

@@ -6,8 +6,30 @@
 #
 # Le script ne pousse rien tant qu'il n'a pas votre confirmation,
 # et il refuse de pousser s'il detecte un secret dans les fichiers.
+#
+# MODE NON INTERACTIF (pour "Run Command" de la console Oracle, qui ne peut
+# pas poser de questions) :
+#
+#   YES=1 GH_TOKEN=github_pat_xxx BOT_PATH=/home/ubuntu/mon-bot bash push-bot.sh
+#
+# En mode non interactif le scan de securite reste BLOQUANT : si un token est
+# trouve en clair, rien n'est envoye. Utilisez FORCE=1 pour passer outre.
 
 set -euo pipefail
+
+YES="${YES:-0}"
+FORCE="${FORCE:-0}"
+GH_TOKEN="${GH_TOKEN:-}"
+
+# Pose une question, ou repond tout seul si YES=1.
+confirm() {   # confirm "question" "reponse_auto"
+  if [ "$YES" = "1" ]; then
+    echo "$1 -> $2 (mode automatique)"
+    REPLY_VALUE="$2"
+    return 0
+  fi
+  read -r -p "$1 " REPLY_VALUE
+}
 
 REPO_URL="https://github.com/UEFNMapper/New.git"
 BRANCH="${BRANCH:-main}"
@@ -20,7 +42,7 @@ step() { printf '\n\033[1m== %s\033[0m\n' "$*"; }
 # ---------------------------------------------------------------- 1. dossier
 step "1/6  Localisation du bot"
 
-BOT_DIR="${1:-}"
+BOT_DIR="${1:-${BOT_PATH:-}}"
 if [ -z "$BOT_DIR" ]; then
   # On tente de deduire le dossier depuis le processus en cours d'execution.
   pid=$(pgrep -f -n 'python.*\.py|node.*\.(js|mjs|ts)' 2>/dev/null | head -1 || true)
@@ -124,8 +146,12 @@ if [ -s "$TMP_HITS" ]; then
   ylw "puis REGENEREZ le token sur https://discord.com/developers/applications"
   ylw "(il est considere comme compromis des qu'il a traine en clair)."
   echo
-  read -r -p "Ignorer cet avertissement et pousser quand meme ? (tapez OUI) " force
-  [ "$force" = "OUI" ] || { echo "Annule."; exit 1; }
+  if [ "$FORCE" = "1" ]; then
+    ylw "FORCE=1 : on continue malgre tout."
+  else
+    confirm "Ignorer cet avertissement et pousser quand meme ? (tapez OUI)" "NON"
+    [ "$REPLY_VALUE" = "OUI" ] || { echo "Annule."; exit 1; }
+  fi
 else
   grn "Aucun secret evident detecte."
 fi
@@ -142,8 +168,8 @@ echo "Liste (30 premiers) :"
 git diff --cached --name-only | head -30 | sed 's/^/   /'
 echo
 ylw "Verifiez que le depot GitHub est bien en PRIVE avant de continuer."
-read -r -p "Envoyer ? (o/N) " ok
-case "$ok" in o|O|oui|OUI) ;; *) echo "Annule."; exit 0;; esac
+confirm "Envoyer ? (o/N)" "o"
+case "$REPLY_VALUE" in o|O|oui|OUI) ;; *) echo "Annule."; exit 0;; esac
 
 git commit -q -m "Import du bot Discord depuis l'instance Oracle"
 grn "Commit cree."
@@ -151,13 +177,15 @@ grn "Commit cree."
 # ---------------------------------------------------------------- 6. push
 step "6/6  Envoi vers GitHub"
 
-echo "Il faut un token GitHub (Personal Access Token, 'fine-grained') :"
-echo "  github.com > Settings > Developer settings > Personal access tokens"
-echo "  > Fine-grained tokens > Generate new token"
-echo "  Repository access : UEFNMapper/New     Permissions : Contents = Read and write"
-echo
-read -r -s -p "Collez le token (invisible a la saisie) : " GH_TOKEN
-echo
+if [ -z "$GH_TOKEN" ]; then
+  echo "Il faut un token GitHub (Personal Access Token, 'fine-grained') :"
+  echo "  github.com > Settings > Developer settings > Personal access tokens"
+  echo "  > Fine-grained tokens > Generate new token"
+  echo "  Repository access : UEFNMapper/New     Permissions : Contents = Read and write"
+  echo
+  read -r -s -p "Collez le token (invisible a la saisie) : " GH_TOKEN
+  echo
+fi
 
 [ -n "$GH_TOKEN" ] || { red "Token vide."; exit 1; }
 
