@@ -1,0 +1,8 @@
+sourcemap.json
+build/
+tools/render/models.json
+tools/render/*.png
+__pycache__/
+*.rbxl
+*.rbxlx
+!release/*.rbxlx
