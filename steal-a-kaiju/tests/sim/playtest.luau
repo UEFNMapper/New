@@ -98,7 +98,8 @@ local landed
 for _ = 1, 60 do
 	Runtime.Advance(1)
 	for _, m in meteorsFolder:GetChildren() do
-		if (m:GetAttribute("Owner") or 0) == 0 and m:GetAttribute("LandAt") <= Runtime.Now() + 1790000000 then
+		local r = m:GetAttribute("Rarity")
+		if (m:GetAttribute("Owner") or 0) == 0 and m:GetAttribute("LandAt") <= Runtime.Now() + 1790000000 and (r == "Common" or r == "Rare") then
 			landed = m
 		end
 	end
@@ -106,7 +107,7 @@ for _ = 1, 60 do
 		break
 	end
 end
-check("un météore est tombé dans le cratère", landed ~= nil)
+check("un météore Commun ou Rare est tombé dans le cratère", landed ~= nil)
 if landed then
 	local id = landed:GetAttribute("Id")
 	local far = Boot.Call(alice, "BuyMeteor", { Id = id })

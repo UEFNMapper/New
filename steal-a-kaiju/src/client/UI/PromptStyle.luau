@@ -87,8 +87,9 @@ local function build(prompt: ProximityPrompt, inputType: Enum.ProximityPromptInp
 	table.insert(conns, prompt.PromptButtonHoldBegan:Connect(function()
 		if prompt.HoldDuration > 0 then
 			holdBar.Size = UDim2.new(0, 0, 0, 8)
-			holdTween = TweenService:Create(holdBar, TweenInfo.new(prompt.HoldDuration, Enum.EasingStyle.Linear), { Size = UDim2.new(0, 180, 0, 8) })
-			holdTween:Play()
+			local tween = TweenService:Create(holdBar, TweenInfo.new(prompt.HoldDuration, Enum.EasingStyle.Linear), { Size = UDim2.new(0, 180, 0, 8) })
+			tween:Play()
+			holdTween = tween
 			Audio.Play("steal_grab", { Pitch = 0.7, Volume = 0.4 })
 		end
 	end))

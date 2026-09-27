@@ -26,9 +26,10 @@ local folder: Folder
 
 local function getFolder(): Folder
 	if not folder or not folder.Parent then
-		folder = Instance.new("Folder")
-		folder.Name = "ClientFx"
-		folder.Parent = Workspace
+		local f = Instance.new("Folder")
+		f.Name = "ClientFx"
+		f.Parent = Workspace
+		folder = f
 	end
 	return folder
 end

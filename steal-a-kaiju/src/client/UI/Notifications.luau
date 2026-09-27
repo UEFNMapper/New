@@ -43,7 +43,7 @@ function Notifications.Toast(text: string, kind: string?)
 	local style = TOAST_STYLE[kind or "Info"] or TOAST_STYLE.Info
 	local order = -math.floor(os.clock() * 100)
 	local holder = Kit.new("Frame", {
-		Size = UDim2.fromOffset(360, 58),
+		Size = UDim2.fromOffset(420, 58),
 		BackgroundTransparency = 1,
 		LayoutOrder = order,
 		Parent = toastHolder,
@@ -134,7 +134,7 @@ function Notifications.Feed(text: string, style: string?, color: Color3?)
 		Size = UDim2.new(1, 0, 0, 40),
 		BackgroundColor3 = C.Ink,
 		BackgroundTransparency = 0.15,
-		LayoutOrder = -math.floor(os.clock() * 100),
+		LayoutOrder = math.floor(os.clock() * 100),
 		Position = UDim2.fromScale(-1, 0),
 		Parent = feedHolder,
 	}, { Kit.Corner(10), Kit.Stroke(2.5, accent) })
@@ -177,7 +177,7 @@ function Notifications.Feed(text: string, style: string?, color: Color3?)
 	end
 	if #rows > 5 then
 		table.sort(rows, function(a, b)
-			return a.LayoutOrder > b.LayoutOrder
+			return a.LayoutOrder < b.LayoutOrder
 		end)
 		rows[1]:Destroy()
 	end
@@ -191,6 +191,18 @@ end
 function Notifications.Announce(text: string, color: Color3?, subtitle: string?, sound: string?)
 	for _, child in announceHolder:GetChildren() do
 		child:Destroy()
+	end
+	-- le bandeau du tutoriel s'efface le temps de l'annonce (même zone de l'écran)
+	local tutorial = layer.Parent and layer.Parent:FindFirstChild("Tutorial") :: ScreenGui?
+	if tutorial then
+		tutorial.Enabled = false
+		local stamp = os.clock()
+		layer:SetAttribute("AnnounceStamp", stamp)
+		task.delay(3.7, function()
+			if layer:GetAttribute("AnnounceStamp") == stamp then
+				tutorial.Enabled = true
+			end
+		end)
 	end
 	local frame = Kit.new("Frame", {
 		Size = UDim2.fromOffset(900, 150),
@@ -362,20 +374,24 @@ function Notifications.Init()
 	layer = Kit.Layer("Notifications", 40)
 	toastHolder = Kit.new("Frame", {
 		Name = "Toasts",
-		Size = UDim2.fromOffset(380, 420),
-		Position = UDim2.new(1, -20, 1, -110),
+		Size = UDim2.fromOffset(440, 420),
+		Position = UDim2.new(1, -130, 1, -110),
 		AnchorPoint = Vector2.new(1, 1),
 		BackgroundTransparency = 1,
 		Parent = layer,
 	}, { Kit.List(Enum.FillDirection.Vertical, 8, Enum.HorizontalAlignment.Right, Enum.VerticalAlignment.Bottom) })
 	Kit.AutoScale(toastHolder)
+	-- Le fil vit sous les fenêtres (DisplayOrder 6 < 20) et en bas à gauche,
+	-- loin des menus et des annonces centrales.
+	local feedLayer = Kit.Layer("Feed", 6)
 	feedHolder = Kit.new("Frame", {
 		Name = "Feed",
-		Size = UDim2.fromOffset(480, 250),
-		Position = UDim2.new(0, 20, 0, 150),
+		Size = UDim2.fromOffset(470, 230),
+		Position = UDim2.new(0, 20, 1, -24),
+		AnchorPoint = Vector2.new(0, 1),
 		BackgroundTransparency = 1,
-		Parent = layer,
-	}, { Kit.List(Enum.FillDirection.Vertical, 6, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top) })
+		Parent = feedLayer,
+	}, { Kit.List(Enum.FillDirection.Vertical, 6, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Bottom) })
 	Kit.AutoScale(feedHolder)
 	announceHolder = Kit.new("Frame", {
 		Name = "Announce",

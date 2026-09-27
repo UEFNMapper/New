@@ -37,8 +37,9 @@ function CameraFx.FovPunch(amount: number, duration: number?)
 		fovTween:Cancel()
 	end
 	camera.FieldOfView = baseFov + amount
-	fovTween = TweenService:Create(camera, TweenInfo.new(duration or 0.5, Enum.EasingStyle.Back), { FieldOfView = baseFov })
-	fovTween:Play()
+	local tween = TweenService:Create(camera, TweenInfo.new(duration or 0.5, Enum.EasingStyle.Back), { FieldOfView = baseFov })
+	tween:Play()
+	fovTween = tween
 end
 
 function CameraFx.Init()

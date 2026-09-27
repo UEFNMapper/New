@@ -453,9 +453,9 @@ function Daily.Init()
 	streakChip = Kit.Chip({
 		Text = "🔥 STREAK: 0 DAYS",
 		Color = C.Magma,
-		Size = UDim2.fromOffset(240, 36),
-		Position = UDim2.fromOffset(4, 6),
-		TextSize = 22,
+		Size = UDim2.fromOffset(200, 34),
+		Position = UDim2.fromOffset(0, -30),
+		TextSize = 20,
 		Parent = content,
 	})
 	streakChip.Rotation = -2

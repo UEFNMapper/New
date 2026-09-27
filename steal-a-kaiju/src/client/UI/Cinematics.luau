@@ -61,7 +61,7 @@ local function stage(backdropColor: Color3?): (Frame, Frame, (number?) -> ())
 		AutoButtonColor = false,
 		Parent = root,
 	})
-	Kit.Tween(backdrop, 0.3, { BackgroundTransparency = 0.25 })
+	Kit.Tween(backdrop, 0.3, { BackgroundTransparency = 0.12 })
 	local center = Kit.new("Frame", {
 		Size = UDim2.fromOffset(1000, 640),
 		Position = UDim2.fromScale(0.5, 0.5),
@@ -188,7 +188,7 @@ local function hatchReveal(args)
 	end
 	if order >= 4 then
 		-- Suspense : le fond vire à la couleur de la rareté
-		Kit.Tween(backdrop, 0.6, { BackgroundColor3 = rarity.Color:Lerp(C.Ink, 0.7) })
+		Kit.Tween(backdrop, 0.6, { BackgroundColor3 = rarity.Color:Lerp(C.Ink, 0.82) })
 		Audio.Play("meteor_rare_alarm")
 		task.wait(0.7)
 	end

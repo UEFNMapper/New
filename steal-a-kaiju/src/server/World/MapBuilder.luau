@@ -171,17 +171,20 @@ local function setupTerrain()
 	-- Fond marin
 	terrain:FillBlock(CFrame.new(0, -34, 0), Vector3.new(2400, 8, 2400), Enum.Material.Sand)
 
+	-- Le terrain s'arrête 0,6 stud sous le sol des pièces : pas de scintillement
+	-- (z-fighting) entre le terrain et les sols construits.
+	local TOP = -0.6
 	-- Île centrale
-	terrain:FillCylinder(CFrame.new(0, -14, 0), 26, 132, Enum.Material.Sand)
-	terrain:FillCylinder(CFrame.new(0, -11, 0), 22, 122, Enum.Material.Grass)
-	terrain:FillCylinder(CFrame.new(0, -12, 0), 24, Layout.CraterRadius + 4, Enum.Material.Basalt)
+	terrain:FillCylinder(CFrame.new(0, TOP - 14, 0), 26, 132, Enum.Material.Sand)
+	terrain:FillCylinder(CFrame.new(0, TOP - 11, 0), 22, 122, Enum.Material.Grass)
+	terrain:FillCylinder(CFrame.new(0, TOP - 12, 0), 24, Layout.CraterRadius + 4, Enum.Material.Basalt)
 
 	-- Îles des joueurs
 	for i = 1, Layout.PlotCount do
 		local cf = Layout.PlotCFrame(i)
 		local pos = cf.Position
-		terrain:FillCylinder(CFrame.new(pos.X, -14, pos.Z), 26, 92, Enum.Material.Sand)
-		terrain:FillCylinder(CFrame.new(pos.X, -11, pos.Z), 22, 84, Enum.Material.Grass)
+		terrain:FillCylinder(CFrame.new(pos.X, TOP - 14, pos.Z), 26, 92, Enum.Material.Sand)
+		terrain:FillCylinder(CFrame.new(pos.X, TOP - 11, pos.Z), 22, 84, Enum.Material.Grass)
 	end
 end
 

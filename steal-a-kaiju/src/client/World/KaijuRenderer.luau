@@ -55,6 +55,7 @@ type Entry = {
 	LastStage: number,
 	WasEgg: boolean,
 	Aura: BasePart?,
+	Parked: CFrame?,
 }
 
 local entries: { [BasePart]: Entry } = {}
@@ -118,8 +119,8 @@ local function addAura(entry: Entry, rarity: Rarities.Rarity, scale: number)
 	ring.CastShadow = false
 	ring.Material = Enum.Material.Neon
 	ring.Color = rarity.Color
-	ring.Transparency = 0.55
-	ring.Size = Vector3.new(0.15, 7 * scale, 7 * scale)
+	ring.Transparency = 0.7
+	ring.Size = Vector3.new(0.15, 4.2 + 2.2 * scale, 4.2 + 2.2 * scale)
 	ring.Parent = entry.Model
 	entry.Aura = ring
 	if rarity.Order >= 6 and not lowFx() then
@@ -260,6 +261,7 @@ local function rebuild(entry: Entry)
 	end
 	model.Parent = folder
 	entry.Key = keyOf(anchor)
+	entry.Parked = nil
 
 	if not isEgg then
 		local rarity = Rarities.Get(anchor:GetAttribute("Rarity") or "Common")
@@ -387,6 +389,7 @@ local function track(anchor: BasePart)
 		LastStage = anchor:GetAttribute("Stage") or 1,
 		WasEgg = anchor:GetAttribute("Egg") == true,
 		Aura = nil,
+		Parked = nil,
 	}
 	entries[anchor] = entry
 	byUid[anchor:GetAttribute("Uid") or anchor.Name] = entry
@@ -527,6 +530,11 @@ local function animate(entry: Entry, dt: number, t: number, camPos: Vector3)
 		entry.PromptAttachment.WorldPosition = target.Position + Vector3.new(0, math.max(2.5, entry.Height * 0.55), 0)
 	end
 	local far = (target.Position - camPos).Magnitude > ANIM_DISTANCE
+	-- Loin et immobile : déjà en place, rien à recalculer (grosse économie sur mobile)
+	if far and entry.Parked == target then
+		return
+	end
+	entry.Parked = if far then target else nil
 	local phase = entry.Phase
 	local s = entry.Scale
 	local breathe = math.sin(t * 2.2 + phase)
@@ -568,7 +576,7 @@ local function animate(entry: Entry, dt: number, t: number, camPos: Vector3)
 	end
 	if entry.Aura then
 		entry.Aura.CFrame = target * CFrame.new(0, 0.12, 0) * CFrame.Angles(0, 0, math.rad(90))
-		entry.Aura.Transparency = 0.5 + math.sin(t * 3 + phase) * 0.15
+		entry.Aura.Transparency = 0.68 + math.sin(t * 3 + phase) * 0.12
 		local pillar = entry.Aura:FindFirstChild("Pillar") :: BasePart?
 		if pillar then
 			pillar.CFrame = target * CFrame.new(0, 40, 0) * CFrame.Angles(0, 0, math.rad(90))

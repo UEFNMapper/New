@@ -163,7 +163,8 @@ local function buildCurrencies()
 	end)
 	State.Observe("Income", function(value)
 		local mult = State.Get("Multiplier") or 1
-		incomeLabel.Text = ("+%s/s"):format(Format.Cash(value)) .. (if mult > 1.001 then ("  <font color=\"#FFC828\">x%s</font>"):format(Format.Short(mult)) else "")
+		local multText = if mult < 10 then (("%.2f"):format(mult):gsub("0+$", ""):gsub("%.$", "")) else Format.Short(mult)
+		incomeLabel.Text = ("+%s/s"):format(Format.Cash(value)) .. (if mult > 1.001 then ("  <font color=\"#FFC828\">x%s</font>"):format(multText) else "")
 	end)
 	State.Observe("Stored", function(value)
 		local auto = (State.Get("Passes") or {}).AutoCollect
@@ -314,12 +315,12 @@ local function buildMenus()
 
 	local right = Kit.new("Frame", {
 		Name = "RightMenu",
-		Size = UDim2.fromOffset(100, 420),
+		Size = UDim2.fromOffset(100, 480),
 		Position = UDim2.new(1, -16, 0.5, 20),
 		AnchorPoint = Vector2.new(1, 0.5),
 		BackgroundTransparency = 1,
 		Parent = layer,
-	}, { Kit.List(Enum.FillDirection.Vertical, 24, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Center) })
+	}, { Kit.List(Enum.FillDirection.Vertical, 38, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Center) })
 	Kit.AutoScale(right)
 	menuButton(right, { Id = "Playtime", Text = "GIFTS", Icon = "🎁", Color = "Pink", Order = 1, Rotation = 3, OnClick = function() openScreen("Playtime") end })
 	menuButton(right, { Id = "Daily", Text = "DAILY", Icon = "📅", Color = "Gold", Order = 2, Rotation = -2, OnClick = function() openScreen("Daily") end })
@@ -445,13 +446,13 @@ local function buildBottom()
 			local protected = (plot:GetAttribute("ProtectedUntil") or 0) - t
 			local cooldown = (plot:GetAttribute("ShieldCooldown") or 0) - t
 			if shield > 0 then
-				Kit.SetButtonText(lockButton, ("SHIELD %ds"):format(math.ceil(shield)))
+				Kit.SetButtonText(lockButton, "SHIELD " .. Format.Clock(shield))
 				Kit.SetButtonColor(lockButton, "Cyan")
 			elseif protected > 0 then
-				Kit.SetButtonText(lockButton, ("SAFE %ds"):format(math.ceil(protected)))
+				Kit.SetButtonText(lockButton, "SAFE " .. Format.Clock(protected))
 				Kit.SetButtonColor(lockButton, "Radioactive")
 			elseif cooldown > 0 then
-				Kit.SetButtonText(lockButton, ("RECHARGE %ds"):format(math.ceil(cooldown)))
+				Kit.SetButtonText(lockButton, "RECHARGE " .. Format.Clock(cooldown))
 				Kit.SetButtonColor(lockButton, "Grey")
 			else
 				Kit.SetButtonText(lockButton, "LOCK BASE")
@@ -539,7 +540,7 @@ local function buildEventBanner()
 		local event = id and Events.ById[id]
 		local left = (Workspace:GetAttribute("EventEnds") or 0) - now()
 		local timeLabel = body:FindFirstChild("Time") :: TextLabel
-		timeLabel.Text = Format.Clock(left) .. (if event then " — " .. event.Tagline else "")
+		timeLabel.Text = "⏱️ " .. Format.Clock(left) .. " left"
 		if event then
 			setBar(left / event.Duration, true)
 		end
@@ -660,8 +661,8 @@ local function buildAlarm()
 	end
 	local label = Kit.Text({
 		Name = "Label",
-		Size = UDim2.fromOffset(820, 70),
-		Position = UDim2.new(0.5, 0, 0, 132),
+		Size = UDim2.fromOffset(760, 56),
+		Position = UDim2.new(0.5, 0, 0, 126),
 		AnchorPoint = Vector2.new(0.5, 0),
 		Text = "🚨 THIEF IN YOUR BASE! 🚨",
 		FontFace = F.Impact,

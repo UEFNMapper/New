@@ -60,6 +60,22 @@ local function buildBoard(cf: CFrame, board: typeof(BOARDS[1]), parent: Instance
 	part.Color = Theme.Colors.Ink
 	part.Material = Enum.Material.SmoothPlastic
 	part.Parent = parent
+	-- cadre lumineux aux couleurs du tableau
+	for _, edge in {
+		{ Vector3.new(27.6, 1.2, 1.8), CFrame.new(0, 16.6, 0) },
+		{ Vector3.new(27.6, 1.2, 1.8), CFrame.new(0, -16.6, 0) },
+		{ Vector3.new(1.2, 34.4, 1.8), CFrame.new(13.4, 0, 0) },
+		{ Vector3.new(1.2, 34.4, 1.8), CFrame.new(-13.4, 0, 0) },
+	} do
+		local trim = Instance.new("Part")
+		trim.Anchored = true
+		trim.CanCollide = false
+		trim.Size = edge[1]
+		trim.CFrame = part.CFrame * edge[2]
+		trim.Color = board.Color
+		trim.Material = Enum.Material.Neon
+		trim.Parent = parent
+	end
 	for _, side in { -1, 1 } do
 		local leg = Instance.new("Part")
 		leg.Anchored = true

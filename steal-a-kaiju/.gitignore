@@ -6,3 +6,7 @@ __pycache__/
 *.rbxl
 *.rbxlx
 !release/*.rbxlx
+tools/render/scene.json
+tools/render/ui.json
+tools/render/ui/
+tests/sim/scratch/

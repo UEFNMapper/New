@@ -106,7 +106,7 @@ function Tutorial.Init()
 	local layer = Kit.Layer("Tutorial", 9)
 	hint = Kit.new("Frame", {
 		Size = UDim2.fromOffset(620, 74),
-		Position = UDim2.new(0.5, 0, 0, 140),
+		Position = UDim2.new(0.5, 0, 0, 196),
 		AnchorPoint = Vector2.new(0.5, 0),
 		BackgroundTransparency = 1,
 		Visible = false,
@@ -191,8 +191,11 @@ function Tutorial.Init()
 		else
 			guide:Hide()
 		end
+		-- le bandeau s'efface pendant un vol (le panneau de portage prend sa place)
+		local carrying = (player:GetAttribute("Carrying") or "") ~= ""
+		hint.Visible = STEPS[step] ~= nil and not carrying
 		-- pendant un vol : flèches dorées vers sa propre île
-		if (player:GetAttribute("Carrying") or "") ~= "" and plot then
+		if carrying and plot then
 			carryGuide:Point(plot:FindFirstChild("Floor"))
 		else
 			carryGuide:Hide()
