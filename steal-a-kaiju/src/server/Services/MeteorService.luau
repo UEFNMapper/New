@@ -206,7 +206,7 @@ local function buy(player: Player, payload: any): Router.Result
 	if not root or (root.Position - m.Position).Magnitude > 22 then
 		return { ok = false, msg = "Get closer!" }
 	end
-	if not Registry.KaijuService.FreeNest(player) then
+	if not Registry.KaijuService.FreeNest(player) and not Registry.KaijuService.CanMakeRoom(player, m:GetAttribute("Rarity") or "Common") then
 		return { ok = false, msg = "Your nests are full! Sell or unlock more." }
 	end
 	local price = m:GetAttribute("Price") or 0

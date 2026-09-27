@@ -65,6 +65,7 @@ Rampage.StarGems = 5 -- par nouvelle étoile
 Rampage.UnlockStars = 2 -- étoiles au quartier N pour ouvrir N+1
 
 -- Récompenses -----------------------------------------------------------------
+Rampage.CashSecondsPerPoint = 0.3 -- 1 point = 0,3 s de revenu (quartier 1 rasé ≈ 1,5 à 3 min de revenu)
 Rampage.MinCashPerPoint = 5 -- plancher : $5 par point x numéro du quartier
 Rampage.GrowthCap = 0.25 -- croissance max : 25 % du temps restant dans le stade
 Rampage.GoldenValueMult = 5

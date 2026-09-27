@@ -45,7 +45,7 @@ Tutorial.Missions = {
 	{
 		Step = 4,
 		Title = "DEFEND YOUR ISLAND!",
-		Text = "Wild kaijus are invading! Your kaijus shoot them — bonk the ones that get close with your Bonker!",
+		Text = "Wild kaijus are invading your island! Your kaijus shoot them. The BIG one is for you: hit it with your Bonker!",
 		Icon = "bonk",
 		Target = "Siege",
 		Reward = { Gems = 15 },

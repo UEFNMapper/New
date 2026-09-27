@@ -45,6 +45,7 @@ type Invader = {
 	Bag: number,
 	Leaked: boolean,
 	Killer: Player?,
+	TowerProof: boolean?, -- ignoré par les tours (vague d'entraînement : à bonker)
 }
 
 type Wave = {
@@ -243,6 +244,10 @@ local function spawnInvader(state: State, wave: Wave, spec: any, t: number, d0: 
 	part:SetAttribute("MaxHP", hp)
 	part:SetAttribute("HP", hp)
 	part:SetAttribute("Bag", 0)
+	if spec.TowerProof then
+		part:SetAttribute("TowerProof", true)
+		part:SetAttribute("Scale", Siege.Tutorial.ToughScale)
+	end
 	local inv: Invader = {
 		Id = id,
 		Type = def.Id,
@@ -260,6 +265,7 @@ local function spawnInvader(state: State, wave: Wave, spec: any, t: number, d0: 
 		Bag = 0,
 		Leaked = false,
 		Killer = nil,
+		TowerProof = spec.TowerProof == true,
 	}
 	setMotion(inv, t, d0 or 0, 1, speed, pathName)
 	part.Parent = state.Folder
@@ -490,7 +496,7 @@ local function fireTowers(state: State, wave: Wave, t: number, cache: { [Invader
 		if t >= ready then
 			local best, bestScore = nil, -math.huge
 			for inv, c in cache do
-				if inv.HP > 0 and flat(tower.Pos, c.Pos) <= tower.Range then
+				if inv.HP > 0 and not inv.TowerProof and flat(tower.Pos, c.Pos) <= tower.Range then
 					local score = priority(inv, c.D)
 					if score > bestScore then
 						best, bestScore = inv, score
@@ -504,7 +510,7 @@ local function fireTowers(state: State, wave: Wave, t: number, cache: { [Invader
 				if tower.Splash then
 					local center = cache[best].Pos
 					for other, c in cache do
-						if other ~= best and other.HP > 0 and flat(center, c.Pos) <= Siege.SplashRadius + other.Radius then
+						if other ~= best and other.HP > 0 and not other.TowerProof and flat(center, c.Pos) <= Siege.SplashRadius + other.Radius then
 							local splash = tower.Damage * Siege.SplashFactor
 							damage(other, splash, nil)
 							table.insert(shots, { I = other.Id, D = splash, S = true })
@@ -536,6 +542,7 @@ local function startWave(state: State, bonus: boolean, tutorial: boolean): boole
 		for _ = 1, Siege.Tutorial.Count do
 			table.insert(queue, { Type = "Grunt", HP = Siege.Tutorial.HP, Speed = Siege.Tutorial.Speed, Path = "Tutorial" })
 		end
+		table.insert(queue, { Type = "Tank", HP = Siege.Tutorial.ToughHP, Speed = Siege.Tutorial.Speed, Path = "Tutorial", TowerProof = true })
 	else
 		for _, id in Siege.Composition(number) do
 			table.insert(queue, { Type = id })
@@ -832,7 +839,7 @@ function SiegeService.DamageNearest(player: Player, position: Vector3, radius: n
 			local best, bestDist = nil, math.huge
 			for _, inv in wave.Invaders do
 				local dist = flat(here, (localPos(inv, t)))
-				if inv.HP > 0 and dist <= radius + inv.Radius and dist < bestDist then
+				if inv.HP > 0 and not inv.TowerProof and dist <= radius + inv.Radius and dist < bestDist then
 					best, bestDist = inv, dist
 				end
 			end

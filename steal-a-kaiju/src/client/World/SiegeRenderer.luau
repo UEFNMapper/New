@@ -89,6 +89,8 @@ local function wildTint(model: Model)
 end
 
 local function healthBar(entry: Invader, alpha: boolean)
+	-- l'envahisseur d'entraînement que seul le joueur peut bonker : étiquette bien visible
+	local tough = entry.Anchor:GetAttribute("TowerProof") == true
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "SiegeBar"
 	gui.Size = if alpha then ScreenScale.Px(120, 34) else ScreenScale.Px(64, 22)
@@ -121,13 +123,17 @@ local function healthBar(entry: Invader, alpha: boolean)
 	label.FontFace = Theme.Fonts.Impact
 	label.TextScaled = true
 	label.TextColor3 = if alpha then C.Gold else C.Red
-	label.Text = if alpha then "👑 ALPHA" else ""
+	label.Text = if alpha then "👑 ALPHA" elseif tough then "🔨 BONK ME!" else ""
 	local stroke = Instance.new("UIStroke")
 	stroke.Thickness = 2
 	stroke.Color = C.Ink
 	stroke.Parent = label
 	label.Parent = gui
-	gui.Enabled = alpha
+	gui.Enabled = alpha or tough
+	if tough then
+		gui.Size = ScreenScale.Px(120, 34)
+		gui.MaxDistance = 220
+	end
 	gui.Parent = entry.Model.PrimaryPart
 	entry.Bar = gui
 	entry.Fill = fill

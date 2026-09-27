@@ -221,14 +221,30 @@ check("mission 3 validée à l'achat d'un œuf", data(dana).Tutorial == 4, data(
 Runtime.Advance(1.5)
 Boot.Call(dana, "Home")
 local sawWave = false
+local Siege = req(Shared.Config.Siege)
+local startedAt = Runtime.Now()
 for _ = 1, 160 do
 	Runtime.Advance(1)
 	sawWave = sawWave or dana:GetAttribute("SiegeActive") == true
 	if data(dana).Tutorial >= 5 then
 		break
 	end
+	-- Dana bonke le gros envahisseur que les tours ne peuvent pas abattre
+	local siegeFolder = S.Workspace:FindFirstChild("Siege")
+	local mine = siegeFolder and siegeFolder:FindFirstChild("Plot" .. PlotService.Get(dana).Index)
+	for _, inv in (mine and mine:GetDescendants() or {}) do
+		if inv:GetAttribute("TowerProof") and (inv:GetAttribute("HP") or 0) > 0 then
+			local path = Siege.GetPath(inv:GetAttribute("Path"))
+			local d = Siege.Distance(path, inv:GetAttribute("D0"), inv:GetAttribute("T0"), inv:GetAttribute("Speed"), inv:GetAttribute("Dir"), S.Workspace:GetServerTimeNow())
+			local p = Siege.PathAt(path, d)
+			local pos = (PlotService.Get(dana).CFrame * Runtime.CFrame.new(p.X, 0, p.Z)).Position
+			dana.Character.HumanoidRootPart.CFrame = Runtime.CFrame.lookAt(pos + V3(2, 3, 0), pos)
+			Boot.Input(dana, "Bonk")
+		end
+	end
 end
 check("mission 4 : vague d'entraînement lancée", sawWave and #Boot.FxFor(dana, "SiegeWaveStart") >= 1)
+check("mission 4 : terminée par le bonk du joueur (pas par la sécurité de 120 s)", Runtime.Now() - startedAt < 90 and #Boot.FxFor(dana, "SiegeBonk") >= 1, Runtime.Now() - startedAt)
 check("mission 4 validée à la fin de la vague", data(dana).Tutorial == 5, data(dana).Tutorial)
 check("XP gagnée pendant le tutoriel", data(dana).Xp > 0 and data(dana).Level >= 2, data(dana).Xp)
 -- Mission 5 : une partie de RAMPAGE
@@ -576,7 +592,7 @@ local Worlds = req(Shared.Config.Worlds)
 local WorldService = req(Services:FindFirstChild("WorldService"))
 check("XP gagnée en jouant (éclosions, croissance)", data(bob).Xp > 0 and data(bob).Level >= 1, data(bob).Xp)
 check("leaderstat Level", bob.leaderstats.Level.Value == data(bob).Level)
-local lockedWorld = Boot.Call(bob, "UnlockWorld", { Id = "Frost" })
+local lockedWorld = Boot.Call(bob, "UnlockWorld", { Id = "Cosmic" })
 check("monde verrouillé par le niveau", lockedWorld and not lockedWorld.ok and string.find(lockedWorld.msg or "", "LEVEL") ~= nil, lockedWorld and lockedWorld.msg)
 local noTravel = Boot.Call(bob, "Travel", { Id = "Candy" })
 check("voyage refusé vers un monde non débloqué", noTravel and not noTravel.ok)

@@ -186,6 +186,9 @@ Siege.Tutorial = {
 	Speed = 6,
 	Gap = 2.5,
 	Timeout = 120, -- s : sécurité, la vague se termine quoi qu'il arrive
+	-- le dernier envahisseur ignore les tirs : seul le joueur peut le bonker
+	ToughHP = 25, -- 3 bonks
+	ToughScale = 1.35,
 }
 
 function Siege.Count(wave: number): number

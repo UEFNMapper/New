@@ -126,7 +126,9 @@ function Calc.SellValue(rec: KaijuRecord): number
 	end
 	local base = if species.Price > 0 then species.Price else species.Income * 250
 	local stage = Growth.Get(Growth.StageFor(rec.Growth, species.Rarity))
-	return math.floor(base * Economy.SellBase * stage.SellMult * Mutations.Mult(rec.Mutation))
+	local fromPrice = base * Economy.SellBase * stage.SellMult * Mutations.Mult(rec.Mutation)
+	-- un kaiju qui a grandi se revend au moins 1 minute de ce qu'il rapporte
+	return math.floor(math.max(fromPrice, Calc.BaseIncome(rec) * 60))
 end
 
 -- Prix d'une nourriture pour ce kaiju.

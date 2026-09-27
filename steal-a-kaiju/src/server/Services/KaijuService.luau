@@ -10,6 +10,7 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Kaijus = require(Shared.Config.Kaijus)
 local Rarities = require(Shared.Config.Rarities)
+local Mutations = require(Shared.Config.Mutations)
 local Growth = require(Shared.Config.Growth)
 local Economy = require(Shared.Config.Economy)
 local Worlds = require(Shared.Config.Worlds)
@@ -244,6 +245,52 @@ end
 
 -- Identifiant unique sur le serveur (les ancres sont indexées par Uid pour tous
 -- les joueurs) : on y met l'UserId du propriétaire.
+-- Nids pleins : fait de la place pour un œuf STRICTEMENT plus rare en revendant le
+-- kaiju le plus faible (jamais une mutation Diamant ou mieux, un Secret, le
+-- compagnon, un kaiju en cours de vol ou joué en Rampage). Renvoie le nid libéré.
+local function weakestFor(player: Player, rarity: string): Record?
+	local data = DataService.Get(player)
+	if not data then
+		return nil
+	end
+	local incoming = Rarities.Get(rarity).Order
+	local rampage = Registry.RampageService
+	local playing = if rampage and rampage.PlayingUid then rampage.PlayingUid(player) else nil
+	local buddyUid = data.Buddy and data.Buddy.Uid or ""
+	local worst, worstValue = nil, math.huge
+	for _, rec in data.Kaijus do
+		local anchor = anchors[rec.Uid]
+		local busy = (anchor and (anchor:GetAttribute("CarriedBy") or 0) ~= 0) or rec.Uid == playing
+		local precious = rec.Rarity == "Secret" or Mutations.Mult(rec.Mutation) >= 3 or rec.Uid == buddyUid
+		if not rec.Egg and not busy and not precious and Rarities.Get(rec.Rarity).Order < incoming then
+			local value = Calc.BaseIncome(rec)
+			if value < worstValue then
+				worst, worstValue = rec, value
+			end
+		end
+	end
+	return worst
+end
+
+function KaijuService.CanMakeRoom(player: Player, rarity: string): boolean
+	return weakestFor(player, rarity) ~= nil
+end
+
+function KaijuService.MakeRoom(player: Player, rarity: string): number?
+	local worst = weakestFor(player, rarity)
+	if not worst then
+		return nil
+	end
+	local value = Calc.SellValue(worst)
+	local species = Kaijus.Get(worst.Species or "")
+	local slot = worst.Nest
+	KaijuService.RemoveRecord(player, worst.Uid)
+	DataService.AddCash(player, value, false)
+	Notify.Fx(player, "Sold", { Amount = value, Species = worst.Species })
+	Notify.Toast(player, ("Nests full: sold %s (+%s) to make room for a %s egg!"):format(if species then species.Name else "a kaiju", Format.Cash(value), string.upper(Rarities.Get(rarity).Name)), "Info")
+	return slot
+end
+
 local function newUid(data: any, player: Player): string
 	local uid = string.format("%x-%x-%x", player.UserId, data.NextUid, math.random(0, 0xFFFF))
 	data.NextUid += 1
@@ -254,7 +301,7 @@ end
 -- `world` : monde d'origine (espèces et mutations locales à l'éclosion).
 function KaijuService.AddEgg(player: Player, rarity: string, hatchSeconds: number?, world: string?): Record?
 	local data = DataService.Get(player)
-	local slot = KaijuService.FreeNest(player)
+	local slot = KaijuService.FreeNest(player) or KaijuService.MakeRoom(player, rarity)
 	if not data or not slot then
 		return nil
 	end
@@ -299,11 +346,17 @@ function KaijuService.PlacePending(player: Player)
 		return
 	end
 	local changed = false
-	while #data.PendingEggs > 0 and KaijuService.FreeNest(player) do
-		local entry = table.remove(data.PendingEggs, 1) :: string
+	local i = 1
+	while i <= #data.PendingEggs do
+		local entry = data.PendingEggs[i] :: string
 		local rarity, world = string.match(entry, "^([^@]+)@?(.*)$")
-		KaijuService.AddEgg(player, rarity or entry, nil, if world and world ~= "" then world else nil)
-		changed = true
+		-- un nid libre, ou de la place faite en revendant un kaiju moins rare
+		if KaijuService.AddEgg(player, rarity or entry, nil, if world and world ~= "" then world else nil) then
+			table.remove(data.PendingEggs, i)
+			changed = true
+		else
+			i += 1
+		end
 	end
 	if changed then
 		DataService.Replicate(player, "PendingEggs")

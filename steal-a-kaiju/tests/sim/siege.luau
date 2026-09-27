@@ -197,7 +197,7 @@ check("vague d'entraînement lancée", SiegeService.StartTutorialWave(hero) == t
 check("attribut joueur SiegeActive = true", hero:GetAttribute("SiegeActive") == true)
 check("pas deux vagues à la fois", SiegeService.StartTutorialWave(hero) == false)
 local start = lastFx(hero, "SiegeWaveStart", log)
-check("sirène envoyée (Tutorial, 4 envahisseurs)", start and start.Tutorial == true and start.Count == 4, start and start.Count)
+check("sirène envoyée (Tutorial, 4 envahisseurs + 1 à bonker)", start and start.Tutorial == true and start.Count == Siege.Tutorial.Count + 1, start and start.Count)
 Runtime.Advance(0.5)
 check("bandeau de sirène affiché", hud:FindFirstChild("SiegeBanner") ~= nil)
 Runtime.Advance(5.5)
@@ -206,19 +206,41 @@ check("HUD : panneau de vague visible", status.Visible == true)
 check("HUD : « TRAINING WAVE »", string.find(status:FindFirstChild("Title", true).Text, "TRAINING") ~= nil, status:FindFirstChild("Title", true).Text)
 check("le bandeau s'efface", hud:FindFirstChild("SiegeBanner") == nil)
 local sawAim = false
-for _ = 1, 150 do
+local tough
+for _ = 1, 60 do
 	Runtime.Advance(1)
 	if not sawAim and #Boot.FxFor(hero, "SiegeShots", log) > 0 then
 		sawAim = true
 	end
-	if folder:GetAttribute("State") ~= "Active" then
+	local alive = 0
+	for _, inv in invaders() do
+		if inv:GetAttribute("TowerProof") then
+			tough = inv
+		else
+			alive += 1
+		end
+	end
+	if tough and alive == 0 and #Boot.FxFor(hero, "SiegeKill", log) >= Siege.Tutorial.Count then
 		break
 	end
 end
+check("les tours abattent les 4 petits envahisseurs", #Boot.FxFor(hero, "SiegeKill", log) == Siege.Tutorial.Count)
+check("le gros envahisseur résiste aux tours (à bonker)", tough ~= nil and tough.Parent ~= nil and tough:GetAttribute("HP") == Siege.Tutorial.ToughHP)
+check("la vague attend le bonk du joueur", folder:GetAttribute("State") == "Active")
+for _ = 1, 20 do
+	if not tough or tough.Parent == nil then
+		break
+	end
+	local pos = invaderPos(tough)
+	hero.Character.HumanoidRootPart.CFrame = Runtime.CFrame.lookAt(pos + V3(2, 3, 0), pos)
+	Boot.Input(hero, "Bonk")
+	Runtime.Advance(1)
+end
+Runtime.Advance(2)
 local tutoEnd = lastFx(hero, "SiegeWaveEnd", log)
 check("vague d'entraînement terminée", tutoEnd ~= nil)
-check("4 kills par les tours, aucune fuite", tutoEnd and tutoEnd.Kills == 4 and tutoEnd.Leaks == 0 and tutoEnd.Cleared == true, tutoEnd and (tutoEnd.Kills .. " kills / " .. tutoEnd.Leaks .. " fuites"))
-check("aucun bonk : ce sont bien les tours", #Boot.FxFor(hero, "SiegeBonk", log) == 0)
+check("5 kills (4 tours + 1 bonk), aucune fuite", tutoEnd and tutoEnd.Kills == Siege.Tutorial.Count + 1 and tutoEnd.Leaks == 0 and tutoEnd.Cleared == true, tutoEnd and (tutoEnd.Kills .. " kills / " .. tutoEnd.Leaks .. " fuites"))
+check("le joueur a bonké le gros", #Boot.FxFor(hero, "SiegeBonk", log) >= 1)
 check("tirs envoyés par lots (SiegeShots)", sawAim)
 check("TutorialService.Notify(« SiegeWave »)", notifiedCount(hero, "SiegeWave") == 1, notifiedCount(hero, "SiegeWave"))
 check("SiegeActive repasse à false", hero:GetAttribute("SiegeActive") == false)

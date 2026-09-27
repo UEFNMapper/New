@@ -138,6 +138,12 @@ function RampageService.IsActive(player: Player): boolean
 	return runs[player] ~= nil
 end
 
+-- Kaiju joué en ce moment (sa copie est dans la ville) : on ne le revend pas.
+function RampageService.PlayingUid(player: Player): string?
+	local run = runs[player]
+	return if run then run.Uid else nil
+end
+
 ----------------------------------------------------------------------------
 -- Récompenses en cours de partie
 ----------------------------------------------------------------------------
@@ -162,7 +168,7 @@ local function scoreHit(run: Run, value: number): (number, number, number)
 	local mult = Rampage.ComboMult(run.Combo)
 	local points = value * mult * run.District.RewardMult
 	local minCash = points * Rampage.MinCashPerPoint * run.District.Index
-	local cash = Registry.KaijuService.IncomeSeconds(run.Player, points, minCash)
+	local cash = Registry.KaijuService.IncomeSeconds(run.Player, points * Rampage.CashSecondsPerPoint, minCash)
 	run.Points += points
 	run.Cash += cash
 	return mult, cash, points

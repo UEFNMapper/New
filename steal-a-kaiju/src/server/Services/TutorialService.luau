@@ -9,6 +9,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Tutorial = require(Shared.Config.Tutorial)
 local Levels = require(Shared.Config.Levels)
+local Layout = require(Shared.Config.Layout)
 
 local Registry = require(script.Parent.Registry)
 local DataService = require(script.Parent.DataService)
@@ -64,7 +65,19 @@ local function startStep(player: Player, s: number)
 		return
 	end
 	if mission.Target == "Siege" then
-		task.delay(4, function()
+		task.spawn(function()
+			-- la vague d'entraînement ne commence que quand le joueur est rentré sur son île
+			local deadline = os.clock() + 120
+			while player.Parent == Players and step(player) == s and os.clock() < deadline do
+				local plot = Registry.PlotService.Get(player)
+				local character = player.Character
+				local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+				if plot and root and Layout.InPlot(plot.CFrame, root.Position, 4) then
+					break
+				end
+				task.wait(0.5)
+			end
+			task.wait(2)
 			if player.Parent == Players and step(player) == s then
 				local siege = Registry.SiegeService
 				if siege.StartTutorialWave then
