@@ -618,7 +618,7 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 	local signPart = part({ Name = "SignAnchor", Size = Vector3.new(1, 1, 1), CFrame = at(0, 18, -D / 2 + 1.6), Transparency = 1, CanCollide = false }, model)
 	local sign = Instance.new("BillboardGui")
 	sign.Name = "OwnerSign"
-	sign.Size = UDim2.fromOffset(360, 90)
+	sign.Size = UDim2.fromScale(26, 6.5) -- en studs : rapetisse avec la distance
 	sign.MaxDistance = 400
 	sign.LightInfluence = 0
 	sign.AlwaysOnTop = false
@@ -632,7 +632,7 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 	signLabel.TextColor3 = Theme.Colors.Paper
 	signLabel.Text = "EMPTY ISLAND"
 	local stroke = Instance.new("UIStroke")
-	stroke.Thickness = 3
+	stroke.Thickness = 2
 	stroke.Color = Theme.Colors.Ink
 	stroke.Parent = signLabel
 	signLabel.Parent = sign

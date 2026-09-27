@@ -14123,7 +14123,7 @@ end
 local function billboard(parent: BasePart, text: string, color: Color3, width: number, height: number, maxDistance: number)
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "SignGui"
-	gui.Size = UDim2.fromOffset(width, height)
+	gui.Size = UDim2.fromScale(width / 12, height / 12) -- en studs : rapetisse avec la distance
 	gui.MaxDistance = maxDistance
 	gui.LightInfluence = 0
 	gui.Adornee = parent
@@ -14137,7 +14137,7 @@ local function billboard(parent: BasePart, text: string, color: Color3, width: n
 	label.TextColor3 = color
 	label.Text = text
 	local stroke = Instance.new("UIStroke")
-	stroke.Thickness = 3
+	stroke.Thickness = 2
 	stroke.Color = Theme.Colors.Ink
 	stroke.Parent = label
 	label.Parent = gui
@@ -14593,12 +14593,17 @@ local function light(parent: BasePart, color: Color3, range: number, brightness:
 	l.Parent = parent
 end
 
--- Étiquette flottante (lisible de loin) au-dessus d'un point.
+-- Pixels (de la maquette) par stud : les panneaux ont une taille EN STUDS, comme de
+-- vrais panneaux. Ils rapetissent avec la distance au lieu de garder la même taille
+-- en pixels à l'écran (sinon, sur téléphone, les panneaux lointains se chevauchent).
+local SIGN_PX_PER_STUD = 12
+
+-- Étiquette flottante au-dessus d'un point. width/height : taille de maquette en pixels.
 local function floatingSign(parent: Instance, cf: CFrame, text: string, color: Color3, width: number, height: number, maxDistance: number, name: string?)
 	local anchor = part({ Name = name or "Sign", Size = Vector3.new(1, 1, 1), CFrame = cf, Transparency = 1, CanCollide = false, CanQuery = false }, parent)
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "SignGui"
-	gui.Size = UDim2.fromOffset(width, height)
+	gui.Size = UDim2.fromScale(width / SIGN_PX_PER_STUD, height / SIGN_PX_PER_STUD)
 	gui.MaxDistance = maxDistance
 	gui.LightInfluence = 0
 	gui.Adornee = anchor
@@ -14612,7 +14617,7 @@ local function floatingSign(parent: Instance, cf: CFrame, text: string, color: C
 	label.TextColor3 = color
 	label.Text = text
 	local stroke = Instance.new("UIStroke")
-	stroke.Thickness = 3
+	stroke.Thickness = 2
 	stroke.Color = Theme.Colors.Ink
 	stroke.Parent = label
 	label.Parent = gui
@@ -15352,7 +15357,7 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 	local signPart = part({ Name = "SignAnchor", Size = Vector3.new(1, 1, 1), CFrame = at(0, 18, -D / 2 + 1.6), Transparency = 1, CanCollide = false }, model)
 	local sign = Instance.new("BillboardGui")
 	sign.Name = "OwnerSign"
-	sign.Size = UDim2.fromOffset(360, 90)
+	sign.Size = UDim2.fromScale(26, 6.5) -- en studs : rapetisse avec la distance
 	sign.MaxDistance = 400
 	sign.LightInfluence = 0
 	sign.AlwaysOnTop = false
@@ -15366,7 +15371,7 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 	signLabel.TextColor3 = Theme.Colors.Paper
 	signLabel.Text = "EMPTY ISLAND"
 	local stroke = Instance.new("UIStroke")
-	stroke.Thickness = 3
+	stroke.Thickness = 2
 	stroke.Color = Theme.Colors.Ink
 	stroke.Parent = signLabel
 	signLabel.Parent = sign
@@ -16418,6 +16423,46 @@ return Remote
           </Item>
           <Item class="ModuleScript" referent="77">
             <Properties>
+              <string name="Name">ScreenScale</string>
+              <string name="Source"><![CDATA[--!nonstrict
+-- Échelle d'écran partagée : l'interface est dessinée pour 1280 x 720 et réduite
+-- sur les petits écrans (téléphones). Sert au HUD (Kit.AutoScale) et aux
+-- étiquettes 3D (BillboardGui) pour qu'elles ne mangent pas l'écran sur mobile.
+
+local Workspace = game:GetService("Workspace")
+
+local ScreenScale = {}
+
+-- Échelle du HUD : on vise 800 px de haut pour laisser de la place au jeu.
+function ScreenScale.Hud(): number
+	local camera = Workspace.CurrentCamera
+	local size = if camera then camera.ViewportSize else Vector2.new(1280, 720)
+	return math.clamp(math.min(size.X / 1280, size.Y / 800), 0.42, 1.25)
+end
+
+-- Échelle des fenêtres (modales : elles ont tout l'écran pour elles, un peu plus grandes que le HUD).
+function ScreenScale.Window(): number
+	local hud = ScreenScale.Hud()
+	return math.min(hud * 1.3, math.max(1, hud))
+end
+
+-- Échelle des étiquettes 3D (jamais agrandies, un peu moins réduites que le HUD).
+function ScreenScale.World(): number
+	return math.clamp(ScreenScale.Hud() * 1.1, 0.5, 1)
+end
+
+-- Taille d'une étiquette 3D en pixels de maquette, adaptée à l'écran.
+function ScreenScale.Px(width: number, height: number): UDim2
+	local s = ScreenScale.World()
+	return UDim2.fromOffset(math.floor(width * s + 0.5), math.floor(height * s + 0.5))
+end
+
+return ScreenScale
+]]></string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="78">
+            <Properties>
               <string name="Name">State</string>
               <string name="Source"><![CDATA[--!nonstrict
 -- État local : copie des données du joueur reçues du serveur + valeurs dérivées.
@@ -16489,7 +16534,7 @@ return State
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="78">
+          <Item class="ModuleScript" referent="79">
             <Properties>
               <string name="Name">UIRegistry</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -16512,7 +16557,7 @@ return UIRegistry
             </Properties>
           </Item>
         </Item>
-        <Item class="LocalScript" referent="79">
+        <Item class="LocalScript" referent="80">
           <Properties>
             <string name="Name">Main</string>
             <string name="Source"><![CDATA[--!nonstrict
@@ -16587,11 +16632,11 @@ print("[Steal a Kaiju] client prêt")
 ]]></string>
           </Properties>
         </Item>
-        <Item class="Folder" referent="80">
+        <Item class="Folder" referent="81">
           <Properties>
             <string name="Name">UI</string>
           </Properties>
-          <Item class="ModuleScript" referent="81">
+          <Item class="ModuleScript" referent="82">
             <Properties>
               <string name="Name">Cinematics</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -17073,12 +17118,12 @@ return Cinematics
 ]]></string>
             </Properties>
           </Item>
-          <Item class="Folder" referent="82">
+          <Item class="Folder" referent="83">
             <Properties>
               <string name="Name">Components</string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="83">
+          <Item class="ModuleScript" referent="84">
             <Properties>
               <string name="Name">Hud</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -17259,9 +17304,10 @@ local function buildCurrencies()
 	RunService.Heartbeat:Connect(function()
 		local at = player:GetAttribute("GoldenMeteorAt")
 		local step = State.Get("Tutorial") or 0
-		goldenChip.Visible = at ~= nil and step >= TutorialConfig.Done
+		local left = if at then at - now() else math.huge
+		-- n'apparaît qu'à l'approche du rendez-vous (moins de place prise à l'écran)
+		goldenChip.Visible = at ~= nil and step >= TutorialConfig.Done and left <= 90
 		if at then
-			local left = at - now()
 			goldenText.Text = if left > 1 then "🌟 Golden meteor in " .. Format.Clock(left) else "🌟 GOLDEN METEOR INCOMING!"
 		end
 	end)
@@ -17642,7 +17688,7 @@ end
 local function buildMenus()
 	local left = Kit.new("Frame", {
 		Name = "LeftMenu",
-		Size = UDim2.fromOffset(200, 310),
+		Size = UDim2.fromOffset(300, 200),
 		BackgroundTransparency = 1,
 		LayoutOrder = 4,
 		Parent = Hud.LeftColumn(),
@@ -18192,7 +18238,7 @@ return Hud
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="84">
+          <Item class="ModuleScript" referent="85">
             <Properties>
               <string name="Name">Kit</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -18213,6 +18259,7 @@ local Icons = require(Shared.Config.Icons)
 local Signal = require(Shared.Util.Signal)
 
 local Audio = require(script.Parent.Parent.Controllers.Audio)
+local ScreenScale = require(script.Parent.Parent.Controllers.ScreenScale)
 
 local C = Theme.Colors
 local F = Theme.Fonts
@@ -18576,22 +18623,23 @@ Kit.UIScale = 1
 local scaled: { UIScale } = {}
 
 local function computeScale(): number
-	local camera = Workspace.CurrentCamera
-	local size = if camera then camera.ViewportSize else Vector2.new(1280, 720)
-	return math.clamp(math.min(size.X / 1280, size.Y / 720), 0.55, 1.35)
+	return ScreenScale.Hud()
 end
 
 -- Ajoute une échelle automatique à un élément de premier niveau.
-function Kit.AutoScale(inst: GuiObject)
-	local s = Kit.new("UIScale", { Name = "AutoScale", Scale = Kit.UIScale, Parent = inst })
+-- kind = "Window" : échelle des fenêtres (un peu plus grandes que le HUD sur téléphone).
+function Kit.AutoScale(inst: GuiObject, kind: string?)
+	local s = Kit.new("UIScale", { Name = "AutoScale", Scale = if kind == "Window" then ScreenScale.Window() else Kit.UIScale, Parent = inst })
+	s:SetAttribute("Kind", kind or "Hud")
 	table.insert(scaled, s)
 	return s
 end
 
 local function refreshScale()
 	Kit.UIScale = computeScale()
+	local window = ScreenScale.Window()
 	for _, s in scaled do
-		s.Scale = Kit.UIScale
+		s.Scale = if s:GetAttribute("Kind") == "Window" then window else Kit.UIScale
 	end
 	Kit.ScaleChanged:Fire(Kit.UIScale)
 end
@@ -19131,7 +19179,7 @@ function Kit.Window(props: { [string]: any }): Window
 		BackgroundTransparency = 1,
 		Parent = layer,
 	})
-	Kit.AutoScale(holder)
+	Kit.AutoScale(holder, "Window")
 	-- Au repos la fenêtre est droite : Roblox ne découpe pas (ClipsDescendants)
 	-- le contenu d'un parent incliné. L'inclinaison BD passe par le ruban.
 	local restRotation = props.Rotation or 0
@@ -19305,7 +19353,7 @@ return Kit
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="85">
+          <Item class="ModuleScript" referent="86">
             <Properties>
               <string name="Name">Notifications</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -19746,7 +19794,7 @@ return Notifications
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="86">
+          <Item class="ModuleScript" referent="87">
             <Properties>
               <string name="Name">PromptStyle</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -19905,7 +19953,7 @@ return PromptStyle
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="87">
+          <Item class="ModuleScript" referent="88">
             <Properties>
               <string name="Name">RampageHud</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -20449,11 +20497,11 @@ return RampageHud
 ]]></string>
             </Properties>
           </Item>
-          <Item class="Folder" referent="88">
+          <Item class="Folder" referent="89">
             <Properties>
               <string name="Name">Screens</string>
             </Properties>
-            <Item class="ModuleScript" referent="89">
+            <Item class="ModuleScript" referent="90">
               <Properties>
                 <string name="Name">Daily</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -21087,7 +21135,7 @@ return Daily
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="90">
+            <Item class="ModuleScript" referent="91">
               <Properties>
                 <string name="Name">Fusion</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -22801,7 +22849,7 @@ return Fusion
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="91">
+            <Item class="ModuleScript" referent="92">
               <Properties>
                 <string name="Name">HowToPlay</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -22905,7 +22953,7 @@ return HowToPlay
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="92">
+            <Item class="ModuleScript" referent="93">
               <Properties>
                 <string name="Name">Index</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -23974,7 +24022,7 @@ return Index
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="93">
+            <Item class="ModuleScript" referent="94">
               <Properties>
                 <string name="Name">KaijuPanel</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -25173,7 +25221,7 @@ return KaijuPanel
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="94">
+            <Item class="ModuleScript" referent="95">
               <Properties>
                 <string name="Name">Playtime</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -25787,7 +25835,7 @@ return Playtime
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="95">
+            <Item class="ModuleScript" referent="96">
               <Properties>
                 <string name="Name">Quests</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -26582,7 +26630,7 @@ return Quests
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="96">
+            <Item class="ModuleScript" referent="97">
               <Properties>
                 <string name="Name">Rampage</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -27229,7 +27277,7 @@ return RampageScreen
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="97">
+            <Item class="ModuleScript" referent="98">
               <Properties>
                 <string name="Name">Rebirth</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -28314,7 +28362,7 @@ return Rebirth
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="98">
+            <Item class="ModuleScript" referent="99">
               <Properties>
                 <string name="Name">Rewards</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -28454,7 +28502,7 @@ return Rewards
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="99">
+            <Item class="ModuleScript" referent="100">
               <Properties>
                 <string name="Name">Settings</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -28958,7 +29006,7 @@ return Settings
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="100">
+            <Item class="ModuleScript" referent="101">
               <Properties>
                 <string name="Name">Shop</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -30405,7 +30453,7 @@ return Shop
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="101">
+            <Item class="ModuleScript" referent="102">
               <Properties>
                 <string name="Name">Spin</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -31161,7 +31209,7 @@ return Spin
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="102">
+            <Item class="ModuleScript" referent="103">
               <Properties>
                 <string name="Name">Worlds</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -31559,7 +31607,7 @@ return WorldsScreen
               </Properties>
             </Item>
           </Item>
-          <Item class="ModuleScript" referent="103">
+          <Item class="ModuleScript" referent="104">
             <Properties>
               <string name="Name">SiegeHud</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -32079,7 +32127,7 @@ return SiegeHud
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="104">
+          <Item class="ModuleScript" referent="105">
             <Properties>
               <string name="Name">Viewport</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -32212,11 +32260,11 @@ return Viewport
             </Properties>
           </Item>
         </Item>
-        <Item class="Folder" referent="105">
+        <Item class="Folder" referent="106">
           <Properties>
             <string name="Name">World</string>
           </Properties>
-          <Item class="ModuleScript" referent="106">
+          <Item class="ModuleScript" referent="107">
             <Properties>
               <string name="Name">BuddyRenderer</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -32246,6 +32294,7 @@ local Theme = require(Shared.Config.Theme)
 local Format = require(Shared.Logic.Format)
 
 local Controllers = script.Parent.Parent.Controllers
+local ScreenScale = require(Controllers.ScreenScale)
 local State = require(Controllers.State)
 local Audio = require(Controllers.Audio)
 local FxBus = require(Controllers.FxBus)
@@ -32323,7 +32372,7 @@ end
 local function buildGui(pet: Pet): BillboardGui
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "BuddyGui"
-	gui.Size = UDim2.fromOffset(120, 90)
+	gui.Size = ScreenScale.Px(120, 90)
 	gui.LightInfluence = 0
 	gui.MaxDistance = 90
 	gui.AlwaysOnTop = false
@@ -32879,7 +32928,7 @@ local function showSpot(part: BasePart)
 	-- étiquette + compte à rebours
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "TreasureGui"
-	gui.Size = UDim2.fromOffset(170, 70)
+	gui.Size = ScreenScale.Px(170, 70)
 	gui.StudsOffsetWorldSpace = Vector3.new(0, 5, 0)
 	gui.LightInfluence = 0
 	gui.MaxDistance = 400
@@ -33219,7 +33268,7 @@ return BuddyRenderer
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="107">
+          <Item class="ModuleScript" referent="108">
             <Properties>
               <string name="Name">CharacterFx</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -33234,6 +33283,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Theme = require(Shared.Config.Theme)
 
 local Controllers = script.Parent.Parent.Controllers
+local ScreenScale = require(Controllers.ScreenScale)
 local Remote = require(Controllers.Remote)
 local Audio = require(Controllers.Audio)
 local FxBus = require(Controllers.FxBus)
@@ -33300,7 +33350,7 @@ local function dizzy(character: Model, duration: number)
 	local stars = {}
 	for i = 1, 3 do
 		local gui = Instance.new("BillboardGui")
-		gui.Size = UDim2.fromOffset(30, 30)
+		gui.Size = ScreenScale.Px(30, 30)
 		gui.AlwaysOnTop = true
 		gui.LightInfluence = 0
 		gui.Adornee = head
@@ -33395,7 +33445,7 @@ return CharacterFx
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="108">
+          <Item class="ModuleScript" referent="109">
             <Properties>
               <string name="Name">Effects</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -33409,6 +33459,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Theme = require(Shared.Config.Theme)
 local Vfx = require(Shared.Config.Vfx)
+local ScreenScale = require(script.Parent.Parent.Controllers.ScreenScale)
 
 local Effects = {}
 
@@ -33577,7 +33628,7 @@ end
 function Effects.FloatingText(pos: Vector3, text: string, color: Color3?, size: number?)
 	local p = anchorPart(pos)
 	local gui = Instance.new("BillboardGui")
-	gui.Size = UDim2.fromOffset(260 * (size or 1), 80 * (size or 1))
+	gui.Size = ScreenScale.Px(260 * (size or 1), 80 * (size or 1))
 	gui.AlwaysOnTop = true
 	gui.LightInfluence = 0
 	gui.MaxDistance = 250
@@ -33750,7 +33801,7 @@ return Effects
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="109">
+          <Item class="ModuleScript" referent="110">
             <Properties>
               <string name="Name">EventVisuals</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -33771,6 +33822,7 @@ local Theme = require(Shared.Config.Theme)
 local Format = require(Shared.Logic.Format)
 
 local Controllers = script.Parent.Parent.Controllers
+local ScreenScale = require(Controllers.ScreenScale)
 local State = require(Controllers.State)
 local Remote = require(Controllers.Remote)
 local Audio = require(Controllers.Audio)
@@ -34011,7 +34063,7 @@ local function trackOrb(anchor: BasePart)
 	light.Range = 10
 	light.Parent = orb
 	local gui = Instance.new("BillboardGui")
-	gui.Size = UDim2.fromOffset(60, 60)
+	gui.Size = ScreenScale.Px(60, 60)
 	gui.LightInfluence = 0
 	gui.MaxDistance = 120
 	gui.Parent = orb
@@ -34185,7 +34237,7 @@ return EventVisuals
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="110">
+          <Item class="ModuleScript" referent="111">
             <Properties>
               <string name="Name">Guide</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -34200,6 +34252,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Theme = require(Shared.Config.Theme)
+local ScreenScale = require(script.Parent.Parent.Controllers.ScreenScale)
 
 local Guide = {}
 Guide.__index = Guide
@@ -34251,7 +34304,7 @@ function Guide.new(color: Color3?)
 	markerPart.Size = Vector3.new(1, 1, 1)
 	markerPart.Parent = folder
 	local marker = Instance.new("BillboardGui")
-	marker.Size = UDim2.fromOffset(90, 90)
+	marker.Size = ScreenScale.Px(90, 90)
 	marker.AlwaysOnTop = true
 	marker.LightInfluence = 0
 	marker.Parent = markerPart
@@ -34333,7 +34386,7 @@ return Guide
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="111">
+          <Item class="ModuleScript" referent="112">
             <Properties>
               <string name="Name">KaijuRenderer</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -34357,6 +34410,7 @@ local Theme = require(Shared.Config.Theme)
 local Format = require(Shared.Logic.Format)
 
 local Controllers = script.Parent.Parent.Controllers
+local ScreenScale = require(Controllers.ScreenScale)
 local State = require(Controllers.State)
 local Remote = require(Controllers.Remote)
 local Audio = require(Controllers.Audio)
@@ -34488,7 +34542,7 @@ local function buildLabel(entry: Entry)
 	local anchor = entry.Anchor
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "KaijuLabel"
-	gui.Size = UDim2.fromOffset(220, 74)
+	gui.Size = ScreenScale.Px(220, 74)
 	gui.MaxDistance = 75
 	gui.LightInfluence = 0
 	gui.AlwaysOnTop = false
@@ -35100,7 +35154,7 @@ return KaijuRenderer
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="112">
+          <Item class="ModuleScript" referent="113">
             <Properties>
               <string name="Name">MeteorRenderer</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -35120,6 +35174,7 @@ local Theme = require(Shared.Config.Theme)
 local Format = require(Shared.Logic.Format)
 
 local Controllers = script.Parent.Parent.Controllers
+local ScreenScale = require(Controllers.ScreenScale)
 local State = require(Controllers.State)
 local Remote = require(Controllers.Remote)
 local Audio = require(Controllers.Audio)
@@ -35161,7 +35216,7 @@ local function buildLabel(entry: Entry)
 	local anchor = entry.Anchor
 	local rarity = Rarities.Get(anchor:GetAttribute("Rarity") or "Common")
 	local gui = Instance.new("BillboardGui")
-	gui.Size = UDim2.fromOffset(200, 86)
+	gui.Size = ScreenScale.Px(200, 86)
 	gui.StudsOffsetWorldSpace = Vector3.new(0, 6.5, 0)
 	gui.MaxDistance = 140
 	gui.LightInfluence = 0
@@ -35499,7 +35554,7 @@ return MeteorRenderer
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="113">
+          <Item class="ModuleScript" referent="114">
             <Properties>
               <string name="Name">PlotVisuals</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -35518,6 +35573,7 @@ local Levels = require(Shared.Config.Levels)
 local Theme = require(Shared.Config.Theme)
 
 local Controllers = script.Parent.Parent.Controllers
+local ScreenScale = require(Controllers.ScreenScale)
 local State = require(Controllers.State)
 local Audio = require(Controllers.Audio)
 local FxBus = require(Controllers.FxBus)
@@ -35568,7 +35624,7 @@ local function makeTimer(model: Model): BillboardGui
 	local gate = model:FindFirstChild("Gate") :: BasePart?
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "ShieldTimer"
-	gui.Size = UDim2.fromOffset(200, 50)
+	gui.Size = ScreenScale.Px(200, 50)
 	gui.StudsOffsetWorldSpace = Vector3.new(0, 9, 0)
 	gui.MaxDistance = 260
 	gui.LightInfluence = 0
@@ -35597,7 +35653,7 @@ local function nestLockLabel(model: Model, slot: number): BillboardGui?
 	end
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "NestLock"
-	gui.Size = UDim2.fromOffset(150, 44)
+	gui.Size = ScreenScale.Px(150, 44)
 	gui.StudsOffsetWorldSpace = Vector3.new(0, 3, 0)
 	gui.MaxDistance = 60
 	gui.LightInfluence = 0
@@ -35823,7 +35879,7 @@ return PlotVisuals
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="114">
+          <Item class="ModuleScript" referent="115">
             <Properties>
               <string name="Name">RampageController</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -35853,6 +35909,7 @@ local Theme = require(Shared.Config.Theme)
 local Format = require(Shared.Logic.Format)
 
 local Controllers = script.Parent.Parent.Controllers
+local ScreenScale = require(Controllers.ScreenScale)
 local State = require(Controllers.State)
 local Remote = require(Controllers.Remote)
 local Audio = require(Controllers.Audio)
@@ -35974,7 +36031,7 @@ local function hpBar(adornee: BasePart, height: number, alpha: number)
 	if not gui then
 		local g = Instance.new("BillboardGui")
 		g.Name = "HpBar"
-		g.Size = UDim2.fromOffset(70, 12)
+		g.Size = ScreenScale.Px(70, 12)
 		g.StudsOffsetWorldSpace = Vector3.new(0, height / 2 + 2, 0)
 		g.LightInfluence = 0
 		g.MaxDistance = 160
@@ -36561,7 +36618,7 @@ return RampageController
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="115">
+          <Item class="ModuleScript" referent="116">
             <Properties>
               <string name="Name">SiegeRenderer</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -36585,6 +36642,7 @@ local KaijuBuilder = require(Shared.KaijuBuilder)
 local Format = require(Shared.Logic.Format)
 
 local Controllers = script.Parent.Parent.Controllers
+local ScreenScale = require(Controllers.ScreenScale)
 local State = require(Controllers.State)
 local Audio = require(Controllers.Audio)
 local FxBus = require(Controllers.FxBus)
@@ -36656,7 +36714,7 @@ end
 local function healthBar(entry: Invader, alpha: boolean)
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "SiegeBar"
-	gui.Size = if alpha then UDim2.fromOffset(120, 34) else UDim2.fromOffset(64, 22)
+	gui.Size = if alpha then ScreenScale.Px(120, 34) else ScreenScale.Px(64, 22)
 	gui.StudsOffset = Vector3.new(0, entry.Height + 1.2, 0)
 	gui.LightInfluence = 0
 	gui.MaxDistance = if alpha then 220 else 110
@@ -36729,7 +36787,7 @@ local function refreshBag(entry: Invader)
 		p.CanTouch = false
 		p.Parent = entry.Model
 		local gui = Instance.new("BillboardGui")
-		gui.Size = UDim2.fromOffset(40, 40)
+		gui.Size = ScreenScale.Px(40, 40)
 		gui.LightInfluence = 0
 		gui.MaxDistance = 140
 		gui.AlwaysOnTop = true
@@ -37246,7 +37304,7 @@ return SiegeRenderer
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="116">
+          <Item class="ModuleScript" referent="117">
             <Properties>
               <string name="Name">Tutorial</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -37529,7 +37587,7 @@ return Tutorial
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="117">
+          <Item class="ModuleScript" referent="118">
             <Properties>
               <string name="Name">WorldVisuals</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -37724,7 +37782,7 @@ return WorldVisuals
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="118">
+  <Item class="Workspace" referent="119">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>

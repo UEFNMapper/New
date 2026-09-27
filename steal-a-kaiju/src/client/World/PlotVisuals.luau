@@ -14,6 +14,7 @@ local Levels = require(Shared.Config.Levels)
 local Theme = require(Shared.Config.Theme)
 
 local Controllers = script.Parent.Parent.Controllers
+local ScreenScale = require(Controllers.ScreenScale)
 local State = require(Controllers.State)
 local Audio = require(Controllers.Audio)
 local FxBus = require(Controllers.FxBus)
@@ -64,7 +65,7 @@ local function makeTimer(model: Model): BillboardGui
 	local gate = model:FindFirstChild("Gate") :: BasePart?
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "ShieldTimer"
-	gui.Size = UDim2.fromOffset(200, 50)
+	gui.Size = ScreenScale.Px(200, 50)
 	gui.StudsOffsetWorldSpace = Vector3.new(0, 9, 0)
 	gui.MaxDistance = 260
 	gui.LightInfluence = 0
@@ -93,7 +94,7 @@ local function nestLockLabel(model: Model, slot: number): BillboardGui?
 	end
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "NestLock"
-	gui.Size = UDim2.fromOffset(150, 44)
+	gui.Size = ScreenScale.Px(150, 44)
 	gui.StudsOffsetWorldSpace = Vector3.new(0, 3, 0)
 	gui.MaxDistance = 60
 	gui.LightInfluence = 0

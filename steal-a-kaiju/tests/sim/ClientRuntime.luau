@@ -220,7 +220,7 @@ function ClientRuntime.Install(Runtime)
 	local camera = new("Camera")
 	camera.Name = "Camera"
 	camera.CFrame = roblox.CFrame.new(0, 40, 60)
-	Runtime.Raw(camera, "ViewportSize", V2(1280, 720))
+	Runtime.Raw(camera, "ViewportSize", Runtime.Viewport or V2(1280, 720)) -- Runtime.Viewport : format téléphone pour les aperçus
 	camera.FieldOfView = 70
 	methods._setParent(camera, S.Workspace)
 	S.Workspace.CurrentCamera = camera

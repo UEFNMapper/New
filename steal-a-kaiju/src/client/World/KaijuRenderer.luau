@@ -19,6 +19,7 @@ local Theme = require(Shared.Config.Theme)
 local Format = require(Shared.Logic.Format)
 
 local Controllers = script.Parent.Parent.Controllers
+local ScreenScale = require(Controllers.ScreenScale)
 local State = require(Controllers.State)
 local Remote = require(Controllers.Remote)
 local Audio = require(Controllers.Audio)
@@ -150,7 +151,7 @@ local function buildLabel(entry: Entry)
 	local anchor = entry.Anchor
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "KaijuLabel"
-	gui.Size = UDim2.fromOffset(220, 74)
+	gui.Size = ScreenScale.Px(220, 74)
 	gui.MaxDistance = 75
 	gui.LightInfluence = 0
 	gui.AlwaysOnTop = false

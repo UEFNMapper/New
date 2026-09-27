@@ -176,9 +176,10 @@ local function buildCurrencies()
 	RunService.Heartbeat:Connect(function()
 		local at = player:GetAttribute("GoldenMeteorAt")
 		local step = State.Get("Tutorial") or 0
-		goldenChip.Visible = at ~= nil and step >= TutorialConfig.Done
+		local left = if at then at - now() else math.huge
+		-- n'apparaît qu'à l'approche du rendez-vous (moins de place prise à l'écran)
+		goldenChip.Visible = at ~= nil and step >= TutorialConfig.Done and left <= 90
 		if at then
-			local left = at - now()
 			goldenText.Text = if left > 1 then "🌟 Golden meteor in " .. Format.Clock(left) else "🌟 GOLDEN METEOR INCOMING!"
 		end
 	end)
@@ -559,7 +560,7 @@ end
 local function buildMenus()
 	local left = Kit.new("Frame", {
 		Name = "LeftMenu",
-		Size = UDim2.fromOffset(200, 310),
+		Size = UDim2.fromOffset(300, 200),
 		BackgroundTransparency = 1,
 		LayoutOrder = 4,
 		Parent = Hud.LeftColumn(),

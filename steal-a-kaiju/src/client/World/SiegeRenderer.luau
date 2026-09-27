@@ -19,6 +19,7 @@ local KaijuBuilder = require(Shared.KaijuBuilder)
 local Format = require(Shared.Logic.Format)
 
 local Controllers = script.Parent.Parent.Controllers
+local ScreenScale = require(Controllers.ScreenScale)
 local State = require(Controllers.State)
 local Audio = require(Controllers.Audio)
 local FxBus = require(Controllers.FxBus)
@@ -90,7 +91,7 @@ end
 local function healthBar(entry: Invader, alpha: boolean)
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "SiegeBar"
-	gui.Size = if alpha then UDim2.fromOffset(120, 34) else UDim2.fromOffset(64, 22)
+	gui.Size = if alpha then ScreenScale.Px(120, 34) else ScreenScale.Px(64, 22)
 	gui.StudsOffset = Vector3.new(0, entry.Height + 1.2, 0)
 	gui.LightInfluence = 0
 	gui.MaxDistance = if alpha then 220 else 110
@@ -163,7 +164,7 @@ local function refreshBag(entry: Invader)
 		p.CanTouch = false
 		p.Parent = entry.Model
 		local gui = Instance.new("BillboardGui")
-		gui.Size = UDim2.fromOffset(40, 40)
+		gui.Size = ScreenScale.Px(40, 40)
 		gui.LightInfluence = 0
 		gui.MaxDistance = 140
 		gui.AlwaysOnTop = true

@@ -26,6 +26,13 @@ local Growth = req(Shared.Config.Growth)
 local Kaijus = req(Shared.Config.Kaijus)
 
 S.ReplicatedStorage:SetAttribute("IconPreview", true)
+-- VIEWPORT=1121x393 : aperçus au format d'un téléphone en paysage
+local process = require("@lune/process")
+local vw, vh = string.match(process.env.VIEWPORT or "", "(%d+)x(%d+)")
+if vw then
+	Runtime.Viewport = roblox.Vector2.new(tonumber(vw), tonumber(vh))
+	Runtime.Raw(S.Workspace.CurrentCamera, "ViewportSize", Runtime.Viewport)
+end
 local hero, client = ClientRuntime.StartClient(Runtime, "Hero")
 local rival = Runtime.AddPlayer("Rival")
 Runtime.Advance(20)
@@ -333,6 +340,7 @@ Boot.Call(hero, "RampageLeave")
 Runtime.Advance(3)
 shot("RampageResults")
 
+shots.__viewport = { tonumber(vw) or 1280, tonumber(vh) or 720 }
 fs.writeFile("tools/render/ui.json", serde.encode("json", shots))
 print("erreurs :", #Runtime.Errors)
 for i, e in Runtime.Errors do

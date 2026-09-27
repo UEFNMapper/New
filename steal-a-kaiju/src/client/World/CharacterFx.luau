@@ -10,6 +10,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Theme = require(Shared.Config.Theme)
 
 local Controllers = script.Parent.Parent.Controllers
+local ScreenScale = require(Controllers.ScreenScale)
 local Remote = require(Controllers.Remote)
 local Audio = require(Controllers.Audio)
 local FxBus = require(Controllers.FxBus)
@@ -76,7 +77,7 @@ local function dizzy(character: Model, duration: number)
 	local stars = {}
 	for i = 1, 3 do
 		local gui = Instance.new("BillboardGui")
-		gui.Size = UDim2.fromOffset(30, 30)
+		gui.Size = ScreenScale.Px(30, 30)
 		gui.AlwaysOnTop = true
 		gui.LightInfluence = 0
 		gui.Adornee = head

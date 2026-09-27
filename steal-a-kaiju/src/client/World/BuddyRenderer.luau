@@ -25,6 +25,7 @@ local Theme = require(Shared.Config.Theme)
 local Format = require(Shared.Logic.Format)
 
 local Controllers = script.Parent.Parent.Controllers
+local ScreenScale = require(Controllers.ScreenScale)
 local State = require(Controllers.State)
 local Audio = require(Controllers.Audio)
 local FxBus = require(Controllers.FxBus)
@@ -102,7 +103,7 @@ end
 local function buildGui(pet: Pet): BillboardGui
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "BuddyGui"
-	gui.Size = UDim2.fromOffset(120, 90)
+	gui.Size = ScreenScale.Px(120, 90)
 	gui.LightInfluence = 0
 	gui.MaxDistance = 90
 	gui.AlwaysOnTop = false
@@ -658,7 +659,7 @@ local function showSpot(part: BasePart)
 	-- étiquette + compte à rebours
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "TreasureGui"
-	gui.Size = UDim2.fromOffset(170, 70)
+	gui.Size = ScreenScale.Px(170, 70)
 	gui.StudsOffsetWorldSpace = Vector3.new(0, 5, 0)
 	gui.LightInfluence = 0
 	gui.MaxDistance = 400

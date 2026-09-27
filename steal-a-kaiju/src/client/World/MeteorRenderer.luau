@@ -15,6 +15,7 @@ local Theme = require(Shared.Config.Theme)
 local Format = require(Shared.Logic.Format)
 
 local Controllers = script.Parent.Parent.Controllers
+local ScreenScale = require(Controllers.ScreenScale)
 local State = require(Controllers.State)
 local Remote = require(Controllers.Remote)
 local Audio = require(Controllers.Audio)
@@ -56,7 +57,7 @@ local function buildLabel(entry: Entry)
 	local anchor = entry.Anchor
 	local rarity = Rarities.Get(anchor:GetAttribute("Rarity") or "Common")
 	local gui = Instance.new("BillboardGui")
-	gui.Size = UDim2.fromOffset(200, 86)
+	gui.Size = ScreenScale.Px(200, 86)
 	gui.StudsOffsetWorldSpace = Vector3.new(0, 6.5, 0)
 	gui.MaxDistance = 140
 	gui.LightInfluence = 0

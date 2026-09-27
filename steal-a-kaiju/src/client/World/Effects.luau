@@ -9,6 +9,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Theme = require(Shared.Config.Theme)
 local Vfx = require(Shared.Config.Vfx)
+local ScreenScale = require(script.Parent.Parent.Controllers.ScreenScale)
 
 local Effects = {}
 
@@ -177,7 +178,7 @@ end
 function Effects.FloatingText(pos: Vector3, text: string, color: Color3?, size: number?)
 	local p = anchorPart(pos)
 	local gui = Instance.new("BillboardGui")
-	gui.Size = UDim2.fromOffset(260 * (size or 1), 80 * (size or 1))
+	gui.Size = ScreenScale.Px(260 * (size or 1), 80 * (size or 1))
 	gui.AlwaysOnTop = true
 	gui.LightInfluence = 0
 	gui.MaxDistance = 250

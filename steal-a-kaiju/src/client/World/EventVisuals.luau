@@ -16,6 +16,7 @@ local Theme = require(Shared.Config.Theme)
 local Format = require(Shared.Logic.Format)
 
 local Controllers = script.Parent.Parent.Controllers
+local ScreenScale = require(Controllers.ScreenScale)
 local State = require(Controllers.State)
 local Remote = require(Controllers.Remote)
 local Audio = require(Controllers.Audio)
@@ -256,7 +257,7 @@ local function trackOrb(anchor: BasePart)
 	light.Range = 10
 	light.Parent = orb
 	local gui = Instance.new("BillboardGui")
-	gui.Size = UDim2.fromOffset(60, 60)
+	gui.Size = ScreenScale.Px(60, 60)
 	gui.LightInfluence = 0
 	gui.MaxDistance = 120
 	gui.Parent = orb

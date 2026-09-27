@@ -41,12 +41,17 @@ local function light(parent: BasePart, color: Color3, range: number, brightness:
 	l.Parent = parent
 end
 
--- Étiquette flottante (lisible de loin) au-dessus d'un point.
+-- Pixels (de la maquette) par stud : les panneaux ont une taille EN STUDS, comme de
+-- vrais panneaux. Ils rapetissent avec la distance au lieu de garder la même taille
+-- en pixels à l'écran (sinon, sur téléphone, les panneaux lointains se chevauchent).
+local SIGN_PX_PER_STUD = 12
+
+-- Étiquette flottante au-dessus d'un point. width/height : taille de maquette en pixels.
 local function floatingSign(parent: Instance, cf: CFrame, text: string, color: Color3, width: number, height: number, maxDistance: number, name: string?)
 	local anchor = part({ Name = name or "Sign", Size = Vector3.new(1, 1, 1), CFrame = cf, Transparency = 1, CanCollide = false, CanQuery = false }, parent)
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "SignGui"
-	gui.Size = UDim2.fromOffset(width, height)
+	gui.Size = UDim2.fromScale(width / SIGN_PX_PER_STUD, height / SIGN_PX_PER_STUD)
 	gui.MaxDistance = maxDistance
 	gui.LightInfluence = 0
 	gui.Adornee = anchor
@@ -60,7 +65,7 @@ local function floatingSign(parent: Instance, cf: CFrame, text: string, color: C
 	label.TextColor3 = color
 	label.Text = text
 	local stroke = Instance.new("UIStroke")
-	stroke.Thickness = 3
+	stroke.Thickness = 2
 	stroke.Color = Theme.Colors.Ink
 	stroke.Parent = label
 	label.Parent = gui

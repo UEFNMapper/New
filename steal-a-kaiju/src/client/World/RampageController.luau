@@ -25,6 +25,7 @@ local Theme = require(Shared.Config.Theme)
 local Format = require(Shared.Logic.Format)
 
 local Controllers = script.Parent.Parent.Controllers
+local ScreenScale = require(Controllers.ScreenScale)
 local State = require(Controllers.State)
 local Remote = require(Controllers.Remote)
 local Audio = require(Controllers.Audio)
@@ -146,7 +147,7 @@ local function hpBar(adornee: BasePart, height: number, alpha: number)
 	if not gui then
 		local g = Instance.new("BillboardGui")
 		g.Name = "HpBar"
-		g.Size = UDim2.fromOffset(70, 12)
+		g.Size = ScreenScale.Px(70, 12)
 		g.StudsOffsetWorldSpace = Vector3.new(0, height / 2 + 2, 0)
 		g.LightInfluence = 0
 		g.MaxDistance = 160

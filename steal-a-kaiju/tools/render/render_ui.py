@@ -603,6 +603,8 @@ def main():
     background = sys.argv[3] if len(sys.argv) > 3 else "docs/previews/island.png"
     only = sys.argv[4] if len(sys.argv) > 4 else None
     shots = json.load(open(src))
+    global W, H
+    W, H = shots.pop("__viewport", [1280, 720])
     os.makedirs(out_dir, exist_ok=True)
     for name, tree in shots.items():
         if only and name not in only.split(","):

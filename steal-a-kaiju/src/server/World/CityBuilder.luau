@@ -75,7 +75,7 @@ end
 local function billboard(parent: BasePart, text: string, color: Color3, width: number, height: number, maxDistance: number)
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "SignGui"
-	gui.Size = UDim2.fromOffset(width, height)
+	gui.Size = UDim2.fromScale(width / 12, height / 12) -- en studs : rapetisse avec la distance
 	gui.MaxDistance = maxDistance
 	gui.LightInfluence = 0
 	gui.Adornee = parent
@@ -89,7 +89,7 @@ local function billboard(parent: BasePart, text: string, color: Color3, width: n
 	label.TextColor3 = color
 	label.Text = text
 	local stroke = Instance.new("UIStroke")
-	stroke.Thickness = 3
+	stroke.Thickness = 2
 	stroke.Color = Theme.Colors.Ink
 	stroke.Parent = label
 	label.Parent = gui

@@ -16,6 +16,7 @@ local Icons = require(Shared.Config.Icons)
 local Signal = require(Shared.Util.Signal)
 
 local Audio = require(script.Parent.Parent.Controllers.Audio)
+local ScreenScale = require(script.Parent.Parent.Controllers.ScreenScale)
 
 local C = Theme.Colors
 local F = Theme.Fonts
@@ -379,22 +380,23 @@ Kit.UIScale = 1
 local scaled: { UIScale } = {}
 
 local function computeScale(): number
-	local camera = Workspace.CurrentCamera
-	local size = if camera then camera.ViewportSize else Vector2.new(1280, 720)
-	return math.clamp(math.min(size.X / 1280, size.Y / 720), 0.55, 1.35)
+	return ScreenScale.Hud()
 end
 
 -- Ajoute une échelle automatique à un élément de premier niveau.
-function Kit.AutoScale(inst: GuiObject)
-	local s = Kit.new("UIScale", { Name = "AutoScale", Scale = Kit.UIScale, Parent = inst })
+-- kind = "Window" : échelle des fenêtres (un peu plus grandes que le HUD sur téléphone).
+function Kit.AutoScale(inst: GuiObject, kind: string?)
+	local s = Kit.new("UIScale", { Name = "AutoScale", Scale = if kind == "Window" then ScreenScale.Window() else Kit.UIScale, Parent = inst })
+	s:SetAttribute("Kind", kind or "Hud")
 	table.insert(scaled, s)
 	return s
 end
 
 local function refreshScale()
 	Kit.UIScale = computeScale()
+	local window = ScreenScale.Window()
 	for _, s in scaled do
-		s.Scale = Kit.UIScale
+		s.Scale = if s:GetAttribute("Kind") == "Window" then window else Kit.UIScale
 	end
 	Kit.ScaleChanged:Fire(Kit.UIScale)
 end
@@ -934,7 +936,7 @@ function Kit.Window(props: { [string]: any }): Window
 		BackgroundTransparency = 1,
 		Parent = layer,
 	})
-	Kit.AutoScale(holder)
+	Kit.AutoScale(holder, "Window")
 	-- Au repos la fenêtre est droite : Roblox ne découpe pas (ClipsDescendants)
 	-- le contenu d'un parent incliné. L'inclinaison BD passe par le ruban.
 	local restRotation = props.Rotation or 0

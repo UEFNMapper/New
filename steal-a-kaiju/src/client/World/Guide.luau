@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Theme = require(Shared.Config.Theme)
+local ScreenScale = require(script.Parent.Parent.Controllers.ScreenScale)
 
 local Guide = {}
 Guide.__index = Guide
@@ -61,7 +62,7 @@ function Guide.new(color: Color3?)
 	markerPart.Size = Vector3.new(1, 1, 1)
 	markerPart.Parent = folder
 	local marker = Instance.new("BillboardGui")
-	marker.Size = UDim2.fromOffset(90, 90)
+	marker.Size = ScreenScale.Px(90, 90)
 	marker.AlwaysOnTop = true
 	marker.LightInfluence = 0
 	marker.Parent = markerPart
