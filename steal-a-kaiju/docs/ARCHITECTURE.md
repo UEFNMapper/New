@@ -48,6 +48,7 @@ LeaderboardService.
 | Rebirth | `{}` | `level` |
 | Fuse | `{ A, B }` (uids) | `species`, `mutation` |
 | FuseOdds | `{ A, B }` | `odds = { { Label, Chance } }` |
+| SetBuddy | `{ Uid }` (kaiju éclos à soi, recharge 10 s) | `cooldown` |
 
 Entrées fréquentes sans réponse : `Remote.Input("Bonk")`, `Remote.Input("Orb", { Id })`.
 
@@ -91,7 +92,10 @@ BonkHit{UserId,Position} (tous) · StampedeWave (tous) · OrbGrabbed{Id,Amount} 
 BossSpawn (tous) · BossEnd{Defeated} (tous) · BossReward{Gems,Top} · BossHit{UserId,Damage} (tous) ·
 BossStomp (tous) · Infected{Uid,Mutation} (tous) · EventStart{Id,By} (tous) · EventEnd{Id} (tous) ·
 QuestReady{Id,Text} · RewardClaimed{Text,Source} · Discovered{Species,Mutation,NewSpecies} ·
-DailyReady · Rebirth{UserId,Level} (tous) · Fused{Uid,Species,Mutation,Secret}
+DailyReady · Rebirth{UserId,Level} (tous) · Fused{Uid,Species,Mutation,Secret} ·
+BuddyChanged{Uid,Species,Mutation,Reason=Auto|Set|Lost,First} · BuddyLevelUp{Level,Radius,Reason} ·
+BuddyTreasure{Id,Position,ExpireAt} · BuddyTreasureGone{Id} · BuddyDig{Id,Position,Kind,Amount,Text,Rarity?} ·
+BuddyDigWorld{UserId,Position,Kind} (tous) · BuddyMagnet{Positions,Count} · BuddyPounce{UserId,Target,Boss?} (tous)
 
 Toasts : `Notify` → types Info | Good | Bad | Cash | Gem | Rare.
 Fil d'annonces : styles Meteor | Rare | Heist | Help | Event | Boss | Purchase | Rebirth | Info.
@@ -104,7 +108,8 @@ Fil d'annonces : styles Meteor | Rare | Heist | Help | Event | Boss | Purchase |
   Species, Mutation, Stage, Growth, GrowthStamp, GrowthRate, Income, SellValue, CarriedBy, Helper, Lifting, LiftUntil
 - Météores `workspace.Meteors.<id>` : Id, Rarity, Price, LandAt, ExpireAt, Owner, Pad
 - Orbes `workspace.Orbs.<id>` : Id — Boss `workspace.Effects.Boss` : Species, Mutation, MaxHP, HP, Scale
-- Joueur : Plot, Carrying
+- Joueur : Plot, Carrying, BuddyUid, BuddySpecies, BuddyMutation, BuddyLevel, TreasurePos (Vector3, trésor privé en cours)
+- Trésors `workspace.DigSpots.<id>` : Id, Owner, ExpireAt + ProximityPrompt « DIG » (désactivé localement chez les autres clients)
 
 Les temps sont en `workspace:GetServerTimeNow()` (même échelle que `os.time()`).
 

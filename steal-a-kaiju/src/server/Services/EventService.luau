@@ -76,6 +76,17 @@ local function spawnOrbWave()
 	Notify.FxAll("StampedeWave", {})
 end
 
+local function collectOrb(player: Player, id: string, orb: { Part: BasePart, Value: number })
+	orbs[id] = nil
+	orb.Part:Destroy()
+	local cfg = Events.Stampede
+	local amount = Calc.CashReward(cfg.OrbCashSeconds, Registry.KaijuService.IncomePerSecond(player), cfg.OrbMinCash)
+	DataService.AddCash(player, amount)
+	Notify.Fx(player, "OrbGrabbed", { Id = id, Amount = amount })
+	Notify.FxAll("OrbGone", { Id = id })
+	Registry.RewardService.Track(player, "Orbs", 1)
+end
+
 local function grabOrb(player: Player, payload: any)
 	local id = if type(payload) == "table" then Router.String(payload.Id) else nil
 	local orb = id and orbs[id]
@@ -87,14 +98,21 @@ local function grabOrb(player: Player, payload: any)
 	if not root or (root.Position - orb.Part.Position).Magnitude > 14 then
 		return
 	end
-	orbs[id] = nil
-	orb.Part:Destroy()
-	local cfg = Events.Stampede
-	local amount = Calc.CashReward(cfg.OrbCashSeconds, Registry.KaijuService.IncomePerSecond(player), cfg.OrbMinCash)
-	DataService.AddCash(player, amount)
-	Notify.Fx(player, "OrbGrabbed", { Id = id, Amount = amount })
-	Notify.FxAll("OrbGone", { Id = id })
-	Registry.RewardService.Track(player, "Orbs", 1)
+	collectOrb(player, id, orb)
+end
+
+-- Aimant du compagnon : ramasse pour le joueur les orbes dans un rayon autour
+-- de `position`. Renvoie les positions des orbes attrapées.
+function EventService.GrabOrbsNear(player: Player, position: Vector3, radius: number): { Vector3 }
+	local grabbed = {}
+	for id, orb in orbs do
+		local pos = orb.Part.Position
+		if (pos - position).Magnitude <= radius then
+			table.insert(grabbed, pos)
+			collectOrb(player, id, orb)
+		end
+	end
+	return grabbed
 end
 
 ----------------------------------------------------------------------------
@@ -192,6 +210,31 @@ function EventService.TryBossHit(player: Player, position: Vector3, range: numbe
 	if hp <= 0 then
 		finishBoss(true)
 	end
+end
+
+-- Coup du compagnon sur le boss (dégâts fixés par BuddyService, pas de
+-- recharge partagée avec le Bonker). Renvoie la position du boss si touché.
+function EventService.BuddyBossHit(player: Player, position: Vector3, range: number, damage: number): Vector3?
+	local b = boss
+	if not b or damage <= 0 then
+		return nil
+	end
+	local flat = Vector3.new(position.X - b.Position.X, 0, position.Z - b.Position.Z)
+	if flat.Magnitude > 30 + range then
+		return nil
+	end
+	bossDamage[player] = (bossDamage[player] or 0) + damage
+	local data = DataService.Get(player)
+	if data then
+		data.Stats.BossDamage += damage
+	end
+	local hp = math.max(0, (b:GetAttribute("HP") or 0) - damage)
+	b:SetAttribute("HP", hp)
+	Notify.FxAll("BossHit", { UserId = player.UserId, Damage = damage, Buddy = true })
+	if hp <= 0 then
+		finishBoss(true)
+	end
+	return b.Position
 end
 
 local function bossStomp()

@@ -21,6 +21,10 @@ step "Playtest client (vrai client contre vrai serveur)"
 res=$(lune run tests/sim/client_playtest.luau 2>&1 | grep -E "RÉSULTAT|❌|API ROBLOX")
 echo "$res"; echo "$res" | grep -q "0 échouées, 0 erreurs" || status=1
 
+step "Compagnon (Buddy) : serveur + client"
+res=$(lune run tests/sim/buddy.luau 2>&1 | grep -E "RÉSULTAT|❌|API ROBLOX")
+echo "$res"; echo "$res" | grep -q "0 échouées, 0 erreurs" || status=1
+
 step "Équilibrage (bot solo, 6 h simulées)"
 lune run tests/sim/economy.luau 6 2>&1 | grep -E "^\[|Erreurs"
 
