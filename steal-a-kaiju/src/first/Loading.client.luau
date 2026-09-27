@@ -60,7 +60,9 @@ local function text(props): TextLabel
 	t.BackgroundTransparency = 1
 	t.TextScaled = true
 	for k, v in props do
-		t[k] = v
+		if k ~= "StrokeThickness" then
+			t[k] = v
+		end
 	end
 	local s = Instance.new("UIStroke")
 	s.Thickness = props.StrokeThickness or 6

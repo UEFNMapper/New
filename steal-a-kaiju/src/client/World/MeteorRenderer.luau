@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local KaijuBuilder = require(Shared.KaijuBuilder)
 local Rarities = require(Shared.Config.Rarities)
+local Economy = require(Shared.Config.Economy)
 local Theme = require(Shared.Config.Theme)
 local Format = require(Shared.Logic.Format)
 
@@ -334,7 +335,8 @@ function MeteorRenderer.Init()
 			local free = isFreeForMe()
 			for _, entry in entries do
 				local price = entry.Anchor:GetAttribute("Price") or 0
-				local text = if free and price <= 500 then "FREE!" else Format.Cash(price)
+				local order = Rarities.Get(entry.Anchor:GetAttribute("Rarity") or "Common").Order
+				local text = if free and order <= Economy.FreeFirstEggMaxOrder then "FREE!" else Format.Cash(price)
 				if entry.Label then
 					local p = entry.Label:FindFirstChild("Price") :: TextLabel?
 					if p then

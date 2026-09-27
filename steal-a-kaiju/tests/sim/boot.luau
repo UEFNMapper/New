@@ -46,4 +46,31 @@ function Boot.FxFor(player, name, from)
 	return out
 end
 
+-- Fait marcher un ou plusieurs joueurs vers une cible à leur vitesse réelle.
+-- `group` : liste de { player, offset } qui se déplacent ensemble.
+function Boot.WalkTo(group, target)
+	local roblox = require("@lune/roblox")
+	for _ = 1, 4000 do
+		local lead = group[1][1]
+		local root = lead.Character.HumanoidRootPart
+		local pos = root.Position
+		local delta = roblox.Vector3.new(target.X - pos.X, 0, target.Z - pos.Z)
+		if delta.Magnitude < 1 then
+			return true
+		end
+		local speed = math.max(lead.Character.Humanoid.WalkSpeed, 1)
+		local step = math.min(delta.Magnitude, speed * 0.1)
+		local newPos = pos + delta.Unit * step
+		for _, member in group do
+			local offset = member[2] or roblox.Vector3.new()
+			member[1].Character.HumanoidRootPart.CFrame = roblox.CFrame.new(newPos + offset)
+		end
+		Runtime.Advance(0.1)
+		if (lead:GetAttribute("Carrying") or "") == "" then
+			return false -- plus rien à porter (livré ou lâché)
+		end
+	end
+	return false
+end
+
 return Boot

@@ -90,7 +90,7 @@ end
 ----------------------------------------------------------------------------
 
 local function setupLighting()
-	Lighting.Technology = Enum.Technology.Future
+	-- Lighting.Technology n'est pas modifiable par script : réglé dans default.project.json
 	Lighting.Brightness = 2.6
 	Lighting.ClockTime = 15.2
 	Lighting.Ambient = rgb(70, 60, 90)

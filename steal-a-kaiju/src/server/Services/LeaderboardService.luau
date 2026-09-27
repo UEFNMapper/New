@@ -150,7 +150,9 @@ local function refreshGlobal()
 			for _, player in Players:GetPlayers() do
 				local data = DataService.Get(player)
 				if data then
-					pcall(store.SetAsync, store, tostring(player.UserId), math.floor(statOf(data, board.Key)))
+					-- les OrderedDataStore n'acceptent que des entiers 64 bits
+					local value = math.clamp(math.floor(statOf(data, board.Key)), 0, 9e18)
+					pcall(store.SetAsync, store, tostring(player.UserId), value)
 				end
 			end
 			local ok, pages = pcall(store.GetSortedAsync, store, false, 10)

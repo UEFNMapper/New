@@ -11,6 +11,37 @@ local roblox = require("@lune/roblox")
 
 local Runtime = {}
 
+-- API Roblox officielle (classes, propriétés, méthodes, événements)
+local serde = require("@lune/serde")
+local API = serde.decode("json", fs.readFile("tests/sim/api.json"))
+Runtime.Validate = true
+Runtime.ApiIssues = {}
+local function apiFind(className: string, kind: string, member: string): string?
+	local c = API[className]
+	while c do
+		local v
+		if kind == "props" then
+			v = c.props[member]
+		else
+			v = table.find(c[kind], member) and "ok" or nil
+		end
+		if v then
+			return v
+		end
+		c = c.super and API[c.super]
+	end
+	return nil
+end
+Runtime.ApiFind = apiFind
+local function apiIssue(msg: string)
+	if not Runtime.ApiIssues[msg] then
+		Runtime.ApiIssues[msg] = true
+		local trace = debug.traceback("", 3)
+		local where = trace:match('%[string "(src/[^"]+)"%]:(%d+)') and (trace:match('%[string "(src/[^"]+)"%]') .. ":" .. trace:match('%[string "src/[^"]+"%]:(%d+)')) or "?"
+		table.insert(Runtime.Errors, "API ROBLOX : " .. msg .. " (" .. where .. ")")
+	end
+end
+
 ----------------------------------------------------------------------------
 -- Horloge virtuelle + planificateur
 ----------------------------------------------------------------------------
@@ -80,7 +111,6 @@ function Runtime.Advance(seconds: number)
 		end
 		table.remove(queue, bi)
 		clock = math.max(clock, best.at)
-		Runtime.Heartbeat:Fire(0.03)
 		if coroutine.status(best.co) == "suspended" then
 			resume(best.co, table.unpack(best.args, 1, best.args.n))
 		end
@@ -215,6 +245,9 @@ local EVENT_NAMES = {
 
 local Instance = {}
 local data = setmetatable({}, { __mode = "k" })
+local DEFAULTS = {} -- valeurs lues quand une propriété n'a jamais été écrite (mode client)
+Runtime._defaults = DEFAULTS
+Runtime._events = EVENT_NAMES
 Runtime.Created = 0
 
 local function isA(className: string, target: string): boolean
@@ -267,6 +300,9 @@ Instance.__index = function(self, key)
 		return d[key]
 	end
 	if methods[key] then
+		if Runtime.Validate and API[d.ClassName] and string.sub(key, 1, 1) ~= "_" and not apiFind(d.ClassName, "methods", key) then
+			apiIssue(("méthode inexistante %s:%s()"):format(d.ClassName, key))
+		end
 		return methods[key]
 	end
 	if key == "Position" and d.Props.CFrame and isA(d.ClassName, "BasePart") then
@@ -280,6 +316,9 @@ Instance.__index = function(self, key)
 		return v
 	end
 	if EVENT_NAMES[key] then
+		if Runtime.Validate and API[d.ClassName] and not apiFind(d.ClassName, "events", key) and not apiFind(d.ClassName, "props", key) then
+			apiIssue(("événement inexistant %s.%s"):format(d.ClassName, key))
+		end
 		local s = d.Signals[key]
 		if not s then
 			s = Signal.new()
@@ -292,6 +331,13 @@ Instance.__index = function(self, key)
 		if data[c].Name == key then
 			return c
 		end
+	end
+	local default = DEFAULTS[key]
+	if default ~= nil then
+		if type(default) == "function" then
+			return default(self, d)
+		end
+		return default
 	end
 	return nil
 end
@@ -308,6 +354,14 @@ Instance.__newindex = function(self, key, value)
 		local cf = d.Props.CFrame or roblox.CFrame.new()
 		d.Props.CFrame = roblox.CFrame.new(value) * cf.Rotation
 		return
+	end
+	if Runtime.Validate and API[d.ClassName] and type(key) == "string" then
+		local access = apiFind(d.ClassName, "props", key)
+		if not access then
+			apiIssue(("propriété inexistante %s.%s"):format(d.ClassName, key))
+		elseif access == "r" then
+			apiIssue(("propriété en lecture seule %s.%s"):format(d.ClassName, key))
+		end
 	end
 	d.Props[key] = value
 	local s = d.PropSignals[key]
@@ -536,6 +590,9 @@ function methods.FireAllClients(self, ...)
 	table.insert(Runtime.ClientLog, { player = "all", remote = data[self].Name, args = table.pack(...) })
 end
 
+Runtime._methods = methods
+Runtime._isA = isA
+
 Runtime.Data = function(inst)
 	return data[inst]
 end
@@ -673,6 +730,11 @@ data[Players].Props.GetNameFromUserIdAsync = function(_, id)
 	return "User" .. id
 end
 
+local function raw(inst, key, value)
+	data[inst].Props[key] = value
+end
+Runtime.Raw = raw
+
 local function makeCharacter(player)
 	local character = new("Model")
 	character.Name = player.Name
@@ -685,7 +747,7 @@ local function makeCharacter(player)
 	methods._setParent(head, character)
 	local humanoid = new("Humanoid")
 	humanoid.Name = "Humanoid"
-	humanoid.Health = 100
+	raw(humanoid, "Health", 100)
 	humanoid.WalkSpeed = 16
 	methods._setParent(humanoid, character)
 	character.PrimaryPart = root
@@ -698,18 +760,15 @@ function Runtime.AddPlayer(name: string, userId: number?)
 	userIdCounter += 1
 	local player = new("Player")
 	player.Name = name
-	player.UserId = userId or userIdCounter
-	player.DisplayName = name
-	player.MembershipType = roblox.Enum.MembershipType.None
-	player.IsFriendsWith = function()
+	raw(player, "UserId", userId or userIdCounter)
+	raw(player, "DisplayName", name)
+	raw(player, "MembershipType", roblox.Enum.MembershipType.None)
+	raw(player, "IsFriendsWith", function()
 		return false
-	end
-	player.IsInGroupAsync = function()
+	end)
+	raw(player, "IsInGroupAsync", function()
 		return false
-	end
-	player.IsInGroup = function()
-		return false
-	end
+	end)
 	local backpack = new("Backpack")
 	backpack.Name = "Backpack"
 	methods._setParent(backpack, player)
@@ -719,7 +778,7 @@ function Runtime.AddPlayer(name: string, userId: number?)
 	-- personnage
 	task.defer(function()
 		local character = makeCharacter(player)
-		player.Character = character
+		raw(player, "Character", character)
 		data[player].Signals.CharacterAdded = data[player].Signals.CharacterAdded or Signal.new()
 		data[player].Signals.CharacterAdded:Fire(character)
 	end)

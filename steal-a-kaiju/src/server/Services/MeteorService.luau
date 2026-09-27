@@ -184,7 +184,7 @@ local function buy(player: Player, payload: any): Router.Result
 		return { ok = false, msg = "Your nests are full! Sell or unlock more." }
 	end
 	local price = m:GetAttribute("Price") or 0
-	local isFree = data.Stats.EggsBought == 0 and price <= 500
+	local isFree = data.Stats.EggsBought == 0 and Rarities.Get(m:GetAttribute("Rarity") or "Common").Order <= Economy.FreeFirstEggMaxOrder
 	if not isFree and not DataService.Spend(player, "Cash", price) then
 		return { ok = false, msg = "Need " .. Format.Cash(price) }
 	end

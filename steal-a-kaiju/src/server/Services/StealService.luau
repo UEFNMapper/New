@@ -32,6 +32,9 @@ type Carry = {
 	Started: number,
 	Lifting: boolean,
 	LiftUntil: number,
+	LastPos: Vector3?,
+	LastCheck: number,
+	Strikes: number,
 }
 
 local carries: { [string]: Carry } = {} -- Uid -> vol en cours
@@ -139,6 +142,9 @@ local function startCarry(player: Player, uid: string, victim: Player, stage: nu
 		Started = os.clock(),
 		Lifting = needed > 1,
 		LiftUntil = if needed > 1 then Workspace:GetServerTimeNow() + Economy.LiftWaitTime else 0,
+		LastPos = nil,
+		LastCheck = os.clock(),
+		Strikes = 0,
 	}
 	carries[uid] = carry
 	carrying[player] = uid
@@ -420,8 +426,25 @@ local function step()
 					continue
 				end
 			end
+			-- Anti-téléportation : un porteur ne peut pas dépasser sa vitesse de marche
+			local now = os.clock()
+			local dt = now - carry.LastCheck
+			local pos = leadRoot.Position
+			if carry.LastPos and dt > 0 then
+				local flat = Vector3.new(pos.X - carry.LastPos.X, 0, pos.Z - carry.LastPos.Z).Magnitude
+				-- marge large : sauts, chutes, latence réseau
+				local allowed = (humanoid.WalkSpeed * 1.5 + 16) * dt + 8
+				if flat > allowed then
+					carry.Strikes += 1
+					warn(("[StealService] déplacement suspect de %s (%.0f studs en %.2fs)"):format(lead.Name, flat, dt))
+					endCarry(uid, "Dropped")
+					continue
+				end
+			end
+			carry.LastPos = pos
+			carry.LastCheck = now
 			local plot = Registry.PlotService.Get(lead)
-			if plot and Layout.InPlot(plot.CFrame, leadRoot.Position, -2) then
+			if plot and Layout.InPlot(plot.CFrame, pos, -2) then
 				deliver(carry)
 			end
 		end

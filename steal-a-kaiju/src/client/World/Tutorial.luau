@@ -13,6 +13,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Layout = require(Shared.Config.Layout)
+local Rarities = require(Shared.Config.Rarities)
+local Economy = require(Shared.Config.Economy)
 local Theme = require(Shared.Config.Theme)
 
 local Controllers = script.Parent.Parent.Controllers
@@ -66,7 +68,7 @@ local function nearestMeteor(): BasePart?
 	for _, m in folder:GetChildren() do
 		if m:IsA("BasePart") and (m:GetAttribute("Owner") or 0) == 0 or m:GetAttribute("Owner") == player.UserId then
 			local d = (m.Position - root.Position).Magnitude
-			if d < bestD and (m:GetAttribute("Price") or 0) <= 500 then
+			if d < bestD and Rarities.Get(m:GetAttribute("Rarity") or "Common").Order <= Economy.FreeFirstEggMaxOrder then
 				best, bestD = m, d
 			end
 		end

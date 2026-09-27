@@ -149,8 +149,8 @@ if bobKaiju then
 	local speed = alice.Character.Humanoid.WalkSpeed
 	check("Alice est ralentie en portant", speed < 22, speed)
 	check("Bob ne gagne plus avec ce kaiju", KaijuService.Anchor(bobKaiju.Uid):GetAttribute("CarriedBy") == alice.UserId)
-	-- Alice rentre chez elle
-	Runtime.MoveTo(alice, plotCenter(alice) + V3(0, 3, 0))
+	-- Alice rentre chez elle en marchant
+	Boot.WalkTo({ { alice } }, plotCenter(alice))
 	Runtime.Advance(0.5)
 	local found = false
 	for _, rec in data(alice).Kaijus do
@@ -165,6 +165,43 @@ if bobKaiju then
 	check("Bob notifié du vol", #Boot.FxFor(bob, "Robbed") == 1)
 	check("vitesse d'Alice restaurée", alice.Character.Humanoid.WalkSpeed >= 22)
 end
+
+----------------------------------------------------------------------------
+section("Anti-triche")
+local victimKaiju = hatchedOf(bob)[1] or hatchedOf(carl)[1]
+if victimKaiju then
+	local owner = if hatchedOf(bob)[1] then bob else carl
+	Runtime.MoveTo(alice, anchorPos(victimKaiju.Uid) + V3(2, 0, 0))
+	Runtime.Advance(3.5)
+	local r = Boot.Call(alice, "Steal", { Uid = victimKaiju.Uid })
+	check("vol lancé", r and r.ok, r and r.msg)
+	Runtime.Advance(0.3)
+	Runtime.MoveTo(alice, plotCenter(alice))
+	Runtime.Advance(0.3)
+	check("téléportation pendant un vol : le kaiju est lâché", KaijuService.Anchor(victimKaiju.Uid) ~= nil and KaijuService.Anchor(victimKaiju.Uid):GetAttribute("CarriedBy") == 0)
+	local still = false
+	for _, rec in data(owner).Kaijus do
+		if rec.Uid == victimKaiju.Uid then
+			still = true
+		end
+	end
+	check("le kaiju reste à son propriétaire", still)
+	Runtime.Advance(4)
+end
+local fake = Boot.Call(alice, "Steal", { Uid = "n'existe-pas" })
+check("vol d'un kaiju inexistant refusé", fake and not fake.ok)
+local junk = Boot.Call(alice, "Sell", { Uid = 42 })
+check("paramètre invalide rejeté proprement", junk and not junk.ok)
+local unknown = Boot.Call(alice, "GiveMeMoney", {})
+check("action inconnue rejetée", unknown and not unknown.ok)
+local spam = 0
+for _ = 1, 30 do
+	local x = Boot.Call(alice, "Lock")
+	if x and x.msg == "Slow down!" then
+		spam += 1
+	end
+end
+check("limitation de débit (anti-spam)", spam > 0, spam)
 
 ----------------------------------------------------------------------------
 section("Bonk : défendre sa base")
@@ -224,9 +261,7 @@ if titan then
 	check("Carl aide à porter", h and h.ok, h and h.msg)
 	check("vitesse de portage d'un Titan", alice.Character.Humanoid.WalkSpeed < 16, alice.Character.Humanoid.WalkSpeed)
 	local carlCash = data(carl).Cash
-	local dest = plotCenter(alice) + V3(0, 3, 0)
-	Runtime.MoveTo(carl, dest + V3(4, 0, 0))
-	Runtime.MoveTo(alice, dest)
+	Boot.WalkTo({ { alice }, { carl, V3(4, 0, 0) } }, plotCenter(alice))
 	Runtime.Advance(0.5)
 	local owned = false
 	for _, rec in data(alice).Kaijus do

@@ -410,7 +410,6 @@ function Kit.Button(props: { [string]: any }): TextButton
 		Size = UDim2.new(1, 0, 1, 0),
 		BackgroundColor3 = C.White,
 		ZIndex = z + 1,
-		ClipsDescendants = true,
 		Parent = button,
 	}, { Kit.Corner(props.Corner or 14), Kit.Stroke(3), Kit.Gradient(colors) })
 	-- reflet haut (volume)
@@ -423,16 +422,27 @@ function Kit.Button(props: { [string]: any }): TextButton
 		ZIndex = z + 2,
 		Parent = face,
 	}, { Kit.Corner((props.Corner or 14) - 4) })
-	-- reflet qui balaie
-	local shine = Kit.new("Frame", {
+	-- reflet qui balaie : bande diagonale dessinée par un dégradé (aucun
+	-- débordement, même quand le bouton ou sa fenêtre sont inclinés)
+	local shineFrame = Kit.new("Frame", {
 		Name = "Shine",
-		Size = UDim2.new(0.35, 0, 1.6, 0),
-		Position = UDim2.new(-0.5, 0, -0.3, 0),
-		Rotation = 20,
+		Size = UDim2.fromScale(1, 1),
 		BackgroundColor3 = C.White,
-		BackgroundTransparency = 0.55,
+		BackgroundTransparency = 0.35,
 		ZIndex = z + 3,
 		Parent = face,
+	}, { Kit.Corner(props.Corner or 14) })
+	local shine = Kit.new("UIGradient", {
+		Rotation = 20,
+		Offset = Vector2.new(-1, 0),
+		Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.42, 1),
+			NumberSequenceKeypoint.new(0.5, 0.2),
+			NumberSequenceKeypoint.new(0.58, 1),
+			NumberSequenceKeypoint.new(1, 1),
+		}),
+		Parent = shineFrame,
 	})
 	local content = Kit.new("Frame", {
 		Name = "Content",
@@ -484,8 +494,8 @@ function Kit.Button(props: { [string]: any }): TextButton
 		Audio.Play("ui_hover", { Cooldown = 0.06 })
 		Kit.Tween(scale, 0.25, { Scale = 1.06 }, Enum.EasingStyle.Back)
 		Kit.Tween(button, 0.25, { Rotation = (props.Rotation or 0) + (props.HoverTilt or 1.5) }, Enum.EasingStyle.Back)
-		shine.Position = UDim2.new(-0.5, 0, -0.3, 0)
-		Kit.Tween(shine, 0.55, { Position = UDim2.new(1.3, 0, -0.3, 0) }, Enum.EasingStyle.Quad)
+		shine.Offset = Vector2.new(-1, 0)
+		Kit.Tween(shine, 0.55, { Offset = Vector2.new(1, 0) }, Enum.EasingStyle.Quad)
 	end)
 	button.MouseLeave:Connect(function()
 		hovering = false
@@ -786,9 +796,12 @@ function Kit.Window(props: { [string]: any }): Window
 		Parent = layer,
 	})
 	Kit.AutoScale(holder)
+	-- Au repos la fenêtre est droite : Roblox ne découpe pas (ClipsDescendants)
+	-- le contenu d'un parent incliné. L'inclinaison BD passe par le ruban.
+	local restRotation = props.Rotation or 0
 	local container, body = Kit.Panel({
 		Size = UDim2.fromScale(1, 1),
-		Rotation = props.Rotation or -1,
+		Rotation = restRotation,
 		Gradient = props.Gradient or "Paper",
 		Parent = holder,
 	})
@@ -856,9 +869,9 @@ function Kit.Window(props: { [string]: any }): Window
 		end
 		local s = Kit.ScaleOf(container)
 		s.Scale = 0.55
-		container.Rotation = (props.Rotation or -1) - 9
+		container.Rotation = restRotation - 9
 		Kit.Tween(s, 0.45, { Scale = 1 }, Enum.EasingStyle.Back)
-		Kit.Tween(container, 0.5, { Rotation = props.Rotation or -1 }, Enum.EasingStyle.Back)
+		Kit.Tween(container, 0.5, { Rotation = restRotation }, Enum.EasingStyle.Back)
 		self.Opened:Fire()
 		Kit.WindowOpened:Fire(self)
 	end
