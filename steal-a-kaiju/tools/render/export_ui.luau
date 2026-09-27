@@ -35,12 +35,13 @@ data.Cash = 48_350_000
 data.Gems = 1240
 data.Nests = 16
 data.Spins = 2
+data.Buddy.Xp = 64
 PlotService.RefreshNests(hero)
 for _, r in { { "Rexplosion", "Gold", 5 }, { "KawaiiKraken", nil, 4 }, { "SushiRex", nil, 3 }, { "Toastzilla", nil, 3 }, { "Sharkapillar", nil, 3 }, { "Drakonda", "Radioactive", 2 }, { "ThunderGoose", nil, 2 } } do
 	local sp = Kaijus.Get(r[1])
 	KaijuService.AddHatched(hero, r[1], r[2], Growth.Threshold(r[3], sp.Rarity) + 30)
 end
-DataService.Replicate(hero, "Cash", "Gems", "Nests", "Spins")
+DataService.Replicate(hero, "Cash", "Gems", "Nests", "Spins", "Buddy")
 Runtime.Advance(3)
 
 ----------------------------------------------------------------------------
@@ -219,6 +220,10 @@ Runtime.Advance(2)
 shot("KaijuPanel")
 UIRegistry.Screens.KaijuPanel.Close()
 Runtime.Advance(1)
+-- Compagnon : trésor flairé (pastille « ! »)
+req(Services:FindFirstChild("BuddyService")).ForceTreasure(hero)
+Runtime.Advance(1)
+shot("Buddy")
 -- Cinématique d'éclosion (Légendaire doré)
 local egg = KaijuService.AddEgg(hero, "Legendary", 1)
 Runtime.Advance(1.6)

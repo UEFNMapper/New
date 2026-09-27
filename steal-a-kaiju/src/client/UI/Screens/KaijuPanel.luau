@@ -1,6 +1,7 @@
 --!nonstrict
 -- Fiche « KAIJU FILE » : aperçu 3D, croissance en direct, nourriture, vente,
--- achat de croissance instantanée, fusion. Gère aussi les œufs (compte à rebours).
+-- achat de croissance instantanée, fusion, choix du compagnon. Gère aussi les
+-- œufs (compte à rebours).
 --   UIRegistry.OpenKaiju(uid)  /  KaijuPanel.Open({ Uid = uid })
 
 local Players = game:GetService("Players")
@@ -234,7 +235,7 @@ local function build()
 	------------------------------------------------------------------ gauche
 	local cardHolder, card = Kit.Panel({
 		Name = "Card",
-		Size = UDim2.fromOffset(300, 404),
+		Size = UDim2.fromOffset(300, 356),
 		Position = UDim2.fromOffset(2, 12),
 		Rotation = -2.5,
 		Gradient = "Cyan",
@@ -342,6 +343,23 @@ local function build()
 		Parent = stolen,
 	})
 	ui.Stolen = stolen
+
+	-- compagnon : sous la carte, aligné sur la rangée d'actions
+	ui.BuddyButton = Kit.Button({
+		Name = "SetBuddy",
+		Text = "SET AS BUDDY",
+		Icon = "🐾",
+		IconSize = 30,
+		TextSize = 24,
+		Color = "Pink",
+		Size = UDim2.fromOffset(296, 56),
+		Position = UDim2.fromOffset(4, 380),
+		ZIndex = 6,
+		Parent = root,
+		OnClick = function()
+			KaijuPanel._SetBuddy()
+		end,
+	})
 
 	------------------------------------------------------------------ droite
 	local right = Kit.new("Frame", {
@@ -727,6 +745,15 @@ local function setChip(chip: any, text: string, color: Color3, secret: boolean?)
 	end
 end
 
+-- Bouton compagnon : « YOUR BUDDY » si c'est déjà lui.
+local function refreshBuddyButton()
+	local buddy = State.Get("Buddy")
+	local isBuddy = buddy ~= nil and currentUid ~= nil and buddy.Uid == currentUid
+	Kit.SetButtonText(ui.BuddyButton, if isBuddy then "YOUR BUDDY" else "SET AS BUDDY")
+	Kit.SetButtonColor(ui.BuddyButton, if isBuddy then "Gold" else "Pink")
+	ui.BuddyButton:SetAttribute("IsBuddy", isBuddy)
+end
+
 local function disarmSell()
 	sellArmed = false
 	sellToken += 1
@@ -829,6 +856,8 @@ local function renderStatic(rec: any, fresh: boolean)
 	ui.GrowButton.Visible = not isEgg
 	ui.FuseButton.Visible = not isEgg
 	ui.HatchButton.Visible = isEgg
+	ui.BuddyButton.Visible = not isEgg
+	refreshBuddyButton()
 	if isEgg then
 		setBreathing(ui.HatchButton, true)
 	end
@@ -845,7 +874,7 @@ local function renderStatic(rec: any, fresh: boolean)
 		-- apparition en cascade
 		local items = if isEgg
 			then { ui.Name, ui.EggPanel, ui.HatchButton }
-			else { ui.Name, ui.StagePanel, ui.IncomeBoxHolder, ui.SellBoxHolder, ui.SellButton, ui.GrowButton, ui.FuseButton }
+			else { ui.Name, ui.StagePanel, ui.IncomeBoxHolder, ui.SellBoxHolder, ui.SellButton, ui.GrowButton, ui.FuseButton, ui.BuddyButton }
 		for i, item in items do
 			popIn(item, 0.04 * i)
 		end
@@ -1069,6 +1098,27 @@ function KaijuPanel._Sell()
 	end
 end
 
+function KaijuPanel._SetBuddy()
+	local uid = currentUid
+	if not uid or busy then
+		return
+	end
+	if ui.BuddyButton:GetAttribute("IsBuddy") then
+		Kit.Shake(ui.BuddyButton, 4, 0.25)
+		UIRegistry.Toast("Already your buddy! It follows you everywhere 🐾", "Info")
+		return
+	end
+	busy = true
+	local res = Remote.Call("SetBuddy", { Uid = uid })
+	busy = false
+	if res.ok then
+		Audio.Play("reward_claim")
+		Kit.Punch(ui.BuddyButton, 0.3)
+		Kit.Pop(vp.Frame, 0.8, 0.4)
+		refreshBuddyButton()
+	end
+end
+
 ----------------------------------------------------------------------------
 -- Interface publique
 ----------------------------------------------------------------------------
@@ -1100,6 +1150,11 @@ function KaijuPanel.Init()
 		end
 		lastRec = rec
 		renderStatic(rec, false)
+	end)
+	State.Changed("Buddy"):Connect(function()
+		if win.IsOpen then
+			refreshBuddyButton()
+		end
 	end)
 	State.Changed("Cash"):Connect(function()
 		if win.IsOpen and lastRec and not lastRec.Egg then

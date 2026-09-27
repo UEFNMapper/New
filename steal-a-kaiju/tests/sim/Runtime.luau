@@ -241,6 +241,8 @@ local EVENT_NAMES = {
 	PromptProductPurchaseFinished = true,
 	Destroying = true,
 	Triggered = true,
+	PromptButtonHoldBegan = true,
+	PromptButtonHoldEnded = true,
 }
 
 local Instance = {}
