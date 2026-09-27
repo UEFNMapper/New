@@ -5609,29 +5609,80 @@ function PlotService.Init()
 
 	Players.PlayerRemoving:Connect(release)
 
-	-- Contacts : collecteur et bouton de verrouillage (propriétaire uniquement)
+	-- Collecteur et bouton de verrouillage : trois façons de les activer, pour
+	-- ne jamais dépendre d'un seul mécanisme de Roblox :
+	--   1. contact (Touched), 2. proximité vérifiée par le serveur, 3. invite « E ».
 	local debounce: { [Player]: number } = {}
+	local function tryCollect(player: Player, plot: MapBuilder.PlotInfo)
+		if ownerOf[plot.Index] == player and (debounce[player] or 0) < os.clock() then
+			debounce[player] = os.clock() + 0.6
+			Registry.KaijuService.Collect(player)
+		end
+	end
+	local function tryLock(player: Player, plot: MapBuilder.PlotInfo)
+		if ownerOf[plot.Index] == player and (debounce[player] or 0) < os.clock() then
+			debounce[player] = os.clock() + 1
+			local result = lock(player)
+			if not result.ok and result.msg then
+				Notify.Toast(player, result.msg, "Bad")
+			end
+		end
+	end
+	local function prompt(parent: BasePart, action: string, object: string, color: string, onTrigger: (Player) -> ()): ProximityPrompt
+		local p = Instance.new("ProximityPrompt")
+		p.Style = Enum.ProximityPromptStyle.Custom
+		p.ActionText = action
+		p.ObjectText = object
+		p.KeyboardKeyCode = Enum.KeyCode.E
+		p.HoldDuration = 0
+		p.MaxActivationDistance = 12
+		p.RequiresLineOfSight = false
+		p:SetAttribute("Color", color)
+		p.Triggered:Connect(onTrigger)
+		p.Parent = parent
+		return p
+	end
 	for _, plot in plots do
 		plot.Collector.CanTouch = true
 		plot.Collector.Touched:Connect(function(hit)
 			local player = Players:GetPlayerFromCharacter(hit.Parent)
-			if player and ownerOf[plot.Index] == player and (debounce[player] or 0) < os.clock() then
-				debounce[player] = os.clock() + 0.6
-				Registry.KaijuService.Collect(player)
+			if player then
+				tryCollect(player, plot)
 			end
+		end)
+		prompt(plot.Collector, "COLLECT CASH", "Cash Reactor", "Radioactive", function(player)
+			tryCollect(player, plot)
 		end)
 		plot.LockButton.CanTouch = true
 		plot.LockButton.Touched:Connect(function(hit)
 			local player = Players:GetPlayerFromCharacter(hit.Parent)
-			if player and ownerOf[plot.Index] == player and (debounce[player] or 0) < os.clock() then
-				debounce[player] = os.clock() + 1
-				local result = lock(player)
-				if not result.ok and result.msg then
-					Notify.Toast(player, result.msg, "Bad")
-				end
+			if player then
+				tryLock(player, plot)
 			end
 		end)
+		prompt(plot.LockButton, "LOCK BASE", "Shield", "Red", function(player)
+			tryLock(player, plot)
+		end)
 	end
+
+	-- Proximité : le propriétaire debout sur le pad collecte automatiquement
+	task.spawn(function()
+		while true do
+			task.wait(0.25)
+			for _, plot in plots do
+				local owner = ownerOf[plot.Index]
+				local character = owner and owner.Character
+				local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+				if owner and root then
+					local pad = plot.Collector.Position
+					local flat = Vector3.new(root.Position.X - pad.X, 0, root.Position.Z - pad.Z).Magnitude
+					if flat <= 6.5 and math.abs(root.Position.Y - pad.Y) < 9 then
+						tryCollect(owner, plot)
+					end
+				end
+			end
+		end
+	end)
 
 	task.spawn(function()
 		while true do

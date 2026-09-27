@@ -90,6 +90,21 @@ PlotService.Get(alice).Collector.Touched:Fire(alice.Character.HumanoidRootPart)
 Runtime.Advance(0.1)
 check("collecte : cash transféré", data(alice).Cash >= cashBefore + math.floor(stored) - 1, data(alice).Cash)
 check("collecte : réacteur vidé", data(alice).Stored < 5, data(alice).Stored)
+Runtime.Advance(10)
+local storedAgain = data(alice).Stored
+Runtime.MoveTo(alice, PlotService.Get(alice).Collector.Position + V3(0, 3, 0))
+Runtime.Advance(1)
+check("collecte par proximité (sans contact)", data(alice).Stored < storedAgain, data(alice).Stored)
+Runtime.MoveTo(alice, PlotService.Get(alice).CFrame.Position)
+Runtime.Advance(10)
+local storedThird = data(alice).Stored
+local collectPrompt = PlotService.Get(alice).Collector:FindFirstChildOfClass("ProximityPrompt")
+check("invite E sur le collecteur", collectPrompt ~= nil)
+if collectPrompt then
+	collectPrompt.Triggered:Fire(alice)
+	Runtime.Advance(0.2)
+	check("collecte par l'invite E", data(alice).Stored < storedThird, data(alice).Stored)
+end
 
 ----------------------------------------------------------------------------
 section("Météores")
