@@ -35,6 +35,7 @@ local PlotService = req(Services:FindFirstChild("PlotService"))
 local EventService = req(Services:FindFirstChild("EventService"))
 local LevelService = req(Services:FindFirstChild("LevelService"))
 local Levels = req(Shared.Config.Levels)
+local Economy = req(Shared.Config.Economy)
 local Layout = req(Shared.Config.Layout)
 local Growth = req(Shared.Config.Growth)
 local Kaijus = req(Shared.Config.Kaijus)
@@ -491,15 +492,15 @@ for _, rec in table.clone(data(alice).Kaijus) do
 	end
 end
 local legend = KaijuService.AddHatched(alice, "Rexplosion", nil, Growth.Threshold(3, "Legendary") + 1)
-data(alice).Cash = 10 ^ 7
+data(alice).Cash = Calc.NextRebirth(data(alice).Rebirths).Cost
 local tooLow = if data(alice).Level < Levels.MenuLevels.Rebirth then Boot.Call(alice, "Rebirth") else { ok = false }
 check("évolution verrouillée avant le niveau 10", tooLow and not tooLow.ok)
 LevelService.AddXp(alice, math.max(0, Levels.TotalFor(Levels.MenuLevels.Rebirth) - data(alice).Xp), "Test")
-data(alice).Cash = 10 ^ 7
+data(alice).Cash = Calc.NextRebirth(data(alice).Rebirths).Cost
 local rebirth = Boot.Call(alice, "Rebirth")
 Runtime.Advance(1)
 check("évolution réussie", rebirth and rebirth.ok and data(alice).Rebirths == 1, rebirth and rebirth.msg)
-check("évolution : cash remis à zéro", data(alice).Cash == 100, data(alice).Cash)
+check("évolution : cash remis à zéro", data(alice).Cash == Economy.StartCash, data(alice).Cash)
 local rareEgg, hatchedLeft = false, 0
 for _, r in data(alice).Kaijus do
 	rareEgg = rareEgg or (r.Egg and r.Rarity == "Rare")
