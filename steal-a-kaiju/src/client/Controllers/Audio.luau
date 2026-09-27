@@ -111,6 +111,11 @@ function Audio.Loop(key: string, opts: { [string]: any }?): Sound?
 	return s
 end
 
+-- Musique en cours (clé), pour la restaurer après un mode spécial.
+function Audio.CurrentMusic(): string?
+	return currentMusicKey
+end
+
 function Audio.Music(key: string?)
 	if key == currentMusicKey then
 		return

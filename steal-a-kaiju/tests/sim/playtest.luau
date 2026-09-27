@@ -230,7 +230,37 @@ end
 check("mission 4 : vague d'entraînement lancée", sawWave and #Boot.FxFor(dana, "SiegeWaveStart") >= 1)
 check("mission 4 validée à la fin de la vague", data(dana).Tutorial == 5, data(dana).Tutorial)
 check("XP gagnée pendant le tutoriel", data(dana).Xp > 0 and data(dana).Level >= 2, data(dana).Xp)
--- Missions 5 (Rampage) et 6 (trésor du compagnon) : voir tests/sim/rampage.luau et plus bas
+-- Mission 5 : une partie de RAMPAGE
+Runtime.Advance(2)
+local danaKaiju = hatchedOf(dana)[1]
+local rampage = Boot.Call(dana, "RampageStart", { Uid = danaKaiju and danaKaiju.Uid, District = 1 })
+check("mission 5 : Rampage lancé", rampage and rampage.ok, rampage and rampage.msg)
+for _ = 1, 110 do
+	Runtime.Advance(1)
+	if data(dana).Tutorial >= 6 then
+		break
+	end
+end
+check("mission 5 validée à la fin de la partie", data(dana).Tutorial == 6 and #Boot.FxFor(dana, "RampageEnd") >= 1, data(dana).Tutorial)
+-- Mission 6 : le compagnon a flairé un trésor tout près
+Runtime.Advance(5)
+local treasurePos = dana:GetAttribute("TreasurePos")
+check("mission 6 : trésor forcé près du joueur", typeof(treasurePos) == "Vector3")
+local spot
+for _, part in S.Workspace:FindFirstChild("DigSpots"):GetChildren() do
+	if part:GetAttribute("Owner") == dana.UserId then
+		spot = part
+	end
+end
+if spot then
+	Runtime.MoveTo(dana, spot.Position + V3(2, 0, 0))
+	local prompt = spot:FindFirstChildOfClass("ProximityPrompt")
+	prompt.PromptButtonHoldBegan:Fire(dana)
+	Runtime.Advance(1.6)
+	prompt.Triggered:Fire(dana)
+	Runtime.Advance(0.5)
+end
+check("mission 6 validée : tutoriel terminé", data(dana).Tutorial == 7 and #Boot.FxFor(dana, "TutorialDone") == 1, data(dana).Tutorial)
 danaTutorial = dana
 
 ----------------------------------------------------------------------------

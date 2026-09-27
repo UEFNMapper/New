@@ -719,7 +719,7 @@ local function buildBottom()
 		if floor and root and not away then
 			away = (root.Position - floor.Position).Magnitude > 170
 		end
-		local inRampage = player:GetAttribute("InRampage") == true
+		local inRampage = (player:GetAttribute("Rampage") or false) ~= false
 		homeButton.Visible = away and not inRampage
 		-- le bouclier ne sert que contre d'autres joueurs
 		local others = #Players:GetPlayers() > 1
@@ -868,7 +868,7 @@ local function buildEventBanner()
 		local left = (Workspace:GetAttribute("EventEnds") or 0) - now()
 		local timeLabel = body:FindFirstChild("Time") :: TextLabel
 		timeLabel.Text = "⏱️ " .. Format.Clock(left) .. " left"
-		goButton.Visible = id == "BossRaid" and player:GetAttribute("World") ~= Worlds.Default and player:GetAttribute("InRampage") ~= true
+		goButton.Visible = id == "BossRaid" and player:GetAttribute("World") ~= Worlds.Default and not player:GetAttribute("Rampage")
 		if event then
 			setBar(left / event.Duration, true)
 		end

@@ -49,8 +49,11 @@ LeaderboardService.
 | Fuse | `{ A, B }` (uids) | `species`, `mutation` |
 | FuseOdds | `{ A, B }` | `odds = { { Label, Chance } }` |
 | SetBuddy | `{ Uid }` (kaiju éclos à soi, recharge 10 s) | `cooldown` |
+| RampageStart | `{ Uid, District }` | `origin`, `endsAt` |
+| RampageLeave | `{}` | ok |
 
-Entrées fréquentes sans réponse : `Remote.Input("Bonk")`, `Remote.Input("Orb", { Id })`.
+Entrées fréquentes sans réponse : `Remote.Input("Bonk")`, `Remote.Input("Orb", { Id })`,
+`Remote.Input("RampageStomp")`, `Remote.Input("RampageRoar", { Dir })` (vérifiés avec la position serveur).
 
 ## État client (`State`)
 
@@ -97,6 +100,14 @@ BuddyChanged{Uid,Species,Mutation,Reason=Auto|Set|Lost,First} · BuddyLevelUp{Le
 BuddyTreasure{Id,Position,ExpireAt} · BuddyTreasureGone{Id} · BuddyDig{Id,Position,Kind,Amount,Text,Rarity?} ·
 BuddyDigWorld{UserId,Position,Kind} (tous) · BuddyMagnet{Positions,Count} · BuddyPounce{UserId,Target,Boss?} (tous)
 
+RAMPAGE (joueur concerné) : RampageOpen · RampageStart{Uid,Species,Mutation,Rarity,Stage,Scale,Power,District,
+DistrictName,Origin,Half,Spawn,StartAt,EndsAt,TotalHP,Buildings,Easy} · RampageHit{Id,HP,MaxHP,Position,Height} ·
+RampageSmash{Id,Kind,Position,Size,Color,Golden,Egg,Cash,Points,Combo,ComboCount,Destruction,Smashed,By} ·
+RampageStar{Stars} · RampageTank{Id,From,To,T0,Speed,HP} · RampageTankHit{Id,HP,MaxHP} ·
+RampageTankDown{Id,Position,Bonus,EndsAt,Cash,Combo} · RampageDart{Id,From,To,T0,T1} ·
+RampageDartHit{Id,Position,Penalty,EndsAt} · RampageEnd{Reason,District,Uid,Species,Mutation,Stars,NewStars,
+Destruction,Smashed,Total,Cash,Score,Best,NewBest,Growth,Gems,Xp,Egg,Unlocked,ReadyAt,Delay} · RampageHome
+
 Toasts : `Notify` → types Info | Good | Bad | Cash | Gem | Rare.
 Fil d'annonces : styles Meteor | Rare | Heist | Help | Event | Boss | Purchase | Rebirth | Info.
 
@@ -108,8 +119,10 @@ Fil d'annonces : styles Meteor | Rare | Heist | Help | Event | Boss | Purchase |
   Species, Mutation, Stage, Growth, GrowthStamp, GrowthRate, Income, SellValue, CarriedBy, Helper, Lifting, LiftUntil
 - Météores `workspace.Meteors.<id>` : Id, Rarity, Price, LandAt, ExpireAt, Owner, Pad
 - Orbes `workspace.Orbs.<id>` : Id — Boss `workspace.Effects.Boss` : Species, Mutation, MaxHP, HP, Scale
-- Joueur : Plot, Carrying, BuddyUid, BuddySpecies, BuddyMutation, BuddyLevel, TreasurePos (Vector3, trésor privé en cours)
+- Joueur : Plot, Carrying, BuddyUid, BuddySpecies, BuddyMutation, BuddyLevel, TreasurePos (Vector3, trésor privé en cours), Rampage (partie en cours), RampageReadyAt (fin de la recharge), World, Level, SiegeActive, GoldenMeteorAt
 - Trésors `workspace.DigSpots.<id>` : Id, Owner, ExpireAt + ProximityPrompt « DIG » (désactivé localement chez les autres clients)
+- Villes `workspace.RampageCities.<userId>.Buildings.B<id>` : Id, Kind, HP, MaxHP, Value, Golden
+- Portail de chaque île : `workspace.Map.Plot<i>.RampagePortal` (+ ProximityPrompt `RampagePrompt`)
 
 Les temps sont en `workspace:GetServerTimeNow()` (même échelle que `os.time()`).
 

@@ -29,6 +29,10 @@ step "Défense de l'île (vagues, tours, bonk, fuites, Alpha, HUD client)"
 res=$(lune run tests/sim/siege.luau 2>&1 | grep -E "RÉSULTAT|❌")
 echo "$res"; echo "$res" | grep -q "0 échouées, 0 erreurs" || status=1
 
+step "Playtest RAMPAGE (portail, ville, coups, tanks, récompenses, client)"
+res=$(lune run tests/sim/rampage.luau 2>&1 | grep -E "RÉSULTAT|❌|API ROBLOX")
+echo "$res"; echo "$res" | grep -q "0 échouées, 0 erreurs" || status=1
+
 step "Équilibrage (bot solo, 6 h simulées)"
 lune run tests/sim/economy.luau 6 2>&1 | grep -E "^\[|Erreurs"
 

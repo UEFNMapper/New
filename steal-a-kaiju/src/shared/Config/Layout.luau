@@ -42,6 +42,7 @@ Layout.PersonalPad = Vector3.new(30, 0, 50)
 Layout.Spawn = Vector3.new(0, 3, 43)
 Layout.Gate = Vector3.new(0, 0, -Layout.PlotDepth / 2)
 Layout.Sign = Vector3.new(0, 0, -Layout.PlotDepth / 2 - 4)
+Layout.RampagePortal = Vector3.new(-40, 0, -46) -- portail RAMPAGE (avant-gauche, hors de la cour des nids)
 
 -- Plateformes des météores dans le cratère.
 function Layout.MeteorPad(i: number, count: number): Vector3
