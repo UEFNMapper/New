@@ -572,7 +572,7 @@ function methods.GetFullName(self)
 	return table.concat(names, ".")
 end
 -- Méthodes génériques sans effet utiles au serveur
-for _, name in { "FillBlock", "FillCylinder", "FillBall", "SetMaterialColor", "Play", "Stop", "Emit", "AddUserId", "Kick", "LoadCharacter", "BreakJoints", "ChangeState", "MoveTo" } do
+for _, name in { "FillBlock", "FillCylinder", "FillBall", "SetMaterialColor", "Play", "Stop", "Emit", "AddUserId", "Kick", "LoadCharacter", "BreakJoints", "ChangeState", "MoveTo", "UnequipTools" } do
 	methods[name] = function(self, ...)
 		if name == "Kick" then
 			data[self].Props.Kicked = (...) or true

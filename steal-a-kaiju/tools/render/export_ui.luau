@@ -243,6 +243,47 @@ Notify.Feed("☄️ LEGENDARY METEOR INCOMING!", "Meteor", roblox.Color3.fromRGB
 Runtime.Advance(1)
 shot("Alarm")
 
+-- RAMPAGE : écran de choix, HUD de partie (combo en cours), résultats
+local RampageController = req(client:FindFirstChild("World"):FindFirstChild("RampageController"))
+Runtime.Advance(8)
+UIRegistry.Screens.Rampage.Open()
+Runtime.Advance(2)
+shot("Rampage")
+UIRegistry.Screens.Rampage.Close()
+Runtime.Advance(1)
+Boot.Call(hero, "RampageStart", { Uid = rec.Uid, District = 1 })
+Runtime.Advance(2.5)
+-- avance jusqu'au pâté de maisons le plus proche (à la vitesse de marche), piétine, rugit
+local buildings = S.Workspace:FindFirstChild("RampageCities"):FindFirstChild(tostring(hero.UserId)):FindFirstChild("Buildings")
+local root = hero.Character.HumanoidRootPart
+for _ = 1, 3 do
+	local target, best = nil, math.huge
+	for _, b in buildings:GetChildren() do
+		local d = (b.PrimaryPart.Position - root.Position) * roblox.Vector3.new(1, 0, 1)
+		if d.Magnitude < best then
+			target, best = b, d.Magnitude
+		end
+	end
+	local goal = target.PrimaryPart.Position
+	for _ = 1, 40 do
+		local d = (goal - root.Position) * roblox.Vector3.new(1, 0, 1)
+		if d.Magnitude < 9 then
+			break
+		end
+		local p = root.Position + d.Unit * 2.2
+		root.CFrame = Runtime.CFrame.lookAt(p, p + d.Unit)
+		Runtime.Advance(0.1)
+	end
+	RampageController.Stomp()
+	Runtime.Advance(0.45)
+end
+RampageController.Roar()
+Runtime.Advance(0.3)
+shot("RampageHud")
+Boot.Call(hero, "RampageLeave")
+Runtime.Advance(3)
+shot("RampageResults")
+
 fs.writeFile("tools/render/ui.json", serde.encode("json", shots))
 print("erreurs :", #Runtime.Errors)
 for i, e in Runtime.Errors do
