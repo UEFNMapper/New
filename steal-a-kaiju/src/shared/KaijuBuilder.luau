@@ -9,6 +9,7 @@ local Config = script.Parent.Config
 local Kaijus = require(Config.Kaijus)
 local Mutations = require(Config.Mutations)
 local Rarities = require(Config.Rarities)
+local Models = require(Config.Models)
 
 local KaijuBuilder = {}
 
@@ -668,7 +669,7 @@ local function applyMutation(ctx: Ctx, mutationId: string?)
 	end
 	for _, p in ctx.model:GetDescendants() do
 		if p:IsA("BasePart") and p ~= ctx.root and not p:GetAttribute("Eye") then
-			if mutation.Tint then
+			if mutation.Tint and not (p:IsA("MeshPart") and p.TextureID ~= "") then
 				p.Color = p.Color:Lerp(mutation.Tint, 0.72)
 			end
 			if mutation.Material and p.Material ~= Enum.Material.Neon then
@@ -725,9 +726,46 @@ local function newCtx(name: string, scale: number, primary: Color3, secondary: C
 	}
 end
 
+-- Modèle à partir d'un mesh importé (Config/Models) : une MeshPart posée au sol,
+-- animée comme un « Squash » par le client. Renvoie nil si rien n'est importé.
+local function buildFromMesh(species: Kaijus.Species, mutationId: string?, scale: number, origin: CFrame?): Model?
+	local def = Models.Get(species.Id)
+	if not def or def.MeshId == 0 or def.Quality == "fallback" then
+		return nil
+	end
+	local ctx = newCtx(species.Id, scale, species.Primary, species.Secondary, species.Accent, origin)
+	local mesh = Instance.new("MeshPart")
+	mesh.Name = "Mesh"
+	mesh.MeshId = "rbxassetid://" .. def.MeshId
+	if def.TextureId ~= 0 then
+		mesh.TextureID = "rbxassetid://" .. def.TextureId
+	end
+	setup(mesh, species.Primary, Enum.Material.SmoothPlastic)
+	-- Taille : ~4,5 studs de haut au stade 1 (voir Config/Models.Scale)
+	local height = 4.5 * scale
+	mesh.Size = Vector3.new(height, height, height)
+	mesh:SetAttribute("Role", "Squash")
+	mesh:SetAttribute("Phase", 0)
+	mesh:SetAttribute("Mesh", true)
+	local offset = (def.Offset or Vector3.zero) * scale / math.max(def.Scale, 0.001)
+	mesh.CFrame = ctx.root.CFrame * CFrame.new(Vector3.new(0, height / 2, 0) + offset)
+	mesh.Parent = ctx.model
+	ctx.headTop = Vector3.new(0, 4.5, 0)
+	applyMutation(ctx, mutationId)
+	ctx.model:SetAttribute("Species", species.Id)
+	ctx.model:SetAttribute("Rarity", species.Rarity)
+	ctx.model:SetAttribute("Height", height)
+	ctx.model:SetAttribute("Imported", true)
+	return ctx.model
+end
+
 -- Construit un kaiju. `scale` = échelle du stade de croissance.
 function KaijuBuilder.Build(speciesId: string, mutationId: string?, scale: number?, origin: CFrame?): Model
 	local species = Kaijus.Get(speciesId) or Kaijus.List[1]
+	local imported = buildFromMesh(species, mutationId, scale or 1, origin)
+	if imported then
+		return imported
+	end
 	local ctx = newCtx(species.Id, scale or 1, species.Primary, species.Secondary, species.Accent, origin)
 	local build = Archetypes[species.Archetype] or Archetypes.Rex
 	build(ctx, species)
@@ -748,6 +786,10 @@ end
 function KaijuBuilder.Height(speciesId: string): number
 	local species = Kaijus.Get(speciesId)
 	if not species then
+		return 4.5
+	end
+	local def = Models.Get(species.Id)
+	if def and def.MeshId ~= 0 and def.Quality ~= "fallback" then
 		return 4.5
 	end
 	local heights = { Rex = 4.6, Quad = 3.3, Serpent = 3.4, Bird = 4.2, Blob = 2.7, Crab = 3.0, Food = 4.2, Mech = 4.8, Squid = 4.0 }

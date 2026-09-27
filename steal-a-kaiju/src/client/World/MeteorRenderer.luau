@@ -291,8 +291,20 @@ function MeteorRenderer.Init()
 		untrack(m:GetAttribute("Id") or m.Name)
 	end)
 
+	local craterTimer = nil
+	task.spawn(function()
+		local map = Workspace:WaitForChild("Map", 30)
+		local crater = map and map:WaitForChild("Crater", 30)
+		local sign = crater and crater:FindFirstChild("MeteorTimer")
+		local gui = sign and sign:FindFirstChild("SignGui")
+		craterTimer = gui and gui:FindFirstChild("Text")
+	end)
 	RunService.RenderStepped:Connect(function()
 		local t = now()
+		if craterTimer then
+			local wait = Workspace:GetAttribute("NextMeteorIn") or -1
+			craterTimer.Text = if wait >= 0 then ("NEXT METEOR IN %ds"):format(math.ceil(wait)) else "METEORS PAUSED"
+		end
 		for _, entry in entries do
 			local anchor = entry.Anchor
 			if not entry.Landed then

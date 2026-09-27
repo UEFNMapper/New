@@ -15,6 +15,9 @@ local Events = require(Shared.Config.Events)
 local Economy = require(Shared.Config.Economy)
 local Kaijus = require(Shared.Config.Kaijus)
 local Growth = require(Shared.Config.Growth)
+local Rarities = require(Shared.Config.Rarities)
+local TutorialConfig = require(Shared.Config.Tutorial)
+local Tutorial = require(script.Parent.Parent.World.Tutorial)
 
 local Kit = require(script.Parent.Kit)
 local Controllers = script.Parent.Parent.Controllers
@@ -93,7 +96,7 @@ end
 local function buildCurrencies()
 	local top = Kit.new("Frame", {
 		Name = "Top",
-		Size = UDim2.fromOffset(560, 110),
+		Size = UDim2.fromOffset(560, 150),
 		Position = UDim2.new(0.5, 0, 0, 12),
 		AnchorPoint = Vector2.new(0.5, 0),
 		BackgroundTransparency = 1,
@@ -146,6 +149,47 @@ local function buildCurrencies()
 		Parent = top,
 	})
 	storedChip.Visible = false
+
+	-- Prochain météore / œuf disponible dans le cratère
+	local meteorChip = Kit.Chip({
+		Name = "Meteor",
+		Text = "☄️ Next meteor in 10s",
+		Color = C.MagmaDark,
+		Size = UDim2.fromOffset(250, 30),
+		Position = UDim2.fromOffset(64, 116),
+		Parent = top,
+	})
+	local meteorText = meteorChip:FindFirstChild("Text") :: TextLabel
+	local lastBest = ""
+	RunService.Heartbeat:Connect(function()
+		local folder = Workspace:FindFirstChild("Meteors")
+		local best, bestOrder = nil, 0
+		if folder then
+			for _, m in folder:GetChildren() do
+				if m:IsA("BasePart") and (m:GetAttribute("Owner") or 0) == 0 and (m:GetAttribute("LandAt") or 0) <= now() then
+					local order = Rarities.Get(m:GetAttribute("Rarity") or "Common").Order
+					if order > bestOrder then
+						best, bestOrder = m, order
+					end
+				end
+			end
+		end
+		if best then
+			local rarity = Rarities.Get(best:GetAttribute("Rarity") or "Common")
+			local left = (best:GetAttribute("ExpireAt") or 0) - now()
+			meteorText.Text = ("☄️ %s EGG in the crater! %ds"):format(string.upper(rarity.Name), math.max(0, math.ceil(left)))
+			meteorChip.BackgroundColor3 = rarity.Color:Lerp(C.Ink, 0.35)
+			if lastBest ~= best.Name then
+				lastBest = best.Name
+				Kit.Punch(meteorChip, 0.15)
+			end
+		else
+			lastBest = ""
+			local wait = Workspace:GetAttribute("NextMeteorIn") or -1
+			meteorText.Text = if wait >= 0 then ("☄️ Next meteor in %ds"):format(math.ceil(wait)) else "☄️ Meteors paused (raid!)"
+			meteorChip.BackgroundColor3 = C.MagmaDark
+		end
+	end)
 
 	State.Observe("Cash", function(value)
 		local previous = cashLabel:GetAttribute("Value") or value
@@ -256,14 +300,11 @@ local function menuButton(parent: Instance, props): TextButton
 		OnClick = props.OnClick,
 	})
 	local face = button:FindFirstChild("Face")
-	Kit.Text({
+	Kit.Icon(props.Icon, {
 		Name = "Emoji",
-		Size = UDim2.fromScale(0.62, 0.62),
+		Size = UDim2.fromScale(0.66, 0.66),
 		Position = UDim2.fromScale(0.5, 0.4),
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Text = props.Icon,
-		FontFace = F.Body,
-		Stroke = false,
 		ZIndex = 12,
 		Parent = face,
 	})
@@ -306,26 +347,41 @@ local function buildMenus()
 		}),
 	})
 	Kit.AutoScale(left)
-	menuButton(left, { Id = "Shop", Text = "SHOP", Icon = "🛒", Color = "Magma", Order = 1, Rotation = -3, OnClick = function() openScreen("Shop") end })
-	menuButton(left, { Id = "Index", Text = "KAIJUDEX", Icon = "📖", Color = "Cyan", Order = 2, Rotation = 2, OnClick = function() openScreen("Index") end })
-	menuButton(left, { Id = "Rebirth", Text = "EVOLVE", Icon = "🧬", Color = "Radioactive", Order = 3, Rotation = 2, OnClick = function() openScreen("Rebirth") end })
-	menuButton(left, { Id = "Fusion", Text = "FUSION", Icon = "🧪", Color = "Purple", Order = 4, Rotation = -3, OnClick = function() openScreen("Fusion") end })
-	menuButton(left, { Id = "Quests", Text = "QUESTS", Icon = "📜", Color = "Gold", Order = 5, Rotation = -2, OnClick = function() openScreen("Quests") end })
-	menuButton(left, { Id = "Upgrades", Text = "UPGRADES", Icon = "🔧", Color = "Pink", Order = 6, Rotation = 3, OnClick = function() openScreen("Shop", "Upgrades") end })
+	menuButton(left, { Id = "Shop", Text = "SHOP", Icon = "shop", Color = "Magma", Order = 1, Rotation = -3, OnClick = function() openScreen("Shop") end })
+	menuButton(left, { Id = "Index", Text = "KAIJUDEX", Icon = "kaijudex", Color = "Cyan", Order = 2, Rotation = 2, OnClick = function() openScreen("Index") end })
+	menuButton(left, { Id = "Rebirth", Text = "EVOLVE", Icon = "evolve", Color = "Radioactive", Order = 3, Rotation = 2, OnClick = function() openScreen("Rebirth") end })
+	menuButton(left, { Id = "Fusion", Text = "FUSION", Icon = "fusion", Color = "Purple", Order = 4, Rotation = -3, OnClick = function() openScreen("Fusion") end })
+	menuButton(left, { Id = "Quests", Text = "QUESTS", Icon = "quests", Color = "Gold", Order = 5, Rotation = -2, OnClick = function() openScreen("Quests") end })
+	menuButton(left, { Id = "Upgrades", Text = "UPGRADES", Icon = "upgrades", Color = "Pink", Order = 6, Rotation = 3, OnClick = function() openScreen("Shop", "Upgrades") end })
 
 	local right = Kit.new("Frame", {
 		Name = "RightMenu",
-		Size = UDim2.fromOffset(100, 480),
+		Size = UDim2.fromOffset(100, 560),
 		Position = UDim2.new(1, -16, 0.5, 20),
 		AnchorPoint = Vector2.new(1, 0.5),
 		BackgroundTransparency = 1,
 		Parent = layer,
 	}, { Kit.List(Enum.FillDirection.Vertical, 38, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Center) })
 	Kit.AutoScale(right)
-	menuButton(right, { Id = "Playtime", Text = "GIFTS", Icon = "🎁", Color = "Pink", Order = 1, Rotation = 3, OnClick = function() openScreen("Playtime") end })
-	menuButton(right, { Id = "Daily", Text = "DAILY", Icon = "📅", Color = "Gold", Order = 2, Rotation = -2, OnClick = function() openScreen("Daily") end })
-	menuButton(right, { Id = "Spin", Text = "SPIN", Icon = "🎡", Color = "Cyan", Order = 3, Rotation = 2, OnClick = function() openScreen("Spin") end })
-	menuButton(right, { Id = "Settings", Text = "SETTINGS", Icon = "⚙️", Color = "Ink", Order = 4, Rotation = -2, OnClick = function() openScreen("Settings") end })
+	menuButton(right, { Id = "Playtime", Text = "GIFTS", Icon = "gifts", Color = "Pink", Order = 1, Rotation = 3, OnClick = function() openScreen("Playtime") end })
+	menuButton(right, { Id = "Daily", Text = "DAILY", Icon = "daily", Color = "Gold", Order = 2, Rotation = -2, OnClick = function() openScreen("Daily") end })
+	menuButton(right, { Id = "Spin", Text = "SPIN", Icon = "spin", Color = "Cyan", Order = 3, Rotation = 2, OnClick = function() openScreen("Spin") end })
+	menuButton(right, { Id = "Settings", Text = "SETTINGS", Icon = "settings", Color = "Ink", Order = 4, Rotation = -2, OnClick = function() openScreen("Settings") end })
+	menuButton(right, { Id = "HowToPlay", Text = "HELP", Icon = "howtoplay", Color = "Cyan", Order = 5, Rotation = 2, OnClick = function() openScreen("HowToPlay") end })
+
+	-- Déblocage progressif des menus au fil des missions
+	State.Observe("Tutorial", function(step)
+		local visible = TutorialConfig.VisibleMenus(math.max(1, step or 1))
+		for id, button in menuButtons do
+			local show = visible[id] == true
+			if show and not button.Visible then
+				button.Visible = true
+				Kit.Pop(button, 0.2, 0.5)
+			elseif not show then
+				button.Visible = false
+			end
+		end
+	end)
 
 	-- Minuteur des cadeaux sous le bouton
 	local giftTimer = Kit.Chip({ Name = "GiftTimer", Text = "0:00", Size = UDim2.fromOffset(84, 24), Position = UDim2.new(0.5, 0, 1, 14), AnchorPoint = Vector2.new(0.5, 0), Color = C.Pink, Parent = menuButtons.Playtime })
@@ -684,6 +740,26 @@ local function startAlarm(args)
 		alarmSound = Audio.Loop("alarm", { Volume = 0.7 })
 	end
 	CameraFx.Shake(0.4, 0.5)
+	-- flèches rouges vers le voleur (joueur ou voleur d'entraînement)
+	local target = nil
+	for _, other in Players:GetPlayers() do
+		if other.DisplayName == args.Thief and other.Character then
+			target = other.Character:FindFirstChild("HumanoidRootPart")
+		end
+	end
+	if not target then
+		local effects = Workspace:FindFirstChild("Effects")
+		if effects then
+			for _, m in effects:GetChildren() do
+				if m.Name == "TrainingThief" and m:GetAttribute("Owner") == player.UserId then
+					target = m.PrimaryPart
+				end
+			end
+		end
+	end
+	if target then
+		Tutorial.PointThief(target)
+	end
 end
 
 local function stopAlarm()
@@ -693,6 +769,7 @@ local function stopAlarm()
 		alarmSound:Destroy()
 		alarmSound = nil
 	end
+	Tutorial.HideThief()
 end
 
 ----------------------------------------------------------------------------

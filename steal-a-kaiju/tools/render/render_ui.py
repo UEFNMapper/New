@@ -22,6 +22,23 @@ from render import intersect, normalize  # noqa: E402
 
 W, H = 1280, 720
 FONT_DIR = "tools/render/fonts"
+ICON_DIR = "assets/icons"
+_image_cache = {}
+
+
+def load_image(ref):
+    """Charge l'image d'un ImageLabel : preview://<clé> → assets/icons/<clé>.png."""
+    if not ref:
+        return None
+    if ref in _image_cache:
+        return _image_cache[ref]
+    im = None
+    if ref.startswith("preview://"):
+        path = os.path.join(ICON_DIR, ref[len("preview://"):] + ".png")
+        if os.path.exists(path):
+            im = Image.open(path).convert("RGBA")
+    _image_cache[ref] = im
+    return im
 EMOJI_FONT = "/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf"
 _font_cache = {}
 _emoji_cache = {}
@@ -459,6 +476,23 @@ def render_node(canvas, node, parent_rect, scale, forced_pos=None, viewports=Non
     if bgT < 1 and cls not in ("ScreenGui", "Folder", "PlayerGui"):
         color = node.get("bg") or [163, 162, 165]
         fill_shape(target, rect, radius, color, 255 * (1 - bgT), None if text_like and False else grad)
+    if cls in ("ImageLabel", "ImageButton"):
+        im = load_image(node.get("image"))
+        if im is not None and w >= 2 and h >= 2:
+            iw, ih = im.size
+            ratio = min(w / iw, h / ih)
+            nw, nh = max(1, int(iw * ratio)), max(1, int(ih * ratio))
+            fitted = im.resize((nw, nh), Image.LANCZOS)
+            tint = node.get("imageColor")
+            if tint and tuple(tint) != (255, 255, 255):
+                arr = np.array(fitted).astype(float)
+                arr[:, :, :3] *= np.array(tint) / 255.0
+                fitted = Image.fromarray(arr.astype(np.uint8))
+            it = node.get("imageT") or 0
+            if it > 0:
+                a = fitted.split()[3].point(lambda v: int(v * (1 - it)))
+                fitted.putalpha(a)
+            target.alpha_composite(fitted, (int(x + (w - nw) / 2), int(y + (h - nh) / 2)))
     if cls == "ViewportFrame" and viewports is not None:
         img = render_viewport(node, w, h)
         if img is not None:

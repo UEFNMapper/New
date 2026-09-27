@@ -76,6 +76,32 @@ local function light(parent: BasePart, color: Color3, range: number, brightness:
 	l.Parent = parent
 end
 
+-- Étiquette flottante (lisible de loin) au-dessus d'un point.
+local function floatingSign(parent: Instance, cf: CFrame, text: string, color: Color3, width: number, height: number, maxDistance: number, name: string?)
+	local anchor = part({ Name = name or "Sign", Size = Vector3.new(1, 1, 1), CFrame = cf, Transparency = 1, CanCollide = false, CanQuery = false }, parent)
+	local gui = Instance.new("BillboardGui")
+	gui.Name = "SignGui"
+	gui.Size = UDim2.fromOffset(width, height)
+	gui.MaxDistance = maxDistance
+	gui.LightInfluence = 0
+	gui.Adornee = anchor
+	gui.Parent = anchor
+	local label = Instance.new("TextLabel")
+	label.Name = "Text"
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.fromScale(1, 1)
+	label.FontFace = Theme.Fonts.Title
+	label.TextScaled = true
+	label.TextColor3 = color
+	label.Text = text
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 3
+	stroke.Color = Theme.Colors.Ink
+	stroke.Parent = label
+	label.Parent = gui
+	return anchor
+end
+
 local function emitter(parent: Instance, props: { [string]: any }): ParticleEmitter
 	local e = Instance.new("ParticleEmitter")
 	for k, v in props do
@@ -83,6 +109,70 @@ local function emitter(parent: Instance, props: { [string]: any }): ParticleEmit
 	end
 	e.Parent = parent
 	return e
+end
+
+----------------------------------------------------------------------------
+-- Décor (style « jouet » : formes rondes, couleurs franches)
+----------------------------------------------------------------------------
+
+local function ball(cf: CFrame, diameter: number, color: Color3, parent: Instance, material: Enum.Material?): Part
+	return part({
+		Shape = Enum.PartType.Ball,
+		Size = Vector3.new(diameter, diameter, diameter),
+		CFrame = cf,
+		Color = color,
+		Material = material or Enum.Material.SmoothPlastic,
+		CanCollide = false,
+	}, parent)
+end
+
+-- Arbre « sucette » : tronc + 3 boules de feuillage.
+local function lollipopTree(parent: Instance, base: CFrame, height: number, rng: Random)
+	local trunk = rgb(150, 100, 60)
+	cylinder(base * CFrame.new(0, height / 2, 0) * CFrame.Angles(0, 0, math.rad(90)) * CFrame.Angles(0, 0, math.rad(-90)), height, 2.2, { Name = "Trunk", Color = trunk, Material = Enum.Material.Wood }, parent)
+	local greens = { rgb(96, 205, 90), rgb(70, 180, 80), rgb(130, 225, 100) }
+	local d = height * 0.75
+	ball(base * CFrame.new(0, height + d * 0.25, 0), d, greens[rng:NextInteger(1, 3)], parent)
+	ball(base * CFrame.new(d * 0.35, height + d * 0.05, d * 0.2), d * 0.7, greens[rng:NextInteger(1, 3)], parent)
+	ball(base * CFrame.new(-d * 0.3, height + d * 0.1, -d * 0.25), d * 0.65, greens[rng:NextInteger(1, 3)], parent)
+	-- quelques fruits
+	for _ = 1, 3 do
+		local a = rng:NextNumber() * math.pi * 2
+		ball(base * CFrame.new(math.cos(a) * d * 0.45, height + d * 0.2 + rng:NextNumber(-2, 2), math.sin(a) * d * 0.45), 1.2, rgb(255, 90, 90), parent, Enum.Material.SmoothPlastic)
+	end
+end
+
+local function bush(parent: Instance, base: CFrame, size: number, rng: Random)
+	ball(base * CFrame.new(0, size * 0.35, 0), size, rgb(80, 190, 90), parent)
+	ball(base * CFrame.new(size * 0.4, size * 0.25, size * 0.2), size * 0.7, rgb(110, 215, 100), parent)
+	ball(base * CFrame.new(-size * 0.35, size * 0.25, -size * 0.2), size * 0.6, rgb(70, 170, 85), parent)
+	if rng:NextNumber() < 0.6 then
+		ball(base * CFrame.new(size * 0.1, size * 0.85, size * 0.1), size * 0.3, rgb(255, 120, 200), parent)
+	end
+end
+
+local function flower(parent: Instance, base: CFrame, color: Color3)
+	cylinder(base * CFrame.new(0, 1, 0) * CFrame.Angles(0, 0, math.rad(90)) * CFrame.Angles(0, 0, math.rad(-90)), 2, 0.3, { Name = "Stem", Color = rgb(70, 170, 70), CanCollide = false }, parent)
+	for i = 1, 5 do
+		local a = i / 5 * math.pi * 2
+		ball(base * CFrame.new(math.cos(a) * 0.7, 2.1, math.sin(a) * 0.7), 0.9, color, parent)
+	end
+	ball(base * CFrame.new(0, 2.15, 0), 0.8, rgb(255, 230, 90), parent)
+end
+
+local function cloud(parent: Instance, center: Vector3, size: number, rng: Random)
+	local model = Instance.new("Model")
+	model.Name = "Cloud"
+	model.Parent = parent
+	for i = 1, 5 do
+		local off = Vector3.new(rng:NextNumber(-1, 1) * size * 0.9, rng:NextNumber(-0.15, 0.25) * size, rng:NextNumber(-0.4, 0.4) * size)
+		local p = ball(CFrame.new(center + off), size * rng:NextNumber(0.6, 1.1), rgb(255, 255, 255), model)
+		p.Material = Enum.Material.SmoothPlastic
+		p.CastShadow = false
+		if i == 1 then
+			model.PrimaryPart = p
+		end
+	end
 end
 
 ----------------------------------------------------------------------------
@@ -161,8 +251,8 @@ local function setupTerrain()
 	terrain.WaterWaveSize = 0.25
 	terrain.WaterWaveSpeed = 12
 	terrain.WaterReflectance = 0.6
-	terrain:SetMaterialColor(Enum.Material.Grass, rgb(96, 190, 90))
-	terrain:SetMaterialColor(Enum.Material.Sand, rgb(240, 214, 160))
+	terrain:SetMaterialColor(Enum.Material.Grass, rgb(92, 208, 88))
+	terrain:SetMaterialColor(Enum.Material.Sand, rgb(250, 226, 170))
 	terrain:SetMaterialColor(Enum.Material.Basalt, rgb(50, 40, 50))
 	terrain:SetMaterialColor(Enum.Material.Rock, rgb(120, 105, 110))
 
@@ -204,6 +294,22 @@ local function buildCrater(folder: Folder): ({ BasePart }, { CFrame }, CFrame)
 		Material = Enum.Material.Basalt,
 	}, crater)
 
+	-- Lac de lave central (la zone « danger » se voit de loin)
+	local lake = cylinder(CFrame.new(0, 0.05, 0), 0.5, 40, { Name = "LavaLake", Color = rgb(255, 120, 30), Material = Enum.Material.Neon, CanCollide = false }, crater)
+	light(lake, rgb(255, 130, 40), 60, 2)
+	cylinder(CFrame.new(0, 0.02, 0), 0.4, 46, { Name = "LavaRim", Color = rgb(40, 28, 40), Material = Enum.Material.Basalt, CanCollide = false }, crater)
+	emitter(lake, {
+		Texture = "rbxasset://textures/particles/sparkles_main.dds",
+		Rate = 10,
+		Lifetime = NumberRange.new(1, 2),
+		Speed = NumberRange.new(6, 12),
+		Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1.2), NumberSequenceKeypoint.new(1, 0) }),
+		LightEmission = 1,
+		Color = ColorSequence.new(rgb(255, 200, 80), rgb(255, 90, 30)),
+		SpreadAngle = Vector2.new(30, 30),
+		Acceleration = Vector3.new(0, -10, 0),
+	})
+
 	-- Fissures de lave (néon)
 	local rng = Random.new(42)
 	for i = 1, 22 do
@@ -232,14 +338,8 @@ local function buildCrater(folder: Folder): ({ BasePart }, { CFrame }, CFrame)
 		if gap > 0.26 then
 			local r = Layout.CraterRadius + rng:NextNumber(-1, 3)
 			local size = rng:NextNumber(6, 11)
-			local rock = part({
-				Name = "Rock",
-				Size = Vector3.new(size, size * rng:NextNumber(0.7, 1.4), size),
-				CFrame = CFrame.new(math.sin(a) * r, size * 0.3, math.cos(a) * r)
-					* CFrame.Angles(rng:NextNumber(-0.4, 0.4), rng:NextNumber() * 6, rng:NextNumber(-0.4, 0.4)),
-				Color = rgb(80, 66, 78):Lerp(rgb(120, 100, 110), rng:NextNumber()),
-				Material = Enum.Material.Slate,
-			}, crater)
+			local rock = ball(CFrame.new(math.sin(a) * r, size * 0.3, math.cos(a) * r), size, rgb(96, 78, 110):Lerp(rgb(150, 120, 150), rng:NextNumber()), crater, Enum.Material.SmoothPlastic)
+			rock.CanCollide = true
 			rock.CastShadow = true
 		end
 	end
@@ -256,12 +356,14 @@ local function buildCrater(folder: Folder): ({ BasePart }, { CFrame }, CFrame)
 		}, crater)
 		local ring = cylinder(CFrame.new(pos + Vector3.new(0, 1.25, 0)), 0.15, 17, {
 			Name = "Ring",
-			Color = Theme.Colors.Magma,
+			Color = Theme.Colors.Gold,
 			Material = Enum.Material.Neon,
 			CanCollide = false,
 			CastShadow = false,
 		}, crater)
-		ring.Transparency = 0.2
+		ring.Transparency = 0.1
+		local inner = cylinder(CFrame.new(pos + Vector3.new(0, 1.26, 0)), 0.14, 8, { Name = "Target", Color = Theme.Colors.Magma, Material = Enum.Material.Neon, CanCollide = false, CastShadow = false }, crater)
+		inner.Transparency = 0.3
 		base:SetAttribute("Index", i)
 		table.insert(pads, base)
 	end
@@ -296,6 +398,11 @@ local function buildCrater(folder: Folder): ({ BasePart }, { CFrame }, CFrame)
 		SpreadAngle = Vector2.new(35, 35),
 		Acceleration = Vector3.new(0, -8, 0),
 	})
+
+	-- Panneau géant du cratère + minuteur du prochain météore (texte mis à jour par le client)
+	floatingSign(crater, CFrame.new(0, 34, 0), "☄️ METEOR CRATER", Theme.Colors.Magma, 520, 70, 900, "CraterSign")
+	floatingSign(crater, CFrame.new(0, 27, 0), "Eggs land here — first come, first served!", Theme.Colors.Paper, 520, 34, 500, "CraterSub")
+	floatingSign(crater, CFrame.new(0, 21, 0), "NEXT METEOR IN 10s", Theme.Colors.Gold, 420, 44, 700, "MeteorTimer")
 
 	-- Tableaux des scores (face à l'extérieur, entre deux ponts)
 	local boards: { CFrame } = {}
@@ -345,6 +452,23 @@ local function buildBridge(folder: Folder, index: number)
 		Color = rgb(170, 120, 80),
 		Material = Enum.Material.WoodPlanks,
 	}, bridge)
+	floatingSign(bridge, cf * CFrame.new(0, 9, len / 2 - 12), "☄️ TO THE CRATER", Theme.Colors.Magma, 260, 34, 160)
+	-- chevrons peints sur le tablier, pointant vers le cratère (-Z local = vers l'île ; +Z = vers le cratère)
+	local chevrons = math.floor(len / 14)
+	for j = 1, chevrons do
+		local z = -len / 2 + j * (len / (chevrons + 1))
+		for _, side in { -1, 1 } do
+			part({
+				Name = "Chevron",
+				Size = Vector3.new(6, 0.12, 1.6),
+				CFrame = cf * CFrame.new(side * 2.2, 0.07, z) * CFrame.Angles(0, math.rad(-40 * side), 0),
+				Color = Theme.Colors.Magma,
+				Material = Enum.Material.Neon,
+				CanCollide = false,
+				CastShadow = false,
+			}, bridge)
+		end
+	end
 	for _, side in { -1, 1 } do
 		part({
 			Name = "Rail",
@@ -400,6 +524,11 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 	part({ Name = "Floor", Size = Vector3.new(W, 1, D), CFrame = at(0, -0.5, 0), Color = rgb(110, 200, 100), Material = Enum.Material.Grass }, model)
 	part({ Name = "Path", Size = Vector3.new(14, 1.05, D), CFrame = at(0, -0.48, 0), Color = rgb(235, 215, 170), Material = Enum.Material.Pavement }, model)
 	part({ Name = "Trim", Size = Vector3.new(W + 2, 0.8, D + 2), CFrame = at(0, -0.9, 0), Color = color, Material = Enum.Material.SmoothPlastic }, model)
+	-- anneau coloré au bord de l'île + écume blanche au niveau de l'eau
+	local edge = cylinder(cf * CFrame.new(0, -0.45, 0), 0.5, 176, { Name = "EdgeRing", Color = color, Material = Enum.Material.SmoothPlastic, CanCollide = false }, model)
+	edge.Transparency = 0.35
+	local foam = cylinder(cf * CFrame.new(0, -6.3, 0), 0.3, 198, { Name = "Foam", Color = rgb(255, 255, 255), Material = Enum.Material.Neon, CanCollide = false, CastShadow = false }, model)
+	foam.Transparency = 0.55
 
 	-- Murets (avec ouverture de porte à l'avant)
 	local wallH, wallT = 4, 2
@@ -448,6 +577,30 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 		CanQuery = false,
 	}, model)
 
+	-- Cour des nids : clôture blanche + panneau
+	do
+		local fenceColor = rgb(255, 250, 240)
+		local x0, x1, z0, z1 = -48, 48, -34, 42
+		local function rail(a: Vector3, b: Vector3)
+			local mid = (a + b) / 2
+			local len = (b - a).Magnitude
+			local cfr = CFrame.lookAt(at(mid.X, 1.6, mid.Z).Position, at(b.X, 1.6, b.Z).Position)
+			part({ Name = "FenceRail", Size = Vector3.new(0.5, 0.5, len), CFrame = cfr, Color = fenceColor, CanCollide = false }, model)
+			part({ Name = "FenceRail", Size = Vector3.new(0.5, 0.5, len), CFrame = cfr * CFrame.new(0, -0.9, 0), Color = fenceColor, CanCollide = false }, model)
+			local posts = math.floor(len / 8)
+			for k = 0, posts do
+				local t = k / math.max(posts, 1)
+				local p = a:Lerp(b, t)
+				part({ Name = "FencePost", Size = Vector3.new(0.9, 2.6, 0.9), CFrame = at(p.X, 1.3, p.Z), Color = color, CanCollide = false }, model)
+			end
+		end
+		rail(Vector3.new(x0, 0, z0), Vector3.new(x1, 0, z0))
+		rail(Vector3.new(x0, 0, z1), Vector3.new(x1, 0, z1))
+		rail(Vector3.new(x0, 0, z0), Vector3.new(x0, 0, z1))
+		rail(Vector3.new(x1, 0, z0), Vector3.new(x1, 0, z1))
+		floatingSign(model, at(0, 8, z1 + 2), "🪺 NEST YARD — your kaijus grow here", color, 380, 34, 120)
+	end
+
 	-- Nids
 	local nests: { BasePart } = {}
 	for i, local_ in Layout.Nests do
@@ -494,6 +647,22 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 	local core = cylinder(reactorBase * CFrame.new(0, 6, 4.5), 6, 2.2, { Name = "Core", Color = Theme.Colors.Cash, Material = Enum.Material.Neon, CanCollide = false }, model)
 	light(core, Theme.Colors.Cash, 20, 1.5)
 	cylinder(reactorBase * CFrame.new(0, 10, 4.5), 1, 6, { Name = "Cap", Color = Theme.Colors.Ink, Material = Enum.Material.Metal }, model)
+	local coin = cylinder(reactorBase * CFrame.new(0, 21, 4.5) * CFrame.Angles(0, 0, math.rad(90)) * CFrame.Angles(0, 0, math.rad(-90)), 1.2, 8, { Name = "Coin", Color = Theme.Colors.Gold, Material = Enum.Material.Foil, CanCollide = false }, model)
+	for _, face in { Enum.NormalId.Left, Enum.NormalId.Right } do
+		local coinGui = Instance.new("SurfaceGui")
+		coinGui.Face = face
+		coinGui.CanvasSize = Vector2.new(200, 200)
+		coinGui.LightInfluence = 0
+		coinGui.Parent = coin
+		local dollar = Instance.new("TextLabel")
+		dollar.BackgroundTransparency = 1
+		dollar.Size = UDim2.fromScale(1, 1)
+		dollar.FontFace = Theme.Fonts.Impact
+		dollar.TextScaled = true
+		dollar.TextColor3 = rgb(160, 110, 20)
+		dollar.Text = "$"
+		dollar.Parent = coinGui
+	end
 	local screen = part({ Name = "Screen", Size = Vector3.new(12, 5, 0.6), CFrame = reactorBase * CFrame.new(0, 14.5, 4.5) * CFrame.Angles(0, math.pi, 0), Color = Theme.Colors.Ink }, model)
 	local gui = Instance.new("SurfaceGui")
 	gui.Name = "CollectorGui"
@@ -522,6 +691,8 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 	sub.Text = "STEP ON THE PAD TO COLLECT"
 	sub.Parent = gui
 
+	floatingSign(model, reactorBase * CFrame.new(0, 6, -4), "⬇ STEP HERE TO COLLECT", Theme.Colors.Cash, 300, 34, 90)
+
 	-- Bouton de verrouillage (gros bouton rouge)
 	local lockCf = at(Layout.LockButton.X, 0, Layout.LockButton.Z)
 	cylinder(lockCf * CFrame.new(0, 0.6, 0), 1.2, 10, { Name = "LockBase", Color = Theme.Colors.Ink, Material = Enum.Material.Metal }, model)
@@ -531,6 +702,22 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 		Material = Enum.Material.Neon,
 		CanCollide = false,
 	}, model)
+	local dome = ball(lockCf * CFrame.new(0, 1.4, 0), 6.6, Theme.Colors.Red, model)
+	dome.Name = "LockDome"
+	local domeGui = Instance.new("SurfaceGui")
+	domeGui.Face = Enum.NormalId.Top
+	domeGui.CanvasSize = Vector2.new(300, 300)
+	domeGui.LightInfluence = 0
+	domeGui.Parent = dome
+	local lockText = Instance.new("TextLabel")
+	lockText.BackgroundTransparency = 1
+	lockText.Size = UDim2.fromScale(0.7, 0.4)
+	lockText.Position = UDim2.fromScale(0.15, 0.3)
+	lockText.FontFace = Theme.Fonts.Impact
+	lockText.TextScaled = true
+	lockText.TextColor3 = rgb(255, 255, 255)
+	lockText.Text = "LOCK"
+	lockText.Parent = domeGui
 	for k = 0, 7 do
 		local a = k / 8 * math.pi * 2
 		part({
@@ -540,6 +727,8 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 			Color = if k % 2 == 0 then Theme.Colors.Gold else Theme.Colors.Ink,
 		}, model)
 	end
+
+	floatingSign(model, lockCf * CFrame.new(0, 6, 0), "🛡️ LOCK BASE", Theme.Colors.Red, 220, 34, 90)
 
 	-- Plateforme du météore personnel
 	local personal = cylinder(at(Layout.PersonalPad.X, 0.5, Layout.PersonalPad.Z), 1, 12, {
@@ -554,6 +743,7 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 		CanCollide = false,
 	}, model)
 	pring.Transparency = 0.3
+	floatingSign(model, at(Layout.PersonalPad.X, 6, Layout.PersonalPad.Z), "☄️ YOUR PERSONAL METEOR LANDS HERE", Theme.Colors.Cyan, 320, 30, 90)
 
 	-- Panneau du propriétaire
 	local signPart = part({ Name = "SignAnchor", Size = Vector3.new(1, 1, 1), CFrame = at(0, 18, -D / 2 + 1.6), Transparency = 1, CanCollide = false }, model)
@@ -578,36 +768,26 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 	stroke.Parent = signLabel
 	signLabel.Parent = sign
 
-	-- Décor : palmiers et rochers en bordure extérieure
+	-- Décor : arbres ronds, buissons et fleurs autour de l'île (hors des murs)
 	local rng = Random.new(index * 1337)
-	for k = 1, 7 do
+	local flowerColors = { rgb(255, 110, 150), rgb(255, 200, 60), rgb(120, 170, 255), rgb(255, 130, 80) }
+	for k = 1, 8 do
 		local side = if k % 2 == 0 then 1 else -1
-		local x = side * (W / 2 + rng:NextNumber(8, 22))
-		local z = rng:NextNumber(-D / 2 + 10, D / 2 - 5)
-		local base = at(x, 0, z)
-		local h = rng:NextNumber(14, 22)
-		for s = 0, 5 do
-			part({
-				Name = "Trunk",
-				Size = Vector3.new(2 - s * 0.15, h / 6 + 0.3, 2 - s * 0.15),
-				CFrame = base * CFrame.new(s * 0.35 * side, h / 12 + s * h / 6, 0) * CFrame.Angles(0, 0, math.rad(-6 * side)),
-				Color = rgb(150, 100, 60):Lerp(rgb(120, 80, 50), s / 5),
-				Material = Enum.Material.Wood,
-			}, model)
-		end
-		local top = base * CFrame.new(2.1 * side, h, 0)
-		for leaf = 1, 6 do
-			local a = leaf / 6 * math.pi * 2
-			local l = Instance.new("WedgePart")
-			l.Anchored = true
-			l.Size = Vector3.new(0.4, 1.4, 9)
-			l.CFrame = top * CFrame.Angles(0, a, 0) * CFrame.new(0, -0.8, 4.2) * CFrame.Angles(math.rad(22), 0, 0)
-			l.Color = rgb(70, 170, 70):Lerp(rgb(110, 210, 90), rng:NextNumber())
-			l.Material = Enum.Material.Grass
-			l.CanCollide = false
-			l.Parent = model
-		end
+		local x = side * (W / 2 + rng:NextNumber(10, 24))
+		local z = rng:NextNumber(-D / 2 + 6, D / 2 - 4)
+		lollipopTree(model, at(x, 0, z), rng:NextNumber(9, 15), rng)
 	end
+	for _ = 1, 10 do
+		local side = if rng:NextNumber() < 0.5 then 1 else -1
+		bush(model, at(side * (W / 2 + rng:NextNumber(4, 26)), 0, rng:NextNumber(-D / 2, D / 2 + 10)), rng:NextNumber(3, 5), rng)
+	end
+	for _ = 1, 14 do
+		local side = if rng:NextNumber() < 0.5 then 1 else -1
+		flower(model, at(side * (W / 2 + rng:NextNumber(3, 28)), 0, rng:NextNumber(-D / 2 - 4, D / 2 + 12)), flowerColors[rng:NextInteger(1, #flowerColors)])
+	end
+	-- deux arbres à l'arrière, derrière le réacteur
+	lollipopTree(model, at(-30, 0, D / 2 + 8), 12, rng)
+	lollipopTree(model, at(30, 0, D / 2 + 8), 13, rng)
 
 	return {
 		Index = index,
@@ -676,6 +856,29 @@ function MapBuilder.Build(): MapInfo
 		plots[i] = buildPlot(folder, i)
 	end
 	buildVolcano(folder)
+
+	-- Nuages et décor de l'île centrale (hors du cratère)
+	local rng = Random.new(2026)
+	local clouds = Instance.new("Folder")
+	clouds.Name = "Clouds"
+	clouds.Parent = folder
+	for i = 1, 14 do
+		local a = i / 14 * math.pi * 2
+		local r = rng:NextNumber(180, 520)
+		cloud(clouds, Vector3.new(math.cos(a) * r, rng:NextNumber(95, 150), math.sin(a) * r), rng:NextNumber(9, 16), rng)
+	end
+	local center = Instance.new("Model")
+	center.Name = "CenterDecor"
+	center.Parent = folder
+	for i = 1, 16 do
+		local a = (i + 0.5) / 16 * math.pi * 2
+		local sector = (a / (math.pi * 2)) * Layout.PlotCount
+		if math.abs(sector - math.floor(sector + 0.5)) > 0.2 then
+			local r = Layout.CraterRadius + rng:NextNumber(22, 40)
+			lollipopTree(center, CFrame.new(math.sin(a) * r, 0, math.cos(a) * r), rng:NextNumber(9, 14), rng)
+			bush(center, CFrame.new(math.sin(a + 0.1) * (r - 10), 0, math.cos(a + 0.1) * (r - 10)), 4, rng)
+		end
+	end
 
 	for _, name in { "Kaijus", "Meteors", "Effects", "Orbs" } do
 		local f = Instance.new("Folder")

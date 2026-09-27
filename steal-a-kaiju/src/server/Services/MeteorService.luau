@@ -202,6 +202,7 @@ local function buy(player: Player, payload: any): Router.Result
 		end
 	end)
 	Registry.RewardService.Track(player, "EggsBought", 1)
+	Registry.TutorialService.Notify(player, "Meteor")
 	local r = Rarities.Get(rarity)
 	if r.Order >= 4 then
 		Notify.FeedExcept(player, ("%s grabbed the %s egg!"):format(player.DisplayName, string.upper(r.Name)), "Rare", r.Color)
@@ -242,6 +243,7 @@ function MeteorService.Start()
 				timer = Economy.MeteorInterval * (0.8 + math.random() * 0.4)
 				craterStep()
 			end
+			Workspace:SetAttribute("NextMeteorIn", if rate > 0 then timer / rate else -1)
 			-- expiration
 			local t = now()
 			for id, m in meteors do

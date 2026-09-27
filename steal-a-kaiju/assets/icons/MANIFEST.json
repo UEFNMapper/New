@@ -1,0 +1,836 @@
+{
+  "alarm": {
+    "file": "alarm.png",
+    "source": "fluent-3d",
+    "sourceName": "Police car light",
+    "sourcePath": "assets/Police car light/3D/police_car_light_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "arrow_down": {
+    "file": "arrow_down.png",
+    "source": "fluent-3d",
+    "sourceName": "Down arrow",
+    "sourcePath": "assets/Down arrow/3D/down_arrow_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "arrow_right": {
+    "file": "arrow_right.png",
+    "source": "fluent-3d",
+    "sourceName": "Right arrow",
+    "sourcePath": "assets/Right arrow/3D/right_arrow_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "aurora": {
+    "file": "aurora.png",
+    "source": "fluent-3d",
+    "sourceName": "Milky way",
+    "sourcePath": "assets/Milky way/3D/milky_way_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "blood_moon": {
+    "file": "blood_moon.png",
+    "source": "fluent-3d",
+    "sourceName": "Full moon",
+    "sourcePath": "assets/Full moon/3D/full_moon_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji",
+    "modified": "tinted (220, 40, 40)"
+  },
+  "bonk": {
+    "file": "bonk.png",
+    "source": "fluent-3d",
+    "sourceName": "Hammer",
+    "sourcePath": "assets/Hammer/3D/hammer_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "boss": {
+    "file": "boss.png",
+    "source": "fluent-3d",
+    "sourceName": "Ogre",
+    "sourcePath": "assets/Ogre/3D/ogre_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "bridge": {
+    "file": "bridge.png",
+    "source": "fluent-3d",
+    "sourceName": "Bridge at night",
+    "sourcePath": "assets/Bridge at night/3D/bridge_at_night_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "cash": {
+    "file": "cash.png",
+    "source": "fluent-3d",
+    "sourceName": "Money with wings",
+    "sourcePath": "assets/Money with wings/3D/money_with_wings_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "chat": {
+    "file": "chat.png",
+    "source": "fluent-3d",
+    "sourceName": "Speech balloon",
+    "sourcePath": "assets/Speech balloon/3D/speech_balloon_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "check": {
+    "file": "check.png",
+    "source": "fluent-3d",
+    "sourceName": "Check mark button",
+    "sourcePath": "assets/Check mark button/3D/check_mark_button_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "code": {
+    "file": "code.png",
+    "source": "fluent-3d",
+    "sourceName": "Keyboard",
+    "sourcePath": "assets/Keyboard/3D/keyboard_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "collect": {
+    "file": "collect.png",
+    "source": "fluent-3d",
+    "sourceName": "Money bag",
+    "sourcePath": "assets/Money bag/3D/money_bag_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "cross": {
+    "file": "cross.png",
+    "source": "fluent-3d",
+    "sourceName": "Cross mark",
+    "sourcePath": "assets/Cross mark/3D/cross_mark_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "crown": {
+    "file": "crown.png",
+    "source": "fluent-3d",
+    "sourceName": "Crown",
+    "sourcePath": "assets/Crown/3D/crown_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "daily": {
+    "file": "daily.png",
+    "source": "fluent-3d",
+    "sourceName": "Calendar",
+    "sourcePath": "assets/Calendar/3D/calendar_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "diamond": {
+    "file": "diamond.png",
+    "source": "fluent-3d",
+    "sourceName": "Gem stone",
+    "sourcePath": "assets/Gem stone/3D/gem_stone_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "dragon": {
+    "file": "dragon.png",
+    "source": "fluent-3d",
+    "sourceName": "Dragon",
+    "sourcePath": "assets/Dragon/3D/dragon_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "egg": {
+    "file": "egg.png",
+    "source": "fluent-3d",
+    "sourceName": "Egg",
+    "sourcePath": "assets/Egg/3D/egg_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "egg_celestial": {
+    "file": "egg_celestial.png",
+    "source": "fluent-3d",
+    "sourceName": "Egg",
+    "sourcePath": "assets/Egg/3D/egg_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji",
+    "modified": "tinted (60, 220, 240)"
+  },
+  "egg_common": {
+    "file": "egg_common.png",
+    "source": "fluent-3d",
+    "sourceName": "Egg",
+    "sourcePath": "assets/Egg/3D/egg_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "egg_epic": {
+    "file": "egg_epic.png",
+    "source": "fluent-3d",
+    "sourceName": "Egg",
+    "sourcePath": "assets/Egg/3D/egg_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji",
+    "modified": "tinted (165, 80, 240)"
+  },
+  "egg_legendary": {
+    "file": "egg_legendary.png",
+    "source": "fluent-3d",
+    "sourceName": "Egg",
+    "sourcePath": "assets/Egg/3D/egg_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji",
+    "modified": "tinted (255, 190, 40)"
+  },
+  "egg_mythic": {
+    "file": "egg_mythic.png",
+    "source": "fluent-3d",
+    "sourceName": "Egg",
+    "sourcePath": "assets/Egg/3D/egg_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji",
+    "modified": "tinted (255, 100, 190)"
+  },
+  "egg_rare": {
+    "file": "egg_rare.png",
+    "source": "fluent-3d",
+    "sourceName": "Egg",
+    "sourcePath": "assets/Egg/3D/egg_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji",
+    "modified": "tinted (70, 140, 255)"
+  },
+  "egg_secret": {
+    "file": "egg_secret.png",
+    "source": "fluent-3d",
+    "sourceName": "Egg",
+    "sourcePath": "assets/Egg/3D/egg_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji",
+    "modified": "tinted (30, 30, 40) + white sparkles overlay"
+  },
+  "evolve": {
+    "file": "evolve.png",
+    "source": "fluent-3d",
+    "sourceName": "Dna",
+    "sourcePath": "assets/Dna/3D/dna_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "exit": {
+    "file": "exit.png",
+    "source": "fluent-3d",
+    "sourceName": "Door",
+    "sourcePath": "assets/Door/3D/door_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "eyes": {
+    "file": "eyes.png",
+    "source": "fluent-3d",
+    "sourceName": "Eyes",
+    "sourcePath": "assets/Eyes/3D/eyes_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "fire": {
+    "file": "fire.png",
+    "source": "fluent-3d",
+    "sourceName": "Fire",
+    "sourcePath": "assets/Fire/3D/fire_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "food_feast": {
+    "file": "food_feast.png",
+    "source": "fluent-3d",
+    "sourceName": "Poultry leg",
+    "sourcePath": "assets/Poultry leg/3D/poultry_leg_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "food_snack": {
+    "file": "food_snack.png",
+    "source": "fluent-3d",
+    "sourceName": "Meat on bone",
+    "sourcePath": "assets/Meat on bone/3D/meat_on_bone_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "food_steak": {
+    "file": "food_steak.png",
+    "source": "fluent-3d",
+    "sourceName": "Cut of meat",
+    "sourcePath": "assets/Cut of meat/3D/cut_of_meat_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "friends": {
+    "file": "friends.png",
+    "source": "fluent-3d",
+    "sourceName": "Busts in silhouette",
+    "sourcePath": "assets/Busts in silhouette/3D/busts_in_silhouette_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "fusion": {
+    "file": "fusion.png",
+    "source": "fluent-3d",
+    "sourceName": "Alembic",
+    "sourcePath": "assets/Alembic/3D/alembic_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "fx": {
+    "file": "fx.png",
+    "source": "fluent-3d",
+    "sourceName": "Sparkler",
+    "sourcePath": "assets/Sparkler/3D/sparkler_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "galaxy": {
+    "file": "galaxy.png",
+    "source": "fluent-3d",
+    "sourceName": "Milky way",
+    "sourcePath": "assets/Milky way/3D/milky_way_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "gem": {
+    "file": "gem.png",
+    "source": "fluent-3d",
+    "sourceName": "Gem stone",
+    "sourcePath": "assets/Gem stone/3D/gem_stone_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "ghost": {
+    "file": "ghost.png",
+    "source": "fluent-3d",
+    "sourceName": "Ghost",
+    "sourcePath": "assets/Ghost/3D/ghost_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "gifts": {
+    "file": "gifts.png",
+    "source": "fluent-3d",
+    "sourceName": "Wrapped gift",
+    "sourcePath": "assets/Wrapped gift/3D/wrapped_gift_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "gold": {
+    "file": "gold.png",
+    "source": "fluent-3d",
+    "sourceName": "Coin",
+    "sourcePath": "assets/Coin/3D/coin_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "group": {
+    "file": "group.png",
+    "source": "fluent-3d",
+    "sourceName": "People hugging",
+    "sourcePath": "assets/People hugging/3D/people_hugging_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "growth": {
+    "file": "growth.png",
+    "source": "fluent-3d",
+    "sourceName": "Seedling",
+    "sourcePath": "assets/Seedling/3D/seedling_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "heart": {
+    "file": "heart.png",
+    "source": "fluent-3d",
+    "sourceName": "Red heart",
+    "sourcePath": "assets/Red heart/3D/red_heart_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "home": {
+    "file": "home.png",
+    "source": "fluent-3d",
+    "sourceName": "House",
+    "sourcePath": "assets/House/3D/house_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "hourglass": {
+    "file": "hourglass.png",
+    "source": "fluent-3d",
+    "sourceName": "Hourglass not done",
+    "sourcePath": "assets/Hourglass not done/3D/hourglass_not_done_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "howtoplay": {
+    "file": "howtoplay.png",
+    "source": "fluent-3d",
+    "sourceName": "Red question mark",
+    "sourcePath": "assets/Red question mark/3D/red_question_mark_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "island": {
+    "file": "island.png",
+    "source": "fluent-3d",
+    "sourceName": "Desert island",
+    "sourcePath": "assets/Desert island/3D/desert_island_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "kaiju": {
+    "file": "kaiju.png",
+    "source": "fluent-3d",
+    "sourceName": "T-rex",
+    "sourcePath": "assets/T-rex/3D/t-rex_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "kaijudex": {
+    "file": "kaijudex.png",
+    "source": "fluent-3d",
+    "sourceName": "Open book",
+    "sourcePath": "assets/Open book/3D/open_book_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "lightning": {
+    "file": "lightning.png",
+    "source": "fluent-3d",
+    "sourceName": "High voltage",
+    "sourcePath": "assets/High voltage/3D/high_voltage_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "lock": {
+    "file": "lock.png",
+    "source": "fluent-3d",
+    "sourceName": "Locked",
+    "sourcePath": "assets/Locked/3D/locked_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "luck": {
+    "file": "luck.png",
+    "source": "fluent-3d",
+    "sourceName": "Four leaf clover",
+    "sourcePath": "assets/Four leaf clover/3D/four_leaf_clover_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "map": {
+    "file": "map.png",
+    "source": "fluent-3d",
+    "sourceName": "World map",
+    "sourcePath": "assets/World map/3D/world_map_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "medal_1": {
+    "file": "medal_1.png",
+    "source": "fluent-3d",
+    "sourceName": "1st place medal",
+    "sourcePath": "assets/1st place medal/3D/1st_place_medal_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "medal_2": {
+    "file": "medal_2.png",
+    "source": "fluent-3d",
+    "sourceName": "2nd place medal",
+    "sourcePath": "assets/2nd place medal/3D/2nd_place_medal_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "medal_3": {
+    "file": "medal_3.png",
+    "source": "fluent-3d",
+    "sourceName": "3rd place medal",
+    "sourcePath": "assets/3rd place medal/3D/3rd_place_medal_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "meteor": {
+    "file": "meteor.png",
+    "source": "fluent-3d",
+    "sourceName": "Comet",
+    "sourcePath": "assets/Comet/3D/comet_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "moon": {
+    "file": "moon.png",
+    "source": "fluent-3d",
+    "sourceName": "Full moon",
+    "sourcePath": "assets/Full moon/3D/full_moon_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "muscle": {
+    "file": "muscle.png",
+    "source": "fluent-3d",
+    "sourceName": "Flexed biceps",
+    "sourcePath": "assets/Flexed biceps/Default/3D/flexed_biceps_3d_default.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "music": {
+    "file": "music.png",
+    "source": "fluent-3d",
+    "sourceName": "Musical note",
+    "sourcePath": "assets/Musical note/3D/musical_note_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "nest": {
+    "file": "nest.png",
+    "source": "fluent-3d",
+    "sourceName": "Nest with eggs",
+    "sourcePath": "assets/Nest with eggs/3D/nest_with_eggs_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "package": {
+    "file": "package.png",
+    "source": "fluent-3d",
+    "sourceName": "Package",
+    "sourcePath": "assets/Package/3D/package_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "pause": {
+    "file": "pause.png",
+    "source": "fluent-3d",
+    "sourceName": "Pause button",
+    "sourcePath": "assets/Pause button/3D/pause_button_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "play": {
+    "file": "play.png",
+    "source": "fluent-3d",
+    "sourceName": "Play button",
+    "sourcePath": "assets/Play button/3D/play_button_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "potion_cash": {
+    "file": "potion_cash.png",
+    "source": "fluent-3d",
+    "sourceName": "Money bag",
+    "sourcePath": "assets/Money bag/3D/money_bag_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "potion_growth": {
+    "file": "potion_growth.png",
+    "source": "fluent-3d",
+    "sourceName": "Seedling",
+    "sourcePath": "assets/Seedling/3D/seedling_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "potion_luck": {
+    "file": "potion_luck.png",
+    "source": "fluent-3d",
+    "sourceName": "Four leaf clover",
+    "sourcePath": "assets/Four leaf clover/3D/four_leaf_clover_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "premium": {
+    "file": "premium.png",
+    "source": "fluent-3d",
+    "sourceName": "Crown",
+    "sourcePath": "assets/Crown/3D/crown_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "quests": {
+    "file": "quests.png",
+    "source": "fluent-3d",
+    "sourceName": "Scroll",
+    "sourcePath": "assets/Scroll/3D/scroll_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "radioactive": {
+    "file": "radioactive.png",
+    "source": "fluent-3d",
+    "sourceName": "Radioactive",
+    "sourcePath": "assets/Radioactive/3D/radioactive_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "rainbow": {
+    "file": "rainbow.png",
+    "source": "fluent-3d",
+    "sourceName": "Rainbow",
+    "sourcePath": "assets/Rainbow/3D/rainbow_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "reactor": {
+    "file": "reactor.png",
+    "source": "fluent-3d",
+    "sourceName": "Atom symbol",
+    "sourcePath": "assets/Atom symbol/3D/atom_symbol_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "rebirth": {
+    "file": "rebirth.png",
+    "source": "fluent-3d",
+    "sourceName": "Dna",
+    "sourcePath": "assets/Dna/3D/dna_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "robux": {
+    "file": "robux.png",
+    "fileWhite": "robux_white.png",
+    "source": "game-icons",
+    "sourceName": "gold-stack",
+    "sourceUrl": "https://game-icons.net/1x1/delapouite/gold-stack.html",
+    "author": "Delapouite",
+    "license": "CC BY 3.0",
+    "attribution": "\"gold-stack\" icon by Delapouite under CC BY 3.0 - https://game-icons.net/1x1/delapouite/gold-stack.html",
+    "modified": "rendered from SVG to PNG; white-on-transparent + glossy radial-gradient colour version"
+  },
+  "settings": {
+    "file": "settings.png",
+    "source": "fluent-3d",
+    "sourceName": "Gear",
+    "sourcePath": "assets/Gear/3D/gear_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "shadow": {
+    "file": "shadow.png",
+    "source": "fluent-3d",
+    "sourceName": "New moon",
+    "sourcePath": "assets/New moon/3D/new_moon_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "shield": {
+    "file": "shield.png",
+    "source": "fluent-3d",
+    "sourceName": "Shield",
+    "sourcePath": "assets/Shield/3D/shield_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "shop": {
+    "file": "shop.png",
+    "source": "fluent-3d",
+    "sourceName": "Shopping cart",
+    "sourcePath": "assets/Shopping cart/3D/shopping_cart_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "skull": {
+    "file": "skull.png",
+    "source": "fluent-3d",
+    "sourceName": "Skull",
+    "sourcePath": "assets/Skull/3D/skull_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "snowflake": {
+    "file": "snowflake.png",
+    "source": "fluent-3d",
+    "sourceName": "Snowflake",
+    "sourcePath": "assets/Snowflake/3D/snowflake_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "sound_off": {
+    "file": "sound_off.png",
+    "source": "fluent-3d",
+    "sourceName": "Muted speaker",
+    "sourcePath": "assets/Muted speaker/3D/muted_speaker_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "sound_on": {
+    "file": "sound_on.png",
+    "source": "fluent-3d",
+    "sourceName": "Speaker high volume",
+    "sourcePath": "assets/Speaker high volume/3D/speaker_high_volume_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "sparkles": {
+    "file": "sparkles.png",
+    "source": "fluent-3d",
+    "sourceName": "Sparkles",
+    "sourcePath": "assets/Sparkles/3D/sparkles_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "speed": {
+    "file": "speed.png",
+    "source": "fluent-3d",
+    "sourceName": "Running shoe",
+    "sourcePath": "assets/Running shoe/3D/running_shoe_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "spin": {
+    "file": "spin.png",
+    "source": "fluent-3d",
+    "sourceName": "Ferris wheel",
+    "sourcePath": "assets/Ferris wheel/3D/ferris_wheel_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "spins": {
+    "file": "spins.png",
+    "source": "fluent-3d",
+    "sourceName": "Ferris wheel",
+    "sourcePath": "assets/Ferris wheel/3D/ferris_wheel_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "stampede": {
+    "file": "stampede.png",
+    "source": "fluent-3d",
+    "sourceName": "Bison",
+    "sourcePath": "assets/Bison/3D/bison_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "star": {
+    "file": "star.png",
+    "source": "fluent-3d",
+    "sourceName": "Star",
+    "sourcePath": "assets/Star/3D/star_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "sun": {
+    "file": "sun.png",
+    "source": "fluent-3d",
+    "sourceName": "Sunrise",
+    "sourcePath": "assets/Sunrise/3D/sunrise_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "tab_boosts": {
+    "file": "tab_boosts.png",
+    "source": "fluent-3d",
+    "sourceName": "Rocket",
+    "sourcePath": "assets/Rocket/3D/rocket_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "tab_cash": {
+    "file": "tab_cash.png",
+    "source": "fluent-3d",
+    "sourceName": "Dollar banknote",
+    "sourcePath": "assets/Dollar banknote/3D/dollar_banknote_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "tab_gems": {
+    "file": "tab_gems.png",
+    "source": "fluent-3d",
+    "sourceName": "Gem stone",
+    "sourcePath": "assets/Gem stone/3D/gem_stone_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "tab_passes": {
+    "file": "tab_passes.png",
+    "source": "fluent-3d",
+    "sourceName": "Ticket",
+    "sourcePath": "assets/Ticket/3D/ticket_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "tab_upgrades": {
+    "file": "tab_upgrades.png",
+    "source": "fluent-3d",
+    "sourceName": "Chart increasing",
+    "sourcePath": "assets/Chart increasing/3D/chart_increasing_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "target": {
+    "file": "target.png",
+    "source": "fluent-3d",
+    "sourceName": "Bullseye",
+    "sourcePath": "assets/Bullseye/3D/bullseye_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "thief": {
+    "file": "thief.png",
+    "source": "fluent-3d",
+    "sourceName": "Ninja",
+    "sourcePath": "assets/Ninja/Default/3D/ninja_3d_default.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "timer": {
+    "file": "timer.png",
+    "source": "fluent-3d",
+    "sourceName": "Stopwatch",
+    "sourcePath": "assets/Stopwatch/3D/stopwatch_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "tornado": {
+    "file": "tornado.png",
+    "source": "fluent-3d",
+    "sourceName": "Tornado",
+    "sourcePath": "assets/Tornado/3D/tornado_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "trophy": {
+    "file": "trophy.png",
+    "source": "fluent-3d",
+    "sourceName": "Trophy",
+    "sourcePath": "assets/Trophy/3D/trophy_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "upgrades": {
+    "file": "upgrades.png",
+    "source": "fluent-3d",
+    "sourceName": "Wrench",
+    "sourcePath": "assets/Wrench/3D/wrench_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "volcano": {
+    "file": "volcano.png",
+    "source": "fluent-3d",
+    "sourceName": "Volcano",
+    "sourcePath": "assets/Volcano/3D/volcano_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "warning": {
+    "file": "warning.png",
+    "source": "fluent-3d",
+    "sourceName": "Warning",
+    "sourcePath": "assets/Warning/3D/warning_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  }
+}

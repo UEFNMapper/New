@@ -8,17 +8,27 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Theme = require(Shared.Config.Theme)
+local Vfx = require(Shared.Config.Vfx)
 
 local Effects = {}
 
+-- Textures : pack assets/vfx une fois uploadé (Config/Vfx), sinon textures intégrées.
 local TEX = {
-	Sparkle = "rbxasset://textures/particles/sparkles_main.dds",
-	Fire = "rbxasset://textures/particles/fire_main.dds",
-	Smoke = "rbxasset://textures/particles/smoke_main.dds",
-	Spark = "rbxasset://textures/particles/fire_sparks_main.dds",
-	Glow = "rbxasset://textures/particles/forcefield_glow_main.dds",
-	Shock = "rbxasset://textures/particles/explosion01_shockwave_main.dds",
-	Core = "rbxasset://textures/particles/explosion01_core_main.dds",
+	Sparkle = Vfx.Texture("sparkle"),
+	Fire = Vfx.Texture("fire"),
+	Smoke = Vfx.Texture("smoke"),
+	Spark = Vfx.Texture("spark"),
+	Glow = Vfx.Texture("glow_soft"),
+	Shock = Vfx.Texture("shockwave"),
+	Core = Vfx.Texture("flare"),
+	Star = Vfx.Texture("star5"),
+	Magic = Vfx.Texture("magic"),
+	Ring = Vfx.Texture("ring"),
+	Lightning = Vfx.Texture("lightning"),
+	Radioactive = Vfx.Texture("radioactive"),
+	Drip = Vfx.Texture("drip"),
+	Confetti = Vfx.Texture("confetti"),
+	Trail = Vfx.Texture("meteor_trail"),
 }
 Effects.Textures = TEX
 

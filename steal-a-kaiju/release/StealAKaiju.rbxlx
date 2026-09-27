@@ -606,6 +606,169 @@ return Growth
         </Item>
         <Item class="ModuleScript" referent="10">
           <Properties>
+            <string name="Name">Icons</string>
+            <string name="Source"><![CDATA[--!strict
+-- Icônes de l'interface (pack assets/icons/*.png : Fluent Emoji 3D + game-icons.net).
+--
+-- Pour chaque clé :
+--   Id    : identifiant Roblox de l'IMAGE une fois uploadée (0 = pas encore uploadée).
+--           Colle ici l'identifiant après upload (Bulk Import) ou lance tools/upload_assets.py,
+--           qui remplit ce champ automatiquement.
+--   Emoji : texte de secours affiché tant que Id == 0 (le jeu reste jouable sans upload).
+--
+-- Utilisation côté client :
+--   local img = Icons.Image("shop")   -- "rbxassetid://123456" ou nil si pas uploadée
+--   local txt = Icons.Emoji("shop")   -- "🛒"
+--
+-- Les clés sont triées par ordre alphabétique ; garde ce format d'une ligne par clé
+-- (`cle = { Id = 0, Emoji = "…" },`) : tools/upload_assets.py s'appuie dessus.
+
+export type IconDef = {
+	Id: number,
+	Emoji: string,
+}
+
+local Defs: { [string]: IconDef } = {
+	alarm = { Id = 0, Emoji = "🚨" },
+	arrow_down = { Id = 0, Emoji = "⬇️" },
+	arrow_right = { Id = 0, Emoji = "➡️" },
+	aurora = { Id = 0, Emoji = "🌌" },
+	blood_moon = { Id = 0, Emoji = "🔴" },
+	bonk = { Id = 0, Emoji = "🔨" },
+	boss = { Id = 0, Emoji = "👹" },
+	bridge = { Id = 0, Emoji = "🌉" },
+	cash = { Id = 0, Emoji = "💸" },
+	chat = { Id = 0, Emoji = "💬" },
+	check = { Id = 0, Emoji = "✅" },
+	code = { Id = 0, Emoji = "⌨️" },
+	collect = { Id = 0, Emoji = "💰" },
+	cross = { Id = 0, Emoji = "❌" },
+	crown = { Id = 0, Emoji = "👑" },
+	daily = { Id = 0, Emoji = "📅" },
+	diamond = { Id = 0, Emoji = "💎" },
+	dragon = { Id = 0, Emoji = "🐉" },
+	egg = { Id = 0, Emoji = "🥚" },
+	egg_celestial = { Id = 0, Emoji = "🥚" },
+	egg_common = { Id = 0, Emoji = "🥚" },
+	egg_epic = { Id = 0, Emoji = "🥚" },
+	egg_legendary = { Id = 0, Emoji = "🥚" },
+	egg_mythic = { Id = 0, Emoji = "🥚" },
+	egg_rare = { Id = 0, Emoji = "🥚" },
+	egg_secret = { Id = 0, Emoji = "🥚" },
+	evolve = { Id = 0, Emoji = "🧬" },
+	exit = { Id = 0, Emoji = "🚪" },
+	eyes = { Id = 0, Emoji = "👀" },
+	fire = { Id = 0, Emoji = "🔥" },
+	food_feast = { Id = 0, Emoji = "🍗" },
+	food_snack = { Id = 0, Emoji = "🍖" },
+	food_steak = { Id = 0, Emoji = "🥩" },
+	friends = { Id = 0, Emoji = "👥" },
+	fusion = { Id = 0, Emoji = "⚗️" },
+	fx = { Id = 0, Emoji = "🎇" },
+	galaxy = { Id = 0, Emoji = "🌌" },
+	gem = { Id = 0, Emoji = "💎" },
+	ghost = { Id = 0, Emoji = "👻" },
+	gifts = { Id = 0, Emoji = "🎁" },
+	gold = { Id = 0, Emoji = "🪙" },
+	group = { Id = 0, Emoji = "🫂" },
+	growth = { Id = 0, Emoji = "🌱" },
+	heart = { Id = 0, Emoji = "❤️" },
+	home = { Id = 0, Emoji = "🏠" },
+	hourglass = { Id = 0, Emoji = "⏳" },
+	howtoplay = { Id = 0, Emoji = "❓" },
+	island = { Id = 0, Emoji = "🏝️" },
+	kaiju = { Id = 0, Emoji = "🦖" },
+	kaijudex = { Id = 0, Emoji = "📖" },
+	lightning = { Id = 0, Emoji = "⚡" },
+	lock = { Id = 0, Emoji = "🔒" },
+	luck = { Id = 0, Emoji = "🍀" },
+	map = { Id = 0, Emoji = "🗺️" },
+	medal_1 = { Id = 0, Emoji = "🥇" },
+	medal_2 = { Id = 0, Emoji = "🥈" },
+	medal_3 = { Id = 0, Emoji = "🥉" },
+	meteor = { Id = 0, Emoji = "☄️" },
+	moon = { Id = 0, Emoji = "🌕" },
+	muscle = { Id = 0, Emoji = "💪" },
+	music = { Id = 0, Emoji = "🎵" },
+	nest = { Id = 0, Emoji = "🪺" },
+	package = { Id = 0, Emoji = "📦" },
+	pause = { Id = 0, Emoji = "⏸️" },
+	play = { Id = 0, Emoji = "▶️" },
+	potion_cash = { Id = 0, Emoji = "💰" },
+	potion_growth = { Id = 0, Emoji = "🌱" },
+	potion_luck = { Id = 0, Emoji = "🍀" },
+	premium = { Id = 0, Emoji = "👑" },
+	quests = { Id = 0, Emoji = "📜" },
+	radioactive = { Id = 0, Emoji = "☢️" },
+	rainbow = { Id = 0, Emoji = "🌈" },
+	reactor = { Id = 0, Emoji = "⚛️" },
+	rebirth = { Id = 0, Emoji = "🧬" },
+	robux = { Id = 0, Emoji = "🪙" },
+	settings = { Id = 0, Emoji = "⚙️" },
+	shadow = { Id = 0, Emoji = "🌑" },
+	shield = { Id = 0, Emoji = "🛡️" },
+	shop = { Id = 0, Emoji = "🛒" },
+	skull = { Id = 0, Emoji = "💀" },
+	snowflake = { Id = 0, Emoji = "❄️" },
+	sound_off = { Id = 0, Emoji = "🔇" },
+	sound_on = { Id = 0, Emoji = "🔊" },
+	sparkles = { Id = 0, Emoji = "✨" },
+	speed = { Id = 0, Emoji = "👟" },
+	spin = { Id = 0, Emoji = "🎡" },
+	spins = { Id = 0, Emoji = "🎡" },
+	stampede = { Id = 0, Emoji = "🦬" },
+	star = { Id = 0, Emoji = "⭐" },
+	sun = { Id = 0, Emoji = "🌅" },
+	tab_boosts = { Id = 0, Emoji = "🚀" },
+	tab_cash = { Id = 0, Emoji = "💵" },
+	tab_gems = { Id = 0, Emoji = "💎" },
+	tab_passes = { Id = 0, Emoji = "🎫" },
+	tab_upgrades = { Id = 0, Emoji = "📈" },
+	target = { Id = 0, Emoji = "🎯" },
+	thief = { Id = 0, Emoji = "🥷" },
+	timer = { Id = 0, Emoji = "⏱️" },
+	tornado = { Id = 0, Emoji = "🌪️" },
+	trophy = { Id = 0, Emoji = "🏆" },
+	upgrades = { Id = 0, Emoji = "🔧" },
+	volcano = { Id = 0, Emoji = "🌋" },
+	warning = { Id = 0, Emoji = "⚠️" },
+}
+
+local Icons = {}
+
+--- Toutes les définitions (lecture seule).
+Icons.Defs = Defs
+
+--- Retourne "rbxassetid://<Id>" pour la clé, ou nil si l'icône n'est pas encore uploadée
+--- (Id == 0) ou si la clé est inconnue.
+function Icons.Image(key: string): string?
+	local def = Defs[key]
+	if def == nil or def.Id == 0 then
+		return nil
+	end
+	return "rbxassetid://" .. def.Id
+end
+
+--- Retourne l'emoji de secours pour la clé ("❔" si la clé est inconnue).
+function Icons.Emoji(key: string): string
+	local def = Defs[key]
+	if def == nil then
+		return "❔"
+	end
+	return def.Emoji
+end
+
+--- Vrai si la clé existe dans le pack.
+function Icons.Has(key: string): boolean
+	return Defs[key] ~= nil
+end
+
+return Icons
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="11">
+          <Properties>
             <string name="Name">Kaijus</string>
             <string name="Source"><![CDATA[--!strict
 -- Roster des kaijus. Chaque espèce est décrite par des données : le KaijuBuilder
@@ -769,7 +932,7 @@ return Kaijus
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="11">
+        <Item class="ModuleScript" referent="12">
           <Properties>
             <string name="Name">Layout</string>
             <string name="Source"><![CDATA[--!strict
@@ -834,7 +997,172 @@ return Layout
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="12">
+        <Item class="ModuleScript" referent="13">
+          <Properties>
+            <string name="Name">Models</string>
+            <string name="Source"><![CDATA[--!strict
+-- Vrais modèles 3D des kaijus (pack assets/models/<Espèce>/, packs CC0 de Quaternius ;
+-- voir assets/models/MANIFEST.json et LICENSES.md, aperçu : assets/models/contact_sheet.png).
+--
+-- Tant que MeshId == 0, le jeu construit le modèle procédural (KaijuBuilder). Dès qu'un
+-- MeshId est renseigné, le client peut afficher le mesh importé à la place.
+--
+-- Champs :
+--   MeshId     : identifiant du mesh uploadé (0 = pas encore importé).
+--   TextureId  : identifiant de la texture (0 = pas de texture : couleurs plates du mesh).
+--   Scale      : facteur pour que le kaiju fasse ~4,5 studs de haut au stade 1 (Baby),
+--                calculé pour un import à l'échelle « 1 unité du fichier = 1 stud ».
+--                Les stades suivants multiplient par Growth.Stages[i].Scale.
+--   Offset     : décalage (studs, déjà multiplié par Scale) qui ramène le centre du mesh
+--                au sol / au centre, si le fichier n'est pas déjà posé en (0,0,0).
+--   Animations : identifiants des animations publiées (0 = pas encore publiée).
+--   Source     : pack d'origine.  Quality : "good" | "ok" | "fallback" (voir MANIFEST.json ;
+--                pour "fallback" mieux vaut garder le modèle procédural).
+--
+-- IMPORT DANS STUDIO (par espèce) --------------------------------------------------------
+-- 1. Onglet Avatar → « 3D Importer » (ou Fichier → Import 3D…). Choisis le .fbx (ou le
+--    .gltf/.glb) du dossier assets/models/<Espèce>/ ; la texture .png doit être dans le
+--    même dossier (elle y est déjà).
+-- 2. Dans le panneau d'import : « Scale Unit » = Studs (1 unité = 1 stud, sinon adapte
+--    Scale), coche « Upload to Roblox » (indispensable pour obtenir un MeshId) et, pour les
+--    modèles animés, garde « Import Animations » / « Rig type : Custom ». Valide.
+-- 3. Un Model est inséré dans Workspace. Sélectionne son MeshPart (ou le premier s'il y en
+--    a plusieurs) → Propriétés → « MeshId » = rbxassetid://NNNN : copie NNNN dans MeshId.
+--    « TextureID » (ou SurfaceAppearance.ColorMap si un SurfaceAppearance a été créé)
+--    donne TextureId. Sans texture (matériaux à couleurs plates), laisse 0 et vérifie
+--    que les couleurs de sommets ont été importées (sinon MeshPart.Color = Primary).
+-- 4. Animations : le rig importé contient un dossier « AnimSaves » (KeyframeSequences).
+--    Ouvre Avatar → Animation Editor, sélectionne le rig, menu « … » → Load → choisis le
+--    clip (ex. Idle, Walk — noms listés dans MANIFEST.json), puis « … » → « Publish to
+--    Roblox » ; copie l'identifiant obtenu dans Animations.Idle / Animations.Walk.
+--    (Alternative : « … » → Import → From FBX Animation, avec le même .fbx.)
+-- 5. Supprime le Model de test du Workspace : le client instancie le mesh lui-même.
+-- Les modèles « prop » (toast, croissant, donut, pizza, sushi, corn dog) n'ont ni rig ni
+-- animation : laisse Animations à 0 ; le client garde ses animations procédurales.
+
+export type ModelDef = {
+	MeshId: number,
+	TextureId: number,
+	Scale: number,
+	Offset: Vector3?,
+	Animations: { Idle: number, Walk: number },
+	Source: string,
+	Quality: string,
+}
+
+local Defs: { [string]: ModelDef } = {
+	-- Quaternius Ultimate Food / Bread_Slice (Bread_Slice.fbx, 0.847 unités de haut)
+	Toastzilla = { MeshId = 0, TextureId = 0, Scale = 5.3127, Offset = Vector3.new(0.005, 2.609, 0), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Ultimate Food", Quality = "ok" },
+	-- Quaternius Ultimate Monsters / Blob/GreenBlob (GreenBlob.fbx, 1.853 unités de haut)
+	Gloop = { MeshId = 0, TextureId = 0, Scale = 2.428, Offset = Vector3.new(-0.185, 0.029, -0.095), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Ultimate Monsters", Quality = "good" },
+	-- Quaternius Cute Monsters / Crab (Crab.fbx, 1.567 unités de haut)
+	Pinchy = { MeshId = 0, TextureId = 0, Scale = 2.8721, Offset = Vector3.new(0, 0.083, -0.063), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Cute Monsters", Quality = "good" },
+	-- Quaternius Ultimate Monsters / Big/Dino (Dino.fbx, 3.226 unités de haut)
+	DinoNugget = { MeshId = 0, TextureId = 0, Scale = 1.3949, Offset = Vector3.new(0, 0.004, -0.117), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Ultimate Monsters", Quality = "ok" },
+	-- Quaternius Cute Fish / Worm (Worm.fbx, 0.484 unités de haut)
+	Wormzy = { MeshId = 0, TextureId = 0, Scale = 9.2914, Offset = Vector3.new(-0.186, -0.019, 0.158), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Cute Fish", Quality = "good" },
+	-- Quaternius Ultimate Monsters / Flying/Pigeon (Pigeon.fbx, 1.37 unités de haut)
+	Pigeonator = { MeshId = 0, TextureId = 0, Scale = 3.2852, Offset = Vector3.new(0, -5.148, 0.545), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Ultimate Monsters", Quality = "good" },
+	-- Quaternius Cute Fish / Shark (Shark.fbx, 3.79 unités de haut)
+	Sharkapillar = { MeshId = 0, TextureId = 0, Scale = 1.1874, Offset = Vector3.new(-0.007, 1.55, 0.464), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Cute Fish", Quality = "ok" },
+	-- Quaternius Ultimate Food / Croissant (Croissant.fbx, 0.55 unités de haut)
+	Croissantosaurus = { MeshId = 0, TextureId = 0, Scale = 8.185, Offset = Vector3.new(0, 2.251, -0.737), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Ultimate Food", Quality = "ok" },
+	-- Quaternius Ultimate Monsters / Big/Yeti (Yeti.fbx, 2.828 unités de haut)
+	Frostodon = { MeshId = 0, TextureId = 0, Scale = 1.5912, Offset = Vector3.new(0, 0.018, -0.145), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Ultimate Monsters", Quality = "ok" },
+	-- Quaternius Ultimate Monsters / Flying/Squidle (Squidle.fbx, 1.987 unités de haut)
+	ThunderSquid = { MeshId = 0, TextureId = 0, Scale = 2.2652, Offset = Vector3.new(0, -2.252, 0.836), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Ultimate Monsters", Quality = "good" },
+	-- Quaternius Ultimate Food / Corndog (Corndog.fbx, 1.352 unités de haut)
+	Kebabzilla = { MeshId = 0, TextureId = 0, Scale = 3.3288, Offset = nil, Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Ultimate Food", Quality = "fallback" },
+	-- Quaternius Animated Robot / Robot (Robot.fbx, 4.497 unités de haut)
+	BeepBoop = { MeshId = 0, TextureId = 0, Scale = 1.0007, Offset = nil, Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Animated Robot", Quality = "good" },
+	-- Quaternius Sushi Restaurant Kit / Food/Food_SalmonNigiri (Food_SalmonNigiri.gltf, 0.314 unités de haut)
+	SushiRex = { MeshId = 0, TextureId = 0, Scale = 14.3276, Offset = nil, Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Sushi Restaurant Kit", Quality = "fallback" },
+	-- Quaternius Animated Mechs / Textured/George (George.fbx, 6.528 unités de haut)
+	Robotank = { MeshId = 0, TextureId = 0, Scale = 0.6894, Offset = Vector3.new(0, 0.013, -0.293), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Animated Mechs", Quality = "good" },
+	-- Quaternius Animated Dinosaurs / Stegosaurus (Stegosaurus.fbx, 10.616 unités de haut)
+	Magmadillo = { MeshId = 0, TextureId = 0, Scale = 0.4239, Offset = Vector3.new(0, 0.045, 1.632), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Animated Dinosaurs", Quality = "ok" },
+	-- Quaternius Animated Dinosaurs / Parasaurolophus (Parasaurolophus.fbx, 5.979 unités de haut)
+	Bananadon = { MeshId = 0, TextureId = 0, Scale = 0.7526, Offset = Vector3.new(0, 0.007, 1.163), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Animated Dinosaurs", Quality = "ok" },
+	-- Quaternius Cute Monsters / Crab (Crab.fbx, 1.567 unités de haut)
+	Crabzooka = { MeshId = 0, TextureId = 0, Scale = 2.8721, Offset = Vector3.new(0, 0.083, -0.063), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Cute Monsters", Quality = "ok" },
+	-- Quaternius Ultimate Food / Pizza (Pizza.fbx, 0.161 unités de haut)
+	Pizzapocalypse = { MeshId = 0, TextureId = 0, Scale = 27.9618, Offset = Vector3.new(-0.112, 0.391, 0.419), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Ultimate Food", Quality = "ok" },
+	-- Quaternius Animated Dinosaurs / Trex (Trex.fbx, 15.225 unités de haut)
+	Rexplosion = { MeshId = 0, TextureId = 0, Scale = 0.2956, Offset = Vector3.new(0, 0.001, 0.321), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Animated Dinosaurs", Quality = "good" },
+	-- Quaternius Cute Monsters / Cthulhu (Cthulhu.fbx, 1.565 unités de haut)
+	KawaiiKraken = { MeshId = 0, TextureId = 0, Scale = 2.8758, Offset = Vector3.new(0, 0.164, -0.167), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Cute Monsters", Quality = "ok" },
+	-- Quaternius Ultimate Monsters / Blob/Chicken (Chicken.fbx, 2.347 unités de haut)
+	ThunderGoose = { MeshId = 0, TextureId = 0, Scale = 1.9172, Offset = Vector3.new(0, 0.012, -0.477), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Ultimate Monsters", Quality = "ok" },
+	-- Quaternius Ultimate Food / Donut1 (Donut1.fbx, 0.291 unités de haut)
+	Donutron = { MeshId = 0, TextureId = 0, Scale = 15.4436, Offset = Vector3.new(-0.015, 1.961, -0.139), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Ultimate Food", Quality = "ok" },
+	-- Quaternius Animated Monsters / Dragon (Dragon.fbx, 3.852 unités de haut)
+	Drakonda = { MeshId = 0, TextureId = 0, Scale = 1.1681, Offset = Vector3.new(0, -0.152, 0.051), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Animated Monsters", Quality = "good" },
+	-- Quaternius Ultimate Animated Animals / Bull (Bull.fbx, 4.587 unités de haut)
+	Kaijumbo = { MeshId = 0, TextureId = 0, Scale = 0.9811, Offset = Vector3.new(0, 0.055, -1.034), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Ultimate Animated Animals", Quality = "ok" },
+	-- Quaternius Animated Dinosaurs / Velociraptor (Velociraptor.fbx, 5.514 unités de haut)
+	Nebulodon = { MeshId = 0, TextureId = 0, Scale = 0.8161, Offset = Vector3.new(0, 0.043, 1.203), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Animated Dinosaurs", Quality = "ok" },
+	-- Quaternius Ultimate Monsters / Blob/Fish (Fish.fbx, 2.731 unités de haut)
+	Hydroblob = { MeshId = 0, TextureId = 0, Scale = 1.6477, Offset = Vector3.new(0, -0.028, 0.091), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Ultimate Monsters", Quality = "good" },
+	-- Quaternius Cute Monsters / Crab (Crab.fbx, 1.567 unités de haut)
+	Crabageddon = { MeshId = 0, TextureId = 0, Scale = 2.8721, Offset = Vector3.new(0, 0.083, -0.063), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Cute Monsters", Quality = "ok" },
+	-- Quaternius Animated Dinosaurs / Trex (Trex.fbx, 15.225 unités de haut)
+	SolarisRex = { MeshId = 0, TextureId = 0, Scale = 0.2956, Offset = Vector3.new(0, 0.001, 0.321), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Animated Dinosaurs", Quality = "ok" },
+	-- Quaternius Ultimate Monsters / Flying/Hywirl (Hywirl.fbx, 2.745 unités de haut)
+	LunarSquid = { MeshId = 0, TextureId = 0, Scale = 1.6394, Offset = Vector3.new(0, -0.044, 0.134), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Ultimate Monsters", Quality = "ok" },
+	-- Quaternius Ultimate Monsters / Big/Birb (Birb.fbx, 3.328 unités de haut)
+	CosmoGoose = { MeshId = 0, TextureId = 0, Scale = 1.3522, Offset = Vector3.new(0, 0.004, -0.238), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Ultimate Monsters", Quality = "ok" },
+	-- Quaternius Cute Fish / GoblinShark (GoblinShark.fbx, 2.761 unités de haut)
+	SharktoastSupreme = { MeshId = 0, TextureId = 0, Scale = 1.6298, Offset = Vector3.new(0, 1.82, 0.109), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Cute Fish", Quality = "fallback" },
+	-- Quaternius Ultimate Monsters / Flying/Squidle (Squidle.fbx, 1.987 unités de haut)
+	CroissantKraken = { MeshId = 0, TextureId = 0, Scale = 2.2652, Offset = Vector3.new(0, -2.252, 0.836), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Ultimate Monsters", Quality = "ok" },
+	-- Quaternius Ultimate Monsters / Blob/Pigeon (Pigeon.fbx, 1.802 unités de haut)
+	NuclearPigeon = { MeshId = 0, TextureId = 0, Scale = 2.4968, Offset = Vector3.new(0, -0.01, -0.509), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Ultimate Monsters", Quality = "good" },
+	-- Quaternius Animated Mechs / Textured/Leela (Leela.fbx, 5.276 unités de haut)
+	OmegaSushiMech = { MeshId = 0, TextureId = 0, Scale = 0.853, Offset = Vector3.new(0, 0.016, -0.253), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Animated Mechs", Quality = "good" },
+	-- Quaternius Ultimate Monsters / Blob/PinkBlob (PinkBlob.fbx, 2.009 unités de haut)
+	InfiniteBlob = { MeshId = 0, TextureId = 0, Scale = 2.2403, Offset = Vector3.new(0, 0.173, 0.175), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Ultimate Monsters", Quality = "good" },
+	-- Quaternius Ultimate Monsters / Big/Demon (Demon.fbx, 3.12 unités de haut)
+	KingKaiju = { MeshId = 0, TextureId = 0, Scale = 1.4421, Offset = Vector3.new(0, 0.022, 0.245), Animations = { Idle = 0, Walk = 0 }, Source = "Quaternius Ultimate Monsters", Quality = "ok" },
+}
+
+local Models = {}
+
+--- Toutes les définitions (lecture seule), indexées par identifiant d'espèce.
+Models.Defs = Defs
+
+--- Définition pour une espèce, ou nil si aucun modèle n'est prévu.
+function Models.Get(speciesId: string): ModelDef?
+	return Defs[speciesId]
+end
+
+--- true si un mesh a été importé pour l'espèce (MeshId renseigné) : le client peut alors
+--- afficher le vrai modèle au lieu du modèle procédural.
+function Models.HasMesh(speciesId: string): boolean
+	local def = Defs[speciesId]
+	return def ~= nil and def.MeshId ~= 0
+end
+
+--- Identifiant d'animation publié pour l'espèce ("Idle" | "Walk"), ou nil.
+function Models.AnimationId(speciesId: string, name: string): string?
+	local def = Defs[speciesId]
+	if def == nil then
+		return nil
+	end
+	local id = def.Animations.Idle
+	if name == "Walk" then
+		id = def.Animations.Walk
+	end
+	if id == 0 then
+		return nil
+	end
+	return "rbxassetid://" .. id
+end
+
+return Models
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="14">
           <Properties>
             <string name="Name">Monetization</string>
             <string name="Source"><![CDATA[--!strict
@@ -927,7 +1255,7 @@ return Monetization
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="13">
+        <Item class="ModuleScript" referent="15">
           <Properties>
             <string name="Name">Mutations</string>
             <string name="Source"><![CDATA[--!strict
@@ -986,7 +1314,7 @@ return Mutations
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="14">
+        <Item class="ModuleScript" referent="16">
           <Properties>
             <string name="Name">Rarities</string>
             <string name="Source"><![CDATA[--!strict
@@ -1117,7 +1445,7 @@ return Rarities
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="15">
+        <Item class="ModuleScript" referent="17">
           <Properties>
             <string name="Name">Rewards</string>
             <string name="Source"><![CDATA[--!strict
@@ -1209,14 +1537,15 @@ return Rewards
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="16">
+        <Item class="ModuleScript" referent="18">
           <Properties>
             <string name="Name">Sounds</string>
             <string name="Source"><![CDATA[--!strict
 -- Sons du jeu.
 --   Default  : son public de la bibliothèque Roblox (fonctionne tout de suite).
 --   Uploaded : identifiant de la version ORIGINALE du pack assets/audio/ une fois
---              uploadée dans ton compte (prioritaire si ≠ 0).
+--              uploadée dans ton compte (prioritaire si ≠ 0). Renseigné via la table
+--              `Uploaded` ci-dessous (clé = nom du fichier .ogg sans extension).
 -- Volume/PlaybackSpeed : réglages de base ; le client ajoute une légère
 -- variation de hauteur pour éviter la répétition.
 
@@ -1227,6 +1556,14 @@ export type SoundDef = {
 	Speed: number?,
 	Looped: boolean?,
 }
+
+-- Identifiants des sons ORIGINAUX (assets/audio/*.ogg) une fois uploadés dans ton compte.
+-- Colle ici l'identifiant après upload (Bulk Import) ou lance tools/upload_assets.py,
+-- qui remplit cette table automatiquement. Une clé absente vaut 0 (son public utilisé).
+-- BEGIN UPLOADED (généré par tools/upload_assets.py, ne pas déplacer les marqueurs)
+local Uploaded: { [string]: number } = {
+}
+-- END UPLOADED
 
 local function D(id: number | string, volume: number, speed: number?, looped: boolean?): SoundDef
 	local default = if typeof(id) == "number" then "rbxassetid://" .. id else id
@@ -1289,11 +1626,16 @@ local Sounds: { [string]: SoundDef } = {
 	music_lobby_calm = D(9043887091, 0.3, 1, true),
 }
 
+-- Fusionne les identifiants uploadés dans chaque SoundDef.
+for key, def in pairs(Sounds) do
+	def.Uploaded = Uploaded[key] or 0
+end
+
 return Sounds
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="17">
+        <Item class="ModuleScript" referent="19">
           <Properties>
             <string name="Name">Theme</string>
             <string name="Source"><![CDATA[--!strict
@@ -1355,8 +1697,220 @@ return Theme
 ]]></string>
           </Properties>
         </Item>
+        <Item class="ModuleScript" referent="20">
+          <Properties>
+            <string name="Name">Tutorial</string>
+            <string name="Source"><![CDATA[--!strict
+-- Missions d'introduction (validées par le serveur). Chaque mission montre une
+-- carte d'objectif, guide le joueur vers une cible, et donne une récompense.
+--
+-- Target : Kaiju (ton premier kaiju) | Collector | Meteor | LockButton | Thief | OtherPlot
+
+export type Mission = {
+	Step: number,
+	Title: string,
+	Text: string,
+	Icon: string, -- clé d'icône (Config/Icons) ou emoji
+	Target: string?,
+	Reward: { Cash: number?, Gems: number? },
+	UnlockMenus: { string }?, -- boutons du HUD débloqués à la fin de la mission
+}
+
+local Tutorial = {}
+
+Tutorial.Missions = {
+	{
+		Step = 1,
+		Title = "YOUR FIRST KAIJU",
+		Text = "An egg landed on your island. Watch it hatch!",
+		Icon = "egg",
+		Target = "Kaiju",
+		Reward = { Cash = 50 },
+	},
+	{
+		Step = 2,
+		Title = "COLLECT YOUR CASH",
+		Text = "Your kaiju earns cash every second. Walk onto the green pad of the Cash Reactor to collect it.",
+		Icon = "collect",
+		Target = "Collector",
+		Reward = { Cash = 100 },
+	},
+	{
+		Step = 3,
+		Title = "GRAB A METEOR EGG",
+		Text = "Meteors drop eggs in the crater in the middle of the map. Follow the arrows and grab one — your first is FREE!",
+		Icon = "meteor",
+		Target = "Meteor",
+		Reward = { Gems = 10 },
+		UnlockMenus = { "Shop", "Upgrades" },
+	},
+	{
+		Step = 4,
+		Title = "LOCK YOUR BASE",
+		Text = "Other players can steal your kaijus! Press the red LOCK button (or the L key) to raise a shield.",
+		Icon = "shield",
+		Target = "LockButton",
+		Reward = { Cash = 150 },
+	},
+	{
+		Step = 5,
+		Title = "BONK THE THIEF!",
+		Text = "A training thief is coming for your kaiju! Equip your Bonker (hotbar slot 1) and hit him to make him drop it.",
+		Icon = "bonk",
+		Target = "Thief",
+		Reward = { Gems = 15 },
+		UnlockMenus = { "Index", "Quests", "Playtime", "Daily", "Spin", "Rebirth", "Fusion" },
+	},
+	{
+		Step = 6,
+		Title = "STEAL A KAIJU",
+		Text = "Now it's your turn! Go to another island, hold E on a kaiju and run it back home. Big ones need 2 thieves.",
+		Icon = "thief",
+		Target = "OtherPlot",
+		Reward = { Gems = 25 },
+	},
+} :: { Mission }
+
+Tutorial.Done = #Tutorial.Missions + 1
+
+-- Boutons du HUD toujours visibles (les autres se débloquent mission après mission)
+Tutorial.AlwaysVisible = { "Settings", "HowToPlay" }
+
+function Tutorial.Get(step: number): Mission?
+	return Tutorial.Missions[step]
+end
+
+-- Boutons visibles pour une étape donnée.
+function Tutorial.VisibleMenus(step: number): { [string]: boolean }
+	local visible: { [string]: boolean } = {}
+	for _, id in Tutorial.AlwaysVisible do
+		visible[id] = true
+	end
+	for _, m in Tutorial.Missions do
+		if m.Step < step and m.UnlockMenus then
+			for _, id in m.UnlockMenus do
+				visible[id] = true
+			end
+		end
+	end
+	if step >= Tutorial.Done then
+		for _, id in { "Shop", "Upgrades", "Index", "Quests", "Playtime", "Daily", "Spin", "Rebirth", "Fusion" } do
+			visible[id] = true
+		end
+	end
+	return visible
+end
+
+-- Voleur d'entraînement
+Tutorial.Thief = {
+	WalkSpeed = 9, -- vers le kaiju
+	FleeSpeed = 6, -- en repartant avec le kaiju (plus lent : facile à rattraper)
+	BonkRange = 12,
+	Timeout = 90, -- s : au-delà, le voleur abandonne (le kaiju n'est jamais perdu)
+}
+
+-- Pages de l'écran « How to play »
+Tutorial.HowToPlay = {
+	{ Icon = "egg", Title = "HATCH & GROW", Text = "Meteor eggs hatch into kaijus. They grow through 5 stages — Baby, Teen, Adult, Titan, Colossus — and earn more cash at every stage. Feed them to grow faster." },
+	{ Icon = "collect", Title = "COLLECT CASH", Text = "Cash piles up in your Cash Reactor. Walk on the green pad to collect it. Buy more nests, upgrades and eggs with it." },
+	{ Icon = "meteor", Title = "METEORS", Text = "Eggs fall in the central crater every few seconds. Rarer eggs have brighter trails — Legendary meteors glow gold. A personal meteor also lands on your island now and then." },
+	{ Icon = "thief", Title = "STEAL", Text = "Walk into another island and hold E on a kaiju to grab it. Run it back to your island before its owner bonks you. Titans and Colossi need TWO thieves." },
+	{ Icon = "shield", Title = "DEFEND", Text = "Lock your base to raise a shield. Hit thieves with your Bonker to make them drop your kaiju. New players are protected for a while." },
+	{ Icon = "fusion", Title = "FUSE & EVOLVE", Text = "Fuse two Adult kaijus in the Fusion Lab to discover SECRET kaijus. Evolve (rebirth) to reset with a permanent cash multiplier." },
+}
+
+return Tutorial
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="21">
+          <Properties>
+            <string name="Name">Vfx</string>
+            <string name="Source"><![CDATA[--!strict
+-- Textures des effets visuels (particules) : pack assets/vfx/*.png (CC0, Kenney Particle
+-- Pack + Kenney Smoke Particles + quelques sprites générés par tools/models/curate_vfx.py).
+--
+-- Pour chaque clé :
+--   Id      : identifiant Roblox de l'IMAGE une fois uploadée (0 = pas encore uploadée).
+--             Asset Manager → Bulk Import des PNG de assets/vfx/, puis colle l'identifiant
+--             (ou lance tools/upload_assets.py qui remplit ce champ).
+--   Default : texture INTÉGRÉE au client Roblox (rbxasset://) utilisée tant que Id == 0.
+--             Le jeu reste donc jouable sans aucun upload.
+--
+-- Utilisation :
+--   emitter.Texture = Vfx.Texture("spark")   -- "rbxassetid://123" ou la texture intégrée
+--
+-- Les sprites du pack sont blancs sur fond transparent : la couleur vient de
+-- ParticleEmitter.Color / Beam.Color. Exception : `confetti` est déjà coloré (garde Color blanc).
+-- Garde ce format d'une ligne par clé (`cle = { Id = 0, Default = "…" },`) pour l'outil d'upload.
+
+export type VfxDef = {
+	Id: number,
+	Default: string,
+}
+
+local P = "rbxasset://textures/particles/"
+local T = "rbxasset://textures/"
+
+local Defs: { [string]: VfxDef } = {
+	bolt = { Id = 0, Default = P .. "fire_sparks_main.dds" },
+	bubble = { Id = 0, Default = T .. "smallWhiteCircle.png" },
+	circle = { Id = 0, Default = T .. "whiteCircle.png" },
+	cloud = { Id = 0, Default = P .. "explosion01_smoke_main.dds" },
+	confetti = { Id = 0, Default = P .. "SquareParticle.png" },
+	drip = { Id = 0, Default = T .. "smallWhiteCircle.png" },
+	dust = { Id = 0, Default = P .. "smoke_main.dds" },
+	fire = { Id = 0, Default = P .. "fire_main.dds" },
+	flare = { Id = 0, Default = T .. "sparkle.png" },
+	glow_hard = { Id = 0, Default = T .. "whiteCircle.png" },
+	glow_soft = { Id = 0, Default = T .. "glow.png" },
+	heart = { Id = 0, Default = T .. "whiteCircle.png" },
+	leaf = { Id = 0, Default = P .. "SquareParticle.png" },
+	lightning = { Id = 0, Default = P .. "fire_sparks_main.dds" },
+	magic = { Id = 0, Default = P .. "sparkles_main.dds" },
+	meteor_trail = { Id = 0, Default = P .. "fire_main.dds" },
+	muzzle = { Id = 0, Default = P .. "explosion01_core_main.dds" },
+	radioactive = { Id = 0, Default = P .. "forcefield_glow_main.dds" },
+	ring = { Id = 0, Default = P .. "explosion01_shockwave_main.dds" },
+	scorch = { Id = 0, Default = P .. "explosion01_core_main.dds" },
+	shockwave = { Id = 0, Default = P .. "explosion01_shockwave_main.dds" },
+	skull = { Id = 0, Default = T .. "whiteCircle.png" },
+	slash = { Id = 0, Default = T .. "gradient.png" },
+	smoke = { Id = 0, Default = P .. "smoke_main.dds" },
+	spark = { Id = 0, Default = P .. "fire_sparks_main.dds" },
+	sparkle = { Id = 0, Default = T .. "sparkle.png" },
+	star4 = { Id = 0, Default = P .. "sparkles_main.dds" },
+	star5 = { Id = 0, Default = P .. "sparkles_main.dds" },
+	trail = { Id = 0, Default = T .. "gradient.png" },
+	twirl = { Id = 0, Default = P .. "forcefield_vortex_main.dds" },
+}
+
+local FALLBACK = P .. "sparkles_main.dds"
+
+local Vfx = {}
+
+--- Toutes les définitions (lecture seule).
+Vfx.Defs = Defs
+
+--- Retourne la texture à utiliser pour la clé : "rbxassetid://<Id>" si le sprite du pack
+--- a été uploadé (Id ~= 0), sinon la texture intégrée `Default`. Clé inconnue → étincelles.
+function Vfx.Texture(key: string): string
+	local def = Defs[key]
+	if def == nil then
+		return FALLBACK
+	end
+	if def.Id ~= 0 then
+		return "rbxassetid://" .. def.Id
+	end
+	return def.Default
+end
+
+return Vfx
+]]></string>
+          </Properties>
+        </Item>
       </Item>
-      <Item class="ModuleScript" referent="18">
+      <Item class="ModuleScript" referent="22">
         <Properties>
           <string name="Name">KaijuBuilder</string>
           <string name="Source"><![CDATA[--!strict
@@ -1370,6 +1924,7 @@ local Config = script.Parent.Config
 local Kaijus = require(Config.Kaijus)
 local Mutations = require(Config.Mutations)
 local Rarities = require(Config.Rarities)
+local Models = require(Config.Models)
 
 local KaijuBuilder = {}
 
@@ -2029,7 +2584,7 @@ local function applyMutation(ctx: Ctx, mutationId: string?)
 	end
 	for _, p in ctx.model:GetDescendants() do
 		if p:IsA("BasePart") and p ~= ctx.root and not p:GetAttribute("Eye") then
-			if mutation.Tint then
+			if mutation.Tint and not (p:IsA("MeshPart") and p.TextureID ~= "") then
 				p.Color = p.Color:Lerp(mutation.Tint, 0.72)
 			end
 			if mutation.Material and p.Material ~= Enum.Material.Neon then
@@ -2086,9 +2641,46 @@ local function newCtx(name: string, scale: number, primary: Color3, secondary: C
 	}
 end
 
+-- Modèle à partir d'un mesh importé (Config/Models) : une MeshPart posée au sol,
+-- animée comme un « Squash » par le client. Renvoie nil si rien n'est importé.
+local function buildFromMesh(species: Kaijus.Species, mutationId: string?, scale: number, origin: CFrame?): Model?
+	local def = Models.Get(species.Id)
+	if not def or def.MeshId == 0 or def.Quality == "fallback" then
+		return nil
+	end
+	local ctx = newCtx(species.Id, scale, species.Primary, species.Secondary, species.Accent, origin)
+	local mesh = Instance.new("MeshPart")
+	mesh.Name = "Mesh"
+	mesh.MeshId = "rbxassetid://" .. def.MeshId
+	if def.TextureId ~= 0 then
+		mesh.TextureID = "rbxassetid://" .. def.TextureId
+	end
+	setup(mesh, species.Primary, Enum.Material.SmoothPlastic)
+	-- Taille : ~4,5 studs de haut au stade 1 (voir Config/Models.Scale)
+	local height = 4.5 * scale
+	mesh.Size = Vector3.new(height, height, height)
+	mesh:SetAttribute("Role", "Squash")
+	mesh:SetAttribute("Phase", 0)
+	mesh:SetAttribute("Mesh", true)
+	local offset = (def.Offset or Vector3.zero) * scale / math.max(def.Scale, 0.001)
+	mesh.CFrame = ctx.root.CFrame * CFrame.new(Vector3.new(0, height / 2, 0) + offset)
+	mesh.Parent = ctx.model
+	ctx.headTop = Vector3.new(0, 4.5, 0)
+	applyMutation(ctx, mutationId)
+	ctx.model:SetAttribute("Species", species.Id)
+	ctx.model:SetAttribute("Rarity", species.Rarity)
+	ctx.model:SetAttribute("Height", height)
+	ctx.model:SetAttribute("Imported", true)
+	return ctx.model
+end
+
 -- Construit un kaiju. `scale` = échelle du stade de croissance.
 function KaijuBuilder.Build(speciesId: string, mutationId: string?, scale: number?, origin: CFrame?): Model
 	local species = Kaijus.Get(speciesId) or Kaijus.List[1]
+	local imported = buildFromMesh(species, mutationId, scale or 1, origin)
+	if imported then
+		return imported
+	end
 	local ctx = newCtx(species.Id, scale or 1, species.Primary, species.Secondary, species.Accent, origin)
 	local build = Archetypes[species.Archetype] or Archetypes.Rex
 	build(ctx, species)
@@ -2109,6 +2701,10 @@ end
 function KaijuBuilder.Height(speciesId: string): number
 	local species = Kaijus.Get(speciesId)
 	if not species then
+		return 4.5
+	end
+	local def = Models.Get(species.Id)
+	if def and def.MeshId ~= 0 and def.Quality ~= "fallback" then
 		return 4.5
 	end
 	local heights = { Rex = 4.6, Quad = 3.3, Serpent = 3.4, Bird = 4.2, Blob = 2.7, Crab = 3.0, Food = 4.2, Mech = 4.8, Squid = 4.0 }
@@ -2149,11 +2745,11 @@ return KaijuBuilder
 ]]></string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="19">
+      <Item class="Folder" referent="23">
         <Properties>
           <string name="Name">Logic</string>
         </Properties>
-        <Item class="ModuleScript" referent="20">
+        <Item class="ModuleScript" referent="24">
           <Properties>
             <string name="Name">Calc</string>
             <string name="Source"><![CDATA[--!strict
@@ -2321,7 +2917,7 @@ return Calc
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="21">
+        <Item class="ModuleScript" referent="25">
           <Properties>
             <string name="Name">DataTemplate</string>
             <string name="Source"><![CDATA[--!strict
@@ -2387,7 +2983,7 @@ return DataTemplate
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="22">
+        <Item class="ModuleScript" referent="26">
           <Properties>
             <string name="Name">Format</string>
             <string name="Source"><![CDATA[--!strict
@@ -2482,7 +3078,7 @@ return Format
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="23">
+        <Item class="ModuleScript" referent="27">
           <Properties>
             <string name="Name">Progress</string>
             <string name="Source"><![CDATA[--!strict
@@ -2558,7 +3154,7 @@ return Progress
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="24">
+        <Item class="ModuleScript" referent="28">
           <Properties>
             <string name="Name">Roll</string>
             <string name="Source"><![CDATA[--!strict
@@ -2666,7 +3262,7 @@ return Roll
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="25">
+      <Item class="ModuleScript" referent="29">
         <Properties>
           <string name="Name">Net</string>
           <string name="Source"><![CDATA[--!strict
@@ -2725,11 +3321,11 @@ return Net
 ]]></string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="26">
+      <Item class="Folder" referent="30">
         <Properties>
           <string name="Name">Util</string>
         </Properties>
-        <Item class="ModuleScript" referent="27">
+        <Item class="ModuleScript" referent="31">
           <Properties>
             <string name="Name">Signal</string>
             <string name="Source"><![CDATA[--!strict
@@ -2800,15 +3396,15 @@ return Signal
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="28">
+  <Item class="ServerScriptService" referent="32">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Folder" referent="29">
+    <Item class="Folder" referent="33">
       <Properties>
         <string name="Name">Server</string>
       </Properties>
-      <Item class="Script" referent="30">
+      <Item class="Script" referent="34">
         <Properties>
           <string name="Name">Main</string>
           <token name="RunContext">0</token>
@@ -2840,6 +3436,7 @@ local order = {
 	"RewardService",
 	"ProgressionService",
 	"LeaderboardService",
+	"TutorialService",
 }
 
 for _, name in order do
@@ -2868,11 +3465,11 @@ print(("[Steal a Kaiju] serveur prêt — %d services"):format(#order))
 ]]></string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="31">
+      <Item class="Folder" referent="35">
         <Properties>
           <string name="Name">Services</string>
         </Properties>
-        <Item class="ModuleScript" referent="32">
+        <Item class="ModuleScript" referent="36">
           <Properties>
             <string name="Name">DataService</string>
             <string name="Source"><![CDATA[--!nonstrict
@@ -3044,7 +3641,7 @@ return DataService
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="33">
+        <Item class="ModuleScript" referent="37">
           <Properties>
             <string name="Name">EventService</string>
             <string name="Source"><![CDATA[--!nonstrict
@@ -3439,7 +4036,7 @@ return EventService
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="34">
+        <Item class="ModuleScript" referent="38">
           <Properties>
             <string name="Name">KaijuService</string>
             <string name="Source"><![CDATA[--!nonstrict
@@ -3762,6 +4359,7 @@ local function hatch(player: Player, data: any, rec: Record)
 	Notify.FxAll("HatchWorld", { Uid = rec.Uid, Rarity = rec.Rarity })
 	Registry.RewardService.Discover(player, rec.Species :: string, rec.Mutation)
 	Registry.RewardService.Track(player, "Hatches", 1)
+	Registry.TutorialService.Notify(player, "Hatch")
 	if rarity.Announce and species then
 		local mut = if rec.Mutation then rec.Mutation .. " " else ""
 		Notify.Feed(("%s hatched a %s%s %s!"):format(player.DisplayName, mut, string.upper(rarity.Name), species.Name), "Rare", rarity.Color)
@@ -3899,6 +4497,7 @@ function KaijuService.Collect(player: Player)
 	DataService.Replicate(player, "Stored")
 	Notify.Fx(player, "Collect", { Amount = amount })
 	Registry.RewardService.Track(player, "Collects", 1)
+	Registry.TutorialService.Notify(player, "Collect")
 end
 
 ----------------------------------------------------------------------------
@@ -4204,7 +4803,7 @@ return KaijuService
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="35">
+        <Item class="ModuleScript" referent="39">
           <Properties>
             <string name="Name">LeaderboardService</string>
             <string name="Source"><![CDATA[--!nonstrict
@@ -4448,7 +5047,7 @@ return LeaderboardService
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="36">
+        <Item class="ModuleScript" referent="40">
           <Properties>
             <string name="Name">MeteorService</string>
             <string name="Source"><![CDATA[--!nonstrict
@@ -4655,6 +5254,7 @@ local function buy(player: Player, payload: any): Router.Result
 		end
 	end)
 	Registry.RewardService.Track(player, "EggsBought", 1)
+	Registry.TutorialService.Notify(player, "Meteor")
 	local r = Rarities.Get(rarity)
 	if r.Order >= 4 then
 		Notify.FeedExcept(player, ("%s grabbed the %s egg!"):format(player.DisplayName, string.upper(r.Name)), "Rare", r.Color)
@@ -4695,6 +5295,7 @@ function MeteorService.Start()
 				timer = Economy.MeteorInterval * (0.8 + math.random() * 0.4)
 				craterStep()
 			end
+			Workspace:SetAttribute("NextMeteorIn", if rate > 0 then timer / rate else -1)
 			-- expiration
 			local t = now()
 			for id, m in meteors do
@@ -4730,7 +5331,7 @@ return MeteorService
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="37">
+        <Item class="ModuleScript" referent="41">
           <Properties>
             <string name="Name">Notify</string>
             <string name="Source"><![CDATA[--!nonstrict
@@ -4780,7 +5381,7 @@ return Notify
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="38">
+        <Item class="ModuleScript" referent="42">
           <Properties>
             <string name="Name">PlotService</string>
             <string name="Source"><![CDATA[--!nonstrict
@@ -4884,6 +5485,7 @@ local function lock(player: Player): Router.Result
 	model:SetAttribute("ShieldCooldown", t + duration + Economy.ShieldCooldown)
 	Notify.FxAll("ShieldUp", { Plot = plot.Index })
 	Registry.RewardService.Track(player, "Locks", 1)
+	Registry.TutorialService.Notify(player, "Lock")
 	return { ok = true }
 end
 
@@ -5043,7 +5645,7 @@ return PlotService
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="39">
+        <Item class="ModuleScript" referent="43">
           <Properties>
             <string name="Name">ProgressionService</string>
             <string name="Source"><![CDATA[--!nonstrict
@@ -5236,7 +5838,7 @@ return ProgressionService
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="40">
+        <Item class="ModuleScript" referent="44">
           <Properties>
             <string name="Name">Registry</string>
             <string name="Source"><![CDATA[--!nocheck
@@ -5246,7 +5848,7 @@ return ({} :: any)
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="41">
+        <Item class="ModuleScript" referent="45">
           <Properties>
             <string name="Name">RewardService</string>
             <string name="Source"><![CDATA[--!nonstrict
@@ -5648,7 +6250,7 @@ return RewardService
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="42">
+        <Item class="ModuleScript" referent="46">
           <Properties>
             <string name="Name">Router</string>
             <string name="Source"><![CDATA[--!nonstrict
@@ -5765,7 +6367,7 @@ return Router
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="43">
+        <Item class="ModuleScript" referent="47">
           <Properties>
             <string name="Name">ShopService</string>
             <string name="Source"><![CDATA[--!nonstrict
@@ -6146,7 +6748,7 @@ return ShopService
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="44">
+        <Item class="ModuleScript" referent="48">
           <Properties>
             <string name="Name">StealService</string>
             <string name="Source"><![CDATA[--!nonstrict
@@ -6327,6 +6929,9 @@ local function steal(player: Player, payload: any): Router.Result
 	if anchor:GetAttribute("Egg") then
 		return { ok = false, msg = "Eggs are too fragile to steal!" }
 	end
+	if (anchor:GetAttribute("CarriedBy") or 0) == -1 then
+		return { ok = false, msg = "Someone is already stealing it!" }
+	end
 	if carries[uid] then
 		local carry = carries[uid]
 		if carry.Lifting and not carry.Helper then
@@ -6411,6 +7016,7 @@ local function deliver(carry: Carry)
 	Notify.Fx(victim, "Robbed", { Thief = lead.DisplayName, Species = speciesId })
 	Registry.RewardService.Track(lead, "Steals", 1)
 	Registry.RewardService.Track(victim, "Stolen", 1)
+	Registry.TutorialService.Notify(lead, "Steal")
 	if carry.Helper and carry.Helper.Parent == Players then
 		local cut = math.max(50, math.floor(baseIncome * 60 * Economy.HelperCut * Registry.KaijuService.Multiplier(carry.Helper)))
 		DataService.AddCash(carry.Helper, cut)
@@ -6475,6 +7081,9 @@ local function bonk(player: Player)
 		Registry.RewardService.Track(player, "Bonks", 1)
 	end
 	Registry.EventService.TryBossHit(player, root.Position, range)
+	if Registry.TutorialService.TryBonkThief(player, root.Position, range) then
+		Registry.RewardService.Track(player, "Bonks", 1)
+	end
 end
 
 ----------------------------------------------------------------------------
@@ -6676,12 +7285,363 @@ return StealService
 ]]></string>
           </Properties>
         </Item>
+        <Item class="ModuleScript" referent="49">
+          <Properties>
+            <string name="Name">TutorialService</string>
+            <string name="Source"><![CDATA[--!nonstrict
+-- Missions d'introduction validées côté serveur + voleur d'entraînement (PNJ).
+-- Les autres services signalent les événements via TutorialService.Notify.
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Tutorial = require(Shared.Config.Tutorial)
+local Layout = require(Shared.Config.Layout)
+local Theme = require(Shared.Config.Theme)
+
+local Registry = require(script.Parent.Registry)
+local DataService = require(script.Parent.DataService)
+local Router = require(script.Parent.Router)
+local Notify = require(script.Parent.Notify)
+
+local TutorialService = {}
+
+type Thief = {
+	Player: Player,
+	Model: Model,
+	Root: BasePart,
+	Uid: string,
+	State: string, -- Walk | Flee | Gone
+	Started: number,
+}
+
+local thieves: { [Player]: Thief } = {}
+
+local function step(player: Player): number
+	local data = DataService.Get(player)
+	if not data then
+		return 0
+	end
+	return math.max(1, data.Tutorial)
+end
+
+----------------------------------------------------------------------------
+-- Voleur d'entraînement
+----------------------------------------------------------------------------
+
+local function buildThief(): (Model, BasePart)
+	local model = Instance.new("Model")
+	model.Name = "TrainingThief"
+	local function part(name: string, size: Vector3, color: Color3, offset: CFrame, shape: Enum.PartType?): Part
+		local p = Instance.new("Part")
+		p.Name = name
+		p.Size = size
+		p.Color = color
+		p.Material = Enum.Material.SmoothPlastic
+		p.Anchored = true
+		p.CanCollide = false
+		p.CanQuery = false
+		p.CanTouch = false
+		if shape then
+			p.Shape = shape
+		end
+		p:SetAttribute("Offset", offset)
+		p.Parent = model
+		return p
+	end
+	local ink = Theme.Colors.Ink
+	local root = part("HumanoidRootPart", Vector3.new(2, 2, 1), ink, CFrame.new(0, 0, 0))
+	root.Transparency = 1
+	part("Torso", Vector3.new(2, 2, 1), ink, CFrame.new(0, 0, 0))
+	part("Stripe", Vector3.new(2.05, 0.4, 1.05), Color3.fromRGB(255, 255, 255), CFrame.new(0, 0.5, 0))
+	part("Stripe2", Vector3.new(2.05, 0.4, 1.05), Color3.fromRGB(255, 255, 255), CFrame.new(0, -0.4, 0))
+	part("Head", Vector3.new(1.3, 1.3, 1.3), Color3.fromRGB(255, 205, 160), CFrame.new(0, 1.65, 0), Enum.PartType.Ball)
+	part("Mask", Vector3.new(1.4, 0.45, 1.4), ink, CFrame.new(0, 1.75, 0))
+	part("Hat", Vector3.new(1.5, 0.35, 1.5), ink, CFrame.new(0, 2.3, 0), Enum.PartType.Cylinder)
+	part("Bag", Vector3.new(1.4, 1.4, 1), Color3.fromRGB(190, 160, 120), CFrame.new(0, 0.2, 0.9), Enum.PartType.Ball)
+	part("LegL", Vector3.new(0.8, 2, 0.8), ink, CFrame.new(-0.5, -2, 0))
+	part("LegR", Vector3.new(0.8, 2, 0.8), ink, CFrame.new(0.5, -2, 0))
+	part("ArmL", Vector3.new(0.7, 1.8, 0.7), ink, CFrame.new(-1.4, 0, 0))
+	part("ArmR", Vector3.new(0.7, 1.8, 0.7), ink, CFrame.new(1.4, 0, 0))
+	model.PrimaryPart = root
+	local gui = Instance.new("BillboardGui")
+	gui.Size = UDim2.fromOffset(200, 50)
+	gui.StudsOffset = Vector3.new(0, 4, 0)
+	gui.AlwaysOnTop = true
+	gui.Adornee = root
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.fromScale(1, 1)
+	label.FontFace = Theme.Fonts.Title
+	label.TextScaled = true
+	label.TextColor3 = Theme.Colors.Red
+	label.Text = "🥷 TRAINING THIEF"
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 3
+	stroke.Color = ink
+	stroke.Parent = label
+	label.Parent = gui
+	gui.Parent = root
+	return model, root
+end
+
+local function placeThief(thief: Thief, position: Vector3, lookAt: Vector3)
+	local flat = Vector3.new(lookAt.X, position.Y, lookAt.Z)
+	local cf = if (flat - position).Magnitude > 0.1 then CFrame.lookAt(position, flat) else CFrame.new(position)
+	local bob = math.sin(os.clock() * 12) * 0.15
+	for _, p in thief.Model:GetChildren() do
+		if p:IsA("BasePart") then
+			local offset = p:GetAttribute("Offset") :: CFrame
+			p.CFrame = cf * CFrame.new(0, bob, 0) * offset
+		end
+	end
+end
+
+local function firstHatched(player: Player)
+	local data = DataService.Get(player)
+	if not data then
+		return nil
+	end
+	for _, rec in data.Kaijus do
+		if not rec.Egg then
+			return rec
+		end
+	end
+	return nil
+end
+
+local function endThief(player: Player, reason: string)
+	local thief = thieves[player]
+	if not thief then
+		return
+	end
+	thieves[player] = nil
+	local anchor = Registry.KaijuService.Anchor(thief.Uid)
+	if anchor and anchor:GetAttribute("CarriedBy") == -1 then
+		anchor:SetAttribute("CarriedBy", 0)
+		Notify.FxAll("KaijuReturned", { Uid = thief.Uid, Reason = reason })
+	end
+	Notify.Fx(player, "ThiefGone", { Reason = reason })
+	Notify.Fx(player, "AlarmStop", { Uid = thief.Uid })
+	local model = thief.Model
+	task.delay(1.5, function()
+		model:Destroy()
+	end)
+end
+
+local function spawnThief(player: Player)
+	if thieves[player] then
+		return
+	end
+	local plot = Registry.PlotService.Get(player)
+	local rec = firstHatched(player)
+	if not plot or not rec then
+		return
+	end
+	local model, root = buildThief()
+	local start = (plot.CFrame * CFrame.new(0, 3, -Layout.PlotDepth / 2 - 14)).Position
+	local thief: Thief = { Player = player, Model = model, Root = root, Uid = rec.Uid, State = "Walk", Started = os.clock() }
+	model:SetAttribute("Owner", player.UserId)
+	model.Parent = Workspace:WaitForChild("Effects")
+	placeThief(thief, start, plot.CFrame.Position)
+	thieves[player] = thief
+	Notify.Fx(player, "ThiefSpawn", { Uid = rec.Uid })
+end
+
+-- Appelé par StealService.bonk : renvoie true si un voleur d'entraînement a été touché.
+function TutorialService.TryBonkThief(player: Player, position: Vector3, range: number): boolean
+	local thief = thieves[player]
+	if not thief or thief.State == "Gone" then
+		return false
+	end
+	local offset = thief.Root.Position - position
+	if Vector3.new(offset.X, 0, offset.Z).Magnitude > range + 3 then
+		return false
+	end
+	thief.State = "Gone"
+	Notify.FxAll("BonkHit", { UserId = -1, Position = thief.Root.Position })
+	Notify.Fx(player, "ThiefBonked", {})
+	-- il s'envole
+	task.spawn(function()
+		local from = thief.Root.Position
+		local dir = if offset.Magnitude > 0.1 then Vector3.new(offset.X, 0, offset.Z).Unit else Vector3.new(0, 0, 1)
+		for i = 1, 12 do
+			task.wait(0.05)
+			placeThief(thief, from + dir * i * 3 + Vector3.new(0, i * 2.5 - i * i * 0.1, 0), from + dir * 10)
+		end
+	end)
+	endThief(player, "Dropped")
+	TutorialService.Notify(player, "Thief")
+	return true
+end
+
+local function stepThieves()
+	for player, thief in thieves do
+		if player.Parent ~= Players or not thief.Model.Parent then
+			thieves[player] = nil
+			continue
+		end
+		local anchor = Registry.KaijuService.Anchor(thief.Uid)
+		local plot = Registry.PlotService.Get(player)
+		if not anchor or not plot or os.clock() - thief.Started > Tutorial.Thief.Timeout then
+			endThief(player, "Timeout")
+			continue
+		end
+		local pos = thief.Root.Position
+		if thief.State == "Walk" then
+			local target = anchor.Position + Vector3.new(0, 2.5, 0)
+			local delta = Vector3.new(target.X - pos.X, 0, target.Z - pos.Z)
+			if delta.Magnitude < 3 then
+				thief.State = "Flee"
+				anchor:SetAttribute("CarriedBy", -1)
+				anchor:SetAttribute("Helper", 0)
+				anchor:SetAttribute("Lifting", false)
+				Notify.Fx(player, "Alarm", { Uid = thief.Uid, Thief = "Training Thief", Species = anchor:GetAttribute("Species") })
+			else
+				placeThief(thief, pos + delta.Unit * Tutorial.Thief.WalkSpeed * 0.1, target)
+			end
+		elseif thief.State == "Flee" then
+			local exit = (plot.CFrame * CFrame.new(0, 3, -Layout.PlotDepth / 2 - 30)).Position
+			local delta = Vector3.new(exit.X - pos.X, 0, exit.Z - pos.Z)
+			if delta.Magnitude < 3 then
+				-- Il s'échappe… mais c'est un entraînement : le kaiju revient.
+				Notify.Toast(player, "The thief escaped! Don't worry, your kaiju came back. Try again!", "Bad")
+				endThief(player, "Timeout")
+				task.delay(4, function()
+					if player.Parent == Players and step(player) == 5 then
+						spawnThief(player)
+					end
+				end)
+			else
+				placeThief(thief, pos + delta.Unit * Tutorial.Thief.FleeSpeed * 0.1, exit)
+			end
+		end
+	end
+end
+
+----------------------------------------------------------------------------
+-- Missions
+----------------------------------------------------------------------------
+
+local function startStep(player: Player, s: number)
+	if s == 5 then
+		task.delay(3, function()
+			if player.Parent == Players and step(player) == 5 then
+				spawnThief(player)
+			end
+		end)
+	end
+end
+
+local function advance(player: Player)
+	local data = DataService.Get(player)
+	if not data then
+		return
+	end
+	local current = step(player)
+	local mission = Tutorial.Get(current)
+	if not mission then
+		return
+	end
+	data.Tutorial = current + 1
+	if mission.Reward.Cash then
+		DataService.AddCash(player, mission.Reward.Cash, false)
+	end
+	if mission.Reward.Gems then
+		DataService.AddGems(player, mission.Reward.Gems)
+	end
+	DataService.Replicate(player, "Tutorial")
+	Notify.Fx(player, "MissionComplete", { Step = current, Reward = mission.Reward, Unlock = mission.UnlockMenus })
+	if data.Tutorial >= Tutorial.Done then
+		Notify.Fx(player, "TutorialDone", {})
+	else
+		startStep(player, data.Tutorial)
+	end
+end
+
+-- event : Hatch | Collect | Meteor | Lock | Thief | Steal
+function TutorialService.Notify(player: Player, event: string)
+	local s = step(player)
+	if s >= Tutorial.Done then
+		return
+	end
+	local mission = Tutorial.Get(s)
+	if not mission then
+		return
+	end
+	local expected = ({ Kaiju = "Hatch", Collector = "Collect", Meteor = "Meteor", LockButton = "Lock", Thief = "Thief", OtherPlot = "Steal" })[mission.Target or ""]
+	if event == expected then
+		advance(player)
+	end
+end
+
+function TutorialService.IsThiefCarrying(uid: string): boolean
+	for _, thief in thieves do
+		if thief.Uid == uid and thief.State == "Flee" then
+			return true
+		end
+	end
+	return false
+end
+
+function TutorialService.Init()
+	-- Le client peut passer la mission de vol (serveur vide) après un délai : validé ici
+	Router.On("SkipMission", function(player)
+		if step(player) == 6 and #Players:GetPlayers() <= 1 then
+			advance(player)
+			return { ok = true }
+		end
+		return { ok = false, msg = "Finish the mission first!" }
+	end, 1)
+
+	DataService.Loaded:Connect(function(player, data)
+		task.delay(3, function()
+			if player.Parent ~= Players then
+				return
+			end
+			if data.Tutorial <= 0 then
+				data.Tutorial = 1
+			end
+			-- rattrapage : déjà un kaiju éclos ?
+			if step(player) == 1 and firstHatched(player) then
+				advance(player)
+			end
+			DataService.Replicate(player, "Tutorial")
+			startStep(player, step(player))
+		end)
+	end)
+
+	Players.PlayerRemoving:Connect(function(player)
+		local thief = thieves[player]
+		if thief then
+			thieves[player] = nil
+			thief.Model:Destroy()
+		end
+	end)
+
+	task.spawn(function()
+		while true do
+			task.wait(0.1)
+			local ok, err = pcall(stepThieves)
+			if not ok then
+				warn("[TutorialService] " .. tostring(err))
+			end
+		end
+	end)
+end
+
+return TutorialService
+]]></string>
+          </Properties>
+        </Item>
       </Item>
-      <Item class="Folder" referent="45">
+      <Item class="Folder" referent="50">
         <Properties>
           <string name="Name">Vendor</string>
         </Properties>
-        <Item class="StringValue" referent="46">
+        <Item class="StringValue" referent="51">
           <Properties>
             <string name="Name">ProfileStore.LICENSE</string>
             <string name="Value"><![CDATA[                                 Apache License
@@ -6888,7 +7848,7 @@ return StealService
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="47">
+        <Item class="ModuleScript" referent="52">
           <Properties>
             <string name="Name">ProfileStore</string>
             <string name="Source">--[[
@@ -9137,11 +10097,11 @@ return ProfileStore</string>
           </Properties>
         </Item>
       </Item>
-      <Item class="Folder" referent="48">
+      <Item class="Folder" referent="53">
         <Properties>
           <string name="Name">World</string>
         </Properties>
-        <Item class="ModuleScript" referent="49">
+        <Item class="ModuleScript" referent="54">
           <Properties>
             <string name="Name">MapBuilder</string>
             <string name="Source"><![CDATA[--!nonstrict
@@ -9222,6 +10182,32 @@ local function light(parent: BasePart, color: Color3, range: number, brightness:
 	l.Parent = parent
 end
 
+-- Étiquette flottante (lisible de loin) au-dessus d'un point.
+local function floatingSign(parent: Instance, cf: CFrame, text: string, color: Color3, width: number, height: number, maxDistance: number, name: string?)
+	local anchor = part({ Name = name or "Sign", Size = Vector3.new(1, 1, 1), CFrame = cf, Transparency = 1, CanCollide = false, CanQuery = false }, parent)
+	local gui = Instance.new("BillboardGui")
+	gui.Name = "SignGui"
+	gui.Size = UDim2.fromOffset(width, height)
+	gui.MaxDistance = maxDistance
+	gui.LightInfluence = 0
+	gui.Adornee = anchor
+	gui.Parent = anchor
+	local label = Instance.new("TextLabel")
+	label.Name = "Text"
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.fromScale(1, 1)
+	label.FontFace = Theme.Fonts.Title
+	label.TextScaled = true
+	label.TextColor3 = color
+	label.Text = text
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 3
+	stroke.Color = Theme.Colors.Ink
+	stroke.Parent = label
+	label.Parent = gui
+	return anchor
+end
+
 local function emitter(parent: Instance, props: { [string]: any }): ParticleEmitter
 	local e = Instance.new("ParticleEmitter")
 	for k, v in props do
@@ -9229,6 +10215,70 @@ local function emitter(parent: Instance, props: { [string]: any }): ParticleEmit
 	end
 	e.Parent = parent
 	return e
+end
+
+----------------------------------------------------------------------------
+-- Décor (style « jouet » : formes rondes, couleurs franches)
+----------------------------------------------------------------------------
+
+local function ball(cf: CFrame, diameter: number, color: Color3, parent: Instance, material: Enum.Material?): Part
+	return part({
+		Shape = Enum.PartType.Ball,
+		Size = Vector3.new(diameter, diameter, diameter),
+		CFrame = cf,
+		Color = color,
+		Material = material or Enum.Material.SmoothPlastic,
+		CanCollide = false,
+	}, parent)
+end
+
+-- Arbre « sucette » : tronc + 3 boules de feuillage.
+local function lollipopTree(parent: Instance, base: CFrame, height: number, rng: Random)
+	local trunk = rgb(150, 100, 60)
+	cylinder(base * CFrame.new(0, height / 2, 0) * CFrame.Angles(0, 0, math.rad(90)) * CFrame.Angles(0, 0, math.rad(-90)), height, 2.2, { Name = "Trunk", Color = trunk, Material = Enum.Material.Wood }, parent)
+	local greens = { rgb(96, 205, 90), rgb(70, 180, 80), rgb(130, 225, 100) }
+	local d = height * 0.75
+	ball(base * CFrame.new(0, height + d * 0.25, 0), d, greens[rng:NextInteger(1, 3)], parent)
+	ball(base * CFrame.new(d * 0.35, height + d * 0.05, d * 0.2), d * 0.7, greens[rng:NextInteger(1, 3)], parent)
+	ball(base * CFrame.new(-d * 0.3, height + d * 0.1, -d * 0.25), d * 0.65, greens[rng:NextInteger(1, 3)], parent)
+	-- quelques fruits
+	for _ = 1, 3 do
+		local a = rng:NextNumber() * math.pi * 2
+		ball(base * CFrame.new(math.cos(a) * d * 0.45, height + d * 0.2 + rng:NextNumber(-2, 2), math.sin(a) * d * 0.45), 1.2, rgb(255, 90, 90), parent, Enum.Material.SmoothPlastic)
+	end
+end
+
+local function bush(parent: Instance, base: CFrame, size: number, rng: Random)
+	ball(base * CFrame.new(0, size * 0.35, 0), size, rgb(80, 190, 90), parent)
+	ball(base * CFrame.new(size * 0.4, size * 0.25, size * 0.2), size * 0.7, rgb(110, 215, 100), parent)
+	ball(base * CFrame.new(-size * 0.35, size * 0.25, -size * 0.2), size * 0.6, rgb(70, 170, 85), parent)
+	if rng:NextNumber() < 0.6 then
+		ball(base * CFrame.new(size * 0.1, size * 0.85, size * 0.1), size * 0.3, rgb(255, 120, 200), parent)
+	end
+end
+
+local function flower(parent: Instance, base: CFrame, color: Color3)
+	cylinder(base * CFrame.new(0, 1, 0) * CFrame.Angles(0, 0, math.rad(90)) * CFrame.Angles(0, 0, math.rad(-90)), 2, 0.3, { Name = "Stem", Color = rgb(70, 170, 70), CanCollide = false }, parent)
+	for i = 1, 5 do
+		local a = i / 5 * math.pi * 2
+		ball(base * CFrame.new(math.cos(a) * 0.7, 2.1, math.sin(a) * 0.7), 0.9, color, parent)
+	end
+	ball(base * CFrame.new(0, 2.15, 0), 0.8, rgb(255, 230, 90), parent)
+end
+
+local function cloud(parent: Instance, center: Vector3, size: number, rng: Random)
+	local model = Instance.new("Model")
+	model.Name = "Cloud"
+	model.Parent = parent
+	for i = 1, 5 do
+		local off = Vector3.new(rng:NextNumber(-1, 1) * size * 0.9, rng:NextNumber(-0.15, 0.25) * size, rng:NextNumber(-0.4, 0.4) * size)
+		local p = ball(CFrame.new(center + off), size * rng:NextNumber(0.6, 1.1), rgb(255, 255, 255), model)
+		p.Material = Enum.Material.SmoothPlastic
+		p.CastShadow = false
+		if i == 1 then
+			model.PrimaryPart = p
+		end
+	end
 end
 
 ----------------------------------------------------------------------------
@@ -9307,8 +10357,8 @@ local function setupTerrain()
 	terrain.WaterWaveSize = 0.25
 	terrain.WaterWaveSpeed = 12
 	terrain.WaterReflectance = 0.6
-	terrain:SetMaterialColor(Enum.Material.Grass, rgb(96, 190, 90))
-	terrain:SetMaterialColor(Enum.Material.Sand, rgb(240, 214, 160))
+	terrain:SetMaterialColor(Enum.Material.Grass, rgb(92, 208, 88))
+	terrain:SetMaterialColor(Enum.Material.Sand, rgb(250, 226, 170))
 	terrain:SetMaterialColor(Enum.Material.Basalt, rgb(50, 40, 50))
 	terrain:SetMaterialColor(Enum.Material.Rock, rgb(120, 105, 110))
 
@@ -9350,6 +10400,22 @@ local function buildCrater(folder: Folder): ({ BasePart }, { CFrame }, CFrame)
 		Material = Enum.Material.Basalt,
 	}, crater)
 
+	-- Lac de lave central (la zone « danger » se voit de loin)
+	local lake = cylinder(CFrame.new(0, 0.05, 0), 0.5, 40, { Name = "LavaLake", Color = rgb(255, 120, 30), Material = Enum.Material.Neon, CanCollide = false }, crater)
+	light(lake, rgb(255, 130, 40), 60, 2)
+	cylinder(CFrame.new(0, 0.02, 0), 0.4, 46, { Name = "LavaRim", Color = rgb(40, 28, 40), Material = Enum.Material.Basalt, CanCollide = false }, crater)
+	emitter(lake, {
+		Texture = "rbxasset://textures/particles/sparkles_main.dds",
+		Rate = 10,
+		Lifetime = NumberRange.new(1, 2),
+		Speed = NumberRange.new(6, 12),
+		Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1.2), NumberSequenceKeypoint.new(1, 0) }),
+		LightEmission = 1,
+		Color = ColorSequence.new(rgb(255, 200, 80), rgb(255, 90, 30)),
+		SpreadAngle = Vector2.new(30, 30),
+		Acceleration = Vector3.new(0, -10, 0),
+	})
+
 	-- Fissures de lave (néon)
 	local rng = Random.new(42)
 	for i = 1, 22 do
@@ -9378,14 +10444,8 @@ local function buildCrater(folder: Folder): ({ BasePart }, { CFrame }, CFrame)
 		if gap > 0.26 then
 			local r = Layout.CraterRadius + rng:NextNumber(-1, 3)
 			local size = rng:NextNumber(6, 11)
-			local rock = part({
-				Name = "Rock",
-				Size = Vector3.new(size, size * rng:NextNumber(0.7, 1.4), size),
-				CFrame = CFrame.new(math.sin(a) * r, size * 0.3, math.cos(a) * r)
-					* CFrame.Angles(rng:NextNumber(-0.4, 0.4), rng:NextNumber() * 6, rng:NextNumber(-0.4, 0.4)),
-				Color = rgb(80, 66, 78):Lerp(rgb(120, 100, 110), rng:NextNumber()),
-				Material = Enum.Material.Slate,
-			}, crater)
+			local rock = ball(CFrame.new(math.sin(a) * r, size * 0.3, math.cos(a) * r), size, rgb(96, 78, 110):Lerp(rgb(150, 120, 150), rng:NextNumber()), crater, Enum.Material.SmoothPlastic)
+			rock.CanCollide = true
 			rock.CastShadow = true
 		end
 	end
@@ -9402,12 +10462,14 @@ local function buildCrater(folder: Folder): ({ BasePart }, { CFrame }, CFrame)
 		}, crater)
 		local ring = cylinder(CFrame.new(pos + Vector3.new(0, 1.25, 0)), 0.15, 17, {
 			Name = "Ring",
-			Color = Theme.Colors.Magma,
+			Color = Theme.Colors.Gold,
 			Material = Enum.Material.Neon,
 			CanCollide = false,
 			CastShadow = false,
 		}, crater)
-		ring.Transparency = 0.2
+		ring.Transparency = 0.1
+		local inner = cylinder(CFrame.new(pos + Vector3.new(0, 1.26, 0)), 0.14, 8, { Name = "Target", Color = Theme.Colors.Magma, Material = Enum.Material.Neon, CanCollide = false, CastShadow = false }, crater)
+		inner.Transparency = 0.3
 		base:SetAttribute("Index", i)
 		table.insert(pads, base)
 	end
@@ -9442,6 +10504,11 @@ local function buildCrater(folder: Folder): ({ BasePart }, { CFrame }, CFrame)
 		SpreadAngle = Vector2.new(35, 35),
 		Acceleration = Vector3.new(0, -8, 0),
 	})
+
+	-- Panneau géant du cratère + minuteur du prochain météore (texte mis à jour par le client)
+	floatingSign(crater, CFrame.new(0, 34, 0), "☄️ METEOR CRATER", Theme.Colors.Magma, 520, 70, 900, "CraterSign")
+	floatingSign(crater, CFrame.new(0, 27, 0), "Eggs land here — first come, first served!", Theme.Colors.Paper, 520, 34, 500, "CraterSub")
+	floatingSign(crater, CFrame.new(0, 21, 0), "NEXT METEOR IN 10s", Theme.Colors.Gold, 420, 44, 700, "MeteorTimer")
 
 	-- Tableaux des scores (face à l'extérieur, entre deux ponts)
 	local boards: { CFrame } = {}
@@ -9491,6 +10558,23 @@ local function buildBridge(folder: Folder, index: number)
 		Color = rgb(170, 120, 80),
 		Material = Enum.Material.WoodPlanks,
 	}, bridge)
+	floatingSign(bridge, cf * CFrame.new(0, 9, len / 2 - 12), "☄️ TO THE CRATER", Theme.Colors.Magma, 260, 34, 160)
+	-- chevrons peints sur le tablier, pointant vers le cratère (-Z local = vers l'île ; +Z = vers le cratère)
+	local chevrons = math.floor(len / 14)
+	for j = 1, chevrons do
+		local z = -len / 2 + j * (len / (chevrons + 1))
+		for _, side in { -1, 1 } do
+			part({
+				Name = "Chevron",
+				Size = Vector3.new(6, 0.12, 1.6),
+				CFrame = cf * CFrame.new(side * 2.2, 0.07, z) * CFrame.Angles(0, math.rad(-40 * side), 0),
+				Color = Theme.Colors.Magma,
+				Material = Enum.Material.Neon,
+				CanCollide = false,
+				CastShadow = false,
+			}, bridge)
+		end
+	end
 	for _, side in { -1, 1 } do
 		part({
 			Name = "Rail",
@@ -9546,6 +10630,11 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 	part({ Name = "Floor", Size = Vector3.new(W, 1, D), CFrame = at(0, -0.5, 0), Color = rgb(110, 200, 100), Material = Enum.Material.Grass }, model)
 	part({ Name = "Path", Size = Vector3.new(14, 1.05, D), CFrame = at(0, -0.48, 0), Color = rgb(235, 215, 170), Material = Enum.Material.Pavement }, model)
 	part({ Name = "Trim", Size = Vector3.new(W + 2, 0.8, D + 2), CFrame = at(0, -0.9, 0), Color = color, Material = Enum.Material.SmoothPlastic }, model)
+	-- anneau coloré au bord de l'île + écume blanche au niveau de l'eau
+	local edge = cylinder(cf * CFrame.new(0, -0.45, 0), 0.5, 176, { Name = "EdgeRing", Color = color, Material = Enum.Material.SmoothPlastic, CanCollide = false }, model)
+	edge.Transparency = 0.35
+	local foam = cylinder(cf * CFrame.new(0, -6.3, 0), 0.3, 198, { Name = "Foam", Color = rgb(255, 255, 255), Material = Enum.Material.Neon, CanCollide = false, CastShadow = false }, model)
+	foam.Transparency = 0.55
 
 	-- Murets (avec ouverture de porte à l'avant)
 	local wallH, wallT = 4, 2
@@ -9594,6 +10683,30 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 		CanQuery = false,
 	}, model)
 
+	-- Cour des nids : clôture blanche + panneau
+	do
+		local fenceColor = rgb(255, 250, 240)
+		local x0, x1, z0, z1 = -48, 48, -34, 42
+		local function rail(a: Vector3, b: Vector3)
+			local mid = (a + b) / 2
+			local len = (b - a).Magnitude
+			local cfr = CFrame.lookAt(at(mid.X, 1.6, mid.Z).Position, at(b.X, 1.6, b.Z).Position)
+			part({ Name = "FenceRail", Size = Vector3.new(0.5, 0.5, len), CFrame = cfr, Color = fenceColor, CanCollide = false }, model)
+			part({ Name = "FenceRail", Size = Vector3.new(0.5, 0.5, len), CFrame = cfr * CFrame.new(0, -0.9, 0), Color = fenceColor, CanCollide = false }, model)
+			local posts = math.floor(len / 8)
+			for k = 0, posts do
+				local t = k / math.max(posts, 1)
+				local p = a:Lerp(b, t)
+				part({ Name = "FencePost", Size = Vector3.new(0.9, 2.6, 0.9), CFrame = at(p.X, 1.3, p.Z), Color = color, CanCollide = false }, model)
+			end
+		end
+		rail(Vector3.new(x0, 0, z0), Vector3.new(x1, 0, z0))
+		rail(Vector3.new(x0, 0, z1), Vector3.new(x1, 0, z1))
+		rail(Vector3.new(x0, 0, z0), Vector3.new(x0, 0, z1))
+		rail(Vector3.new(x1, 0, z0), Vector3.new(x1, 0, z1))
+		floatingSign(model, at(0, 8, z1 + 2), "🪺 NEST YARD — your kaijus grow here", color, 380, 34, 120)
+	end
+
 	-- Nids
 	local nests: { BasePart } = {}
 	for i, local_ in Layout.Nests do
@@ -9640,6 +10753,22 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 	local core = cylinder(reactorBase * CFrame.new(0, 6, 4.5), 6, 2.2, { Name = "Core", Color = Theme.Colors.Cash, Material = Enum.Material.Neon, CanCollide = false }, model)
 	light(core, Theme.Colors.Cash, 20, 1.5)
 	cylinder(reactorBase * CFrame.new(0, 10, 4.5), 1, 6, { Name = "Cap", Color = Theme.Colors.Ink, Material = Enum.Material.Metal }, model)
+	local coin = cylinder(reactorBase * CFrame.new(0, 21, 4.5) * CFrame.Angles(0, 0, math.rad(90)) * CFrame.Angles(0, 0, math.rad(-90)), 1.2, 8, { Name = "Coin", Color = Theme.Colors.Gold, Material = Enum.Material.Foil, CanCollide = false }, model)
+	for _, face in { Enum.NormalId.Left, Enum.NormalId.Right } do
+		local coinGui = Instance.new("SurfaceGui")
+		coinGui.Face = face
+		coinGui.CanvasSize = Vector2.new(200, 200)
+		coinGui.LightInfluence = 0
+		coinGui.Parent = coin
+		local dollar = Instance.new("TextLabel")
+		dollar.BackgroundTransparency = 1
+		dollar.Size = UDim2.fromScale(1, 1)
+		dollar.FontFace = Theme.Fonts.Impact
+		dollar.TextScaled = true
+		dollar.TextColor3 = rgb(160, 110, 20)
+		dollar.Text = "$"
+		dollar.Parent = coinGui
+	end
 	local screen = part({ Name = "Screen", Size = Vector3.new(12, 5, 0.6), CFrame = reactorBase * CFrame.new(0, 14.5, 4.5) * CFrame.Angles(0, math.pi, 0), Color = Theme.Colors.Ink }, model)
 	local gui = Instance.new("SurfaceGui")
 	gui.Name = "CollectorGui"
@@ -9668,6 +10797,8 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 	sub.Text = "STEP ON THE PAD TO COLLECT"
 	sub.Parent = gui
 
+	floatingSign(model, reactorBase * CFrame.new(0, 6, -4), "⬇ STEP HERE TO COLLECT", Theme.Colors.Cash, 300, 34, 90)
+
 	-- Bouton de verrouillage (gros bouton rouge)
 	local lockCf = at(Layout.LockButton.X, 0, Layout.LockButton.Z)
 	cylinder(lockCf * CFrame.new(0, 0.6, 0), 1.2, 10, { Name = "LockBase", Color = Theme.Colors.Ink, Material = Enum.Material.Metal }, model)
@@ -9677,6 +10808,22 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 		Material = Enum.Material.Neon,
 		CanCollide = false,
 	}, model)
+	local dome = ball(lockCf * CFrame.new(0, 1.4, 0), 6.6, Theme.Colors.Red, model)
+	dome.Name = "LockDome"
+	local domeGui = Instance.new("SurfaceGui")
+	domeGui.Face = Enum.NormalId.Top
+	domeGui.CanvasSize = Vector2.new(300, 300)
+	domeGui.LightInfluence = 0
+	domeGui.Parent = dome
+	local lockText = Instance.new("TextLabel")
+	lockText.BackgroundTransparency = 1
+	lockText.Size = UDim2.fromScale(0.7, 0.4)
+	lockText.Position = UDim2.fromScale(0.15, 0.3)
+	lockText.FontFace = Theme.Fonts.Impact
+	lockText.TextScaled = true
+	lockText.TextColor3 = rgb(255, 255, 255)
+	lockText.Text = "LOCK"
+	lockText.Parent = domeGui
 	for k = 0, 7 do
 		local a = k / 8 * math.pi * 2
 		part({
@@ -9686,6 +10833,8 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 			Color = if k % 2 == 0 then Theme.Colors.Gold else Theme.Colors.Ink,
 		}, model)
 	end
+
+	floatingSign(model, lockCf * CFrame.new(0, 6, 0), "🛡️ LOCK BASE", Theme.Colors.Red, 220, 34, 90)
 
 	-- Plateforme du météore personnel
 	local personal = cylinder(at(Layout.PersonalPad.X, 0.5, Layout.PersonalPad.Z), 1, 12, {
@@ -9700,6 +10849,7 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 		CanCollide = false,
 	}, model)
 	pring.Transparency = 0.3
+	floatingSign(model, at(Layout.PersonalPad.X, 6, Layout.PersonalPad.Z), "☄️ YOUR PERSONAL METEOR LANDS HERE", Theme.Colors.Cyan, 320, 30, 90)
 
 	-- Panneau du propriétaire
 	local signPart = part({ Name = "SignAnchor", Size = Vector3.new(1, 1, 1), CFrame = at(0, 18, -D / 2 + 1.6), Transparency = 1, CanCollide = false }, model)
@@ -9724,36 +10874,26 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 	stroke.Parent = signLabel
 	signLabel.Parent = sign
 
-	-- Décor : palmiers et rochers en bordure extérieure
+	-- Décor : arbres ronds, buissons et fleurs autour de l'île (hors des murs)
 	local rng = Random.new(index * 1337)
-	for k = 1, 7 do
+	local flowerColors = { rgb(255, 110, 150), rgb(255, 200, 60), rgb(120, 170, 255), rgb(255, 130, 80) }
+	for k = 1, 8 do
 		local side = if k % 2 == 0 then 1 else -1
-		local x = side * (W / 2 + rng:NextNumber(8, 22))
-		local z = rng:NextNumber(-D / 2 + 10, D / 2 - 5)
-		local base = at(x, 0, z)
-		local h = rng:NextNumber(14, 22)
-		for s = 0, 5 do
-			part({
-				Name = "Trunk",
-				Size = Vector3.new(2 - s * 0.15, h / 6 + 0.3, 2 - s * 0.15),
-				CFrame = base * CFrame.new(s * 0.35 * side, h / 12 + s * h / 6, 0) * CFrame.Angles(0, 0, math.rad(-6 * side)),
-				Color = rgb(150, 100, 60):Lerp(rgb(120, 80, 50), s / 5),
-				Material = Enum.Material.Wood,
-			}, model)
-		end
-		local top = base * CFrame.new(2.1 * side, h, 0)
-		for leaf = 1, 6 do
-			local a = leaf / 6 * math.pi * 2
-			local l = Instance.new("WedgePart")
-			l.Anchored = true
-			l.Size = Vector3.new(0.4, 1.4, 9)
-			l.CFrame = top * CFrame.Angles(0, a, 0) * CFrame.new(0, -0.8, 4.2) * CFrame.Angles(math.rad(22), 0, 0)
-			l.Color = rgb(70, 170, 70):Lerp(rgb(110, 210, 90), rng:NextNumber())
-			l.Material = Enum.Material.Grass
-			l.CanCollide = false
-			l.Parent = model
-		end
+		local x = side * (W / 2 + rng:NextNumber(10, 24))
+		local z = rng:NextNumber(-D / 2 + 6, D / 2 - 4)
+		lollipopTree(model, at(x, 0, z), rng:NextNumber(9, 15), rng)
 	end
+	for _ = 1, 10 do
+		local side = if rng:NextNumber() < 0.5 then 1 else -1
+		bush(model, at(side * (W / 2 + rng:NextNumber(4, 26)), 0, rng:NextNumber(-D / 2, D / 2 + 10)), rng:NextNumber(3, 5), rng)
+	end
+	for _ = 1, 14 do
+		local side = if rng:NextNumber() < 0.5 then 1 else -1
+		flower(model, at(side * (W / 2 + rng:NextNumber(3, 28)), 0, rng:NextNumber(-D / 2 - 4, D / 2 + 12)), flowerColors[rng:NextInteger(1, #flowerColors)])
+	end
+	-- deux arbres à l'arrière, derrière le réacteur
+	lollipopTree(model, at(-30, 0, D / 2 + 8), 12, rng)
+	lollipopTree(model, at(30, 0, D / 2 + 8), 13, rng)
 
 	return {
 		Index = index,
@@ -9823,6 +10963,29 @@ function MapBuilder.Build(): MapInfo
 	end
 	buildVolcano(folder)
 
+	-- Nuages et décor de l'île centrale (hors du cratère)
+	local rng = Random.new(2026)
+	local clouds = Instance.new("Folder")
+	clouds.Name = "Clouds"
+	clouds.Parent = folder
+	for i = 1, 14 do
+		local a = i / 14 * math.pi * 2
+		local r = rng:NextNumber(180, 520)
+		cloud(clouds, Vector3.new(math.cos(a) * r, rng:NextNumber(95, 150), math.sin(a) * r), rng:NextNumber(9, 16), rng)
+	end
+	local center = Instance.new("Model")
+	center.Name = "CenterDecor"
+	center.Parent = folder
+	for i = 1, 16 do
+		local a = (i + 0.5) / 16 * math.pi * 2
+		local sector = (a / (math.pi * 2)) * Layout.PlotCount
+		if math.abs(sector - math.floor(sector + 0.5)) > 0.2 then
+			local r = Layout.CraterRadius + rng:NextNumber(22, 40)
+			lollipopTree(center, CFrame.new(math.sin(a) * r, 0, math.cos(a) * r), rng:NextNumber(9, 14), rng)
+			bush(center, CFrame.new(math.sin(a + 0.1) * (r - 10), 0, math.cos(a + 0.1) * (r - 10)), 4, rng)
+		end
+	end
+
 	for _, name in { "Kaijus", "Meteors", "Effects", "Orbs" } do
 		local f = Instance.new("Folder")
 		f.Name = name
@@ -9845,32 +11008,32 @@ return MapBuilder
       </Item>
     </Item>
   </Item>
-  <Item class="SoundService" referent="50">
+  <Item class="SoundService" referent="55">
     <Properties>
       <string name="Name">SoundService</string>
       <bool name="RespectFilteringEnabled">true</bool>
     </Properties>
   </Item>
-  <Item class="StarterPlayer" referent="51">
+  <Item class="StarterPlayer" referent="56">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMaxZoomDistance">90</float>
       <float name="CharacterJumpPower">50</float>
       <float name="CharacterWalkSpeed">22</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="52">
+    <Item class="StarterPlayerScripts" referent="57">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="53">
+      <Item class="Folder" referent="58">
         <Properties>
           <string name="Name">Client</string>
         </Properties>
-        <Item class="Folder" referent="54">
+        <Item class="Folder" referent="59">
           <Properties>
             <string name="Name">Controllers</string>
           </Properties>
-          <Item class="ModuleScript" referent="55">
+          <Item class="ModuleScript" referent="60">
             <Properties>
               <string name="Name">Audio</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -10043,7 +11206,7 @@ return Audio
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="56">
+          <Item class="ModuleScript" referent="61">
             <Properties>
               <string name="Name">CameraFx</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -10121,7 +11284,7 @@ return CameraFx
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="57">
+          <Item class="ModuleScript" referent="62">
             <Properties>
               <string name="Name">FxBus</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -10160,7 +11323,7 @@ return FxBus
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="58">
+          <Item class="ModuleScript" referent="63">
             <Properties>
               <string name="Name">Remote</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -10197,7 +11360,7 @@ return Remote
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="59">
+          <Item class="ModuleScript" referent="64">
             <Properties>
               <string name="Name">State</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -10270,7 +11433,7 @@ return State
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="60">
+          <Item class="ModuleScript" referent="65">
             <Properties>
               <string name="Name">UIRegistry</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -10291,7 +11454,7 @@ return UIRegistry
             </Properties>
           </Item>
         </Item>
-        <Item class="LocalScript" referent="61">
+        <Item class="LocalScript" referent="66">
           <Properties>
             <string name="Name">Main</string>
             <string name="Source"><![CDATA[--!nonstrict
@@ -10366,11 +11529,11 @@ print("[Steal a Kaiju] client prêt")
 ]]></string>
           </Properties>
         </Item>
-        <Item class="Folder" referent="62">
+        <Item class="Folder" referent="67">
           <Properties>
             <string name="Name">UI</string>
           </Properties>
-          <Item class="ModuleScript" referent="63">
+          <Item class="ModuleScript" referent="68">
             <Properties>
               <string name="Name">Cinematics</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -10848,12 +12011,12 @@ return Cinematics
 ]]></string>
             </Properties>
           </Item>
-          <Item class="Folder" referent="64">
+          <Item class="Folder" referent="69">
             <Properties>
               <string name="Name">Components</string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="65">
+          <Item class="ModuleScript" referent="70">
             <Properties>
               <string name="Name">Hud</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -10873,6 +12036,9 @@ local Events = require(Shared.Config.Events)
 local Economy = require(Shared.Config.Economy)
 local Kaijus = require(Shared.Config.Kaijus)
 local Growth = require(Shared.Config.Growth)
+local Rarities = require(Shared.Config.Rarities)
+local TutorialConfig = require(Shared.Config.Tutorial)
+local Tutorial = require(script.Parent.Parent.World.Tutorial)
 
 local Kit = require(script.Parent.Kit)
 local Controllers = script.Parent.Parent.Controllers
@@ -10951,7 +12117,7 @@ end
 local function buildCurrencies()
 	local top = Kit.new("Frame", {
 		Name = "Top",
-		Size = UDim2.fromOffset(560, 110),
+		Size = UDim2.fromOffset(560, 150),
 		Position = UDim2.new(0.5, 0, 0, 12),
 		AnchorPoint = Vector2.new(0.5, 0),
 		BackgroundTransparency = 1,
@@ -11004,6 +12170,47 @@ local function buildCurrencies()
 		Parent = top,
 	})
 	storedChip.Visible = false
+
+	-- Prochain météore / œuf disponible dans le cratère
+	local meteorChip = Kit.Chip({
+		Name = "Meteor",
+		Text = "☄️ Next meteor in 10s",
+		Color = C.MagmaDark,
+		Size = UDim2.fromOffset(250, 30),
+		Position = UDim2.fromOffset(64, 116),
+		Parent = top,
+	})
+	local meteorText = meteorChip:FindFirstChild("Text") :: TextLabel
+	local lastBest = ""
+	RunService.Heartbeat:Connect(function()
+		local folder = Workspace:FindFirstChild("Meteors")
+		local best, bestOrder = nil, 0
+		if folder then
+			for _, m in folder:GetChildren() do
+				if m:IsA("BasePart") and (m:GetAttribute("Owner") or 0) == 0 and (m:GetAttribute("LandAt") or 0) <= now() then
+					local order = Rarities.Get(m:GetAttribute("Rarity") or "Common").Order
+					if order > bestOrder then
+						best, bestOrder = m, order
+					end
+				end
+			end
+		end
+		if best then
+			local rarity = Rarities.Get(best:GetAttribute("Rarity") or "Common")
+			local left = (best:GetAttribute("ExpireAt") or 0) - now()
+			meteorText.Text = ("☄️ %s EGG in the crater! %ds"):format(string.upper(rarity.Name), math.max(0, math.ceil(left)))
+			meteorChip.BackgroundColor3 = rarity.Color:Lerp(C.Ink, 0.35)
+			if lastBest ~= best.Name then
+				lastBest = best.Name
+				Kit.Punch(meteorChip, 0.15)
+			end
+		else
+			lastBest = ""
+			local wait = Workspace:GetAttribute("NextMeteorIn") or -1
+			meteorText.Text = if wait >= 0 then ("☄️ Next meteor in %ds"):format(math.ceil(wait)) else "☄️ Meteors paused (raid!)"
+			meteorChip.BackgroundColor3 = C.MagmaDark
+		end
+	end)
 
 	State.Observe("Cash", function(value)
 		local previous = cashLabel:GetAttribute("Value") or value
@@ -11114,14 +12321,11 @@ local function menuButton(parent: Instance, props): TextButton
 		OnClick = props.OnClick,
 	})
 	local face = button:FindFirstChild("Face")
-	Kit.Text({
+	Kit.Icon(props.Icon, {
 		Name = "Emoji",
-		Size = UDim2.fromScale(0.62, 0.62),
+		Size = UDim2.fromScale(0.66, 0.66),
 		Position = UDim2.fromScale(0.5, 0.4),
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Text = props.Icon,
-		FontFace = F.Body,
-		Stroke = false,
 		ZIndex = 12,
 		Parent = face,
 	})
@@ -11164,26 +12368,41 @@ local function buildMenus()
 		}),
 	})
 	Kit.AutoScale(left)
-	menuButton(left, { Id = "Shop", Text = "SHOP", Icon = "🛒", Color = "Magma", Order = 1, Rotation = -3, OnClick = function() openScreen("Shop") end })
-	menuButton(left, { Id = "Index", Text = "KAIJUDEX", Icon = "📖", Color = "Cyan", Order = 2, Rotation = 2, OnClick = function() openScreen("Index") end })
-	menuButton(left, { Id = "Rebirth", Text = "EVOLVE", Icon = "🧬", Color = "Radioactive", Order = 3, Rotation = 2, OnClick = function() openScreen("Rebirth") end })
-	menuButton(left, { Id = "Fusion", Text = "FUSION", Icon = "🧪", Color = "Purple", Order = 4, Rotation = -3, OnClick = function() openScreen("Fusion") end })
-	menuButton(left, { Id = "Quests", Text = "QUESTS", Icon = "📜", Color = "Gold", Order = 5, Rotation = -2, OnClick = function() openScreen("Quests") end })
-	menuButton(left, { Id = "Upgrades", Text = "UPGRADES", Icon = "🔧", Color = "Pink", Order = 6, Rotation = 3, OnClick = function() openScreen("Shop", "Upgrades") end })
+	menuButton(left, { Id = "Shop", Text = "SHOP", Icon = "shop", Color = "Magma", Order = 1, Rotation = -3, OnClick = function() openScreen("Shop") end })
+	menuButton(left, { Id = "Index", Text = "KAIJUDEX", Icon = "kaijudex", Color = "Cyan", Order = 2, Rotation = 2, OnClick = function() openScreen("Index") end })
+	menuButton(left, { Id = "Rebirth", Text = "EVOLVE", Icon = "evolve", Color = "Radioactive", Order = 3, Rotation = 2, OnClick = function() openScreen("Rebirth") end })
+	menuButton(left, { Id = "Fusion", Text = "FUSION", Icon = "fusion", Color = "Purple", Order = 4, Rotation = -3, OnClick = function() openScreen("Fusion") end })
+	menuButton(left, { Id = "Quests", Text = "QUESTS", Icon = "quests", Color = "Gold", Order = 5, Rotation = -2, OnClick = function() openScreen("Quests") end })
+	menuButton(left, { Id = "Upgrades", Text = "UPGRADES", Icon = "upgrades", Color = "Pink", Order = 6, Rotation = 3, OnClick = function() openScreen("Shop", "Upgrades") end })
 
 	local right = Kit.new("Frame", {
 		Name = "RightMenu",
-		Size = UDim2.fromOffset(100, 480),
+		Size = UDim2.fromOffset(100, 560),
 		Position = UDim2.new(1, -16, 0.5, 20),
 		AnchorPoint = Vector2.new(1, 0.5),
 		BackgroundTransparency = 1,
 		Parent = layer,
 	}, { Kit.List(Enum.FillDirection.Vertical, 38, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Center) })
 	Kit.AutoScale(right)
-	menuButton(right, { Id = "Playtime", Text = "GIFTS", Icon = "🎁", Color = "Pink", Order = 1, Rotation = 3, OnClick = function() openScreen("Playtime") end })
-	menuButton(right, { Id = "Daily", Text = "DAILY", Icon = "📅", Color = "Gold", Order = 2, Rotation = -2, OnClick = function() openScreen("Daily") end })
-	menuButton(right, { Id = "Spin", Text = "SPIN", Icon = "🎡", Color = "Cyan", Order = 3, Rotation = 2, OnClick = function() openScreen("Spin") end })
-	menuButton(right, { Id = "Settings", Text = "SETTINGS", Icon = "⚙️", Color = "Ink", Order = 4, Rotation = -2, OnClick = function() openScreen("Settings") end })
+	menuButton(right, { Id = "Playtime", Text = "GIFTS", Icon = "gifts", Color = "Pink", Order = 1, Rotation = 3, OnClick = function() openScreen("Playtime") end })
+	menuButton(right, { Id = "Daily", Text = "DAILY", Icon = "daily", Color = "Gold", Order = 2, Rotation = -2, OnClick = function() openScreen("Daily") end })
+	menuButton(right, { Id = "Spin", Text = "SPIN", Icon = "spin", Color = "Cyan", Order = 3, Rotation = 2, OnClick = function() openScreen("Spin") end })
+	menuButton(right, { Id = "Settings", Text = "SETTINGS", Icon = "settings", Color = "Ink", Order = 4, Rotation = -2, OnClick = function() openScreen("Settings") end })
+	menuButton(right, { Id = "HowToPlay", Text = "HELP", Icon = "howtoplay", Color = "Cyan", Order = 5, Rotation = 2, OnClick = function() openScreen("HowToPlay") end })
+
+	-- Déblocage progressif des menus au fil des missions
+	State.Observe("Tutorial", function(step)
+		local visible = TutorialConfig.VisibleMenus(math.max(1, step or 1))
+		for id, button in menuButtons do
+			local show = visible[id] == true
+			if show and not button.Visible then
+				button.Visible = true
+				Kit.Pop(button, 0.2, 0.5)
+			elseif not show then
+				button.Visible = false
+			end
+		end
+	end)
 
 	-- Minuteur des cadeaux sous le bouton
 	local giftTimer = Kit.Chip({ Name = "GiftTimer", Text = "0:00", Size = UDim2.fromOffset(84, 24), Position = UDim2.new(0.5, 0, 1, 14), AnchorPoint = Vector2.new(0.5, 0), Color = C.Pink, Parent = menuButtons.Playtime })
@@ -11542,6 +12761,26 @@ local function startAlarm(args)
 		alarmSound = Audio.Loop("alarm", { Volume = 0.7 })
 	end
 	CameraFx.Shake(0.4, 0.5)
+	-- flèches rouges vers le voleur (joueur ou voleur d'entraînement)
+	local target = nil
+	for _, other in Players:GetPlayers() do
+		if other.DisplayName == args.Thief and other.Character then
+			target = other.Character:FindFirstChild("HumanoidRootPart")
+		end
+	end
+	if not target then
+		local effects = Workspace:FindFirstChild("Effects")
+		if effects then
+			for _, m in effects:GetChildren() do
+				if m.Name == "TrainingThief" and m:GetAttribute("Owner") == player.UserId then
+					target = m.PrimaryPart
+				end
+			end
+		end
+	end
+	if target then
+		Tutorial.PointThief(target)
+	end
 end
 
 local function stopAlarm()
@@ -11551,6 +12790,7 @@ local function stopAlarm()
 		alarmSound:Destroy()
 		alarmSound = nil
 	end
+	Tutorial.HideThief()
 end
 
 ----------------------------------------------------------------------------
@@ -11623,7 +12863,7 @@ return Hud
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="66">
+          <Item class="ModuleScript" referent="71">
             <Properties>
               <string name="Name">Kit</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -11640,6 +12880,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Theme = require(Shared.Config.Theme)
+local Icons = require(Shared.Config.Icons)
 local Signal = require(Shared.Util.Signal)
 
 local Audio = require(script.Parent.Parent.Controllers.Audio)
@@ -11732,6 +12973,144 @@ function Kit.Grid(cell: UDim2, padding: number?): UIGridLayout
 	})
 end
 
+-- Icône : image du pack (Config/Icons) si uploadée, sinon emoji de secours.
+-- `key` peut aussi être directement un emoji.
+-- En mode aperçu (attribut IconPreview sur ReplicatedStorage), l'image pointe
+-- vers "preview://<clé>" pour les rendus hors Roblox.
+-- Un emoji brut est converti vers la clé du pack qui l'utilise (ex. "💎" -> "gem").
+local emojiToKey: { [string]: string } = {}
+local function stripVariation(text: string): string
+	return (text:gsub("\u{FE0F}", ""))
+end
+for key, def in Icons.Defs do
+	local e = stripVariation(def.Emoji)
+	if not emojiToKey[e] then
+		emojiToKey[e] = key
+	end
+end
+
+local function resolveKey(keyOrEmoji: string): string
+	if Icons.Has(keyOrEmoji) then
+		return keyOrEmoji
+	end
+	return emojiToKey[stripVariation(keyOrEmoji)] or keyOrEmoji
+end
+
+
+local function iconImage(key: string): string?
+	if ReplicatedStorage:GetAttribute("IconPreview") and Icons.Has(key) then
+		return "preview://" .. key
+	end
+	return Icons.Image(key)
+end
+
+-- Image du pack pour un texte qui est un emoji seul (sinon nil).
+local function emojiImageFor(text: string): string?
+	local key = emojiToKey[stripVariation(text)]
+	if key then
+		return iconImage(key)
+	end
+	return nil
+end
+
+-- Un TextLabel dont le texte est un emoji du pack affiche l'image à la place
+-- (le texte devient invisible). Suit les changements de .Text.
+local function attachEmojiImage(label: TextLabel)
+	local function refresh()
+		local image = emojiImageFor(label.Text)
+		local existing = label:FindFirstChild("EmojiImage") :: ImageLabel?
+		if image then
+			if not existing then
+				existing = Instance.new("ImageLabel")
+				existing.Name = "EmojiImage"
+				existing.BackgroundTransparency = 1
+				existing.Size = UDim2.fromScale(1, 1)
+				existing.ScaleType = Enum.ScaleType.Fit
+				existing.ZIndex = label.ZIndex
+				existing.Parent = label
+			end
+			existing.Image = image
+			label.TextTransparency = 1
+			local stroke = label:FindFirstChildOfClass("UIStroke")
+			if stroke then
+				stroke.Transparency = 1
+			end
+		elseif existing then
+			existing:Destroy()
+			label.TextTransparency = 0
+			local stroke = label:FindFirstChildOfClass("UIStroke")
+			if stroke then
+				stroke.Transparency = 0
+			end
+		end
+	end
+	label:GetPropertyChangedSignal("Text"):Connect(refresh)
+	refresh()
+end
+
+function Kit.Icon(keyOrEmoji: string, props: { [string]: any }): GuiObject
+	local key = resolveKey(keyOrEmoji)
+	local image = iconImage(key)
+	local inst
+	if image then
+		inst = Kit.new("ImageLabel", {
+			Name = props.Name or "Icon",
+			BackgroundTransparency = 1,
+			Image = image,
+			ScaleType = Enum.ScaleType.Fit,
+		})
+	else
+		inst = Kit.new("TextLabel", {
+			Name = props.Name or "Icon",
+			BackgroundTransparency = 1,
+			Text = if Icons.Has(key) then Icons.Emoji(key) else key,
+			FontFace = F.Body,
+			TextScaled = true,
+		})
+	end
+	inst:SetAttribute("IconKey", key)
+	for k, v in props do
+		if k ~= "Name" and k ~= "Parent" then
+			(inst :: any)[k] = v
+		end
+	end
+	inst.Parent = props.Parent
+	return inst
+end
+
+-- Change l'icône d'un élément créé par Kit.Icon (remplace l'instance si le type change).
+function Kit.SetIcon(inst: GuiObject, keyOrEmoji: string): GuiObject
+	local key = resolveKey(keyOrEmoji)
+	if inst:GetAttribute("IconKey") == key then
+		return inst
+	end
+	local image = iconImage(key)
+	if image and inst:IsA("ImageLabel") then
+		inst.Image = image
+		inst:SetAttribute("IconKey", key)
+		return inst
+	elseif not image and inst:IsA("TextLabel") then
+		inst.Text = if Icons.Has(key) then Icons.Emoji(key) else key
+		inst:SetAttribute("IconKey", key)
+		return inst
+	end
+	local replacement = Kit.Icon(key, {
+		Size = inst.Size,
+		Position = inst.Position,
+		AnchorPoint = inst.AnchorPoint,
+		ZIndex = inst.ZIndex,
+		LayoutOrder = inst.LayoutOrder,
+		Rotation = inst.Rotation,
+		Parent = inst.Parent,
+	})
+	replacement.Name = inst.Name
+	for _, child in inst:GetChildren() do
+		child.Parent = replacement
+	end
+	inst:Destroy()
+	return replacement
+end
+
 -- Texte BD : police, contour encre.
 function Kit.Text(props: { [string]: any }): TextLabel
 	local stroke = props.Stroke
@@ -11758,6 +13137,9 @@ function Kit.Text(props: { [string]: any }): TextLabel
 	end
 	if scaled then
 		Kit.new("UITextSizeConstraint", { MaxTextSize = props.MaxTextSize or 60, Parent = label })
+	end
+	if props.NoEmojiImage ~= true then
+		attachEmojiImage(label)
 	end
 	label.Parent = props.Parent
 	return label
@@ -12082,14 +13464,11 @@ function Kit.Button(props: { [string]: any }): TextButton
 		Parent = face,
 	}, { Kit.List(Enum.FillDirection.Horizontal, 6, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Center) })
 	if props.Icon then
-		Kit.Text({
+		Kit.Icon(props.Icon, {
 			Name = "Icon",
-			Size = UDim2.new(0, props.IconSize or 34, 1, 0),
-			Text = props.Icon,
-			FontFace = F.Body,
+			Size = UDim2.new(0, props.IconSize or 34, 0.8, 0),
 			ZIndex = z + 4,
 			LayoutOrder = 1,
-			Stroke = false,
 			Parent = content,
 		})
 	end
@@ -12597,7 +13976,7 @@ return Kit
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="67">
+          <Item class="ModuleScript" referent="72">
             <Properties>
               <string name="Name">Notifications</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -13022,7 +14401,7 @@ return Notifications
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="68">
+          <Item class="ModuleScript" referent="73">
             <Properties>
               <string name="Name">PromptStyle</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -13181,11 +14560,11 @@ return PromptStyle
 ]]></string>
             </Properties>
           </Item>
-          <Item class="Folder" referent="69">
+          <Item class="Folder" referent="74">
             <Properties>
               <string name="Name">Screens</string>
             </Properties>
-            <Item class="ModuleScript" referent="70">
+            <Item class="ModuleScript" referent="75">
               <Properties>
                 <string name="Name">Daily</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -13819,7 +15198,7 @@ return Daily
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="71">
+            <Item class="ModuleScript" referent="76">
               <Properties>
                 <string name="Name">Fusion</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -15533,7 +16912,111 @@ return Fusion
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="72">
+            <Item class="ModuleScript" referent="77">
+              <Properties>
+                <string name="Name">HowToPlay</string>
+                <string name="Source"><![CDATA[--!nonstrict
+-- Écran « How to play » : 6 pages illustrées, accessible à tout moment.
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+local TutorialConfig = require(Shared.Config.Tutorial)
+
+local Kit = require(script.Parent.Parent.Kit)
+local Audio = require(script.Parent.Parent.Parent.Controllers.Audio)
+
+local C = Kit.Colors
+local F = Kit.Fonts
+
+local HowToPlay = {}
+
+local window
+local pageIndex = 1
+local pages: { Frame } = {}
+local dots: { Frame } = {}
+local counter: TextLabel
+
+local function select(index: number)
+	pageIndex = ((index - 1) % #pages) + 1
+	for i, page in pages do
+		page.Visible = i == pageIndex
+		dots[i].BackgroundColor3 = if i == pageIndex then C.Magma else C.PaperDark
+	end
+	counter.Text = ("%d / %d"):format(pageIndex, #pages)
+	Kit.Pop(pages[pageIndex], 0.7, 0.3)
+	Audio.Play("ui_tab")
+end
+
+function HowToPlay.Init()
+	window = Kit.Window({ Name = "HowToPlay", Title = "HOW TO PLAY", Icon = "❓", Color = "Cyan", Size = UDim2.fromOffset(760, 480), RibbonWidth = 360 })
+	local content = window.Frame
+	local holder = Kit.new("Frame", { Size = UDim2.new(1, 0, 1, -70), BackgroundTransparency = 1, Parent = content })
+	for i, def in TutorialConfig.HowToPlay do
+		local page = Kit.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Visible = false, Parent = holder })
+		local burst = Kit.Starburst({ Size = UDim2.fromOffset(340, 340), Position = UDim2.fromScale(0.22, 0.5), Color = C.Gold, Transparency = 0.8, Parent = page })
+		burst.ZIndex = 4
+		local icon = Kit.Icon(def.Icon, { Size = UDim2.fromOffset(170, 170), Position = UDim2.fromScale(0.22, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 6, Parent = page })
+		Kit.Wobble(icon, 5, 1.4)
+		Kit.Chip({ Text = ("STEP %d"):format(i), Color = C.Magma, Size = UDim2.fromOffset(110, 30), Position = UDim2.new(0.44, 0, 0, 30), TextSize = 18, ZIndex = 6, Parent = page })
+		Kit.Text({
+			Size = UDim2.new(0.54, 0, 0, 54),
+			Position = UDim2.new(0.44, 0, 0, 66),
+			Text = def.Title,
+			FontFace = F.Impact,
+			TextColor3 = C.Ink,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Stroke = false,
+			MaxTextSize = 50,
+			ZIndex = 6,
+			Parent = page,
+		})
+		Kit.Text({
+			Size = UDim2.new(0.54, 0, 0, 200),
+			Position = UDim2.new(0.44, 0, 0, 130),
+			Text = def.Text,
+			FontFace = F.Body,
+			TextColor3 = C.InkSoft,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextYAlignment = Enum.TextYAlignment.Top,
+			TextWrapped = true,
+			Stroke = false,
+			MaxTextSize = 22,
+			ZIndex = 6,
+			Parent = page,
+		})
+		pages[i] = page
+	end
+	local nav = Kit.new("Frame", { Size = UDim2.new(1, 0, 0, 60), Position = UDim2.new(0, 0, 1, -60), BackgroundTransparency = 1, Parent = content })
+	Kit.Button({ Text = "◀ BACK", Color = "Ink", Size = UDim2.fromOffset(150, 50), Position = UDim2.new(0, 10, 0.5, 0), AnchorPoint = Vector2.new(0, 0.5), TextSize = 22, OnClick = function() select(pageIndex - 1) end, Parent = nav })
+	local next = Kit.Button({ Text = "NEXT ▶", Color = "Radioactive", Size = UDim2.fromOffset(150, 50), Position = UDim2.new(1, -10, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), TextSize = 22, OnClick = function() select(pageIndex + 1) end, Parent = nav })
+	Kit.Breathe(next, 0.04, 0.8)
+	local dotRow = Kit.new("Frame", { Size = UDim2.fromOffset(200, 16), Position = UDim2.new(0.5, 0, 0.5, -12), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1, Parent = nav }, { Kit.List(Enum.FillDirection.Horizontal, 8, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Center) })
+	for i = 1, #pages do
+		dots[i] = Kit.new("Frame", { Size = UDim2.fromOffset(14, 14), BackgroundColor3 = C.PaperDark, LayoutOrder = i, Parent = dotRow }, { Kit.Round(), Kit.Stroke(2) })
+	end
+	counter = Kit.Text({ Size = UDim2.fromOffset(100, 20), Position = UDim2.new(0.5, 0, 0.5, 14), AnchorPoint = Vector2.new(0.5, 0.5), Text = "1 / 6", FontFace = F.Body, TextColor3 = C.InkSoft, Stroke = false, Parent = nav })
+	select(1)
+end
+
+function HowToPlay.Open(args)
+	if type(args) == "table" and args.Page then
+		select(args.Page)
+	else
+		select(1)
+	end
+	window:Open()
+end
+
+function HowToPlay.Close()
+	window:Close()
+end
+
+return HowToPlay
+]]></string>
+              </Properties>
+            </Item>
+            <Item class="ModuleScript" referent="78">
               <Properties>
                 <string name="Name">Index</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -16595,7 +18078,7 @@ return Index
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="73">
+            <Item class="ModuleScript" referent="79">
               <Properties>
                 <string name="Name">KaijuPanel</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -17739,7 +19222,7 @@ return KaijuPanel
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="74">
+            <Item class="ModuleScript" referent="80">
               <Properties>
                 <string name="Name">Playtime</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -18353,7 +19836,7 @@ return Playtime
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="75">
+            <Item class="ModuleScript" referent="81">
               <Properties>
                 <string name="Name">Quests</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -19148,7 +20631,7 @@ return Quests
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="76">
+            <Item class="ModuleScript" referent="82">
               <Properties>
                 <string name="Name">Rebirth</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -20233,7 +21716,7 @@ return Rebirth
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="77">
+            <Item class="ModuleScript" referent="83">
               <Properties>
                 <string name="Name">Settings</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -20737,7 +22220,7 @@ return Settings
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="78">
+            <Item class="ModuleScript" referent="84">
               <Properties>
                 <string name="Name">Shop</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -22207,7 +23690,7 @@ return Shop
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="79">
+            <Item class="ModuleScript" referent="85">
               <Properties>
                 <string name="Name">Spin</string>
                 <string name="Source"><![CDATA[--!nonstrict
@@ -22964,7 +24447,7 @@ return Spin
               </Properties>
             </Item>
           </Item>
-          <Item class="ModuleScript" referent="80">
+          <Item class="ModuleScript" referent="86">
             <Properties>
               <string name="Name">Viewport</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -23097,11 +24580,11 @@ return Viewport
             </Properties>
           </Item>
         </Item>
-        <Item class="Folder" referent="81">
+        <Item class="Folder" referent="87">
           <Properties>
             <string name="Name">World</string>
           </Properties>
-          <Item class="ModuleScript" referent="82">
+          <Item class="ModuleScript" referent="88">
             <Properties>
               <string name="Name">CharacterFx</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -23277,7 +24760,7 @@ return CharacterFx
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="83">
+          <Item class="ModuleScript" referent="89">
             <Properties>
               <string name="Name">Effects</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -23290,17 +24773,27 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Theme = require(Shared.Config.Theme)
+local Vfx = require(Shared.Config.Vfx)
 
 local Effects = {}
 
+-- Textures : pack assets/vfx une fois uploadé (Config/Vfx), sinon textures intégrées.
 local TEX = {
-	Sparkle = "rbxasset://textures/particles/sparkles_main.dds",
-	Fire = "rbxasset://textures/particles/fire_main.dds",
-	Smoke = "rbxasset://textures/particles/smoke_main.dds",
-	Spark = "rbxasset://textures/particles/fire_sparks_main.dds",
-	Glow = "rbxasset://textures/particles/forcefield_glow_main.dds",
-	Shock = "rbxasset://textures/particles/explosion01_shockwave_main.dds",
-	Core = "rbxasset://textures/particles/explosion01_core_main.dds",
+	Sparkle = Vfx.Texture("sparkle"),
+	Fire = Vfx.Texture("fire"),
+	Smoke = Vfx.Texture("smoke"),
+	Spark = Vfx.Texture("spark"),
+	Glow = Vfx.Texture("glow_soft"),
+	Shock = Vfx.Texture("shockwave"),
+	Core = Vfx.Texture("flare"),
+	Star = Vfx.Texture("star5"),
+	Magic = Vfx.Texture("magic"),
+	Ring = Vfx.Texture("ring"),
+	Lightning = Vfx.Texture("lightning"),
+	Radioactive = Vfx.Texture("radioactive"),
+	Drip = Vfx.Texture("drip"),
+	Confetti = Vfx.Texture("confetti"),
+	Trail = Vfx.Texture("meteor_trail"),
 }
 Effects.Textures = TEX
 
@@ -23622,7 +25115,7 @@ return Effects
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="84">
+          <Item class="ModuleScript" referent="90">
             <Properties>
               <string name="Name">EventVisuals</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -24046,7 +25539,7 @@ return EventVisuals
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="85">
+          <Item class="ModuleScript" referent="91">
             <Properties>
               <string name="Name">Guide</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -24194,7 +25687,7 @@ return Guide
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="86">
+          <Item class="ModuleScript" referent="92">
             <Properties>
               <string name="Name">KaijuRenderer</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -24267,6 +25760,18 @@ local function now(): number
 end
 
 local function characterOf(userId: number): Model?
+	if userId == -1 then
+		-- voleur d'entraînement (PNJ) : modèle dans workspace.Effects
+		local effects = Workspace:FindFirstChild("Effects")
+		if effects then
+			for _, m in effects:GetChildren() do
+				if m.Name == "TrainingThief" then
+					return m
+				end
+			end
+		end
+		return nil
+	end
 	local p = Players:GetPlayerByUserId(userId)
 	return p and p.Character
 end
@@ -24934,7 +26439,7 @@ return KaijuRenderer
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="87">
+          <Item class="ModuleScript" referent="93">
             <Properties>
               <string name="Name">MeteorRenderer</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -25230,8 +26735,20 @@ function MeteorRenderer.Init()
 		untrack(m:GetAttribute("Id") or m.Name)
 	end)
 
+	local craterTimer = nil
+	task.spawn(function()
+		local map = Workspace:WaitForChild("Map", 30)
+		local crater = map and map:WaitForChild("Crater", 30)
+		local sign = crater and crater:FindFirstChild("MeteorTimer")
+		local gui = sign and sign:FindFirstChild("SignGui")
+		craterTimer = gui and gui:FindFirstChild("Text")
+	end)
 	RunService.RenderStepped:Connect(function()
 		local t = now()
+		if craterTimer then
+			local wait = Workspace:GetAttribute("NextMeteorIn") or -1
+			craterTimer.Text = if wait >= 0 then ("NEXT METEOR IN %ds"):format(math.ceil(wait)) else "METEORS PAUSED"
+		end
 		for _, entry in entries do
 			local anchor = entry.Anchor
 			if not entry.Landed then
@@ -25321,7 +26838,7 @@ return MeteorRenderer
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="88">
+          <Item class="ModuleScript" referent="94">
             <Properties>
               <string name="Name">PlotVisuals</string>
               <string name="Source"><![CDATA[--!nonstrict
@@ -25469,6 +26986,27 @@ local function refreshMyNests()
 				nest.Transparency = if locked and mine then 0.55 else 0
 			end
 			local lock = entry.NestLocks[slot]
+			local occupied = false
+			if mine and not locked then
+				for _, rec in State.Get("Kaijus") or {} do
+					if rec.Nest == slot then
+						occupied = true
+					end
+				end
+				if not occupied then
+					if not lock then
+						lock = nestLockLabel(model, slot)
+						entry.NestLocks[slot] = lock :: any
+					end
+					local text = (lock :: any).Text :: TextLabel
+					text.Text = "🪺 EMPTY NEST"
+					text.TextColor3 = C.PaperDark
+				elseif lock then
+					lock:Destroy()
+					entry.NestLocks[slot] = nil
+					lock = nil
+				end
+			end
 			if mine and locked then
 				if not lock then
 					lock = nestLockLabel(model, slot)
@@ -25482,7 +27020,7 @@ local function refreshMyNests()
 					text.Text = "🔒"
 					text.TextColor3 = C.Paper
 				end
-			elseif lock then
+			elseif lock and not (mine and not locked and not occupied) then
 				lock:Destroy()
 				entry.NestLocks[slot] = nil
 			end
@@ -25544,15 +27082,41 @@ function PlotVisuals.Init()
 	end
 	player:GetAttributeChangedSignal("Plot"):Connect(refreshMyNests)
 	State.Observe("Nests", refreshMyNests)
+	State.Observe("Kaijus", refreshMyNests)
 	State.Changed("Cash"):Connect(function()
 		-- rafraîchit la couleur du prix (léger)
 		refreshMyNests()
 	end)
 	refreshMyNests()
 
+	-- Pièces d'or des réacteurs et nuages : animés localement (peu coûteux)
+	local coins: { { Part: BasePart, Base: CFrame } } = {}
+	for _, entry in plots do
+		local coin = entry.Model:FindFirstChild("Coin") :: BasePart?
+		if coin then
+			table.insert(coins, { Part = coin, Base = coin.CFrame })
+		end
+	end
+	local clouds: { { Model: Model, Base: CFrame, Speed: number } } = {}
+	local cloudFolder = map:FindFirstChild("Clouds")
+	if cloudFolder then
+		for i, c in cloudFolder:GetChildren() do
+			if c:IsA("Model") and c.PrimaryPart then
+				table.insert(clouds, { Model = c, Base = c:GetPivot(), Speed = 1.5 + (i % 4) * 0.6 })
+			end
+		end
+	end
 	RunService.Heartbeat:Connect(function()
 		local t = now()
 		local pulse = (math.sin(os.clock() * 3) + 1) / 2
+		local clock = os.clock()
+		for _, c in coins do
+			c.Part.CFrame = c.Base * CFrame.new(0, math.sin(clock * 2) * 0.6, 0) * CFrame.Angles(clock * 1.6, 0, 0)
+		end
+		for _, c in clouds do
+			local drift = (clock * c.Speed) % 900 - 450
+			c.Model:PivotTo(c.Base * CFrame.new(drift, 0, 0))
+		end
 		for _, entry in plots do
 			local model = entry.Model
 			local shield = (model:GetAttribute("ShieldUntil") or 0) - t
@@ -25617,16 +27181,13 @@ return PlotVisuals
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="89">
+          <Item class="ModuleScript" referent="95">
             <Properties>
               <string name="Name">Tutorial</string>
               <string name="Source"><![CDATA[--!nonstrict
--- Tutoriel guidé (5 étapes) + guidage automatique pendant un vol.
---   0 : ton œuf éclôt       -> quand un kaiju est éclos
---   1 : collecte ton cash    -> après une collecte
---   2 : achète un œuf        -> après un achat
---   3 : verrouille ta base   -> après un verrouillage (ou 25 s)
---   4 : va voler !           -> 12 s puis terminé (5)
+-- Missions d'introduction (côté client) : carte d'objectif animée, flèches
+-- au sol vers la cible, célébration à chaque mission, guidage pendant un vol
+-- et vers le voleur d'entraînement.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -25637,35 +27198,38 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Layout = require(Shared.Config.Layout)
 local Rarities = require(Shared.Config.Rarities)
 local Economy = require(Shared.Config.Economy)
+local TutorialConfig = require(Shared.Config.Tutorial)
 local Theme = require(Shared.Config.Theme)
+local Format = require(Shared.Logic.Format)
 
 local Controllers = script.Parent.Parent.Controllers
 local State = require(Controllers.State)
 local Remote = require(Controllers.Remote)
 local Audio = require(Controllers.Audio)
 local FxBus = require(Controllers.FxBus)
+local UIRegistry = require(Controllers.UIRegistry)
+local CameraFx = require(Controllers.CameraFx)
 local Kit = require(script.Parent.Parent.UI.Kit)
 local Guide = require(script.Parent.Guide)
 
 local C = Theme.Colors
+local F = Theme.Fonts
 local player = Players.LocalPlayer
 
 local Tutorial = {}
 
-local STEPS = {
-	[0] = { Icon = "🥚", Text = "Your first egg is hatching! Watch it on your island." },
-	[1] = { Icon = "⚛️", Text = "Your kaiju makes cash! Step on the Cash Reactor to collect." },
-	[2] = { Icon = "☄️", Text = "Meteors drop eggs in the crater. Buy one — it's FREE!" },
-	[3] = { Icon = "🛡️", Text = "Thieves are coming! Press LOCK BASE to raise your shield." },
-	[4] = { Icon = "🦹", Text = "Now go STEAL kaijus from other islands! Big ones need 2 thieves." },
-}
-
-local hint: Frame
-local hintText: TextLabel
-local hintIcon: TextLabel
-local guide
-local carryGuide
-local step = -1
+local layer: ScreenGui
+local card: Frame
+local cardIcon: GuiObject
+local cardStep: TextLabel
+local cardTitle: TextLabel
+local cardText: TextLabel
+local cardHint: TextLabel
+local skipButton: TextButton
+local guide = Guide.new(C.Radioactive)
+local carryGuide = Guide.new(C.Gold)
+local thiefGuide = Guide.new(C.Red)
+local currentStep = 0
 local stepStarted = 0
 
 local function myPlot(): Model?
@@ -25674,13 +27238,21 @@ local function myPlot(): Model?
 	return if index and map then map:FindFirstChild("Plot" .. index) :: Model else nil
 end
 
-local function myFirstKaijuAnchor(): BasePart?
+local function myKaijuAnchor(): BasePart?
 	local folder = Workspace:FindFirstChild("Kaijus")
 	local mine = folder and folder:FindFirstChild(tostring(player.UserId))
-	return mine and mine:FindFirstChildWhichIsA("BasePart")
+	if not mine then
+		return nil
+	end
+	for _, a in mine:GetChildren() do
+		if a:IsA("BasePart") and not a:GetAttribute("Egg") then
+			return a
+		end
+	end
+	return mine:FindFirstChildWhichIsA("BasePart")
 end
 
-local function nearestMeteor(): BasePart?
+local function nearestFreeMeteor(): BasePart?
 	local folder = Workspace:FindFirstChild("Meteors")
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if not folder or not root then
@@ -25688,141 +27260,259 @@ local function nearestMeteor(): BasePart?
 	end
 	local best, bestD = nil, math.huge
 	for _, m in folder:GetChildren() do
-		if m:IsA("BasePart") and (m:GetAttribute("Owner") or 0) == 0 or m:GetAttribute("Owner") == player.UserId then
-			local d = (m.Position - root.Position).Magnitude
-			if d < bestD and Rarities.Get(m:GetAttribute("Rarity") or "Common").Order <= Economy.FreeFirstEggMaxOrder then
-				best, bestD = m, d
+		if m:IsA("BasePart") then
+			local owner = m:GetAttribute("Owner") or 0
+			local order = Rarities.Get(m:GetAttribute("Rarity") or "Common").Order
+			if (owner == 0 or owner == player.UserId) and order <= Economy.FreeFirstEggMaxOrder then
+				local d = (m.Position - root.Position).Magnitude
+				if d < bestD then
+					best, bestD = m, d
+				end
 			end
 		end
 	end
 	return best
 end
 
-local function setStep(n: number)
-	if n == step then
-		return
+local function nearestOtherPlot(): Model?
+	local map = Workspace:FindFirstChild("Map")
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not map or not root then
+		return nil
 	end
-	step = n
-	stepStarted = os.clock()
-	local def = STEPS[n]
-	if not def then
-		hint.Visible = false
-		guide:Hide()
-		return
+	local best, bestD = nil, math.huge
+	for i = 1, Layout.PlotCount do
+		local plot = map:FindFirstChild("Plot" .. i)
+		if plot and plot:GetAttribute("OwnerId") and plot:GetAttribute("OwnerId") ~= player.UserId then
+			local floor = plot:FindFirstChild("Floor") :: BasePart?
+			if floor then
+				local d = (floor.Position - root.Position).Magnitude
+				if d < bestD then
+					best, bestD = plot, d
+				end
+			end
+		end
 	end
-	hint.Visible = true
-	hintIcon.Text = def.Icon
-	hintText.Text = def.Text
-	Kit.Pop(hint, 0.5)
-	Audio.Play("quest_complete", { Volume = 0.6 })
+	return best
 end
 
-local function advance(to: number)
-	if to > (State.Get("Tutorial") or 0) then
-		Remote.Call("Tutorial", { Step = to }, true)
+local function thiefModel(): Model?
+	local effects = Workspace:FindFirstChild("Effects")
+	if not effects then
+		return nil
 	end
-	setStep(to)
+	for _, m in effects:GetChildren() do
+		if m.Name == "TrainingThief" and m:GetAttribute("Owner") == player.UserId then
+			return m
+		end
+	end
+	return nil
 end
 
-function Tutorial.Init()
-	local layer = Kit.Layer("Tutorial", 9)
-	hint = Kit.new("Frame", {
-		Size = UDim2.fromOffset(620, 74),
-		Position = UDim2.new(0.5, 0, 0, 196),
+----------------------------------------------------------------------------
+-- Carte de mission
+----------------------------------------------------------------------------
+
+local function buildCard()
+	card = Kit.new("Frame", {
+		Name = "Mission",
+		Size = UDim2.fromOffset(430, 118),
+		Position = UDim2.new(0.5, 0, 0, 168),
 		AnchorPoint = Vector2.new(0.5, 0),
 		BackgroundTransparency = 1,
 		Visible = false,
 		Parent = layer,
 	})
-	Kit.AutoScale(hint)
-	local _, body = Kit.Panel({ Size = UDim2.fromScale(1, 1), Rotation = -1, Gradient = "Gold", Parent = hint })
-	hintIcon = Kit.Text({ Size = UDim2.fromOffset(60, 60), Position = UDim2.fromOffset(8, 7), Text = "🥚", FontFace = Kit.Fonts.Body, Stroke = false, ZIndex = 4, Parent = body })
-	Kit.Wobble(hintIcon, 8, 0.7)
-	hintText = Kit.Text({ Size = UDim2.new(1, -86, 1, -14), Position = UDim2.fromOffset(74, 7), Text = "", FontFace = Kit.Fonts.Body, TextColor3 = C.Ink, Stroke = false, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 4, Parent = body })
+	Kit.AutoScale(card)
+	local _, body = Kit.Panel({ Size = UDim2.fromScale(1, 1), Rotation = -1, Gradient = "Paper", Parent = card })
+	Kit.Hazard({ Size = UDim2.new(1, -16, 0, 8), Position = UDim2.fromOffset(8, 5), Parent = body })
+	cardStep = Kit.Text({
+		Size = UDim2.fromOffset(120, 22),
+		Position = UDim2.fromOffset(14, 16),
+		Text = "MISSION 1/6",
+		FontFace = F.Title,
+		TextColor3 = C.Magma,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Stroke = false,
+		ZIndex = 4,
+		Parent = body,
+	})
+	cardIcon = Kit.Icon("egg", { Size = UDim2.fromOffset(64, 64), Position = UDim2.fromOffset(12, 42), ZIndex = 4, Parent = body })
+	Kit.Wobble(cardIcon, 8, 0.9)
+	cardTitle = Kit.Text({
+		Size = UDim2.new(1, -100, 0, 30),
+		Position = UDim2.fromOffset(84, 36),
+		Text = "",
+		FontFace = F.Impact,
+		TextColor3 = C.Ink,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Stroke = false,
+		MaxTextSize = 30,
+		ZIndex = 4,
+		Parent = body,
+	})
+	cardText = Kit.Text({
+		Size = UDim2.new(1, -100, 0, 44),
+		Position = UDim2.fromOffset(84, 66),
+		Text = "",
+		FontFace = F.Body,
+		TextColor3 = C.InkSoft,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		TextWrapped = true,
+		Stroke = false,
+		MaxTextSize = 17,
+		ZIndex = 4,
+		Parent = body,
+	})
+	cardHint = Kit.Text({
+		Size = UDim2.new(0.6, 0, 0, 20),
+		Position = UDim2.new(1, -14, 0, 16),
+		AnchorPoint = Vector2.new(1, 0),
+		Text = "",
+		FontFace = F.Body,
+		TextColor3 = C.RadioactiveDark,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		Stroke = false,
+		MaxTextSize = 16,
+		ZIndex = 4,
+		Parent = body,
+	})
+	skipButton = Kit.Button({
+		Text = "SKIP",
+		Color = "Grey",
+		Size = UDim2.fromOffset(80, 30),
+		Position = UDim2.new(1, -12, 1, -10),
+		AnchorPoint = Vector2.new(1, 1),
+		TextSize = 16,
+		MaxTextSize = 16,
+		ZIndex = 6,
+		OnClick = function()
+			Remote.Call("SkipMission")
+		end,
+		Parent = body,
+	})
+	skipButton.Visible = false
+end
 
-	guide = Guide.new(C.Radioactive)
-	carryGuide = Guide.new(C.Gold)
-
-	local saved = State.Get("Tutorial") or 0
-	if saved < 5 then
-		setStep(saved)
+local function showStep(step: number)
+	local mission = TutorialConfig.Get(step)
+	if not mission then
+		card.Visible = false
+		guide:Hide()
+		return
 	end
+	card.Visible = true
+	cardStep.Text = ("MISSION %d/%d"):format(step, #TutorialConfig.Missions)
+	cardTitle.Text = mission.Title
+	cardText.Text = mission.Text
+	Kit.SetIcon(cardIcon, mission.Icon)
+	local reward = mission.Reward
+	cardHint.Text = "Reward: " .. (if reward.Cash then Format.Cash(reward.Cash) elseif reward.Gems then reward.Gems .. " 💎" else "")
+	skipButton.Visible = false
+	Kit.Pop(card, 0.4, 0.5)
+end
 
-	FxBus.On("Hatch", function()
-		if step == 0 then
-			task.delay(4, function()
-				advance(1)
-			end)
+local function celebrate(args)
+	local mission = TutorialConfig.Get(args.Step or 0)
+	if not mission then
+		return
+	end
+	Audio.Play("quest_complete")
+	CameraFx.FovPunch(-3, 0.4)
+	local reward = args.Reward or {}
+	local text = if reward.Cash then "+" .. Format.Cash(reward.Cash) elseif reward.Gems then "+" .. reward.Gems .. " 💎" else ""
+	UIRegistry.Announce("MISSION COMPLETE!", C.Radioactive, mission.Title .. "  —  " .. text)
+	if args.Unlock and #args.Unlock > 0 then
+		task.delay(3.2, function()
+			UIRegistry.Toast("New menus unlocked: " .. table.concat(args.Unlock, ", "), "Good")
+		end)
+	end
+end
+
+----------------------------------------------------------------------------
+
+function Tutorial.Init()
+	layer = Kit.Layer("Tutorial", 9)
+	buildCard()
+
+	State.Observe("Tutorial", function(step)
+		step = math.max(1, step or 1)
+		if step ~= currentStep then
+			currentStep = step
+			stepStarted = os.clock()
+			showStep(step)
 		end
 	end)
-	FxBus.On("Collect", function()
-		if step == 1 then
-			advance(2)
-		end
+
+	FxBus.On("MissionComplete", celebrate)
+	FxBus.On("TutorialDone", function()
+		task.delay(3.5, function()
+			UIRegistry.Announce("YOU'RE READY!", C.Gold, "Grow the biggest kaijus. Guard them. Steal the rest.", "hatch_legendary")
+		end)
 	end)
-	State.Changed("Stats"):Connect(function(stats)
-		if step == 2 and stats.EggsBought > 0 then
-			advance(3)
-		elseif step == 3 and (stats.Locks or 0) > 0 then
-			advance(4)
-		end
+	FxBus.On("ThiefSpawn", function()
+		UIRegistry.Announce("🥷 TRAINING THIEF!", C.Red, "He's coming for your kaiju — equip your Bonker and hit him!", "alarm")
 	end)
-	State.Changed("Kaijus"):Connect(function(list)
-		if step == 0 then
-			for _, rec in list do
-				if not rec.Egg then
-					advance(1)
-					break
-				end
-			end
-		end
+	FxBus.On("ThiefBonked", function()
+		UIRegistry.Toast("BONK! The thief dropped your kaiju 💪", "Good")
 	end)
 
 	RunService.Heartbeat:Connect(function()
-		-- étapes chronométrées
-		if step == 3 and os.clock() - stepStarted > 25 then
-			advance(4)
-		elseif step == 4 and os.clock() - stepStarted > 12 then
-			advance(5)
-		end
-		-- cible du guide
 		local plot = myPlot()
-		if step == 0 then
-			guide:Point(myFirstKaijuAnchor())
-		elseif step == 1 and plot then
+		local carrying = (player:GetAttribute("Carrying") or "") ~= ""
+		card.Visible = TutorialConfig.Get(currentStep) ~= nil and not carrying
+		local mission = TutorialConfig.Get(currentStep)
+		local target = mission and mission.Target
+		if target == "Kaiju" then
+			guide:Point(myKaijuAnchor())
+		elseif target == "Collector" and plot then
 			guide:Point(plot:FindFirstChild("CollectorPad"))
-		elseif step == 2 then
-			local m = nearestMeteor()
+		elseif target == "Meteor" then
+			local m = nearestFreeMeteor()
 			if m then
 				guide:Point(m)
+				cardHint.Text = "An egg is waiting in the crater!"
 			else
-				guide:Hide()
+				guide:Point(Vector3.new(0, 0, 0))
+				local wait = Workspace:GetAttribute("NextMeteorIn") or 0
+				cardHint.Text = if wait > 0 then ("Next meteor in %ds"):format(math.ceil(wait)) else "Head to the crater!"
 			end
-		elseif step == 3 then
-			guide:Hide()
-		elseif step == 4 then
-			local index = player:GetAttribute("Plot") or 1
-			local other = (index % Layout.PlotCount) + 1
-			local map = Workspace:FindFirstChild("Map")
-			local target = map and map:FindFirstChild("Plot" .. other)
-			if target and target:GetAttribute("OwnerId") then
-				guide:Point(target:FindFirstChild("Floor"))
+		elseif target == "LockButton" and plot then
+			guide:Point(plot:FindFirstChild("LockButton"))
+		elseif target == "Thief" then
+			local thief = thiefModel()
+			guide:Point(if thief then thief.PrimaryPart else nil)
+			cardHint.Text = if thief then "He's on your island!" else "He's on his way..."
+		elseif target == "OtherPlot" then
+			local other = nearestOtherPlot()
+			if other then
+				guide:Point(other:FindFirstChild("Floor"))
+				cardHint.Text = (other:GetAttribute("OwnerName") or "Someone") .. "'s island is closest"
+				skipButton.Visible = false
 			else
 				guide:Hide()
+				cardHint.Text = "No other player yet — invite friends!"
+				skipButton.Visible = os.clock() - stepStarted > 20
 			end
 		else
 			guide:Hide()
 		end
-		-- le bandeau s'efface pendant un vol (le panneau de portage prend sa place)
-		local carrying = (player:GetAttribute("Carrying") or "") ~= ""
-		hint.Visible = STEPS[step] ~= nil and not carrying
-		-- pendant un vol : flèches dorées vers sa propre île
 		if carrying and plot then
 			carryGuide:Point(plot:FindFirstChild("Floor"))
 		else
 			carryGuide:Hide()
 		end
 	end)
+end
+
+-- Flèches rouges vers un voleur (alarme)
+function Tutorial.PointThief(target: any)
+	thiefGuide:Point(target)
+end
+
+function Tutorial.HideThief()
+	thiefGuide:Hide()
 end
 
 return Tutorial
@@ -25833,7 +27523,7 @@ return Tutorial
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="90">
+  <Item class="Workspace" referent="96">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>

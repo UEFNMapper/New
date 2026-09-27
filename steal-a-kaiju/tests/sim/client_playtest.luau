@@ -58,7 +58,7 @@ local count = 0
 for _ in UIRegistry.Screens do
 	count += 1
 end
-check("10 écrans enregistrés", count == 10, count)
+check("11 écrans enregistrés", count == 11, count)
 
 ----------------------------------------------------------------------------
 section("Éclosion (cinématique) et rendu 3D")

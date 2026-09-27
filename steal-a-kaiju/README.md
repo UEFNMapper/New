@@ -31,8 +31,48 @@ effets, sons originaux.
 | **Boutique Premium** | 9 Game Passes + 15 produits (packs, boosts de serveur, événements achetables) |
 | **Conformité 2026** | Probabilités affichées pour tout le hasard payant ; achats aléatoires masqués si `PolicyService` l'impose |
 | **Anti-triche** | Serveur autoritaire, validation de chaque requête, limitation de débit, anti-téléportation pendant un vol |
+| **Onboarding** | 6 missions guidées avec récompenses, voleur d'entraînement, menus débloqués progressivement, écran How to play |
 
 Captures d'interface (rendues depuis le vrai code client) : [`docs/previews/ui/`](docs/previews/ui/)
+
+## Les 5 premières minutes (onboarding)
+
+Le joueur est guidé par **6 missions** validées par le serveur, chacune avec une carte
+d'objectif, des flèches au sol vers la cible et une récompense :
+
+1. **Ton premier kaiju** — l'œuf de bienvenue éclôt sous tes yeux.
+2. **Collecte ton cash** — marche sur le pad vert du réacteur.
+3. **Attrape un œuf de météore** — flèches jusqu'au cratère, premier œuf gratuit.
+4. **Verrouille ta base** — le bouton rouge / touche L.
+5. **Bonk le voleur !** — un **voleur d'entraînement (PNJ)** vient prendre ton kaiju, tu le
+   frappes avec le Bonker (le kaiju n'est jamais perdu pendant l'entraînement).
+6. **Vole un kaiju** — chez un vrai joueur (passable après 20 s si le serveur est vide).
+
+Les menus se débloquent au fil des missions (seuls Réglages et Aide sont visibles au début),
+et un écran **How to play** en 6 pages reste accessible à tout moment. Dans le monde :
+panneaux « NEST YARD », « STEP HERE TO COLLECT », « LOCK BASE », « TO THE CRATER »,
+minuteur du prochain météore au-dessus du cratère et sur le HUD.
+
+## Assets : icônes, modèles 3D, sons
+
+| Dossier | Contenu | Licence |
+|---|---|---|
+| `assets/icons/` | 103 icônes 3D (Microsoft Fluent Emoji 3D + game-icons.net), planche `contact_sheet.png` | MIT / CC BY |
+| `assets/audio/` | 42 effets + 4 musiques originaux | libre |
+| `assets/models/` | modèles 3D de créatures (voir `MANIFEST.json`) | CC0 |
+| `assets/vfx/` | textures de particules (Kenney) | CC0 |
+
+**Tant qu'ils ne sont pas uploadés, le jeu reste jouable** : emojis à la place des icônes,
+sons publics Roblox, modèles procéduraux, textures de particules intégrées à Roblox.
+
+Pour tout uploader d'un coup et remplir les identifiants automatiquement :
+
+```bash
+export ROBLOX_API_KEY=...          # clé Open Cloud (permission Assets lecture/écriture)
+python3 tools/upload_assets.py --user-id 123456789      # ou --group-id
+```
+
+Détails et alternative manuelle (Bulk Import dans Studio) : [`docs/UPLOAD.md`](docs/UPLOAD.md).
 
 ## Lancer le jeu dans Roblox Studio
 

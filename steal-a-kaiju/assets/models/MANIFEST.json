@@ -1,0 +1,1663 @@
+{
+  "Toastzilla": {
+    "file": "Bread_Slice.fbx",
+    "format": "fbx",
+    "files": [
+      "Bread_Slice.fbx",
+      "Bread_Slice.glb"
+    ],
+    "preview": "Bread_Slice.glb",
+    "textures": [],
+    "source": "https://quaternius.com/packs/ultimatefood.html",
+    "pack": "Quaternius Ultimate Food",
+    "model": "Bread_Slice",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [],
+    "notes": "Static toast slice prop (no rig, no animation): exact food, but eyes/legs must stay procedural or be animated by the client (Squash).",
+    "scaleHint": 0.847,
+    "boundsMin": [
+      -0.347,
+      -0.491,
+      -0.054
+    ],
+    "boundsMax": [
+      0.346,
+      0.356,
+      0.054
+    ],
+    "suggestedScale": 5.3127,
+    "suggestedOffset": [
+      0.001,
+      0.491,
+      -0.0
+    ],
+    "matchQuality": "ok",
+    "bytes": 52988
+  },
+  "Gloop": {
+    "file": "GreenBlob.fbx",
+    "format": "fbx",
+    "files": [
+      "GreenBlob.fbx",
+      "Atlas_Monsters.png",
+      "GreenBlob.gltf"
+    ],
+    "preview": "GreenBlob.gltf",
+    "textures": [
+      "Atlas_Monsters.png"
+    ],
+    "source": "https://quaternius.com/packs/ultimatemonsters.html",
+    "pack": "Quaternius Ultimate Monsters",
+    "model": "Blob/GreenBlob",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Bite_Front",
+      "Dance",
+      "Death",
+      "HitRecieve",
+      "Idle",
+      "Jump",
+      "No",
+      "Walk",
+      "Yes"
+    ],
+    "notes": "Green blob with big eyes; antenna accessory stays procedural.",
+    "scaleHint": 1.853,
+    "boundsMin": [
+      -1.048,
+      -0.012,
+      -1.059
+    ],
+    "boundsMax": [
+      1.201,
+      1.841,
+      1.136
+    ],
+    "suggestedScale": 2.428,
+    "suggestedOffset": [
+      -0.076,
+      0.012,
+      -0.039
+    ],
+    "matchQuality": "good",
+    "bytes": 475698
+  },
+  "Pinchy": {
+    "file": "Crab.fbx",
+    "format": "fbx",
+    "files": [
+      "Crab.fbx",
+      "Crab_Texture.png",
+      "Crab.gltf"
+    ],
+    "preview": "Crab.gltf",
+    "textures": [
+      "Crab_Texture.png"
+    ],
+    "source": "https://quaternius.com/packs/cutemonsters.html",
+    "pack": "Quaternius Cute Monsters",
+    "model": "Crab",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Bite_Front",
+      "Bite_InPlace",
+      "Dance",
+      "Death",
+      "HitRecieve",
+      "Idle",
+      "Jump",
+      "No",
+      "Walk",
+      "Yes"
+    ],
+    "notes": "Cute red crab blob with claws (Idle/Walk/Bite/Jump clips).",
+    "scaleHint": 1.567,
+    "boundsMin": [
+      -1.283,
+      -0.029,
+      -0.686
+    ],
+    "boundsMax": [
+      1.283,
+      1.538,
+      0.73
+    ],
+    "suggestedScale": 2.8721,
+    "suggestedOffset": [
+      -0.0,
+      0.029,
+      -0.022
+    ],
+    "matchQuality": "good",
+    "bytes": 1659845
+  },
+  "DinoNugget": {
+    "file": "Dino.fbx",
+    "format": "fbx",
+    "files": [
+      "Dino.fbx",
+      "Atlas_Monsters.png",
+      "Dino.gltf"
+    ],
+    "preview": "Dino.gltf",
+    "textures": [
+      "Atlas_Monsters.png"
+    ],
+    "source": "https://quaternius.com/packs/ultimatemonsters.html",
+    "pack": "Quaternius Ultimate Monsters",
+    "model": "Big/Dino",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Death",
+      "Duck",
+      "HitReact",
+      "Idle",
+      "Jump",
+      "Jump_Idle",
+      "Jump_Land",
+      "No",
+      "Punch",
+      "Run",
+      "Walk",
+      "Wave",
+      "Weapon",
+      "Yes"
+    ],
+    "notes": "Chubby cartoon dino (pink in texture): tint to nugget orange via MeshPart.Color or swap atlas colours.",
+    "scaleHint": 3.226,
+    "boundsMin": [
+      -2.325,
+      -0.003,
+      -0.875
+    ],
+    "boundsMax": [
+      2.325,
+      3.223,
+      1.044
+    ],
+    "suggestedScale": 1.3949,
+    "suggestedOffset": [
+      -0.0,
+      0.003,
+      -0.084
+    ],
+    "matchQuality": "ok",
+    "bytes": 4597546
+  },
+  "Wormzy": {
+    "file": "Worm.fbx",
+    "format": "fbx",
+    "files": [
+      "Worm.fbx",
+      "Worm.glb"
+    ],
+    "preview": "Worm.glb",
+    "textures": [],
+    "source": "https://quaternius.com/packs/cutefish.html",
+    "pack": "Quaternius Cute Fish",
+    "model": "Worm",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [],
+    "notes": "Pink worm (bait model from Cute Fish), tiny: scale up. Has a Swim/Idle rig.",
+    "scaleHint": 0.484,
+    "boundsMin": [
+      -0.228,
+      0.002,
+      -0.233
+    ],
+    "boundsMax": [
+      0.267,
+      0.486,
+      0.199
+    ],
+    "suggestedScale": 9.2914,
+    "suggestedOffset": [
+      -0.02,
+      -0.002,
+      0.017
+    ],
+    "matchQuality": "good",
+    "bytes": 37184
+  },
+  "Pigeonator": {
+    "file": "Pigeon.fbx",
+    "format": "fbx",
+    "files": [
+      "Pigeon.fbx",
+      "Atlas_Monsters.png",
+      "Pigeon.gltf"
+    ],
+    "preview": "Pigeon.gltf",
+    "textures": [
+      "Atlas_Monsters.png"
+    ],
+    "source": "https://quaternius.com/packs/ultimatemonsters.html",
+    "pack": "Quaternius Ultimate Monsters",
+    "model": "Flying/Pigeon",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Death",
+      "Fast_Flying",
+      "Flying_Idle",
+      "Headbutt",
+      "HitReact",
+      "No",
+      "Punch",
+      "Yes"
+    ],
+    "notes": "Flying pigeon monster with wings (Idle/Flying clips).",
+    "scaleHint": 1.37,
+    "boundsMin": [
+      -2.067,
+      1.567,
+      -1.252
+    ],
+    "boundsMax": [
+      2.067,
+      2.937,
+      0.92
+    ],
+    "suggestedScale": 3.2852,
+    "suggestedOffset": [
+      -0.0,
+      -1.567,
+      0.166
+    ],
+    "matchQuality": "good",
+    "bytes": 1125836
+  },
+  "Sharkapillar": {
+    "file": "Shark.fbx",
+    "format": "fbx",
+    "files": [
+      "Shark.fbx",
+      "Shark.glb"
+    ],
+    "preview": "Shark.glb",
+    "textures": [],
+    "source": "https://quaternius.com/packs/cutefish.html",
+    "pack": "Quaternius Cute Fish",
+    "model": "Shark",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Attack",
+      "Death",
+      "Out_Of_Water",
+      "Swimming_Fast",
+      "Swimming_Impulse",
+      "Swimming_Normal"
+    ],
+    "notes": "Cute big-eyed shark; no caterpillar legs (add procedural legs if wanted).",
+    "scaleHint": 3.79,
+    "boundsMin": [
+      -1.898,
+      -1.305,
+      -3.07
+    ],
+    "boundsMax": [
+      1.909,
+      2.485,
+      2.288
+    ],
+    "suggestedScale": 1.1874,
+    "suggestedOffset": [
+      -0.006,
+      1.305,
+      0.391
+    ],
+    "matchQuality": "ok",
+    "bytes": 440248
+  },
+  "Croissantosaurus": {
+    "file": "Croissant.fbx",
+    "format": "fbx",
+    "files": [
+      "Croissant.fbx",
+      "Croissant.glb"
+    ],
+    "preview": "Croissant.glb",
+    "textures": [],
+    "source": "https://quaternius.com/packs/ultimatefood.html",
+    "pack": "Quaternius Ultimate Food",
+    "model": "Croissant",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [],
+    "notes": "Static croissant prop (no rig): exact food, eyes/spikes stay procedural.",
+    "scaleHint": 0.55,
+    "boundsMin": [
+      -0.652,
+      -0.275,
+      -0.275
+    ],
+    "boundsMax": [
+      0.652,
+      0.275,
+      0.456
+    ],
+    "suggestedScale": 8.185,
+    "suggestedOffset": [
+      -0.0,
+      0.275,
+      -0.09
+    ],
+    "matchQuality": "ok",
+    "bytes": 24740
+  },
+  "Frostodon": {
+    "file": "Yeti.fbx",
+    "format": "fbx",
+    "files": [
+      "Yeti.fbx",
+      "Atlas_Monsters.png",
+      "Yeti.gltf"
+    ],
+    "preview": "Yeti.gltf",
+    "textures": [
+      "Atlas_Monsters.png"
+    ],
+    "source": "https://quaternius.com/packs/ultimatemonsters.html",
+    "pack": "Quaternius Ultimate Monsters",
+    "model": "Big/Yeti",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Death",
+      "Duck",
+      "HitReact",
+      "Idle",
+      "Jump",
+      "Jump_Idle",
+      "Jump_Land",
+      "No",
+      "Punch",
+      "Run",
+      "Walk",
+      "Wave",
+      "Weapon",
+      "Yes"
+    ],
+    "notes": "Ice-themed yeti (biped, not quadruped) with white fur + blue face; horn/spikes procedural.",
+    "scaleHint": 2.828,
+    "boundsMin": [
+      -2.325,
+      -0.011,
+      -0.645
+    ],
+    "boundsMax": [
+      2.325,
+      2.817,
+      0.827
+    ],
+    "suggestedScale": 1.5912,
+    "suggestedOffset": [
+      -0.0,
+      0.011,
+      -0.091
+    ],
+    "matchQuality": "ok",
+    "bytes": 4627407
+  },
+  "ThunderSquid": {
+    "file": "Squidle.fbx",
+    "format": "fbx",
+    "files": [
+      "Squidle.fbx",
+      "Atlas_Monsters.png",
+      "Squidle.gltf"
+    ],
+    "preview": "Squidle.gltf",
+    "textures": [
+      "Atlas_Monsters.png"
+    ],
+    "source": "https://quaternius.com/packs/ultimatemonsters.html",
+    "pack": "Quaternius Ultimate Monsters",
+    "model": "Flying/Squidle",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Death",
+      "Fast_Flying",
+      "Flying_Idle",
+      "Headbutt",
+      "HitReact",
+      "No",
+      "Punch",
+      "Yes"
+    ],
+    "notes": "Flying squid monster; tint yellow, bolt accessory procedural.",
+    "scaleHint": 1.987,
+    "boundsMin": [
+      -2.736,
+      0.994,
+      -1.43
+    ],
+    "boundsMax": [
+      2.736,
+      2.981,
+      0.692
+    ],
+    "suggestedScale": 2.2652,
+    "suggestedOffset": [
+      -0.0,
+      -0.994,
+      0.369
+    ],
+    "matchQuality": "good",
+    "bytes": 2880361
+  },
+  "Kebabzilla": {
+    "file": "Corndog.fbx",
+    "format": "fbx",
+    "files": [
+      "Corndog.fbx",
+      "Corndog.glb"
+    ],
+    "preview": "Corndog.glb",
+    "textures": [],
+    "source": "https://quaternius.com/packs/ultimatefood.html",
+    "pack": "Quaternius Ultimate Food",
+    "model": "Corndog",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [],
+    "notes": "No kebab/d\u00f6ner model in any CC0 pack; closest skewered food is a corn dog. Keep the procedural model.",
+    "scaleHint": 1.352,
+    "boundsMin": [
+      -0.128,
+      -0.0,
+      -0.128
+    ],
+    "boundsMax": [
+      0.128,
+      1.352,
+      0.128
+    ],
+    "suggestedScale": 3.3288,
+    "suggestedOffset": [
+      -0.0,
+      0.0,
+      0.0
+    ],
+    "matchQuality": "fallback",
+    "bytes": 37320
+  },
+  "BeepBoop": {
+    "file": "Robot.fbx",
+    "format": "fbx",
+    "files": [
+      "Robot.fbx",
+      "Robot.glb"
+    ],
+    "preview": "Robot.glb",
+    "textures": [],
+    "source": "https://quaternius.com/packs/animatedrobot.html",
+    "pack": "Quaternius Animated Robot",
+    "model": "Robot",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Robot_Dance",
+      "Robot_Death",
+      "Robot_Idle",
+      "Robot_Jump",
+      "Robot_No",
+      "Robot_Punch",
+      "Robot_Running",
+      "Robot_Sitting",
+      "Robot_Standing",
+      "Robot_ThumbsUp",
+      "Robot_WalkJump",
+      "Robot_Walking",
+      "Robot_Wave",
+      "Robot_Yes"
+    ],
+    "notes": "Small orange robot with visor and antenna; 14 clips (Idle, Walking, Running, Dance, Wave...).",
+    "scaleHint": 4.497,
+    "boundsMin": [
+      -3.312,
+      -0.02,
+      -1.282
+    ],
+    "boundsMax": [
+      3.307,
+      4.477,
+      1.334
+    ],
+    "suggestedScale": 1.0007,
+    "suggestedOffset": [
+      0.003,
+      0.02,
+      -0.026
+    ],
+    "matchQuality": "good",
+    "bytes": 3698828
+  },
+  "SushiRex": {
+    "file": "Food_SalmonNigiri.gltf",
+    "format": "gltf",
+    "files": [
+      "Food_SalmonNigiri.gltf"
+    ],
+    "preview": "Food_SalmonNigiri.gltf",
+    "textures": [
+      "embedded in glTF"
+    ],
+    "source": "https://quaternius.com/packs/sushirestaurantkit.html",
+    "pack": "Quaternius Sushi Restaurant Kit",
+    "model": "Food/Food_SalmonNigiri",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [],
+    "notes": "Only a static salmon nigiri exists (no sushi dinosaur); glTF with embedded atlas. Keep the procedural rex unless you rig it.",
+    "scaleHint": 0.314,
+    "boundsMin": [
+      -0.18,
+      -0.003,
+      -0.326
+    ],
+    "boundsMax": [
+      0.176,
+      0.311,
+      0.326
+    ],
+    "suggestedScale": 14.3276,
+    "suggestedOffset": [
+      0.002,
+      0.003,
+      -0.0
+    ],
+    "matchQuality": "fallback",
+    "bytes": 38083
+  },
+  "Robotank": {
+    "file": "George.fbx",
+    "format": "fbx",
+    "files": [
+      "George.fbx",
+      "George_Texture.png",
+      "George.gltf"
+    ],
+    "preview": "George.gltf",
+    "textures": [
+      "George_Texture.png"
+    ],
+    "source": "https://quaternius.com/packs/animatedmech.html",
+    "pack": "Quaternius Animated Mechs",
+    "model": "Textured/George",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Dance",
+      "Death",
+      "Hello",
+      "HitRecieve_1",
+      "HitRecieve_2",
+      "Idle",
+      "Jump",
+      "Kick",
+      "No",
+      "Pickup",
+      "Punch",
+      "Run",
+      "Run_Holding",
+      "Run_Tall",
+      "Shoot",
+      "SwordSlash",
+      "Walk",
+      "Walk_Holding",
+      "Walk_Tall",
+      "Yes"
+    ],
+    "notes": "Walker mech with twin guns (Idle/Walk/Run/Shoot clips); textured, olive green.",
+    "scaleHint": 6.528,
+    "boundsMin": [
+      -3.628,
+      -0.019,
+      -0.804
+    ],
+    "boundsMax": [
+      3.628,
+      6.509,
+      1.654
+    ],
+    "suggestedScale": 0.6894,
+    "suggestedOffset": [
+      -0.0,
+      0.019,
+      -0.425
+    ],
+    "matchQuality": "good",
+    "bytes": 12587102
+  },
+  "Magmadillo": {
+    "file": "Stegosaurus.fbx",
+    "format": "fbx",
+    "files": [
+      "Stegosaurus.fbx",
+      "Stegosaurus.glb"
+    ],
+    "preview": "Stegosaurus.glb",
+    "textures": [],
+    "source": "https://quaternius.com/packs/animateddinosaurs.html",
+    "pack": "Quaternius Animated Dinosaurs",
+    "model": "Stegosaurus",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Stegosaurus_Attack",
+      "Stegosaurus_Death",
+      "Stegosaurus_Idle",
+      "Stegosaurus_Jump",
+      "Stegosaurus_Run",
+      "Stegosaurus_Walk"
+    ],
+    "notes": "Quadruped with back plates reading as magma plates; flat-colour materials (dark), tint/glow accent procedural.",
+    "scaleHint": 10.616,
+    "boundsMin": [
+      -2.353,
+      -0.106,
+      -15.377
+    ],
+    "boundsMax": [
+      2.353,
+      10.51,
+      7.676
+    ],
+    "suggestedScale": 0.4239,
+    "suggestedOffset": [
+      0.0,
+      0.106,
+      3.851
+    ],
+    "matchQuality": "ok",
+    "bytes": 1556984
+  },
+  "Bananadon": {
+    "file": "Parasaurolophus.fbx",
+    "format": "fbx",
+    "files": [
+      "Parasaurolophus.fbx",
+      "Parasaurolophus.glb"
+    ],
+    "preview": "Parasaurolophus.glb",
+    "textures": [],
+    "source": "https://quaternius.com/packs/animateddinosaurs.html",
+    "pack": "Quaternius Animated Dinosaurs",
+    "model": "Parasaurolophus",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Parasaurolophus_Attack",
+      "Parasaurolophus_Death",
+      "Parasaurolophus_Idle",
+      "Parasaurolophus_Jump",
+      "Parasaurolophus_Run",
+      "Parasaurolophus_Walk"
+    ],
+    "notes": "Biped dinosaur with a curved banana-like crest; tint yellow.",
+    "scaleHint": 5.979,
+    "boundsMin": [
+      -0.975,
+      -0.009,
+      -7.786
+    ],
+    "boundsMax": [
+      0.975,
+      5.97,
+      4.695
+    ],
+    "suggestedScale": 0.7526,
+    "suggestedOffset": [
+      -0.0,
+      0.009,
+      1.545
+    ],
+    "matchQuality": "ok",
+    "bytes": 1345844
+  },
+  "Crabzooka": {
+    "file": "Crab.fbx",
+    "format": "fbx",
+    "files": [
+      "Crab.fbx",
+      "Crab_Texture.png",
+      "Crab.gltf"
+    ],
+    "preview": "Crab.gltf",
+    "textures": [
+      "Crab_Texture.png"
+    ],
+    "source": "https://quaternius.com/packs/cutemonsters.html",
+    "pack": "Quaternius Cute Monsters",
+    "model": "Crab",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Bite_Front",
+      "Bite_InPlace",
+      "Dance",
+      "Death",
+      "HitRecieve",
+      "Idle",
+      "Jump",
+      "No",
+      "Walk",
+      "Yes"
+    ],
+    "notes": "Same Cute Monsters crab as Pinchy, tinted grey/orange; cannon accessory procedural.",
+    "scaleHint": 1.567,
+    "boundsMin": [
+      -1.283,
+      -0.029,
+      -0.686
+    ],
+    "boundsMax": [
+      1.283,
+      1.538,
+      0.73
+    ],
+    "suggestedScale": 2.8721,
+    "suggestedOffset": [
+      -0.0,
+      0.029,
+      -0.022
+    ],
+    "matchQuality": "ok",
+    "bytes": 1659845
+  },
+  "Pizzapocalypse": {
+    "file": "Pizza.fbx",
+    "format": "fbx",
+    "files": [
+      "Pizza.fbx",
+      "Pizza.glb"
+    ],
+    "preview": "Pizza.glb",
+    "textures": [],
+    "source": "https://quaternius.com/packs/ultimatefood.html",
+    "pack": "Quaternius Ultimate Food",
+    "model": "Pizza",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [],
+    "notes": "Static whole pizza prop (no rig): exact food, face/legs procedural.",
+    "scaleHint": 0.161,
+    "boundsMin": [
+      -1.682,
+      -0.014,
+      -1.693
+    ],
+    "boundsMax": [
+      1.69,
+      0.147,
+      1.664
+    ],
+    "suggestedScale": 27.9618,
+    "suggestedOffset": [
+      -0.004,
+      0.014,
+      0.015
+    ],
+    "matchQuality": "ok",
+    "bytes": 97832
+  },
+  "Rexplosion": {
+    "file": "Trex.fbx",
+    "format": "fbx",
+    "files": [
+      "Trex.fbx",
+      "Trex.glb"
+    ],
+    "preview": "Trex.glb",
+    "textures": [],
+    "source": "https://quaternius.com/packs/animateddinosaurs.html",
+    "pack": "Quaternius Animated Dinosaurs",
+    "model": "Trex",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "TRex_Attack",
+      "TRex_Death",
+      "TRex_Idle",
+      "TRex_Jump",
+      "TRex_Run",
+      "TRex_Walk"
+    ],
+    "notes": "Animated T-Rex, dark green (Idle/Walk/Run/Attack/Jump); large file units (15 tall) so Scale is small.",
+    "scaleHint": 15.225,
+    "boundsMin": [
+      -3.977,
+      -0.004,
+      -16.602
+    ],
+    "boundsMax": [
+      3.977,
+      15.221,
+      14.428
+    ],
+    "suggestedScale": 0.2956,
+    "suggestedOffset": [
+      0.0,
+      0.004,
+      1.087
+    ],
+    "matchQuality": "good",
+    "bytes": 1410628
+  },
+  "KawaiiKraken": {
+    "file": "Cthulhu.fbx",
+    "format": "fbx",
+    "files": [
+      "Cthulhu.fbx",
+      "Cthulhu_Texture.png",
+      "Cthulhu.gltf"
+    ],
+    "preview": "Cthulhu.gltf",
+    "textures": [
+      "Cthulhu_Texture.png"
+    ],
+    "source": "https://quaternius.com/packs/cutemonsters.html",
+    "pack": "Quaternius Cute Monsters",
+    "model": "Cthulhu",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Bite_Front",
+      "Death",
+      "Flying",
+      "HitRecieve"
+    ],
+    "notes": "Cute tentacled Cthulhu head; tint pink, bow/blush procedural.",
+    "scaleHint": 1.565,
+    "boundsMin": [
+      -1.603,
+      -0.057,
+      -0.686
+    ],
+    "boundsMax": [
+      1.603,
+      1.508,
+      0.803
+    ],
+    "suggestedScale": 2.8758,
+    "suggestedOffset": [
+      -0.0,
+      0.057,
+      -0.058
+    ],
+    "matchQuality": "ok",
+    "bytes": 1565325
+  },
+  "ThunderGoose": {
+    "file": "Chicken.fbx",
+    "format": "fbx",
+    "files": [
+      "Chicken.fbx",
+      "Atlas_Monsters.png",
+      "Chicken.gltf"
+    ],
+    "preview": "Chicken.gltf",
+    "textures": [
+      "Atlas_Monsters.png"
+    ],
+    "source": "https://quaternius.com/packs/ultimatemonsters.html",
+    "pack": "Quaternius Ultimate Monsters",
+    "model": "Blob/Chicken",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Bite_Front",
+      "Dance",
+      "Death",
+      "HitRecieve",
+      "Idle",
+      "Jump",
+      "No",
+      "Walk",
+      "Yes"
+    ],
+    "notes": "Round orange chicken monster (closest goose); bolt/glow procedural.",
+    "scaleHint": 2.347,
+    "boundsMin": [
+      -1.175,
+      -0.006,
+      -0.802
+    ],
+    "boundsMax": [
+      1.175,
+      2.341,
+      1.3
+    ],
+    "suggestedScale": 1.9172,
+    "suggestedOffset": [
+      0.0,
+      0.006,
+      -0.249
+    ],
+    "matchQuality": "ok",
+    "bytes": 560462
+  },
+  "Donutron": {
+    "file": "Donut1.fbx",
+    "format": "fbx",
+    "files": [
+      "Donut1.fbx",
+      "Donut1.glb"
+    ],
+    "preview": "Donut1.glb",
+    "textures": [],
+    "source": "https://quaternius.com/packs/ultimatefood.html",
+    "pack": "Quaternius Ultimate Food",
+    "model": "Donut1",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [],
+    "notes": "Static pink-frosted donut with sprinkles (exact colours): visor/eyes procedural.",
+    "scaleHint": 0.291,
+    "boundsMin": [
+      -0.429,
+      -0.127,
+      -0.426
+    ],
+    "boundsMax": [
+      0.43,
+      0.164,
+      0.444
+    ],
+    "suggestedScale": 15.4436,
+    "suggestedOffset": [
+      -0.001,
+      0.127,
+      -0.009
+    ],
+    "matchQuality": "ok",
+    "bytes": 97360
+  },
+  "Drakonda": {
+    "file": "Dragon.fbx",
+    "format": "fbx",
+    "files": [
+      "Dragon.fbx",
+      "Dragon.glb"
+    ],
+    "preview": "Dragon.glb",
+    "textures": [],
+    "source": "https://quaternius.com/packs/animatedmonster.html",
+    "pack": "Quaternius Animated Monsters",
+    "model": "Dragon",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Dragon_Attack",
+      "Dragon_Attack2",
+      "Dragon_Death",
+      "Dragon_Flying",
+      "Dragon_Hit"
+    ],
+    "notes": "Red winged dragon (Flying/Attack/Hit clips) \u2014 has legs unlike the flavour text, but the best dragon in the packs.",
+    "scaleHint": 3.852,
+    "boundsMin": [
+      -1.705,
+      0.13,
+      -1.9
+    ],
+    "boundsMax": [
+      1.705,
+      3.982,
+      1.811
+    ],
+    "suggestedScale": 1.1681,
+    "suggestedOffset": [
+      -0.0,
+      -0.13,
+      0.044
+    ],
+    "matchQuality": "good",
+    "bytes": 1143100
+  },
+  "Kaijumbo": {
+    "file": "Bull.fbx",
+    "format": "fbx",
+    "files": [
+      "Bull.fbx",
+      "Bull.gltf"
+    ],
+    "preview": "Bull.gltf",
+    "textures": [],
+    "source": "https://quaternius.com/packs/ultimateanimatedanimals.html",
+    "pack": "Quaternius Ultimate Animated Animals",
+    "model": "Bull",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Attack_Headbutt",
+      "Attack_Kick",
+      "Death",
+      "Eating",
+      "Gallop",
+      "Gallop_Jump",
+      "Idle",
+      "Idle_2",
+      "Idle_Headlow",
+      "Idle_HitReact_Left",
+      "Jump_toIdle",
+      "Walk"
+    ],
+    "notes": "Big horned quadruped (horns ~ tusks); tint blue-grey, crown procedural. Idle/Walk/Gallop/Headbutt clips.",
+    "scaleHint": 4.587,
+    "boundsMin": [
+      -1.257,
+      -0.056,
+      -2.98
+    ],
+    "boundsMax": [
+      1.257,
+      4.531,
+      5.087
+    ],
+    "suggestedScale": 0.9811,
+    "suggestedOffset": [
+      -0.0,
+      0.056,
+      -1.054
+    ],
+    "matchQuality": "ok",
+    "bytes": 6111018
+  },
+  "Nebulodon": {
+    "file": "Velociraptor.fbx",
+    "format": "fbx",
+    "files": [
+      "Velociraptor.fbx",
+      "Velociraptor.glb"
+    ],
+    "preview": "Velociraptor.glb",
+    "textures": [],
+    "source": "https://quaternius.com/packs/animateddinosaurs.html",
+    "pack": "Quaternius Animated Dinosaurs",
+    "model": "Velociraptor",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Velociraptor_Attack",
+      "Velociraptor_Death",
+      "Velociraptor_Idle",
+      "Velociraptor_Jump",
+      "Velociraptor_Run",
+      "Velociraptor_Walk"
+    ],
+    "notes": "Sleek raptor; tint deep purple, stars/glow procedural.",
+    "scaleHint": 5.514,
+    "boundsMin": [
+      -1.318,
+      -0.053,
+      -8.112
+    ],
+    "boundsMax": [
+      1.318,
+      5.461,
+      5.164
+    ],
+    "suggestedScale": 0.8161,
+    "suggestedOffset": [
+      -0.0,
+      0.053,
+      1.474
+    ],
+    "matchQuality": "ok",
+    "bytes": 1333776
+  },
+  "Hydroblob": {
+    "file": "Fish.fbx",
+    "format": "fbx",
+    "files": [
+      "Fish.fbx",
+      "Atlas_Monsters.png",
+      "Fish.gltf"
+    ],
+    "preview": "Fish.gltf",
+    "textures": [
+      "Atlas_Monsters.png"
+    ],
+    "source": "https://quaternius.com/packs/ultimatemonsters.html",
+    "pack": "Quaternius Ultimate Monsters",
+    "model": "Blob/Fish",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Bite_Front",
+      "Dance",
+      "Death",
+      "HitRecieve",
+      "Idle",
+      "Jump",
+      "No",
+      "Walk",
+      "Yes"
+    ],
+    "notes": "Blue blob-fish with fins: water blob; crown procedural.",
+    "scaleHint": 2.731,
+    "boundsMin": [
+      -1.398,
+      0.017,
+      -1.467
+    ],
+    "boundsMax": [
+      1.398,
+      2.748,
+      1.356
+    ],
+    "suggestedScale": 1.6477,
+    "suggestedOffset": [
+      -0.0,
+      -0.017,
+      0.055
+    ],
+    "matchQuality": "good",
+    "bytes": 623394
+  },
+  "Crabageddon": {
+    "file": "Crab.fbx",
+    "format": "fbx",
+    "files": [
+      "Crab.fbx",
+      "Crab_Texture.png",
+      "Crab.gltf"
+    ],
+    "preview": "Crab.gltf",
+    "textures": [
+      "Crab_Texture.png"
+    ],
+    "source": "https://quaternius.com/packs/cutemonsters.html",
+    "pack": "Quaternius Cute Monsters",
+    "model": "Crab",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Bite_Front",
+      "Bite_InPlace",
+      "Dance",
+      "Death",
+      "HitRecieve",
+      "Idle",
+      "Jump",
+      "No",
+      "Walk",
+      "Yes"
+    ],
+    "notes": "Cute Monsters crab again, tinted near-black with red claws; spikes/crown/glow procedural.",
+    "scaleHint": 1.567,
+    "boundsMin": [
+      -1.283,
+      -0.029,
+      -0.686
+    ],
+    "boundsMax": [
+      1.283,
+      1.538,
+      0.73
+    ],
+    "suggestedScale": 2.8721,
+    "suggestedOffset": [
+      -0.0,
+      0.029,
+      -0.022
+    ],
+    "matchQuality": "ok",
+    "bytes": 1659845
+  },
+  "SolarisRex": {
+    "file": "Trex.fbx",
+    "format": "fbx",
+    "files": [
+      "Trex.fbx",
+      "Trex.glb"
+    ],
+    "preview": "Trex.glb",
+    "textures": [],
+    "source": "https://quaternius.com/packs/animateddinosaurs.html",
+    "pack": "Quaternius Animated Dinosaurs",
+    "model": "Trex",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "TRex_Attack",
+      "TRex_Death",
+      "TRex_Idle",
+      "TRex_Jump",
+      "TRex_Run",
+      "TRex_Walk"
+    ],
+    "notes": "Same T-Rex as Rexplosion, tinted orange/gold; halo procedural.",
+    "scaleHint": 15.225,
+    "boundsMin": [
+      -3.977,
+      -0.004,
+      -16.602
+    ],
+    "boundsMax": [
+      3.977,
+      15.221,
+      14.428
+    ],
+    "suggestedScale": 0.2956,
+    "suggestedOffset": [
+      0.0,
+      0.004,
+      1.087
+    ],
+    "matchQuality": "ok",
+    "bytes": 1410628
+  },
+  "LunarSquid": {
+    "file": "Hywirl.fbx",
+    "format": "fbx",
+    "files": [
+      "Hywirl.fbx",
+      "Atlas_Monsters.png",
+      "Hywirl.gltf"
+    ],
+    "preview": "Hywirl.gltf",
+    "textures": [
+      "Atlas_Monsters.png"
+    ],
+    "source": "https://quaternius.com/packs/ultimatemonsters.html",
+    "pack": "Quaternius Ultimate Monsters",
+    "model": "Flying/Hywirl",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Death",
+      "Fast_Flying",
+      "Flying_Idle",
+      "Headbutt",
+      "HitReact",
+      "No",
+      "Punch",
+      "Yes"
+    ],
+    "notes": "Pale violet flying tentacle creature; halo/stars procedural.",
+    "scaleHint": 2.745,
+    "boundsMin": [
+      -2.772,
+      0.027,
+      -0.966
+    ],
+    "boundsMax": [
+      2.772,
+      2.772,
+      0.801
+    ],
+    "suggestedScale": 1.6394,
+    "suggestedOffset": [
+      -0.0,
+      -0.027,
+      0.082
+    ],
+    "matchQuality": "ok",
+    "bytes": 2434663
+  },
+  "CosmoGoose": {
+    "file": "Birb.fbx",
+    "format": "fbx",
+    "files": [
+      "Birb.fbx",
+      "Atlas_Monsters.png",
+      "Birb.gltf"
+    ],
+    "preview": "Birb.gltf",
+    "textures": [
+      "Atlas_Monsters.png"
+    ],
+    "source": "https://quaternius.com/packs/ultimatemonsters.html",
+    "pack": "Quaternius Ultimate Monsters",
+    "model": "Big/Birb",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Death",
+      "Duck",
+      "HitReact",
+      "Idle",
+      "Jump",
+      "Jump_Idle",
+      "Jump_Land",
+      "No",
+      "Punch",
+      "Run",
+      "Walk",
+      "Wave",
+      "Weapon",
+      "Yes"
+    ],
+    "notes": "Big blue bird biped with wings and beak; tint dark violet, halo/stars procedural.",
+    "scaleHint": 3.328,
+    "boundsMin": [
+      -2.325,
+      -0.003,
+      -0.649
+    ],
+    "boundsMax": [
+      2.325,
+      3.325,
+      1.001
+    ],
+    "suggestedScale": 1.3522,
+    "suggestedOffset": [
+      0.0,
+      0.003,
+      -0.176
+    ],
+    "matchQuality": "ok",
+    "bytes": 4617550
+  },
+  "SharktoastSupreme": {
+    "file": "GoblinShark.fbx",
+    "format": "fbx",
+    "files": [
+      "GoblinShark.fbx",
+      "GoblinShark.glb"
+    ],
+    "preview": "GoblinShark.glb",
+    "textures": [],
+    "source": "https://quaternius.com/packs/cutefish.html",
+    "pack": "Quaternius Cute Fish",
+    "model": "GoblinShark",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Attack",
+      "Death",
+      "Out_Of_Water",
+      "Swimming_Fast",
+      "Swimming_Impulse",
+      "Swimming_Normal"
+    ],
+    "notes": "Toothy goblin shark for 'breakfast has teeth' \u2014 no toast; keep the procedural toast+fin unless you want a shark.",
+    "scaleHint": 2.761,
+    "boundsMin": [
+      -1.952,
+      -1.117,
+      -2.388
+    ],
+    "boundsMax": [
+      1.952,
+      1.644,
+      2.254
+    ],
+    "suggestedScale": 1.6298,
+    "suggestedOffset": [
+      0.0,
+      1.117,
+      0.067
+    ],
+    "matchQuality": "fallback",
+    "bytes": 440700
+  },
+  "CroissantKraken": {
+    "file": "Squidle.fbx",
+    "format": "fbx",
+    "files": [
+      "Squidle.fbx",
+      "Atlas_Monsters.png",
+      "Squidle.gltf"
+    ],
+    "preview": "Squidle.gltf",
+    "textures": [
+      "Atlas_Monsters.png"
+    ],
+    "source": "https://quaternius.com/packs/ultimatemonsters.html",
+    "pack": "Quaternius Ultimate Monsters",
+    "model": "Flying/Squidle",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Death",
+      "Fast_Flying",
+      "Flying_Idle",
+      "Headbutt",
+      "HitReact",
+      "No",
+      "Punch",
+      "Yes"
+    ],
+    "notes": "Same Squidle as ThunderSquid, tinted croissant gold; crown procedural.",
+    "scaleHint": 1.987,
+    "boundsMin": [
+      -2.736,
+      0.994,
+      -1.43
+    ],
+    "boundsMax": [
+      2.736,
+      2.981,
+      0.692
+    ],
+    "suggestedScale": 2.2652,
+    "suggestedOffset": [
+      -0.0,
+      -0.994,
+      0.369
+    ],
+    "matchQuality": "ok",
+    "bytes": 2880361
+  },
+  "NuclearPigeon": {
+    "file": "Pigeon.fbx",
+    "format": "fbx",
+    "files": [
+      "Pigeon.fbx",
+      "Atlas_Monsters.png",
+      "Pigeon.gltf"
+    ],
+    "preview": "Pigeon.gltf",
+    "textures": [
+      "Atlas_Monsters.png"
+    ],
+    "source": "https://quaternius.com/packs/ultimatemonsters.html",
+    "pack": "Quaternius Ultimate Monsters",
+    "model": "Blob/Pigeon",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Bite_Front",
+      "Dance",
+      "Death",
+      "HitRecieve",
+      "Idle",
+      "Jump",
+      "No",
+      "Walk",
+      "Yes"
+    ],
+    "notes": "Pigeon blob monster; tint radioactive green, glow/bolt/crown procedural.",
+    "scaleHint": 1.802,
+    "boundsMin": [
+      -1.175,
+      0.004,
+      -0.802
+    ],
+    "boundsMax": [
+      1.175,
+      1.806,
+      1.21
+    ],
+    "suggestedScale": 2.4968,
+    "suggestedOffset": [
+      -0.0,
+      -0.004,
+      -0.204
+    ],
+    "matchQuality": "good",
+    "bytes": 504851
+  },
+  "OmegaSushiMech": {
+    "file": "Leela.fbx",
+    "format": "fbx",
+    "files": [
+      "Leela.fbx",
+      "Leela_Texture.png",
+      "Leela.gltf"
+    ],
+    "preview": "Leela.gltf",
+    "textures": [
+      "Leela_Texture.png"
+    ],
+    "source": "https://quaternius.com/packs/animatedmech.html",
+    "pack": "Quaternius Animated Mechs",
+    "model": "Textured/Leela",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Dance",
+      "Death",
+      "Hello",
+      "HitRecieve_1",
+      "HitRecieve_2",
+      "Idle",
+      "Jump",
+      "Kick",
+      "No",
+      "Pickup",
+      "Punch",
+      "Run",
+      "Run_Tall",
+      "Shoot",
+      "SwordSlash",
+      "Walk",
+      "Walk_Tall",
+      "Yes"
+    ],
+    "notes": "White/orange mech (Idle/Walk/Run/Shoot); matches the sushi colours.",
+    "scaleHint": 5.276,
+    "boundsMin": [
+      -1.479,
+      -0.019,
+      -1.04
+    ],
+    "boundsMax": [
+      1.479,
+      5.257,
+      1.635
+    ],
+    "suggestedScale": 0.853,
+    "suggestedOffset": [
+      -0.0,
+      0.019,
+      -0.297
+    ],
+    "matchQuality": "good",
+    "bytes": 7114001
+  },
+  "InfiniteBlob": {
+    "file": "PinkBlob.fbx",
+    "format": "fbx",
+    "files": [
+      "PinkBlob.fbx",
+      "Atlas_Monsters.png",
+      "PinkBlob.gltf"
+    ],
+    "preview": "PinkBlob.gltf",
+    "textures": [
+      "Atlas_Monsters.png"
+    ],
+    "source": "https://quaternius.com/packs/ultimatemonsters.html",
+    "pack": "Quaternius Ultimate Monsters",
+    "model": "Blob/PinkBlob",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Bite_Front",
+      "Dance",
+      "Death",
+      "HitRecieve",
+      "Idle",
+      "Jump",
+      "No",
+      "Walk",
+      "Yes"
+    ],
+    "notes": "Purple blob with eyes; halo/stars procedural.",
+    "scaleHint": 2.009,
+    "boundsMin": [
+      -0.917,
+      -0.077,
+      -0.947
+    ],
+    "boundsMax": [
+      0.917,
+      1.932,
+      0.791
+    ],
+    "suggestedScale": 2.2403,
+    "suggestedOffset": [
+      -0.0,
+      0.077,
+      0.078
+    ],
+    "matchQuality": "good",
+    "bytes": 427143
+  },
+  "KingKaiju": {
+    "file": "Demon.fbx",
+    "format": "fbx",
+    "files": [
+      "Demon.fbx",
+      "Atlas_Monsters.png",
+      "Demon.gltf"
+    ],
+    "preview": "Demon.gltf",
+    "textures": [
+      "Atlas_Monsters.png"
+    ],
+    "source": "https://quaternius.com/packs/ultimatemonsters.html",
+    "pack": "Quaternius Ultimate Monsters",
+    "model": "Big/Demon",
+    "license": "CC0 1.0",
+    "attribution": "Quaternius (quaternius.com) \u2014 CC0, attribution not required but appreciated",
+    "animations": [
+      "Death",
+      "Duck",
+      "HitReact",
+      "Idle",
+      "Jump",
+      "Jump_Idle",
+      "Jump_Land",
+      "No",
+      "Punch",
+      "Run",
+      "Walk",
+      "Wave",
+      "Weapon",
+      "Yes"
+    ],
+    "notes": "Red horned demon boss (biped, spiky, winged); tint black/gold, crown/halo procedural.",
+    "scaleHint": 3.12,
+    "boundsMin": [
+      -2.328,
+      -0.015,
+      -1.33
+    ],
+    "boundsMax": [
+      2.328,
+      3.105,
+      0.99
+    ],
+    "suggestedScale": 1.4421,
+    "suggestedOffset": [
+      -0.0,
+      0.015,
+      0.17
+    ],
+    "matchQuality": "ok",
+    "bytes": 4737592
+  }
+}

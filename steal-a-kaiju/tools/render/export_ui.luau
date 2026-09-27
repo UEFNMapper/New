@@ -25,6 +25,7 @@ local Shared = S.ReplicatedStorage:FindFirstChild("Shared")
 local Growth = req(Shared.Config.Growth)
 local Kaijus = req(Shared.Config.Kaijus)
 
+S.ReplicatedStorage:SetAttribute("IconPreview", true)
 local hero, client = ClientRuntime.StartClient(Runtime, "Hero")
 local rival = Runtime.AddPlayer("Rival")
 Runtime.Advance(20)
@@ -108,6 +109,8 @@ local function dump(inst)
 		node.font = if d.FontFace then tostring(d.FontFace.Family) else nil
 	end
 	node.imageColor = color(d.ImageColor3)
+	node.image = d.Image
+	node.imageT = d.ImageTransparency
 	-- modificateurs
 	if cls == "UICorner" then
 		node.radius = { d.CornerRadius and d.CornerRadius.Scale or 0, d.CornerRadius and d.CornerRadius.Offset or 8 }
@@ -188,7 +191,7 @@ end
 ----------------------------------------------------------------------------
 
 shot("hud")
-for _, name in { "Shop", "Index", "Rebirth", "Fusion", "Daily", "Playtime", "Quests", "Spin", "Settings" } do
+for _, name in { "Shop", "Index", "Rebirth", "Fusion", "Daily", "Playtime", "Quests", "Spin", "Settings", "HowToPlay" } do
 	local screen = UIRegistry.Screens[name]
 	screen.Open()
 	Runtime.Advance(2)

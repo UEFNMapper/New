@@ -2,7 +2,8 @@
 -- Sons du jeu.
 --   Default  : son public de la bibliothèque Roblox (fonctionne tout de suite).
 --   Uploaded : identifiant de la version ORIGINALE du pack assets/audio/ une fois
---              uploadée dans ton compte (prioritaire si ≠ 0).
+--              uploadée dans ton compte (prioritaire si ≠ 0). Renseigné via la table
+--              `Uploaded` ci-dessous (clé = nom du fichier .ogg sans extension).
 -- Volume/PlaybackSpeed : réglages de base ; le client ajoute une légère
 -- variation de hauteur pour éviter la répétition.
 
@@ -13,6 +14,14 @@ export type SoundDef = {
 	Speed: number?,
 	Looped: boolean?,
 }
+
+-- Identifiants des sons ORIGINAUX (assets/audio/*.ogg) une fois uploadés dans ton compte.
+-- Colle ici l'identifiant après upload (Bulk Import) ou lance tools/upload_assets.py,
+-- qui remplit cette table automatiquement. Une clé absente vaut 0 (son public utilisé).
+-- BEGIN UPLOADED (généré par tools/upload_assets.py, ne pas déplacer les marqueurs)
+local Uploaded: { [string]: number } = {
+}
+-- END UPLOADED
 
 local function D(id: number | string, volume: number, speed: number?, looped: boolean?): SoundDef
 	local default = if typeof(id) == "number" then "rbxassetid://" .. id else id
@@ -74,5 +83,10 @@ local Sounds: { [string]: SoundDef } = {
 	music_boss = D(9046119816, 0.36, 1, true),
 	music_lobby_calm = D(9043887091, 0.3, 1, true),
 }
+
+-- Fusionne les identifiants uploadés dans chaque SoundDef.
+for key, def in pairs(Sounds) do
+	def.Uploaded = Uploaded[key] or 0
+end
 
 return Sounds

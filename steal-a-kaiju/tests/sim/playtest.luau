@@ -168,6 +168,71 @@ if bobKaiju then
 end
 
 ----------------------------------------------------------------------------
+section("Missions d'introduction")
+local dana = Runtime.AddPlayer("Dana")
+Runtime.Advance(5)
+check("mission 1 démarre", data(dana).Tutorial == 1, data(dana).Tutorial)
+Runtime.Advance(10)
+check("mission 1 validée à l'éclosion (+50$)", data(dana).Tutorial == 2 and #Boot.FxFor(dana, "MissionComplete") == 1, data(dana).Tutorial)
+Runtime.Advance(10)
+PlotService.Get(dana).Collector.Touched:Fire(dana.Character.HumanoidRootPart)
+Runtime.Advance(0.5)
+check("mission 2 validée à la collecte", data(dana).Tutorial == 3, data(dana).Tutorial)
+local got
+for _ = 1, 60 do
+	Runtime.Advance(1)
+	for _, m in meteorsFolder:GetChildren() do
+		local r = m:GetAttribute("Rarity")
+		if (m:GetAttribute("Owner") or 0) == 0 and m:GetAttribute("LandAt") <= Runtime.Now() + 1790000000 and (r == "Common" or r == "Rare") then
+			got = m
+		end
+	end
+	if got then
+		break
+	end
+end
+if got then
+	Runtime.MoveTo(dana, got.Position)
+	Boot.Call(dana, "BuyMeteor", { Id = got:GetAttribute("Id") })
+	Runtime.Advance(0.5)
+end
+check("mission 3 validée à l'achat d'un œuf", data(dana).Tutorial == 4, data(dana).Tutorial)
+Boot.Call(dana, "Lock")
+Runtime.Advance(0.5)
+check("mission 4 validée au verrouillage", data(dana).Tutorial == 5, data(dana).Tutorial)
+Runtime.Advance(4)
+local effects = S.Workspace:FindFirstChild("Effects")
+local thief
+for _, m in effects:GetChildren() do
+	if m.Name == "TrainingThief" and m:GetAttribute("Owner") == dana.UserId then
+		thief = m
+	end
+end
+check("le voleur d'entraînement apparaît", thief ~= nil)
+if thief then
+	local danaKaiju = hatchedOf(dana)[1]
+	-- il marche jusqu'au kaiju et l'attrape
+	for _ = 1, 200 do
+		Runtime.Advance(0.5)
+		if KaijuService.Anchor(danaKaiju.Uid):GetAttribute("CarriedBy") == -1 then
+			break
+		end
+	end
+	check("le voleur attrape le kaiju (alarme)", KaijuService.Anchor(danaKaiju.Uid):GetAttribute("CarriedBy") == -1 and #Boot.FxFor(dana, "Alarm") >= 1)
+	-- Dana le bonke
+	local tp = thief.PrimaryPart.Position
+	dana.Character.HumanoidRootPart.CFrame = Runtime.CFrame.lookAt(tp + V3(0, 0, 3), tp)
+	Boot.Input(dana, "Bonk")
+	Runtime.Advance(0.5)
+	check("bonk : le voleur lâche le kaiju", KaijuService.Anchor(danaKaiju.Uid):GetAttribute("CarriedBy") == 0)
+	check("mission 5 validée", data(dana).Tutorial == 6, data(dana).Tutorial)
+	Runtime.Advance(2)
+	check("le voleur a disparu", thief.Parent == nil)
+end
+local skipEarly = Boot.Call(dana, "SkipMission")
+check("mission 6 : impossible de passer s'il y a d'autres joueurs", skipEarly and not skipEarly.ok)
+
+----------------------------------------------------------------------------
 section("Anti-triche")
 local victimKaiju = hatchedOf(bob)[1] or hatchedOf(carl)[1]
 if victimKaiju then

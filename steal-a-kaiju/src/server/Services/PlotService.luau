@@ -99,6 +99,7 @@ local function lock(player: Player): Router.Result
 	model:SetAttribute("ShieldCooldown", t + duration + Economy.ShieldCooldown)
 	Notify.FxAll("ShieldUp", { Plot = plot.Index })
 	Registry.RewardService.Track(player, "Locks", 1)
+	Registry.TutorialService.Notify(player, "Lock")
 	return { ok = true }
 end
 

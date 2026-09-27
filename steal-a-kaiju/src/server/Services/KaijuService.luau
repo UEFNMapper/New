@@ -318,6 +318,7 @@ local function hatch(player: Player, data: any, rec: Record)
 	Notify.FxAll("HatchWorld", { Uid = rec.Uid, Rarity = rec.Rarity })
 	Registry.RewardService.Discover(player, rec.Species :: string, rec.Mutation)
 	Registry.RewardService.Track(player, "Hatches", 1)
+	Registry.TutorialService.Notify(player, "Hatch")
 	if rarity.Announce and species then
 		local mut = if rec.Mutation then rec.Mutation .. " " else ""
 		Notify.Feed(("%s hatched a %s%s %s!"):format(player.DisplayName, mut, string.upper(rarity.Name), species.Name), "Rare", rarity.Color)
@@ -455,6 +456,7 @@ function KaijuService.Collect(player: Player)
 	DataService.Replicate(player, "Stored")
 	Notify.Fx(player, "Collect", { Amount = amount })
 	Registry.RewardService.Track(player, "Collects", 1)
+	Registry.TutorialService.Notify(player, "Collect")
 end
 
 ----------------------------------------------------------------------------

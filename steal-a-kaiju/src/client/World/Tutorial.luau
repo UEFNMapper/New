@@ -1,10 +1,7 @@
 --!nonstrict
--- Tutoriel guidé (5 étapes) + guidage automatique pendant un vol.
---   0 : ton œuf éclôt       -> quand un kaiju est éclos
---   1 : collecte ton cash    -> après une collecte
---   2 : achète un œuf        -> après un achat
---   3 : verrouille ta base   -> après un verrouillage (ou 25 s)
---   4 : va voler !           -> 12 s puis terminé (5)
+-- Missions d'introduction (côté client) : carte d'objectif animée, flèches
+-- au sol vers la cible, célébration à chaque mission, guidage pendant un vol
+-- et vers le voleur d'entraînement.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -15,35 +12,38 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Layout = require(Shared.Config.Layout)
 local Rarities = require(Shared.Config.Rarities)
 local Economy = require(Shared.Config.Economy)
+local TutorialConfig = require(Shared.Config.Tutorial)
 local Theme = require(Shared.Config.Theme)
+local Format = require(Shared.Logic.Format)
 
 local Controllers = script.Parent.Parent.Controllers
 local State = require(Controllers.State)
 local Remote = require(Controllers.Remote)
 local Audio = require(Controllers.Audio)
 local FxBus = require(Controllers.FxBus)
+local UIRegistry = require(Controllers.UIRegistry)
+local CameraFx = require(Controllers.CameraFx)
 local Kit = require(script.Parent.Parent.UI.Kit)
 local Guide = require(script.Parent.Guide)
 
 local C = Theme.Colors
+local F = Theme.Fonts
 local player = Players.LocalPlayer
 
 local Tutorial = {}
 
-local STEPS = {
-	[0] = { Icon = "🥚", Text = "Your first egg is hatching! Watch it on your island." },
-	[1] = { Icon = "⚛️", Text = "Your kaiju makes cash! Step on the Cash Reactor to collect." },
-	[2] = { Icon = "☄️", Text = "Meteors drop eggs in the crater. Buy one — it's FREE!" },
-	[3] = { Icon = "🛡️", Text = "Thieves are coming! Press LOCK BASE to raise your shield." },
-	[4] = { Icon = "🦹", Text = "Now go STEAL kaijus from other islands! Big ones need 2 thieves." },
-}
-
-local hint: Frame
-local hintText: TextLabel
-local hintIcon: TextLabel
-local guide
-local carryGuide
-local step = -1
+local layer: ScreenGui
+local card: Frame
+local cardIcon: GuiObject
+local cardStep: TextLabel
+local cardTitle: TextLabel
+local cardText: TextLabel
+local cardHint: TextLabel
+local skipButton: TextButton
+local guide = Guide.new(C.Radioactive)
+local carryGuide = Guide.new(C.Gold)
+local thiefGuide = Guide.new(C.Red)
+local currentStep = 0
 local stepStarted = 0
 
 local function myPlot(): Model?
@@ -52,13 +52,21 @@ local function myPlot(): Model?
 	return if index and map then map:FindFirstChild("Plot" .. index) :: Model else nil
 end
 
-local function myFirstKaijuAnchor(): BasePart?
+local function myKaijuAnchor(): BasePart?
 	local folder = Workspace:FindFirstChild("Kaijus")
 	local mine = folder and folder:FindFirstChild(tostring(player.UserId))
-	return mine and mine:FindFirstChildWhichIsA("BasePart")
+	if not mine then
+		return nil
+	end
+	for _, a in mine:GetChildren() do
+		if a:IsA("BasePart") and not a:GetAttribute("Egg") then
+			return a
+		end
+	end
+	return mine:FindFirstChildWhichIsA("BasePart")
 end
 
-local function nearestMeteor(): BasePart?
+local function nearestFreeMeteor(): BasePart?
 	local folder = Workspace:FindFirstChild("Meteors")
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if not folder or not root then
@@ -66,141 +74,259 @@ local function nearestMeteor(): BasePart?
 	end
 	local best, bestD = nil, math.huge
 	for _, m in folder:GetChildren() do
-		if m:IsA("BasePart") and (m:GetAttribute("Owner") or 0) == 0 or m:GetAttribute("Owner") == player.UserId then
-			local d = (m.Position - root.Position).Magnitude
-			if d < bestD and Rarities.Get(m:GetAttribute("Rarity") or "Common").Order <= Economy.FreeFirstEggMaxOrder then
-				best, bestD = m, d
+		if m:IsA("BasePart") then
+			local owner = m:GetAttribute("Owner") or 0
+			local order = Rarities.Get(m:GetAttribute("Rarity") or "Common").Order
+			if (owner == 0 or owner == player.UserId) and order <= Economy.FreeFirstEggMaxOrder then
+				local d = (m.Position - root.Position).Magnitude
+				if d < bestD then
+					best, bestD = m, d
+				end
 			end
 		end
 	end
 	return best
 end
 
-local function setStep(n: number)
-	if n == step then
-		return
+local function nearestOtherPlot(): Model?
+	local map = Workspace:FindFirstChild("Map")
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not map or not root then
+		return nil
 	end
-	step = n
-	stepStarted = os.clock()
-	local def = STEPS[n]
-	if not def then
-		hint.Visible = false
-		guide:Hide()
-		return
+	local best, bestD = nil, math.huge
+	for i = 1, Layout.PlotCount do
+		local plot = map:FindFirstChild("Plot" .. i)
+		if plot and plot:GetAttribute("OwnerId") and plot:GetAttribute("OwnerId") ~= player.UserId then
+			local floor = plot:FindFirstChild("Floor") :: BasePart?
+			if floor then
+				local d = (floor.Position - root.Position).Magnitude
+				if d < bestD then
+					best, bestD = plot, d
+				end
+			end
+		end
 	end
-	hint.Visible = true
-	hintIcon.Text = def.Icon
-	hintText.Text = def.Text
-	Kit.Pop(hint, 0.5)
-	Audio.Play("quest_complete", { Volume = 0.6 })
+	return best
 end
 
-local function advance(to: number)
-	if to > (State.Get("Tutorial") or 0) then
-		Remote.Call("Tutorial", { Step = to }, true)
+local function thiefModel(): Model?
+	local effects = Workspace:FindFirstChild("Effects")
+	if not effects then
+		return nil
 	end
-	setStep(to)
+	for _, m in effects:GetChildren() do
+		if m.Name == "TrainingThief" and m:GetAttribute("Owner") == player.UserId then
+			return m
+		end
+	end
+	return nil
 end
 
-function Tutorial.Init()
-	local layer = Kit.Layer("Tutorial", 9)
-	hint = Kit.new("Frame", {
-		Size = UDim2.fromOffset(620, 74),
-		Position = UDim2.new(0.5, 0, 0, 196),
+----------------------------------------------------------------------------
+-- Carte de mission
+----------------------------------------------------------------------------
+
+local function buildCard()
+	card = Kit.new("Frame", {
+		Name = "Mission",
+		Size = UDim2.fromOffset(430, 118),
+		Position = UDim2.new(0.5, 0, 0, 168),
 		AnchorPoint = Vector2.new(0.5, 0),
 		BackgroundTransparency = 1,
 		Visible = false,
 		Parent = layer,
 	})
-	Kit.AutoScale(hint)
-	local _, body = Kit.Panel({ Size = UDim2.fromScale(1, 1), Rotation = -1, Gradient = "Gold", Parent = hint })
-	hintIcon = Kit.Text({ Size = UDim2.fromOffset(60, 60), Position = UDim2.fromOffset(8, 7), Text = "🥚", FontFace = Kit.Fonts.Body, Stroke = false, ZIndex = 4, Parent = body })
-	Kit.Wobble(hintIcon, 8, 0.7)
-	hintText = Kit.Text({ Size = UDim2.new(1, -86, 1, -14), Position = UDim2.fromOffset(74, 7), Text = "", FontFace = Kit.Fonts.Body, TextColor3 = C.Ink, Stroke = false, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 4, Parent = body })
+	Kit.AutoScale(card)
+	local _, body = Kit.Panel({ Size = UDim2.fromScale(1, 1), Rotation = -1, Gradient = "Paper", Parent = card })
+	Kit.Hazard({ Size = UDim2.new(1, -16, 0, 8), Position = UDim2.fromOffset(8, 5), Parent = body })
+	cardStep = Kit.Text({
+		Size = UDim2.fromOffset(120, 22),
+		Position = UDim2.fromOffset(14, 16),
+		Text = "MISSION 1/6",
+		FontFace = F.Title,
+		TextColor3 = C.Magma,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Stroke = false,
+		ZIndex = 4,
+		Parent = body,
+	})
+	cardIcon = Kit.Icon("egg", { Size = UDim2.fromOffset(64, 64), Position = UDim2.fromOffset(12, 42), ZIndex = 4, Parent = body })
+	Kit.Wobble(cardIcon, 8, 0.9)
+	cardTitle = Kit.Text({
+		Size = UDim2.new(1, -100, 0, 30),
+		Position = UDim2.fromOffset(84, 36),
+		Text = "",
+		FontFace = F.Impact,
+		TextColor3 = C.Ink,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Stroke = false,
+		MaxTextSize = 30,
+		ZIndex = 4,
+		Parent = body,
+	})
+	cardText = Kit.Text({
+		Size = UDim2.new(1, -100, 0, 44),
+		Position = UDim2.fromOffset(84, 66),
+		Text = "",
+		FontFace = F.Body,
+		TextColor3 = C.InkSoft,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		TextWrapped = true,
+		Stroke = false,
+		MaxTextSize = 17,
+		ZIndex = 4,
+		Parent = body,
+	})
+	cardHint = Kit.Text({
+		Size = UDim2.new(0.6, 0, 0, 20),
+		Position = UDim2.new(1, -14, 0, 16),
+		AnchorPoint = Vector2.new(1, 0),
+		Text = "",
+		FontFace = F.Body,
+		TextColor3 = C.RadioactiveDark,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		Stroke = false,
+		MaxTextSize = 16,
+		ZIndex = 4,
+		Parent = body,
+	})
+	skipButton = Kit.Button({
+		Text = "SKIP",
+		Color = "Grey",
+		Size = UDim2.fromOffset(80, 30),
+		Position = UDim2.new(1, -12, 1, -10),
+		AnchorPoint = Vector2.new(1, 1),
+		TextSize = 16,
+		MaxTextSize = 16,
+		ZIndex = 6,
+		OnClick = function()
+			Remote.Call("SkipMission")
+		end,
+		Parent = body,
+	})
+	skipButton.Visible = false
+end
 
-	guide = Guide.new(C.Radioactive)
-	carryGuide = Guide.new(C.Gold)
-
-	local saved = State.Get("Tutorial") or 0
-	if saved < 5 then
-		setStep(saved)
+local function showStep(step: number)
+	local mission = TutorialConfig.Get(step)
+	if not mission then
+		card.Visible = false
+		guide:Hide()
+		return
 	end
+	card.Visible = true
+	cardStep.Text = ("MISSION %d/%d"):format(step, #TutorialConfig.Missions)
+	cardTitle.Text = mission.Title
+	cardText.Text = mission.Text
+	Kit.SetIcon(cardIcon, mission.Icon)
+	local reward = mission.Reward
+	cardHint.Text = "Reward: " .. (if reward.Cash then Format.Cash(reward.Cash) elseif reward.Gems then reward.Gems .. " 💎" else "")
+	skipButton.Visible = false
+	Kit.Pop(card, 0.4, 0.5)
+end
 
-	FxBus.On("Hatch", function()
-		if step == 0 then
-			task.delay(4, function()
-				advance(1)
-			end)
+local function celebrate(args)
+	local mission = TutorialConfig.Get(args.Step or 0)
+	if not mission then
+		return
+	end
+	Audio.Play("quest_complete")
+	CameraFx.FovPunch(-3, 0.4)
+	local reward = args.Reward or {}
+	local text = if reward.Cash then "+" .. Format.Cash(reward.Cash) elseif reward.Gems then "+" .. reward.Gems .. " 💎" else ""
+	UIRegistry.Announce("MISSION COMPLETE!", C.Radioactive, mission.Title .. "  —  " .. text)
+	if args.Unlock and #args.Unlock > 0 then
+		task.delay(3.2, function()
+			UIRegistry.Toast("New menus unlocked: " .. table.concat(args.Unlock, ", "), "Good")
+		end)
+	end
+end
+
+----------------------------------------------------------------------------
+
+function Tutorial.Init()
+	layer = Kit.Layer("Tutorial", 9)
+	buildCard()
+
+	State.Observe("Tutorial", function(step)
+		step = math.max(1, step or 1)
+		if step ~= currentStep then
+			currentStep = step
+			stepStarted = os.clock()
+			showStep(step)
 		end
 	end)
-	FxBus.On("Collect", function()
-		if step == 1 then
-			advance(2)
-		end
+
+	FxBus.On("MissionComplete", celebrate)
+	FxBus.On("TutorialDone", function()
+		task.delay(3.5, function()
+			UIRegistry.Announce("YOU'RE READY!", C.Gold, "Grow the biggest kaijus. Guard them. Steal the rest.", "hatch_legendary")
+		end)
 	end)
-	State.Changed("Stats"):Connect(function(stats)
-		if step == 2 and stats.EggsBought > 0 then
-			advance(3)
-		elseif step == 3 and (stats.Locks or 0) > 0 then
-			advance(4)
-		end
+	FxBus.On("ThiefSpawn", function()
+		UIRegistry.Announce("🥷 TRAINING THIEF!", C.Red, "He's coming for your kaiju — equip your Bonker and hit him!", "alarm")
 	end)
-	State.Changed("Kaijus"):Connect(function(list)
-		if step == 0 then
-			for _, rec in list do
-				if not rec.Egg then
-					advance(1)
-					break
-				end
-			end
-		end
+	FxBus.On("ThiefBonked", function()
+		UIRegistry.Toast("BONK! The thief dropped your kaiju 💪", "Good")
 	end)
 
 	RunService.Heartbeat:Connect(function()
-		-- étapes chronométrées
-		if step == 3 and os.clock() - stepStarted > 25 then
-			advance(4)
-		elseif step == 4 and os.clock() - stepStarted > 12 then
-			advance(5)
-		end
-		-- cible du guide
 		local plot = myPlot()
-		if step == 0 then
-			guide:Point(myFirstKaijuAnchor())
-		elseif step == 1 and plot then
+		local carrying = (player:GetAttribute("Carrying") or "") ~= ""
+		card.Visible = TutorialConfig.Get(currentStep) ~= nil and not carrying
+		local mission = TutorialConfig.Get(currentStep)
+		local target = mission and mission.Target
+		if target == "Kaiju" then
+			guide:Point(myKaijuAnchor())
+		elseif target == "Collector" and plot then
 			guide:Point(plot:FindFirstChild("CollectorPad"))
-		elseif step == 2 then
-			local m = nearestMeteor()
+		elseif target == "Meteor" then
+			local m = nearestFreeMeteor()
 			if m then
 				guide:Point(m)
+				cardHint.Text = "An egg is waiting in the crater!"
 			else
-				guide:Hide()
+				guide:Point(Vector3.new(0, 0, 0))
+				local wait = Workspace:GetAttribute("NextMeteorIn") or 0
+				cardHint.Text = if wait > 0 then ("Next meteor in %ds"):format(math.ceil(wait)) else "Head to the crater!"
 			end
-		elseif step == 3 then
-			guide:Hide()
-		elseif step == 4 then
-			local index = player:GetAttribute("Plot") or 1
-			local other = (index % Layout.PlotCount) + 1
-			local map = Workspace:FindFirstChild("Map")
-			local target = map and map:FindFirstChild("Plot" .. other)
-			if target and target:GetAttribute("OwnerId") then
-				guide:Point(target:FindFirstChild("Floor"))
+		elseif target == "LockButton" and plot then
+			guide:Point(plot:FindFirstChild("LockButton"))
+		elseif target == "Thief" then
+			local thief = thiefModel()
+			guide:Point(if thief then thief.PrimaryPart else nil)
+			cardHint.Text = if thief then "He's on your island!" else "He's on his way..."
+		elseif target == "OtherPlot" then
+			local other = nearestOtherPlot()
+			if other then
+				guide:Point(other:FindFirstChild("Floor"))
+				cardHint.Text = (other:GetAttribute("OwnerName") or "Someone") .. "'s island is closest"
+				skipButton.Visible = false
 			else
 				guide:Hide()
+				cardHint.Text = "No other player yet — invite friends!"
+				skipButton.Visible = os.clock() - stepStarted > 20
 			end
 		else
 			guide:Hide()
 		end
-		-- le bandeau s'efface pendant un vol (le panneau de portage prend sa place)
-		local carrying = (player:GetAttribute("Carrying") or "") ~= ""
-		hint.Visible = STEPS[step] ~= nil and not carrying
-		-- pendant un vol : flèches dorées vers sa propre île
 		if carrying and plot then
 			carryGuide:Point(plot:FindFirstChild("Floor"))
 		else
 			carryGuide:Hide()
 		end
 	end)
+end
+
+-- Flèches rouges vers un voleur (alarme)
+function Tutorial.PointThief(target: any)
+	thiefGuide:Point(target)
+end
+
+function Tutorial.HideThief()
+	thiefGuide:Hide()
 end
 
 return Tutorial

@@ -12,6 +12,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Theme = require(Shared.Config.Theme)
+local Icons = require(Shared.Config.Icons)
 local Signal = require(Shared.Util.Signal)
 
 local Audio = require(script.Parent.Parent.Controllers.Audio)
@@ -104,6 +105,144 @@ function Kit.Grid(cell: UDim2, padding: number?): UIGridLayout
 	})
 end
 
+-- Icône : image du pack (Config/Icons) si uploadée, sinon emoji de secours.
+-- `key` peut aussi être directement un emoji.
+-- En mode aperçu (attribut IconPreview sur ReplicatedStorage), l'image pointe
+-- vers "preview://<clé>" pour les rendus hors Roblox.
+-- Un emoji brut est converti vers la clé du pack qui l'utilise (ex. "💎" -> "gem").
+local emojiToKey: { [string]: string } = {}
+local function stripVariation(text: string): string
+	return (text:gsub("\u{FE0F}", ""))
+end
+for key, def in Icons.Defs do
+	local e = stripVariation(def.Emoji)
+	if not emojiToKey[e] then
+		emojiToKey[e] = key
+	end
+end
+
+local function resolveKey(keyOrEmoji: string): string
+	if Icons.Has(keyOrEmoji) then
+		return keyOrEmoji
+	end
+	return emojiToKey[stripVariation(keyOrEmoji)] or keyOrEmoji
+end
+
+
+local function iconImage(key: string): string?
+	if ReplicatedStorage:GetAttribute("IconPreview") and Icons.Has(key) then
+		return "preview://" .. key
+	end
+	return Icons.Image(key)
+end
+
+-- Image du pack pour un texte qui est un emoji seul (sinon nil).
+local function emojiImageFor(text: string): string?
+	local key = emojiToKey[stripVariation(text)]
+	if key then
+		return iconImage(key)
+	end
+	return nil
+end
+
+-- Un TextLabel dont le texte est un emoji du pack affiche l'image à la place
+-- (le texte devient invisible). Suit les changements de .Text.
+local function attachEmojiImage(label: TextLabel)
+	local function refresh()
+		local image = emojiImageFor(label.Text)
+		local existing = label:FindFirstChild("EmojiImage") :: ImageLabel?
+		if image then
+			if not existing then
+				existing = Instance.new("ImageLabel")
+				existing.Name = "EmojiImage"
+				existing.BackgroundTransparency = 1
+				existing.Size = UDim2.fromScale(1, 1)
+				existing.ScaleType = Enum.ScaleType.Fit
+				existing.ZIndex = label.ZIndex
+				existing.Parent = label
+			end
+			existing.Image = image
+			label.TextTransparency = 1
+			local stroke = label:FindFirstChildOfClass("UIStroke")
+			if stroke then
+				stroke.Transparency = 1
+			end
+		elseif existing then
+			existing:Destroy()
+			label.TextTransparency = 0
+			local stroke = label:FindFirstChildOfClass("UIStroke")
+			if stroke then
+				stroke.Transparency = 0
+			end
+		end
+	end
+	label:GetPropertyChangedSignal("Text"):Connect(refresh)
+	refresh()
+end
+
+function Kit.Icon(keyOrEmoji: string, props: { [string]: any }): GuiObject
+	local key = resolveKey(keyOrEmoji)
+	local image = iconImage(key)
+	local inst
+	if image then
+		inst = Kit.new("ImageLabel", {
+			Name = props.Name or "Icon",
+			BackgroundTransparency = 1,
+			Image = image,
+			ScaleType = Enum.ScaleType.Fit,
+		})
+	else
+		inst = Kit.new("TextLabel", {
+			Name = props.Name or "Icon",
+			BackgroundTransparency = 1,
+			Text = if Icons.Has(key) then Icons.Emoji(key) else key,
+			FontFace = F.Body,
+			TextScaled = true,
+		})
+	end
+	inst:SetAttribute("IconKey", key)
+	for k, v in props do
+		if k ~= "Name" and k ~= "Parent" then
+			(inst :: any)[k] = v
+		end
+	end
+	inst.Parent = props.Parent
+	return inst
+end
+
+-- Change l'icône d'un élément créé par Kit.Icon (remplace l'instance si le type change).
+function Kit.SetIcon(inst: GuiObject, keyOrEmoji: string): GuiObject
+	local key = resolveKey(keyOrEmoji)
+	if inst:GetAttribute("IconKey") == key then
+		return inst
+	end
+	local image = iconImage(key)
+	if image and inst:IsA("ImageLabel") then
+		inst.Image = image
+		inst:SetAttribute("IconKey", key)
+		return inst
+	elseif not image and inst:IsA("TextLabel") then
+		inst.Text = if Icons.Has(key) then Icons.Emoji(key) else key
+		inst:SetAttribute("IconKey", key)
+		return inst
+	end
+	local replacement = Kit.Icon(key, {
+		Size = inst.Size,
+		Position = inst.Position,
+		AnchorPoint = inst.AnchorPoint,
+		ZIndex = inst.ZIndex,
+		LayoutOrder = inst.LayoutOrder,
+		Rotation = inst.Rotation,
+		Parent = inst.Parent,
+	})
+	replacement.Name = inst.Name
+	for _, child in inst:GetChildren() do
+		child.Parent = replacement
+	end
+	inst:Destroy()
+	return replacement
+end
+
 -- Texte BD : police, contour encre.
 function Kit.Text(props: { [string]: any }): TextLabel
 	local stroke = props.Stroke
@@ -130,6 +269,9 @@ function Kit.Text(props: { [string]: any }): TextLabel
 	end
 	if scaled then
 		Kit.new("UITextSizeConstraint", { MaxTextSize = props.MaxTextSize or 60, Parent = label })
+	end
+	if props.NoEmojiImage ~= true then
+		attachEmojiImage(label)
 	end
 	label.Parent = props.Parent
 	return label
@@ -454,14 +596,11 @@ function Kit.Button(props: { [string]: any }): TextButton
 		Parent = face,
 	}, { Kit.List(Enum.FillDirection.Horizontal, 6, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Center) })
 	if props.Icon then
-		Kit.Text({
+		Kit.Icon(props.Icon, {
 			Name = "Icon",
-			Size = UDim2.new(0, props.IconSize or 34, 1, 0),
-			Text = props.Icon,
-			FontFace = F.Body,
+			Size = UDim2.new(0, props.IconSize or 34, 0.8, 0),
 			ZIndex = z + 4,
 			LayoutOrder = 1,
-			Stroke = false,
 			Parent = content,
 		})
 	end

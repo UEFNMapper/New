@@ -143,6 +143,27 @@ local function refreshMyNests()
 				nest.Transparency = if locked and mine then 0.55 else 0
 			end
 			local lock = entry.NestLocks[slot]
+			local occupied = false
+			if mine and not locked then
+				for _, rec in State.Get("Kaijus") or {} do
+					if rec.Nest == slot then
+						occupied = true
+					end
+				end
+				if not occupied then
+					if not lock then
+						lock = nestLockLabel(model, slot)
+						entry.NestLocks[slot] = lock :: any
+					end
+					local text = (lock :: any).Text :: TextLabel
+					text.Text = "🪺 EMPTY NEST"
+					text.TextColor3 = C.PaperDark
+				elseif lock then
+					lock:Destroy()
+					entry.NestLocks[slot] = nil
+					lock = nil
+				end
+			end
 			if mine and locked then
 				if not lock then
 					lock = nestLockLabel(model, slot)
@@ -156,7 +177,7 @@ local function refreshMyNests()
 					text.Text = "🔒"
 					text.TextColor3 = C.Paper
 				end
-			elseif lock then
+			elseif lock and not (mine and not locked and not occupied) then
 				lock:Destroy()
 				entry.NestLocks[slot] = nil
 			end
@@ -218,15 +239,41 @@ function PlotVisuals.Init()
 	end
 	player:GetAttributeChangedSignal("Plot"):Connect(refreshMyNests)
 	State.Observe("Nests", refreshMyNests)
+	State.Observe("Kaijus", refreshMyNests)
 	State.Changed("Cash"):Connect(function()
 		-- rafraîchit la couleur du prix (léger)
 		refreshMyNests()
 	end)
 	refreshMyNests()
 
+	-- Pièces d'or des réacteurs et nuages : animés localement (peu coûteux)
+	local coins: { { Part: BasePart, Base: CFrame } } = {}
+	for _, entry in plots do
+		local coin = entry.Model:FindFirstChild("Coin") :: BasePart?
+		if coin then
+			table.insert(coins, { Part = coin, Base = coin.CFrame })
+		end
+	end
+	local clouds: { { Model: Model, Base: CFrame, Speed: number } } = {}
+	local cloudFolder = map:FindFirstChild("Clouds")
+	if cloudFolder then
+		for i, c in cloudFolder:GetChildren() do
+			if c:IsA("Model") and c.PrimaryPart then
+				table.insert(clouds, { Model = c, Base = c:GetPivot(), Speed = 1.5 + (i % 4) * 0.6 })
+			end
+		end
+	end
 	RunService.Heartbeat:Connect(function()
 		local t = now()
 		local pulse = (math.sin(os.clock() * 3) + 1) / 2
+		local clock = os.clock()
+		for _, c in coins do
+			c.Part.CFrame = c.Base * CFrame.new(0, math.sin(clock * 2) * 0.6, 0) * CFrame.Angles(clock * 1.6, 0, 0)
+		end
+		for _, c in clouds do
+			local drift = (clock * c.Speed) % 900 - 450
+			c.Model:PivotTo(c.Base * CFrame.new(drift, 0, 0))
+		end
 		for _, entry in plots do
 			local model = entry.Model
 			local shield = (model:GetAttribute("ShieldUntil") or 0) - t
