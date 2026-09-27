@@ -55,6 +55,8 @@ local function firstHatched(player: Player): boolean
 	return false
 end
 
+local advance: (player: Player) -> ()
+
 -- Lance le contenu propre à une mission (après une courte pause pour lire la carte).
 local function startStep(player: Player, s: number)
 	local mission = Tutorial.Get(s)
@@ -64,7 +66,12 @@ local function startStep(player: Player, s: number)
 	if mission.Target == "Siege" then
 		task.delay(4, function()
 			if player.Parent == Players and step(player) == s then
-				Registry.SiegeService.StartTutorialWave(player)
+				local siege = Registry.SiegeService
+				if siege.StartTutorialWave then
+					siege.StartTutorialWave(player)
+				else
+					advance(player) -- défense d'île indisponible : on ne bloque pas le tutoriel
+				end
 			end
 		end)
 	elseif mission.Target == "Treasure" then
@@ -76,7 +83,7 @@ local function startStep(player: Player, s: number)
 	end
 end
 
-local function advance(player: Player)
+function advance(player: Player)
 	local data = DataService.Get(player)
 	if not data then
 		return
