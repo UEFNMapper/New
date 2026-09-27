@@ -31,6 +31,7 @@ local FxBus = require(Controllers.FxBus)
 local CameraFx = require(Controllers.CameraFx)
 local UIRegistry = require(Controllers.UIRegistry)
 local Kit = require(script.Parent.Parent.UI.Kit)
+local Hud = require(script.Parent.Parent.UI.Hud)
 local Viewport = require(script.Parent.Parent.UI.Viewport)
 local Effects = require(script.Parent.Effects)
 local Guide = require(script.Parent.Guide)
@@ -467,6 +468,8 @@ end
 
 local function buildChip()
 	local layer = Kit.Layer("BuddyHud", 4)
+	-- la pastille se range dans la colonne de gauche du HUD (sous le niveau)
+	local column = if Hud.LeftColumn then Hud.LeftColumn() else nil
 	local holder = Kit.new("TextButton", {
 		Name = "BuddyChip",
 		Size = UDim2.fromOffset(250, 78),
@@ -475,9 +478,12 @@ local function buildChip()
 		Text = "",
 		AutoButtonColor = false,
 		Visible = false,
-		Parent = layer,
+		LayoutOrder = 2,
+		Parent = column or layer,
 	})
-	Kit.AutoScale(holder)
+	if not column then
+		Kit.AutoScale(holder)
+	end
 	local frame, body = Kit.Panel({
 		Name = "Card",
 		Size = UDim2.fromScale(1, 1),

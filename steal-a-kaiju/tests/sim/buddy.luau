@@ -84,6 +84,13 @@ local rival = Runtime.AddPlayer("Rival")
 local hero, clientFolder = ClientRuntime.StartClient(Runtime, "Hero")
 local logStart = #Runtime.ClientLog
 Runtime.Advance(3)
+-- tutoriel déjà fini : les trésors automatiques sont actifs (pendant le tutoriel, seule la mission en crée)
+for _, p in { hero, rival } do
+	local d = DataService.Get(p)
+	if d then
+		d.Tutorial = 7
+	end
+end
 check("pas de compagnon tant que rien n'a éclos", data(hero).Buddy.Uid == "" and hero:GetAttribute("BuddyUid") == nil, data(hero).Buddy.Uid)
 Runtime.Advance(9)
 local first = hatched(hero)[1]
@@ -134,10 +141,9 @@ Runtime.Advance(1)
 
 ----------------------------------------------------------------------------
 section("Client : pastille HUD du compagnon")
-local hud = playerGui:FindFirstChild("BuddyHud")
-local chip = hud and hud:FindFirstChild("BuddyChip")
+local chip = BuddyRenderer.Chip()
 check("pastille créée et visible", chip ~= nil and chip.Visible == true)
-check("fonction publique BuddyRenderer.Chip()", BuddyRenderer.Chip() == chip)
+check("pastille rangée dans la colonne de gauche du HUD (sous le niveau)", chip ~= nil and chip.Parent ~= nil and chip.Parent.Name == "LeftColumn")
 local function chipText(name)
 	for _, d in chip:GetDescendants() do
 		if d.Name == name and d.ClassName == "TextLabel" then

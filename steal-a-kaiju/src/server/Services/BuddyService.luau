@@ -466,7 +466,8 @@ local function tickPlayer(player: Player, st: PlayerState, withAssist: boolean)
 	if not rec or not root then
 		return
 	end
-	if not st.Spot and t >= st.NextSpotAt then
+	-- pendant le tutoriel, c'est la mission « DIG UP A TREASURE » qui fait apparaître le trésor
+	if not st.Spot and t >= st.NextSpotAt and Registry.TutorialService.IsDone(player) then
 		local pos, index = pickSpot(player, root.Position, st.LastIndex)
 		if pos then
 			spawnSpot(player, st, pos, index)

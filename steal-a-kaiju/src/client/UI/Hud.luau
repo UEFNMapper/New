@@ -289,6 +289,22 @@ end
 ----------------------------------------------------------------------------
 
 local levelPanel: Frame
+local leftColumn: Frame -- colonne de gauche : niveau, compagnon, menus (une seule échelle)
+
+-- Colonne de gauche, partagée avec la pastille du compagnon (BuddyRenderer).
+function Hud.LeftColumn(): Frame
+	if not leftColumn then
+		leftColumn = Kit.new("Frame", {
+			Name = "LeftColumn",
+			Size = UDim2.fromOffset(350, 500),
+			Position = UDim2.fromOffset(16, 62),
+			BackgroundTransparency = 1,
+			Parent = layer,
+		}, { Kit.List(Enum.FillDirection.Vertical, 10, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top) })
+		Kit.AutoScale(leftColumn)
+	end
+	return leftColumn
+end
 
 -- Le prochain objectif du joueur : un monde à ouvrir, sinon le prochain déblocage de niveau.
 local function nextGoal(): (string, number?, string?)
@@ -315,11 +331,10 @@ local function buildLevel()
 	levelPanel = Kit.new("Frame", {
 		Name = "Level",
 		Size = UDim2.fromOffset(330, 84),
-		Position = UDim2.fromOffset(16, 66),
 		BackgroundTransparency = 1,
-		Parent = layer,
+		LayoutOrder = 1,
+		Parent = Hud.LeftColumn(),
 	})
-	Kit.AutoScale(levelPanel)
 	local _, body = Kit.Panel({ Size = UDim2.fromScale(1, 1), Rotation = -1, Gradient = "Ink", Parent = levelPanel })
 	local star = Kit.Icon("level", { Size = UDim2.fromOffset(70, 70), Position = UDim2.fromOffset(-10, -6), ZIndex = 5, Parent = body })
 	Kit.Wobble(star, 5, 1.6)
@@ -518,19 +533,18 @@ end
 local function buildMenus()
 	local left = Kit.new("Frame", {
 		Name = "LeftMenu",
-		Size = UDim2.fromOffset(200, 440),
-		Position = UDim2.new(0, 16, 0.5, 30),
-		AnchorPoint = Vector2.new(0, 0.5),
+		Size = UDim2.fromOffset(200, 310),
 		BackgroundTransparency = 1,
-		Parent = layer,
+		LayoutOrder = 3,
+		Parent = Hud.LeftColumn(),
 	}, {
 		Kit.new("UIGridLayout", {
 			CellSize = UDim2.fromOffset(84, 84),
 			CellPadding = UDim2.fromOffset(14, 22),
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}),
+		Kit.Padding(4, 8),
 	})
-	Kit.AutoScale(left)
 	menuButton(left, { Id = "Shop", Text = "SHOP", Icon = "shop", Color = "Magma", Order = 1, Rotation = -3, OnClick = function() openScreen("Shop") end })
 	menuButton(left, { Id = "Upgrades", Text = "UPGRADES", Icon = "upgrades", Color = "Pink", Order = 2, Rotation = 3, OnClick = function() openScreen("Shop", "Upgrades") end })
 	menuButton(left, { Id = "Worlds", Text = "WORLDS", Icon = "worlds", Color = "Cyan", Order = 3, Rotation = 2, OnClick = function() openScreen("Worlds") end })
