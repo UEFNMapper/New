@@ -412,10 +412,10 @@ local function magnet(player: Player, data: any, root: BasePart)
 	local count = #grabbed
 	local siege = Registry.SiegeService
 	if siege and siege.CollectOrbsNear then
-		local n = siege.CollectOrbsNear(player, root.Position, radius)
-		if type(n) == "number" then
-			count += n
-		end
+		-- renvoie (cash, nombre d'orbes) ; on compte les orbes pour l'XP du compagnon
+		local cash, n = siege.CollectOrbsNear(player, root.Position, radius)
+		local orbsGrabbed = if type(n) == "number" then n elseif type(cash) == "number" then cash else 0
+		count += orbsGrabbed
 	end
 	if count > 0 then
 		Notify.Fx(player, "BuddyMagnet", { Positions = grabbed, Count = count })

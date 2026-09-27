@@ -85,25 +85,12 @@ local function nearestFreeMeteor(): BasePart?
 	return best
 end
 
--- Envahisseur le plus proche pendant la vague (défense de l'île).
-local function nearestInvader(): BasePart?
+-- État de la défense de mon île (dossier répliqué par SiegeService).
+local function mySiegeState(): string?
 	local siege = Workspace:FindFirstChild("Siege")
 	local index = player:GetAttribute("Plot")
-	local mine = siege and index and siege:FindFirstChild(tostring(index))
-	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
-	if not mine or not root then
-		return nil
-	end
-	local best, bestD = nil, math.huge
-	for _, inv in mine:GetDescendants() do
-		if inv:IsA("BasePart") and (inv:GetAttribute("HP") or 0) > 0 then
-			local d = (inv.Position - root.Position).Magnitude
-			if d < bestD then
-				best, bestD = inv, d
-			end
-		end
-	end
-	return best
+	local mine = siege and index and siege:FindFirstChild("Plot" .. index)
+	return if mine then mine:GetAttribute("State") else nil
 end
 
 ----------------------------------------------------------------------------
@@ -253,14 +240,9 @@ function Tutorial.Init()
 				cardHint.Text = if wait > 0 then ("Next meteor in %ds"):format(math.ceil(wait)) else "Head to the crater!"
 			end
 		elseif target == "Siege" then
-			local invader = nearestInvader()
-			if invader then
-				guide:Point(invader)
-				cardHint.Text = "BONK the invaders!"
-			else
-				guide:Point(if plot then plot:FindFirstChild("Floor") else nil)
-				cardHint.Text = if player:GetAttribute("SiegeActive") then "Your kaijus are fighting!" else "They're coming... get home!"
-			end
+			guide:Point(if plot then plot:FindFirstChild("Floor") else nil)
+			local state = mySiegeState()
+			cardHint.Text = if state == "Active" then "BONK the invaders on your island!" else "They're coming... get home!"
 		elseif target == "RampagePortal" and plot then
 			guide:Point(plot:FindFirstChild("RampagePortal"))
 		elseif target == "Treasure" then

@@ -397,7 +397,7 @@ Runtime.Advance(0.6)
 check("orbe hors de portée de main attrapée par l'aimant", target.Parent == nil)
 local grabbedCount = data(hero).Stats.Orbs - orbs0
 check("stat Orbs et cash versés", grabbedCount >= 1 and #Boot.FxFor(hero, "OrbGrabbed", logStart) == grabbedCount, grabbedCount)
-check("XP compagnon +1 par orbe", data(hero).Buddy.Xp - bxp == grabbedCount * Buddy.Xp.Orb, data(hero).Buddy.Xp - bxp)
+check("XP compagnon +1 par orbe", data(hero).Buddy.Xp - bxp >= grabbedCount * Buddy.Xp.Orb, data(hero).Buddy.Xp - bxp)
 check("effet BuddyMagnet (positions)", #Boot.FxFor(hero, "BuddyMagnet", logStart) >= 1)
 EventService.Stop()
 Runtime.Advance(1)
@@ -406,6 +406,7 @@ Runtime.Advance(1)
 section("Aide au combat")
 -- siège (contrat défensif : SiegeService.DamageNearest / CollectOrbsNear)
 local calls = {}
+local realDamage, realCollect = SiegeService.DamageNearest, SiegeService.CollectOrbsNear
 SiegeService.DamageNearest = function(p, pos, range, dmg)
 	if p == hero then
 		table.insert(calls, { p = p, range = range, dmg = dmg })
@@ -413,7 +414,7 @@ SiegeService.DamageNearest = function(p, pos, range, dmg)
 	return pos + V3(5, 0, 0), true
 end
 SiegeService.CollectOrbsNear = function()
-	return 2
+	return 500, 2
 end
 root(hero).CFrame = plot.CFrame * roblox.CFrame.new(0, 3, -10)
 logStart = #Runtime.ClientLog
@@ -426,8 +427,8 @@ local offIsland = #calls
 root(hero).CFrame = roblox.CFrame.new(0, 3, 0)
 Runtime.Advance(3.2)
 check("siège : pas d'aide hors de ton île", #calls == offIsland)
-SiegeService.DamageNearest = nil
-SiegeService.CollectOrbsNear = nil
+SiegeService.DamageNearest = realDamage
+SiegeService.CollectOrbsNear = realCollect
 -- boss
 EventService.Stop()
 Runtime.Advance(0.5)

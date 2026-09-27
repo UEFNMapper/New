@@ -302,16 +302,17 @@ local function collectOrb(orb: Orb, player: Player)
 end
 
 -- Ramasse les orbes du joueur autour d'une position (compagnon : aspirateur).
--- Renvoie le cash total ramassé.
-function SiegeService.CollectOrbsNear(player: Player, position: Vector3, radius: number): number
-	local total = 0
+-- Renvoie le cash total ramassé et le nombre d'orbes.
+function SiegeService.CollectOrbsNear(player: Player, position: Vector3, radius: number): (number, number)
+	local total, count = 0, 0
 	for _, orb in table.clone(orbs) do
 		if orb.Owner == player and (orb.Part.Position - position).Magnitude <= radius then
 			total += orb.Value
+			count += 1
 			collectOrb(orb, player)
 		end
 	end
-	return total
+	return total, count
 end
 
 local function stepOrbs(t: number)
@@ -821,7 +822,8 @@ function SiegeService.TryBonk(player: Player, position: Vector3, range: number, 
 end
 
 -- Attaque du compagnon : frappe l'envahisseur le plus proche dans le rayon.
-function SiegeService.DamageNearest(player: Player, position: Vector3, radius: number, amount: number): boolean
+-- Renvoie la position (monde) de la cible touchée et si elle a été éliminée.
+function SiegeService.DamageNearest(player: Player, position: Vector3, radius: number, amount: number): (Vector3?, boolean)
 	local t = now()
 	for _, state in states do
 		local wave = state.Wave
@@ -838,15 +840,17 @@ function SiegeService.DamageNearest(player: Player, position: Vector3, radius: n
 				damage(best, amount, player)
 				best.Part:SetAttribute("HP", best.HP)
 				fxAudience(state, "SiegeShots", { Plot = state.Plot.Index, Shots = { { P = position, I = best.Id, D = amount } } })
-				if best.HP <= 0 then
+				local target = state.Plot.CFrame:PointToWorldSpace((localPos(best, t)))
+				local killed = best.HP <= 0
+				if killed then
 					kill(state, wave, best, t)
 				end
 				publish(state)
-				return true
+				return target, killed
 			end
 		end
 	end
-	return false
+	return nil, false
 end
 
 ----------------------------------------------------------------------------

@@ -462,11 +462,11 @@ if inv then
 	local b = lastFx(rival, "SiegeBonk", log)
 	check("un visiteur peut bonker sur ton île", b and b.UserId == rival.UserId)
 end
-check("compagnon : rien à frapper loin des îles", SiegeService.DamageNearest(rival, V3(0, 3, 0), 10, 999) == false)
+check("compagnon : rien à frapper loin des îles", SiegeService.DamageNearest(rival, V3(0, 3, 0), 10, 999) == nil)
 local victim = invaders()[1]
 if victim then
 	local pos = invaderPos(victim)
-	check("compagnon : DamageNearest touche l'envahisseur", SiegeService.DamageNearest(rival, pos, 6, 1e6) == true)
+	check("compagnon : DamageNearest touche l'envahisseur", typeof(SiegeService.DamageNearest(rival, pos, 6, 1e6)) == "Vector3")
 	local mine
 	for _, o in orbsOf() do
 		if o:GetAttribute("Owner") == rival.UserId then

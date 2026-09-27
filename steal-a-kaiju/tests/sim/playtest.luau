@@ -187,6 +187,7 @@ end
 
 ----------------------------------------------------------------------------
 section("Missions d'introduction")
+local danaTutorial
 local dana = Runtime.AddPlayer("Dana")
 Runtime.Advance(5)
 check("mission 1 démarre", data(dana).Tutorial == 1, data(dana).Tutorial)
@@ -215,40 +216,22 @@ if got then
 	Runtime.Advance(0.5)
 end
 check("mission 3 validée à l'achat d'un œuf", data(dana).Tutorial == 4, data(dana).Tutorial)
-Boot.Call(dana, "Lock")
-Runtime.Advance(0.5)
-check("mission 4 validée au verrouillage", data(dana).Tutorial == 5, data(dana).Tutorial)
-Runtime.Advance(4)
-local effects = S.Workspace:FindFirstChild("Effects")
-local thief
-for _, m in effects:GetChildren() do
-	if m.Name == "TrainingThief" and m:GetAttribute("Owner") == dana.UserId then
-		thief = m
+-- Mission 4 : vague d'entraînement sur l'île (les tours + le bonk)
+Runtime.Advance(1.5)
+Boot.Call(dana, "Home")
+local sawWave = false
+for _ = 1, 160 do
+	Runtime.Advance(1)
+	sawWave = sawWave or dana:GetAttribute("SiegeActive") == true
+	if data(dana).Tutorial >= 5 then
+		break
 	end
 end
-check("le voleur d'entraînement apparaît", thief ~= nil)
-if thief then
-	local danaKaiju = hatchedOf(dana)[1]
-	-- il marche jusqu'au kaiju et l'attrape
-	for _ = 1, 200 do
-		Runtime.Advance(0.5)
-		if KaijuService.Anchor(danaKaiju.Uid):GetAttribute("CarriedBy") == -1 then
-			break
-		end
-	end
-	check("le voleur attrape le kaiju (alarme)", KaijuService.Anchor(danaKaiju.Uid):GetAttribute("CarriedBy") == -1 and #Boot.FxFor(dana, "Alarm") >= 1)
-	-- Dana le bonke
-	local tp = thief.PrimaryPart.Position
-	dana.Character.HumanoidRootPart.CFrame = Runtime.CFrame.lookAt(tp + V3(0, 0, 3), tp)
-	Boot.Input(dana, "Bonk")
-	Runtime.Advance(0.5)
-	check("bonk : le voleur lâche le kaiju", KaijuService.Anchor(danaKaiju.Uid):GetAttribute("CarriedBy") == 0)
-	check("mission 5 validée", data(dana).Tutorial == 6, data(dana).Tutorial)
-	Runtime.Advance(2)
-	check("le voleur a disparu", thief.Parent == nil)
-end
-local skipEarly = Boot.Call(dana, "SkipMission")
-check("mission 6 : impossible de passer s'il y a d'autres joueurs", skipEarly and not skipEarly.ok)
+check("mission 4 : vague d'entraînement lancée", sawWave and #Boot.FxFor(dana, "SiegeWaveStart") >= 1)
+check("mission 4 validée à la fin de la vague", data(dana).Tutorial == 5, data(dana).Tutorial)
+check("XP gagnée pendant le tutoriel", data(dana).Xp > 0 and data(dana).Level >= 2, data(dana).Xp)
+-- Missions 5 (Rampage) et 6 (trésor du compagnon) : voir tests/sim/rampage.luau et plus bas
+danaTutorial = dana
 
 ----------------------------------------------------------------------------
 section("Anti-triche")
