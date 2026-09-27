@@ -80,7 +80,7 @@ def place(canvas, im, cx, cy, shadow=True, anchor="center"):
         im, pad = with_shadow(im)
     else:
         pad = 0
-    x = cx - im.width / 2 if anchor == "center" else cx - pad
+    x = cx - im.width / 2
     y = cy - im.height / 2 if anchor == "center" else cy - im.height + pad
     canvas.alpha_composite(im, (int(x), int(y)))
 
@@ -134,36 +134,39 @@ def thumb_main():
         place(c, icon("meteor", s), x, y, shadow=False)
     king, _ = art.glow(kaiju("KingKaiju", 1000), 34, (255, 235, 150), 0.8)
     c.alpha_composite(king, (int(1420 - king.width / 2), int(H * 0.53 - king.height / 2)))
-    place(c, kaiju("Pigeonator", 300, 30), 1830, 900)
-    for (x, y, s, r) in ((1060, 300, 120, -15), (1100, 820, 110, 20), (1770, 420, 100, 10)):
+    place(c, kaiju("Pigeonator", 280, -30), 1760, 910)
+    for (x, y, s, r) in ((1060, 300, 120, -15), (1100, 820, 110, 20), (1830, 560, 100, 10)):
         place(c, icon("cash", s).rotate(r, expand=True, resample=Image.BICUBIC), x, y)
-    place(c, icon("egg_legendary", 150).rotate(-12, expand=True, resample=Image.BICUBIC), 980, 560)
+    place(c, icon("egg_legendary", 150).rotate(-12, expand=True, resample=Image.BICUBIC), 880, 930)
     t1 = art.title("STEAL A", 200, stroke=20, shadow=16).rotate(3, expand=True, resample=Image.BICUBIC)
     t2 = art.title("KAIJU!", 330, (255, 245, 120), (255, 110, 20), stroke=26, shadow=20).rotate(3, expand=True, resample=Image.BICUBIC)
     c.alpha_composite(t1, (90, 110))
     c.alpha_composite(t2, (60, 300))
     tag = chip("HATCH • GROW • STEAL!", 64, bg=(255, 60, 110))
     c.alpha_composite(tag.rotate(3, expand=True, resample=Image.BICUBIC), (110, 700))
-    place(c, kaiju("Toastzilla", 280, -20), 230, 960)
-    place(c, kaiju("Gloop", 200, -10), 470, 990)
+    place(c, kaiju("Toastzilla", 280, 20), 230, 960)
+    place(c, kaiju("Gloop", 200, 10), 470, 990)
     c.convert("RGB").save(os.path.join(OUT, "thumbnail_1_main.png"))
+
+
+GROWER = "Rexplosion"
 
 
 def thumb_grow():
     c = backdrop("crater", 3, 0.72)
     c.alpha_composite(art.starburst((W, H), (140, 255, 140), 22, 45, center=(W * 0.5, H * 0.62)))
     c.alpha_composite(art.vignette((W, H), 0.45))
-    stages = [("BABY", 190), ("TEEN", 290), ("ADULT", 430), ("TITAN", 640)]
-    xs = [230, 580, 1010, 1540]
+    stages = [("BABY", 170), ("TEEN", 260), ("ADULT", 390), ("TITAN", 590)]
+    xs = [210, 540, 950, 1500]
     base_y = 960
     for i, ((label, h), x) in enumerate(zip(stages, xs)):
-        k = kaiju("Toastzilla", h, -15)
+        k = kaiju(GROWER, h)
         place(c, k, x, base_y, anchor="bottom")
         lab = chip(label, 46, bg=[(120, 200, 255), (120, 220, 120), (255, 170, 40), (255, 70, 90)][i])
         c.alpha_composite(lab, (int(x - lab.width / 2), base_y - 10))
         if i < 3:
             arr = icon("arrow_right", 110)
-            place(c, arr, (x + xs[i + 1]) / 2 + 20, base_y - 180, shadow=True)
+            place(c, arr, (x + xs[i + 1]) / 2 + 10, base_y - 110, shadow=True)
     t = art.title("GROW THEM HUGE!", 170, (190, 255, 120), (40, 190, 60), stroke=18, shadow=14).rotate(2, expand=True, resample=Image.BICUBIC)
     c.alpha_composite(t, (int(W / 2 - t.width / 2), 40))
     place(c, icon("growth", 170), 150, 170)
@@ -176,15 +179,15 @@ def thumb_rampage():
     c.alpha_composite(red)
     c.alpha_composite(art.starburst((W, H), (255, 180, 60), 18, 70, center=(W * 0.62, H * 0.55)))
     c.alpha_composite(art.vignette((W, H), 0.6))
-    mag, _ = art.glow(kaiju("Magmadillo", 820, 10), 30, (255, 150, 60), 0.9)
-    c.alpha_composite(mag, (int(1250 - mag.width / 2), int(H * 0.56 - mag.height / 2)))
-    for (x, y, s, r) in ((780, 820, 190, -10), (1700, 860, 170, 15), (1640, 250, 130, 0), (880, 330, 120, 20)):
+    mag, _ = art.glow(kaiju("Magmadillo", 700, -10), 30, (255, 150, 60), 0.9)
+    c.alpha_composite(mag, (int(1380 - mag.width / 2), int(H * 0.6 - mag.height / 2)))
+    for (x, y, s, r) in ((820, 860, 190, -10), (1790, 930, 170, 15), (1800, 330, 130, 0), (960, 560, 120, 20)):
         place(c, icon("smash", s).rotate(r, expand=True, resample=Image.BICUBIC), x, y, shadow=False)
     place(c, icon("rampage", 210).rotate(-8, expand=True, resample=Image.BICUBIC), 1000, 980)
     t = art.title("RAMPAGE!", 280, (255, 235, 110), (255, 60, 30), stroke=24, shadow=18).rotate(6, expand=True, resample=Image.BICUBIC)
-    c.alpha_composite(t, (60, 170))
+    c.alpha_composite(t, (50, 30))
     sub = chip("SMASH THE TOY CITY!", 60, bg=(255, 90, 40))
-    c.alpha_composite(sub.rotate(6, expand=True, resample=Image.BICUBIC), (120, 560))
+    c.alpha_composite(sub.rotate(6, expand=True, resample=Image.BICUBIC), (110, 430))
     place(c, kaiju("Crabzooka", 300, -25), 330, 900)
     c.convert("RGB").save(os.path.join(OUT, "thumbnail_3_rampage.png"))
 
@@ -208,8 +211,10 @@ def thumb_worlds():
         c.paste(layer, (0, 0), mask)
         d = ImageDraw.Draw(c)
         d.line([(x0 - slant / 2, H), (x0 + slant / 2, 0)], fill=INK + (255,), width=16)
-        lab = art.title(label, 64, (255, 255, 255), col, stroke=8, shadow=6)
-        c.alpha_composite(lab, (int(x0 + W / n / 2 - lab.width / 2), 880))
+    for i, (view, label, col) in enumerate(names):
+        x0 = i * W / n
+        lab = art.title(label, 52, (255, 255, 255), col, stroke=7, shadow=5)
+        c.alpha_composite(lab, (int(x0 + W / n / 2 - lab.width / 2 - 30), 930))
     c.alpha_composite(art.vignette((W, H), 0.35))
     t = art.title("EXPLORE NEW WORLDS!", 150, stroke=16, shadow=12)
     c.alpha_composite(t, (int(W / 2 - t.width / 2), 50))
@@ -377,7 +382,7 @@ def shot_grow(t, d):
     label, h, col = steps[i]
     prev = steps[i - 1][1] if i > 0 else h * 0.6
     s = (prev + (h - prev) * ease_out_back(u / 0.3)) / h
-    put(c, kz("Toastzilla", h, -15), W / 2, 1000 - h / 2 - 20, s)
+    put(c, kz(GROWER, h), W / 2, 1000 - h / 2 - 20, s)
     lab = cached(("chip", label), lambda: chip(label, 64, bg=col))
     put(c, lab, W / 2, 1000, ease_out_back(u / 0.25))
     headline(c, "GROW THEM INTO TITANS!", t - 0.1, 140, 110, (200, 255, 120), (40, 190, 60))
@@ -411,8 +416,8 @@ def shot_steal(t, d):
     k = ease_in_out(t / d)
     x = -250 + (W + 500) * k
     hop = abs(math.sin(t * 2 * math.pi / BEAT)) * 40
-    put(c, kz("Kebabzilla", 420, 60), x, 650 - hop, 1, math.sin(t * 9) * 6)
-    put(c, ic("thief", 300), x - 330, 760 - hop * 0.7, 1, math.sin(t * 9 + 1) * 8)
+    put(c, kz("Kebabzilla", 560, 60), x, 640 - hop, 1, math.sin(t * 9) * 6)
+    put(c, ic("thief", 420), x - 420, 760 - hop * 0.7, 1, math.sin(t * 9 + 1) * 8)
     blink = (int(t / BEAT) % 2) == 0
     if blink:
         edges = cached("edges", lambda: _edges())
@@ -501,7 +506,7 @@ def shot_logo(t, d):
     for j, name in enumerate(LINEUP):
         x = (j * 260 + t * 420) % (W + 520) - 260
         put(c, kz(name, 240, 30), x, 1000 - abs(math.sin(t * 7 + j)) * 18)
-    put(c, kz("KingKaiju", 560, 0, (255, 240, 170)), W / 2, 470 + 400 * (1 - ease_out_back(t / 0.45)))
+    put(c, kz("KingKaiju", 640, 0, (255, 240, 170)), W / 2, 500 + 400 * (1 - ease_out_back(t / 0.45)))
     pop_title(c, ("logo1",), lambda: art.title("STEAL A KAIJU!", 190, stroke=20, shadow=16), W / 2, 170, t - 0.45, 2)
     if t > 1.1:
         play = cached("play", lambda: chip("PLAY NOW!", 80, bg=(70, 210, 90)))
