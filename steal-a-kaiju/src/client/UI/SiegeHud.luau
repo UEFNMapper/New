@@ -16,6 +16,7 @@ local Kaijus = require(Shared.Config.Kaijus)
 local Format = require(Shared.Logic.Format)
 
 local Kit = require(script.Parent.Kit)
+local Hud = require(script.Parent.Hud)
 local Viewport = require(script.Parent.Viewport)
 local Controllers = script.Parent.Parent.Controllers
 local Remote = require(Controllers.Remote)
@@ -72,15 +73,15 @@ end
 ----------------------------------------------------------------------------
 
 local function buildStatus()
+	-- rangé dans la colonne de gauche du HUD, entre le niveau et le compagnon
 	local holder = Kit.new("Frame", {
 		Name = "SiegeStatus",
 		Size = UDim2.fromOffset(300, 100),
-		Position = UDim2.fromOffset(16, 58),
 		BackgroundTransparency = 1,
 		Visible = false,
-		Parent = layer,
+		LayoutOrder = 2,
+		Parent = Hud.LeftColumn(),
 	})
-	Kit.AutoScale(holder)
 	local _, body = Kit.Panel({ Size = UDim2.fromScale(1, 1), Rotation = -1.5, Gradient = "Ink", Parent = holder })
 	Kit.Hazard({ Size = UDim2.new(1, -24, 0, 8), Position = UDim2.fromOffset(12, 7), ZIndex = 3, Parent = body })
 	ui.Title = Kit.Text({

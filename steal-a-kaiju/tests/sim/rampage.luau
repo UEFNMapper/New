@@ -816,12 +816,13 @@ check("modèle géant du kaiju construit et collé au personnage", kaijuModel an
 check("caméra reculée selon la taille", hero.CameraMinZoomDistance and hero.CameraMinZoomDistance > 16)
 local heroOrigin = lastFx(hero, "RampageStart", 1).Origin
 walkTo(hero, heroOrigin + V3(0, 3.5, 0))
-local heroShack = nearest(hero, kind("Shack"))
-walkNextTo(hero, heroShack, 1)
+-- une maison (25 PV) : un kaiju puissant écraserait une cabane rien qu'en marchant dessus
+local heroHouse = nearest(hero, kind("House"))
+walkNextTo(hero, heroHouse, 1)
 from = #Runtime.ClientLog + 1
 hud:FindFirstChild("Stomp", true).Activated:Fire()
 Runtime.Advance(0.5)
-check("bouton STOMP : la cabane est écrasée", #Boot.FxFor(hero, "RampageSmash", from) >= 1)
+check("bouton STOMP : la maison est frappée", #Boot.FxFor(hero, "RampageSmash", from) + #Boot.FxFor(hero, "RampageHit", from) >= 1)
 check(
 	"HUD : cash, compteur et barre de destruction mis à jour",
 	hud:FindFirstChild("Cash", true).Text ~= "$0" and hud:FindFirstChild("Percent", true).Text ~= "DESTRUCTION 0%" and hud:FindFirstChild("Smashed", true).Text:find(" 0/") == nil,

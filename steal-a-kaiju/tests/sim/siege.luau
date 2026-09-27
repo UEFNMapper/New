@@ -83,7 +83,7 @@ check("pas de vague pendant le début du tutoriel (Idle)", folder:GetAttribute("
 local playerGui = hero:FindFirstChild("PlayerGui")
 local hud = playerGui:FindFirstChild("SiegeHud")
 check("couche SiegeHud créée", hud ~= nil)
-local status = hud and hud:FindFirstChild("SiegeStatus")
+local status = playerGui:FindFirstChild("SiegeStatus", true) -- rangé dans la colonne de gauche du HUD
 check("panneau d'état caché hors siège", status and status.Visible == false)
 
 local function hatchedCount(p)

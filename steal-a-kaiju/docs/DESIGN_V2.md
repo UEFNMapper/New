@@ -52,7 +52,7 @@ Le cratère reste le centre social. Des portails mènent à 4 îles-mondes visib
 | Candy Coast | niveau 5 + péage | Rare / Epic | Rainbow |
 | Frost Peaks | niveau 12 + péage | Epic / Legendary | Diamond |
 | Volcano Core | niveau 18 + Évolution 1 | Legendary / Mythic | Blood Moon |
-| Cosmic Rift | niveau 28 + Évolution 3 | Mythic / Celestial | Galaxy, Shadow |
+| Cosmic Rift | niveau 30 + Évolution 4 | Mythic / Celestial | Galaxy, Shadow |
 
 Chaque monde a son décor, sa lumière, ses espèces (10 nouvelles espèces ajoutées) et sa
 mutation. Le météore perso de l'île tombe depuis le meilleur monde débloqué.

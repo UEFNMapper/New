@@ -321,7 +321,7 @@ function Hud.LeftColumn(): Frame
 	if not column then
 		column = Kit.new("Frame", {
 			Name = "LeftColumn",
-			Size = UDim2.fromOffset(350, 500),
+			Size = UDim2.fromOffset(350, 620),
 			Position = UDim2.fromOffset(16, 62),
 			BackgroundTransparency = 1,
 			Parent = layer,
@@ -561,7 +561,7 @@ local function buildMenus()
 		Name = "LeftMenu",
 		Size = UDim2.fromOffset(200, 310),
 		BackgroundTransparency = 1,
-		LayoutOrder = 3,
+		LayoutOrder = 4,
 		Parent = Hud.LeftColumn(),
 	}, {
 		Kit.new("UIGridLayout", {

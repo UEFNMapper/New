@@ -98,7 +98,7 @@ do
 	local eggs = { "Rare", "Epic", "Epic", "Legendary", "Legendary", "Legendary", "Mythic", "Mythic", "Mythic", "Celestial" }
 	for i = 1, 25 do
 		table.insert(Economy.Rebirths, {
-			Cost = math.floor(8000000 * 6 ^ (i - 1)),
+			Cost = math.floor(40000000 * 7 ^ (i - 1)),
 			NeedRarity = needs[math.min(i, #needs)],
 			Mult = 1 + 0.5 * i, -- multiplicateur cumulé après ce rebirth
 			Luck = 1 + 0.1 * i,

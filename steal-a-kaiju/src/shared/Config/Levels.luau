@@ -19,7 +19,7 @@ Levels.Max = 100
 
 -- XP pour passer du niveau L au niveau L+1.
 function Levels.XpToNext(level: number): number
-	return math.floor(40 * level * 1.06 ^ level)
+	return math.floor(40 * level * 1.08 ^ level)
 end
 
 -- XP cumulée nécessaire pour atteindre `level`.

@@ -478,7 +478,7 @@ local function buildChip()
 		Text = "",
 		AutoButtonColor = false,
 		Visible = false,
-		LayoutOrder = 2,
+		LayoutOrder = 3,
 		Parent = column or layer,
 	})
 	if not column then

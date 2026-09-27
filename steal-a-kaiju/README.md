@@ -4,11 +4,15 @@
 > et plus tout le serveur les voit.**
 
 Jeu Roblox complet de type « Steal a … » : des œufs de kaiju tombent en météores, tu les
-fais éclore et grandir sur ton île, ils rapportent du cash… et les autres joueurs peuvent
-venir te les voler. Les Titans et les Colosses sont si lourds qu'il faut **être deux** pour
-les porter.
+fais éclore et grandir sur ton île, ils rapportent du cash. **Tes kaijus servent aussi à
+jouer** : ils défendent ton île contre des vagues de monstres sauvages, tu peux devenir l'un
+d'eux pour écraser une ville en jouet, et ton compagnon te suit partout pour déterrer des
+trésors. Tu montes de niveau pour ouvrir **5 mondes** aux œufs de plus en plus rares. Avec
+d'autres joueurs, on peut en plus se voler les kaijus (les Titans se portent à deux).
 
-Tout le jeu est écrit en code (Luau + Rojo) : carte, modèles 3D des 36 kaijus, interface,
+Le plan de la V2 (et pourquoi) est dans [`docs/DESIGN_V2.md`](docs/DESIGN_V2.md).
+
+Tout le jeu est écrit en code (Luau + Rojo) : carte, modèles 3D des 46 kaijus, interface,
 effets, sons originaux.
 
 ![Île d'un joueur](docs/previews/island.png)
@@ -17,8 +21,13 @@ effets, sons originaux.
 
 | Système | Détail |
 |---|---|
-| **Pluie de météores** | Un œuf tombe toutes les ~14 s dans le cratère (premier arrivé, premier servi), plus un météore perso sur ton île toutes les 2 min 30 |
-| **36 kaijus** | 7 raretés (Common → Celestial + 6 SECRETS obtenus uniquement par fusion), 9 archétypes, accessoires, animations |
+| **Niveau du joueur** | XP pour chaque action, récompense à chaque niveau, nids, mondes et menus débloqués par niveau, barre « NEXT GOAL » toujours visible |
+| **5 mondes** | Kaiju Crater, Candy Coast, Frost Peaks, Volcano Core, Cosmic Rift : îles-arènes avec décor, lumière, espèces et mutation propres, portails et carte du monde |
+| **Défense de l'île** | Vagues de mini-kaijus sauvages toutes les 2 min 30 : tes kaijus tirent, tu bonkes, un Alpha toutes les 5 vagues lâche un œuf |
+| **RAMPAGE** | Deviens ton kaiju et écrase une ville en jouet (75 s, combos, tanks, 5 quartiers, étoiles) : cash, croissance du kaiju et œufs |
+| **Compagnon** | Un de tes kaijus te suit, aspire les orbes, flaire un trésor toutes les ~50 s et t'aide au combat ; il a son propre niveau |
+| **Pluie de météores** | Un œuf toutes les ~14 s dans le cratère et dans chaque monde visité, un météore perso sur ton île, et un **météore doré** (rareté supérieure, moitié prix) toutes les 5 chutes perso |
+| **46 kaijus** | 7 raretés (Common → Celestial + 6 SECRETS obtenus uniquement par fusion), 9 archétypes, accessoires, animations |
 | **Croissance** | 5 stades (Baby → Teen → Adult → Titan → Colossus), le modèle grandit physiquement, revenus x1 → x40, croissance même hors ligne |
 | **Mutations** | Gold x2, Diamond x3, Blood Moon x4, Rainbow x5, Radioactive x6, Galaxy x8, Shadow x10 |
 | **Vol** | Attraper un kaiju chez un autre, le ramener chez soi ; ralentissement selon la taille ; Titans/Colosses à deux avec partage du butin |
@@ -27,13 +36,16 @@ effets, sons originaux.
 | **Évolution** | 25 niveaux de rebirth (multiplicateur, chance, gemmes, œuf offert) |
 | **Labo de fusion** | 6 recettes secrètes + fusions aléatoires (probabilités affichées) |
 | **Événements** | Meteor Shower, Blood Moon, Radioactive Storm, Golden Hour, Cosmic Aurora, Cash Stampede, **Colossal Raid** (boss à combattre ensemble) |
-| **Rétention** | Série quotidienne (7 jours), 10 cadeaux de temps de jeu, 3 quêtes par jour, roue de la fortune, codes, Kaijudex (+1 % de cash par espèce), bonus amis / groupe / Premium, classements mondiaux |
+| **Rétention** | Série quotidienne (7 jours), 10 cadeaux de temps de jeu, 3 quêtes par jour (toutes faisables en solo), roue de la fortune, regroupés dans un seul bouton REWARDS ; codes, Kaijudex (+1 % de cash par espèce), bonus amis / groupe / Premium, classements mondiaux |
 | **Boutique Premium** | 9 Game Passes + 15 produits (packs, boosts de serveur, événements achetables) |
 | **Conformité 2026** | Probabilités affichées pour tout le hasard payant ; achats aléatoires masqués si `PolicyService` l'impose |
 | **Anti-triche** | Serveur autoritaire, validation de chaque requête, limitation de débit, anti-téléportation pendant un vol |
-| **Onboarding** | 6 missions guidées avec récompenses, voleur d'entraînement, menus débloqués progressivement, écran How to play |
+| **Onboarding** | 6 missions guidées avec récompenses, menus débloqués progressivement, écran How to play en 7 pages |
 
-Captures d'interface (rendues depuis le vrai code client) : [`docs/previews/ui/`](docs/previews/ui/)
+Captures d'interface (rendues depuis le vrai code client) : [`docs/previews/ui/`](docs/previews/ui/).
+Les 4 îles-mondes : [`docs/previews/world_candy.png`](docs/previews/world_candy.png),
+[`world_frost.png`](docs/previews/world_frost.png), [`world_volcano.png`](docs/previews/world_volcano.png),
+[`world_cosmic.png`](docs/previews/world_cosmic.png).
 
 ## Les 5 premières minutes (onboarding)
 
@@ -43,15 +55,27 @@ d'objectif, des flèches au sol vers la cible et une récompense :
 1. **Ton premier kaiju** — l'œuf de bienvenue éclôt sous tes yeux.
 2. **Collecte ton cash** — marche sur le pad vert du réacteur.
 3. **Attrape un œuf de météore** — flèches jusqu'au cratère, premier œuf gratuit.
-4. **Verrouille ta base** — le bouton rouge / touche L.
-5. **Bonk le voleur !** — un **voleur d'entraînement (PNJ)** vient prendre ton kaiju, tu le
-   frappes avec le Bonker (le kaiju n'est jamais perdu pendant l'entraînement).
-6. **Vole un kaiju** — chez un vrai joueur (passable après 20 s si le serveur est vide).
+4. **Défends ton île** — une petite vague d'entraînement : tes kaijus tirent, tu bonkes.
+5. **RAMPAGE !** — le portail de ton île te transforme en kaiju géant dans une ville en jouet.
+6. **Déterre un trésor** — ton compagnon a flairé un trésor tout près.
 
-Les menus se débloquent au fil des missions (seuls Réglages et Aide sont visibles au début),
-et un écran **How to play** en 6 pages reste accessible à tout moment. Dans le monde :
-panneaux « NEST YARD », « STEP HERE TO COLLECT », « LOCK BASE », « TO THE CRATER »,
-minuteur du prochain météore au-dessus du cratère et sur le HUD.
+Ensuite, la barre **NEXT GOAL** (en haut à gauche) montre toujours le prochain objectif :
+le prochain déblocage de niveau, ou le monde que tu peux ouvrir.
+
+## La progression en solo
+
+| Moment | Ce que le joueur poursuit |
+|---|---|
+| 1 min | Premier kaiju, premier niveau, nid supplémentaire |
+| 5-10 min | Candy Coast (niveau 5), premier Epic, première vague de défense |
+| 30 min | Frost Peaks (niveau 12), premier Titan, quartier 2 de Rampage |
+| 1 h - 1 h 30 | Première Évolution (niveau 10 + cash), Volcano Core |
+| 1 jour | Cosmic Rift (niveau 30 + Évolution 4), premières recettes secrètes |
+| 1 semaine | Kaijudex complet (46 espèces × 8 variantes), vague 30+, 5 étoiles partout |
+
+Mesuré par le bot d'équilibrage (joueur « parfait », environ 2 fois plus rapide qu'un
+enfant) : Candy Coast à 3 min, Frost Peaks à 12 min, Évolution 1 à 45 min, Volcano Core à
+58 min, Cosmic Rift à 3 h 20, Évolution 5 à 3 h 45, puis une longue fin de partie.
 
 ## Assets : icônes, modèles 3D, sons
 
@@ -118,16 +142,19 @@ virtuelle et une validation de chaque propriété, méthode et événement contr
 officielle (919 classes).
 
 ```bash
-./tools/test_all.sh   # environ 1 minute
+./tools/test_all.sh   # environ 10 minutes
 ```
 
 | Test | Résultat |
 |---|---|
-| Analyse de types Luau (luau-lsp) + appels entre services + méthodes de l'API Roblox | ✅ 0 erreur |
-| Tests unitaires (formules, tirages, croissance, quêtes, 36 modèles × 8 mutations) | ✅ 13/13 |
-| Playtest serveur : 3 joueurs, éclosion, collecte, météores, vol, casse à deux, bonk, bouclier, boutique, récompenses, fusion, évolution, boss, événements, reconnexion, 2 h de jeu | ✅ 100/100 |
-| Playtest client : vrai client contre vrai serveur, 10 écrans ouverts et tous leurs boutons cliqués, cinématiques, 7 événements, 30 min | ✅ 33/33, 0 erreur |
-| Équilibrage : un bot joue 6 h | Évolution 1 vers 30 min, Légendaire vers 12 min, Évolution 5 vers 4 h |
+| Analyse de types Luau (luau-lsp) + appels entre services + méthodes de l'API Roblox | ✅ aucune nouvelle erreur |
+| Tests unitaires (formules, tirages, mondes, niveaux, météore doré, 46 modèles × 8 mutations) | ✅ 15/15 |
+| Playtest serveur : 3 joueurs, tutoriel complet (6 missions), météores, vol, casse à deux, bonk, bouclier, boutique, récompenses, fusion, évolution, niveaux, mondes, boss, reconnexion, 2 h de jeu | ✅ 134/134 |
+| Playtest client : vrai client contre vrai serveur, 14 écrans ouverts et tous leurs boutons cliqués, cinématiques, événements | ✅ 37/37, 0 erreur |
+| Compagnon : choix auto, trésors, fouille, aimant, aide au combat, pastille HUD | ✅ 94/94 |
+| Défense de l'île : vague d'entraînement, tours, bonk, fuites, Alpha, pause, HUD | ✅ 98/98 |
+| RAMPAGE : portail, ville, 3 types de coups vérifiés côté serveur, combo, tanks, récompenses, client | ✅ 111/111 |
+| Équilibrage : un bot joue 6 h | Évolution 1 vers 45 min, Cosmic Rift vers 3 h 20, Évolution 5 vers 3 h 45 |
 
 Ces tests ont trouvé et fait corriger de vrais bugs qui auraient cassé le jeu dans Roblox,
 notamment une propriété d'éclairage non modifiable par script (le serveur aurait planté au
@@ -141,8 +168,8 @@ emojis, et le chargement des sons.
 
 ```
 src/shared/   config (kaijus, économie, événements, boutique…), logique pure, KaijuBuilder
-src/server/   12 services (données, îles, kaijus, météores, vol, événements, récompenses…)
-src/client/   HUD, 10 fenêtres, cinématiques, rendu 3D des kaijus et météores, effets
+src/server/   18 services (données, îles, kaijus, météores, mondes, niveaux, défense, Rampage, compagnon…)
+src/client/   HUD, 14 fenêtres, cinématiques, rendu 3D des kaijus, météores, mondes, effets
 src/first/    écran de chargement
 assets/audio/ 42 effets + 4 musiques originaux (synthétisés, libres de droits)
 tests/        tests unitaires + simulateur Roblox headless + playtests
