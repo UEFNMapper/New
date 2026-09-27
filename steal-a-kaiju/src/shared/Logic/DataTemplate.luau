@@ -62,6 +62,7 @@ local DataTemplate = {
 	Spins = 1,
 	FreeSpinAt = 0,
 	Tutorial = 0,
+	GoldenCount = 0, -- météores perso tombés (1 sur 5 est doré)
 	LastOnline = 0,
 	GroupClaimed = false,
 	StarterPack = false,

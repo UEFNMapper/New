@@ -940,24 +940,30 @@ function SiegeService.Init()
 	task.spawn(function()
 		while true do
 			task.wait(Siege.Tick)
-			local t = now()
-			for player, state in states do
-				local ok, err = pcall(function()
-					if player.Parent ~= Players then
-						cleanup(player)
-					elseif state.Wave then
-						stepWave(state, state.Wave, t)
-					else
-						stepCountdown(state, t)
+			-- une erreur ne doit jamais arrêter la boucle pour tout le serveur
+			local ok, err = pcall(function()
+				local t = now()
+				for player, state in states do
+					local ok, err = pcall(function()
+						if player.Parent ~= Players then
+							cleanup(player)
+						elseif state.Wave then
+							stepWave(state, state.Wave, t)
+						else
+							stepCountdown(state, t)
+						end
+					end)
+					if not ok then
+						warn("[SiegeService] " .. tostring(err))
 					end
-				end)
-				if not ok then
-					warn("[SiegeService] " .. tostring(err))
 				end
-			end
-			local ok, err = pcall(stepOrbs, t)
+				local ok, err = pcall(stepOrbs, t)
+				if not ok then
+					warn("[SiegeService] orbes : " .. tostring(err))
+				end
+			end)
 			if not ok then
-				warn("[SiegeService] orbes : " .. tostring(err))
+				warn("[SiegeService] boucle : " .. tostring(err))
 			end
 		end
 	end)

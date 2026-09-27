@@ -407,23 +407,34 @@ function EventService.Start()
 	task.spawn(function()
 		task.wait(Events.FirstDelay)
 		while true do
-			if not current then
-				local nextEvent = table.remove(queue, 1)
-				if nextEvent then
-					start(nextEvent.Id, nextEvent.By)
-				else
-					start(pickRandom())
+			-- une erreur ne doit jamais arrêter la boucle pour tout le serveur
+			local ok, err = pcall(function()
+				if not current then
+					local nextEvent = table.remove(queue, 1)
+					if nextEvent then
+						start(nextEvent.Id, nextEvent.By)
+					else
+						start(pickRandom())
+					end
 				end
-			end
-			-- attend la fin, puis une pause (sauf si un événement payant attend)
-			while current do
-				task.wait(1)
-			end
-			local gap = math.random(Events.Gap[1], Events.Gap[2])
-			local waited = 0
-			while waited < gap and #queue == 0 do
-				task.wait(1)
-				waited += 1
+				-- attend la fin, puis une pause (sauf si un événement payant attend)
+				while current do
+					task.wait(1)
+				end
+				local gap = math.random(Events.Gap[1], Events.Gap[2])
+				local waited = 0
+				while waited < gap and #queue == 0 do
+					task.wait(1)
+					waited += 1
+				end
+			end)
+			if not ok then
+				warn("[EventService] boucle : " .. tostring(err))
+				-- un événement à moitié lancé ne doit pas durer pour toujours
+				if current then
+					pcall(stop)
+				end
+				task.wait(5)
 			end
 		end
 	end)

@@ -365,6 +365,18 @@ for _, rec in data.Kaijus do
 end
 log = #Runtime.ClientLog
 Boot.Call(hero, "SiegeStartNow")
+Runtime.Advance(0.5)
+-- pendant une vague on défend son île : pas de Rampage ni de voyage (le réacteur serait pillé)
+local heroKaiju
+for _, rec in data.Kaijus do
+	if not rec.Egg then
+		heroKaiju = rec
+	end
+end
+local noRampage = Boot.Call(hero, "RampageStart", { Uid = heroKaiju and heroKaiju.Uid, District = 1 })
+check("Rampage refusé pendant une vague", noRampage and not noRampage.ok and string.find(noRampage.msg or "", "Defend") ~= nil, noRampage and noRampage.msg)
+local noTravel = Boot.Call(hero, "Travel", { Id = "Crater" })
+check("voyage refusé pendant une vague", noTravel and not noTravel.ok, noTravel and noTravel.msg)
 local leakFx
 local storedPrev, storedBefore = data.Stored, data.Stored
 for _ = 1, 120 do

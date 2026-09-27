@@ -13,6 +13,7 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Buddy = require(Shared.Config.Buddy)
+local TutorialConfig = require(Shared.Config.Tutorial)
 local Layout = require(Shared.Config.Layout)
 local Worlds = require(Shared.Config.Worlds)
 local Levels = require(Shared.Config.Levels)
@@ -41,6 +42,7 @@ type PlayerState = {
 	NextSpotAt: number,
 	Spot: Spot?,
 	LastIndex: number?,
+	RetryAt: number?, -- trésor du tutoriel : prochain essai de réapparition
 	SwapAt: number,
 }
 
@@ -466,7 +468,14 @@ local function tickPlayer(player: Player, st: PlayerState, withAssist: boolean)
 	if not rec or not root then
 		return
 	end
-	-- pendant le tutoriel, c'est la mission « DIG UP A TREASURE » qui fait apparaître le trésor
+	-- pendant le tutoriel, c'est la mission « DIG UP A TREASURE » qui fait apparaître
+	-- le trésor : s'il a expiré sans être creusé, on le remet (pas de blocage)
+	local tutorialStep = Registry.TutorialService.Step(player)
+	local mission = TutorialConfig.Get(tutorialStep)
+	if not st.Spot and mission and mission.Target == "Treasure" and t >= (st.RetryAt or 0) then
+		st.RetryAt = t + 3
+		BuddyService.ForceTreasure(player)
+	end
 	if not st.Spot and t >= st.NextSpotAt and Registry.TutorialService.IsDone(player) then
 		local pos, index = pickSpot(player, root.Position, st.LastIndex)
 		if pos then
@@ -504,12 +513,18 @@ function BuddyService.Init()
 		local tick = 0
 		while true do
 			task.wait(Buddy.MagnetTick)
-			tick += 1
-			for player, st in states do
-				local ok, err = pcall(tickPlayer, player, st, tick % assistEvery == 0)
-				if not ok then
-					warn("[BuddyService] tick : " .. tostring(err))
+			-- une erreur ne doit jamais arrêter la boucle pour tout le serveur
+			local ok, err = pcall(function()
+				tick += 1
+				for player, st in states do
+					local ok, err = pcall(tickPlayer, player, st, tick % assistEvery == 0)
+					if not ok then
+						warn("[BuddyService] tick : " .. tostring(err))
+					end
 				end
+			end)
+			if not ok then
+				warn("[BuddyService] boucle : " .. tostring(err))
 			end
 		end
 	end)

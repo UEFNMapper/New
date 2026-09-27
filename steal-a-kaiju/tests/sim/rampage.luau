@@ -25,6 +25,10 @@ local PlotService = req(Services:FindFirstChild("PlotService"))
 local RampageService = req(Services:FindFirstChild("RampageService"))
 local Shared = S.ReplicatedStorage:FindFirstChild("Shared")
 local Rampage = req(Shared.Config.Rampage)
+-- Ce test porte sur le Rampage : pas de vague de défense pendant la session
+-- (une vague en cours bloque volontairement le lancement, testé dans siege.luau)
+local Siege = req(Shared.Config.Siege)
+Siege.Countdown, Siege.FirstCountdown, Siege.JoinCountdown = 1e9, 1e9, 1e9
 local Growth = req(Shared.Config.Growth)
 local Layout = req(Shared.Config.Layout)
 local Tutorial = req(Shared.Config.Tutorial)

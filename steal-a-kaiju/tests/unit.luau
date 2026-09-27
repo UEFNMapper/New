@@ -112,6 +112,18 @@ test("mondes : espèces, poids, portes", function()
 		expect(Roll.GoldenRarity(1, rng, "Crater") ~= "Common")
 		expect(Roll.GoldenRarity(1, rng, "Cosmic") ~= "Legendary")
 	end
+	-- même avec de la chance, le doré n'est jamais pire qu'un météore normal
+	local epicGolden, epicNormal = 0, 0
+	for _ = 1, 3000 do
+		if Rarities.ById[Roll.GoldenRarity(2, rng, "Candy")].Order >= 3 then
+			epicGolden += 1
+		end
+		if Rarities.ById[Roll.Rarity(2, rng, "Candy")].Order >= 3 then
+			epicNormal += 1
+		end
+		expect(Roll.GoldenRarity(2, rng, "Candy") ~= "Common")
+	end
+	expect(epicGolden > epicNormal, epicGolden .. " vs " .. epicNormal)
 	expect(Worlds.At(Worlds.Origin("Candy") + Vector3.new(10, 3, 5)) == "Candy")
 	expect(Worlds.At(Vector3.new(0, 3, 0)) == nil)
 end)

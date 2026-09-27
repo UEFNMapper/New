@@ -73,17 +73,22 @@ function Roll.Rarity(luck: number, rng: Rng?, worldId: string?): string
 	return Rarities.List[index].Id
 end
 
--- Tirage « doré » : comme Roll.Rarity mais sans la rareté la plus fréquente du
--- monde (rareté supérieure garantie).
+-- Tirage « doré » : comme Roll.Rarity mais sans la rareté la plus basse du
+-- monde (rareté supérieure garantie, même avec de la chance).
 function Roll.GoldenRarity(luck: number, rng: Rng?, worldId: string?): string
-	local weights = Roll.RarityWeights(luck, worldId)
-	local top, topW = 0, -1
-	for i, w in weights do
-		if w > topW then
-			top, topW = i, w
+	local world = Worlds.Get(worldId)
+	local lowest = math.huge
+	for _, r in Rarities.List do
+		if (world.Weights[r.Id] or 0) > 0 then
+			lowest = math.min(lowest, r.Order)
 		end
 	end
-	weights[top] = 0
+	local weights = Roll.RarityWeights(luck, worldId)
+	for i, r in Rarities.List do
+		if r.Order <= lowest then
+			weights[i] = 0
+		end
+	end
 	return Rarities.List[Roll.Weighted(weights, rng)].Id
 end
 

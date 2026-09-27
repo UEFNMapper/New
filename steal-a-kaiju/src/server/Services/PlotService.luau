@@ -229,6 +229,9 @@ function PlotService.Init()
 	-- ne jamais dépendre d'un seul mécanisme de Roblox :
 	--   1. contact (Touched), 2. proximité vérifiée par le serveur, 3. invite « E ».
 	local debounce: { [Player]: number } = {}
+	Players.PlayerRemoving:Connect(function(player)
+		debounce[player] = nil
+	end)
 	local function tryCollect(player: Player, plot: MapBuilder.PlotInfo)
 		if ownerOf[plot.Index] == player and (debounce[player] or 0) < os.clock() then
 			debounce[player] = os.clock() + 0.6
@@ -285,17 +288,23 @@ function PlotService.Init()
 	task.spawn(function()
 		while true do
 			task.wait(0.25)
-			for _, plot in plots do
-				local owner = ownerOf[plot.Index]
-				local character = owner and owner.Character
-				local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
-				if owner and root then
-					local pad = plot.Collector.Position
-					local flat = Vector3.new(root.Position.X - pad.X, 0, root.Position.Z - pad.Z).Magnitude
-					if flat <= 6.5 and math.abs(root.Position.Y - pad.Y) < 9 then
-						tryCollect(owner, plot)
+			-- une erreur ne doit jamais arrêter la boucle pour tout le serveur
+			local ok, err = pcall(function()
+				for _, plot in plots do
+					local owner = ownerOf[plot.Index]
+					local character = owner and owner.Character
+					local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+					if owner and root then
+						local pad = plot.Collector.Position
+						local flat = Vector3.new(root.Position.X - pad.X, 0, root.Position.Z - pad.Z).Magnitude
+						if flat <= 6.5 and math.abs(root.Position.Y - pad.Y) < 9 then
+							tryCollect(owner, plot)
+						end
 					end
 				end
+			end)
+			if not ok then
+				warn("[PlotService] boucle : " .. tostring(err))
 			end
 		end
 	end)
@@ -303,7 +312,13 @@ function PlotService.Init()
 	task.spawn(function()
 		while true do
 			task.wait(0.2)
-			enforceShields()
+			-- une erreur ne doit jamais arrêter la boucle pour tout le serveur
+			local ok, err = pcall(function()
+				enforceShields()
+			end)
+			if not ok then
+				warn("[PlotService] boucle : " .. tostring(err))
+			end
 		end
 	end)
 end

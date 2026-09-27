@@ -463,6 +463,7 @@ section("Fusion et Évolution")
 for _, rec in table.clone(data(alice).Kaijus) do
 	KaijuService.RemoveRecord(alice, rec.Uid)
 end
+LevelService.AddXp(alice, math.max(0, Levels.TotalFor(Levels.MenuLevels.Fusion) - data(alice).Xp), "Test")
 local a = KaijuService.AddHatched(alice, "Toastzilla", nil, Growth.Threshold(3, "Common") + 1)
 local b = KaijuService.AddHatched(alice, "Sharkapillar", nil, Growth.Threshold(3, "Rare") + 1)
 Runtime.Advance(1.2)

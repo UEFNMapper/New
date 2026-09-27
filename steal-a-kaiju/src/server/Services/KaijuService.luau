@@ -14,6 +14,7 @@ local Growth = require(Shared.Config.Growth)
 local Economy = require(Shared.Config.Economy)
 local Worlds = require(Shared.Config.Worlds)
 local Levels = require(Shared.Config.Levels)
+local Layout = require(Shared.Config.Layout)
 local Calc = require(Shared.Logic.Calc)
 local Roll = require(Shared.Logic.Roll)
 local Format = require(Shared.Logic.Format)
@@ -241,8 +242,10 @@ function KaijuService.FreeNest(player: Player): number?
 	return nil
 end
 
-local function newUid(data: any): string
-	local uid = string.format("%x-%x", data.NextUid, math.random(0, 0xFFFF))
+-- Identifiant unique sur le serveur (les ancres sont indexées par Uid pour tous
+-- les joueurs) : on y met l'UserId du propriétaire.
+local function newUid(data: any, player: Player): string
+	local uid = string.format("%x-%x-%x", player.UserId, data.NextUid, math.random(0, 0xFFFF))
 	data.NextUid += 1
 	return uid
 end
@@ -257,7 +260,7 @@ function KaijuService.AddEgg(player: Player, rarity: string, hatchSeconds: numbe
 	end
 	local r = Rarities.Get(rarity)
 	local rec: Record = {
-		Uid = newUid(data),
+		Uid = newUid(data, player),
 		Rarity = r.Id,
 		Growth = 0,
 		Nest = slot,
@@ -283,7 +286,8 @@ function KaijuService.GiveEgg(player: Player, rarity: string, source: string?, w
 	if rec then
 		Notify.Fx(player, "EggGift", { Rarity = rarity, Source = source, Uid = rec.Uid })
 	else
-		table.insert(data.PendingEggs, rarity)
+		-- l'œuf garde son monde d'origine : « Rareté@Monde »
+		table.insert(data.PendingEggs, if world then rarity .. "@" .. world else rarity)
 		DataService.Replicate(player, "PendingEggs")
 		Notify.Toast(player, ("%s egg saved! Free a nest to place it."):format(r.Name), "Info")
 	end
@@ -296,8 +300,9 @@ function KaijuService.PlacePending(player: Player)
 	end
 	local changed = false
 	while #data.PendingEggs > 0 and KaijuService.FreeNest(player) do
-		local rarity = table.remove(data.PendingEggs, 1) :: string
-		KaijuService.AddEgg(player, rarity)
+		local entry = table.remove(data.PendingEggs, 1) :: string
+		local rarity, world = string.match(entry, "^([^@]+)@?(.*)$")
+		KaijuService.AddEgg(player, rarity or entry, nil, if world and world ~= "" then world else nil)
 		changed = true
 	end
 	if changed then
@@ -367,7 +372,7 @@ function KaijuService.AddHatched(player: Player, speciesId: string, mutation: st
 		return nil
 	end
 	local rec: Record = {
-		Uid = newUid(data),
+		Uid = newUid(data, player),
 		Species = species.Id,
 		Rarity = species.Rarity,
 		Mutation = mutation,
@@ -410,7 +415,7 @@ function KaijuService.Transfer(from: Player, uid: string, to: Player): Record?
 		return nil
 	end
 	rec.Nest = slot
-	rec.Uid = newUid(toData)
+	rec.Uid = newUid(toData, to)
 	table.insert(toData.Kaijus, rec)
 	syncAnchor(to, rec)
 	DataService.Replicate(to, "Kaijus")
@@ -459,7 +464,14 @@ end
 
 function KaijuService.Collect(player: Player)
 	local data = DataService.Get(player)
-	if not data or data.Stored < 1 then
+	if not data then
+		return
+	end
+	if data.Stored < 1 then
+		-- Auto Collect : le cash va directement au portefeuille, la mission « collecte » est validée quand même
+		if Registry.ShopService.HasPass(player, "AutoCollect") then
+			Registry.TutorialService.Notify(player, "Collect")
+		end
 		return
 	end
 	local amount = math.floor(data.Stored)
@@ -617,11 +629,12 @@ local function applyOffline(player: Player, data: any)
 	end
 	local maxHours = if Registry.ShopService.HasPass(player, "Offline") then Economy.OfflineMaxHoursPass else Economy.OfflineMaxHours
 	local capped = math.min(elapsed, maxHours * 3600)
+	-- revenu au stade de départ (la croissance hors ligne ne paie pas rétroactivement)
 	local income = 0
 	for _, rec in data.Kaijus do
 		if not rec.Egg then
-			rec.Growth += elapsed
 			income += Calc.BaseIncome(rec)
+			rec.Growth += elapsed
 		end
 	end
 	local amount = math.floor(income * KaijuService.Multiplier(player) * capped * Economy.OfflineRate)
@@ -643,10 +656,16 @@ local function onLoaded(player: Player, data: any)
 	while not Registry.PlotService.Get(player) and os.clock() - t0 < 10 do
 		task.wait()
 	end
-	-- Attend que les pass soient connus (1re fois)
-	task.wait(0.5)
+	-- Attend que les pass soient connus (nids bonus, hors ligne, x2 cash) : sinon on
+	-- déplacerait des kaijus ou on sous-paierait les gains hors ligne.
+	Registry.ShopService.WaitForOwnership(player, 20)
+	if player.Parent == nil then
+		return
+	end
 	applyOffline(player, data)
-	local limit = Registry.PlotService.UnlockedNests(player)
+	-- Nettoyage non destructif : seuls les nids en double ou hors de l'île sont
+	-- réattribués ; un kaiju sur un nid au-delà de la limite y reste (jamais revendu).
+	local limit = #Layout.Nests
 	local used: { [number]: boolean } = {}
 	for _, rec in table.clone(data.Kaijus) do
 		if rec.Nest > limit or used[rec.Nest] then
@@ -665,9 +684,9 @@ local function onLoaded(player: Player, data: any)
 					table.remove(data.Kaijus, i)
 				end
 				if rec.Egg then
-					table.insert(data.PendingEggs, rec.Rarity)
+					table.insert(data.PendingEggs, if rec.World then rec.Rarity .. "@" .. rec.World else rec.Rarity)
 				elseif rec.Species then
-					-- revendu automatiquement plutôt que perdu
+					-- plus aucune place physique (impossible en pratique) : revendu plutôt que perdu
 					data.Cash += Calc.SellValue(rec)
 				end
 				continue
@@ -768,8 +787,14 @@ function KaijuService.Init()
 	task.spawn(function()
 		while true do
 			task.wait(10)
-			for player in ownerFolders do
-				KaijuService.RefreshPlayer(player)
+			-- une erreur ne doit jamais arrêter la boucle pour tout le serveur
+			local ok, err = pcall(function()
+				for player in ownerFolders do
+					KaijuService.RefreshPlayer(player)
+				end
+			end)
+			if not ok then
+				warn("[KaijuService] boucle : " .. tostring(err))
 			end
 		end
 	end)

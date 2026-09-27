@@ -673,6 +673,9 @@ local function start(player: Player, payload: any): Router.Result
 	if (readyAt[player] or 0) > now then
 		return { ok = false, msg = ("The city is being rebuilt... %ds"):format(math.ceil(readyAt[player] - now)) }
 	end
+	if Registry.SiegeService.IsActive(player) then
+		return { ok = false, msg = "Defend your island first!" }
+	end
 	if Registry.StealService.IsCarrying(player) then
 		return { ok = false, msg = "Deliver the stolen kaiju first!" }
 	end
@@ -798,6 +801,9 @@ local function tryOpen(player: Player, plotIndex: number, explicit: boolean)
 		return
 	end
 	openDebounce[player] = os.clock() + 3
+	if Registry.SiegeService.IsActive(player) then
+		return { ok = false, msg = "Defend your island first!" }
+	end
 	if Registry.StealService.IsCarrying(player) then
 		Notify.Toast(player, "Deliver the stolen kaiju first!", "Bad")
 		return
@@ -914,18 +920,24 @@ function RampageService.Init()
 		local tick = 0
 		while true do
 			task.wait(0.1)
-			tick += 1
-			for player, run in runs do
-				local ok, err = pcall(stepRun, player, run)
-				if not ok then
-					warn("[RampageService] " .. tostring(err))
+			-- une erreur ne doit jamais arrêter la boucle pour tout le serveur
+			local ok, err = pcall(function()
+				tick += 1
+				for player, run in runs do
+					local ok, err = pcall(stepRun, player, run)
+					if not ok then
+						warn("[RampageService] " .. tostring(err))
+					end
 				end
-			end
-			if tick % 3 == 0 then
-				local ok, err = pcall(checkPortals)
-				if not ok then
-					warn("[RampageService] portails : " .. tostring(err))
+				if tick % 3 == 0 then
+					local ok, err = pcall(checkPortals)
+					if not ok then
+						warn("[RampageService] portails : " .. tostring(err))
+					end
 				end
+			end)
+			if not ok then
+				warn("[RampageService] boucle : " .. tostring(err))
 			end
 		end
 	end)

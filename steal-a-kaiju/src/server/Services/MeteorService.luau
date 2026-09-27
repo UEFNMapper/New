@@ -168,7 +168,10 @@ local function personalStep(player: Player)
 	local data = DataService.Get(player)
 	local world = Worlds.Best(if data then data.Worlds else {})
 	local luck = Registry.KaijuService.PersonalLuck(player)
-	personalCount[player] = (personalCount[player] or 0) + 1
+	personalCount[player] = (personalCount[player] or (if data then data.GoldenCount or 0 else 0)) + 1
+	if data then
+		data.GoldenCount = personalCount[player] -- le compteur du météore doré survit à une reconnexion
+	end
 	local golden = personalCount[player] % Economy.GoldenEvery == 0
 	local rarity = if golden then Roll.GoldenRarity(luck, nil, world.Id) else Roll.Rarity(luck, nil, world.Id)
 	local price = math.floor(MeteorService.EggPrice(rarity) * (if golden then Economy.GoldenPriceMult else 0.8))
@@ -193,6 +196,11 @@ local function buy(player: Player, payload: any): Router.Result
 	if owner ~= 0 and owner ~= player.UserId then
 		return { ok = false, msg = "This meteor belongs to someone else" }
 	end
+	-- œufs d'un monde : seulement si ce monde est débloqué (anti-téléportation)
+	local meteorWorld = m:GetAttribute("World") or Worlds.Default
+	if owner == 0 and meteorWorld ~= Worlds.Default and not Registry.WorldService.IsUnlocked(player, meteorWorld) then
+		return { ok = false, msg = "Unlock this world first!" }
+	end
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if not root or (root.Position - m.Position).Magnitude > 22 then
@@ -211,15 +219,12 @@ local function buy(player: Player, payload: any): Router.Result
 	local from = m.Position
 	removeMeteor(id)
 	Notify.FxAll("MeteorBought", { Id = id, Buyer = player.UserId, Rarity = rarity, From = from })
-	-- l'œuf s'envole vers la base : il arrive après l'animation
-	task.delay(1.2, function()
-		if player.Parent == Players then
-			local rec = Registry.KaijuService.AddEgg(player, rarity, nil, world)
-			if not rec then
-				Registry.KaijuService.GiveEgg(player, rarity, "Meteor", world)
-			end
-		end
-	end)
+	-- l'œuf est enregistré tout de suite (rien ne se perd si le joueur part ou
+	-- évolue pendant l'animation) ; le client le fait voler jusqu'au nid
+	local rec = Registry.KaijuService.AddEgg(player, rarity, nil, world)
+	if not rec then
+		Registry.KaijuService.GiveEgg(player, rarity, "Meteor", world)
+	end
 	Registry.RewardService.Track(player, "EggsBought", 1)
 	Registry.TutorialService.Notify(player, "Meteor")
 	local r = Rarities.Get(rarity)
@@ -261,31 +266,37 @@ function MeteorService.Start()
 		end
 		while true do
 			task.wait(0.5)
-			local event = Registry.EventService.Current()
-			local rate = if event then event.MeteorRate else 1
-			for _, w in Worlds.List do
-				local isCrater = w.Id == Worlds.Default
-				local active = isCrater or Registry.WorldService.CountIn(w.Id) > 0
-				if active and rate > 0 then
-					timers[w.Id] -= 0.5 * rate
+			-- une erreur ne doit jamais arrêter la boucle pour tout le serveur
+			local ok, err = pcall(function()
+				local event = Registry.EventService.Current()
+				local rate = if event then event.MeteorRate else 1
+				for _, w in Worlds.List do
+					local isCrater = w.Id == Worlds.Default
+					local active = isCrater or Registry.WorldService.CountIn(w.Id) > 0
+					if active and rate > 0 then
+						timers[w.Id] -= 0.5 * rate
+					end
+					if timers[w.Id] <= 0 then
+						local interval = if isCrater then Economy.MeteorInterval else Worlds.MeteorInterval
+						timers[w.Id] = interval * (0.8 + math.random() * 0.4)
+						worldStep(w.Id)
+					end
+					local attr = if isCrater then "NextMeteorIn" else "NextMeteorIn_" .. w.Id
+					Workspace:SetAttribute(attr, if rate > 0 then timers[w.Id] / rate else -1)
 				end
-				if timers[w.Id] <= 0 then
-					local interval = if isCrater then Economy.MeteorInterval else Worlds.MeteorInterval
-					timers[w.Id] = interval * (0.8 + math.random() * 0.4)
-					worldStep(w.Id)
+				-- expiration
+				local t = now()
+				for id, m in meteors do
+					if (m:GetAttribute("ExpireAt") or 0) < t then
+						Notify.FxAll("MeteorExpired", { Id = id })
+						removeMeteor(id)
+					end
 				end
-				local attr = if isCrater then "NextMeteorIn" else "NextMeteorIn_" .. w.Id
-				Workspace:SetAttribute(attr, if rate > 0 then timers[w.Id] / rate else -1)
+				publishLuck()
+			end)
+			if not ok then
+				warn("[MeteorService] boucle : " .. tostring(err))
 			end
-			-- expiration
-			local t = now()
-			for id, m in meteors do
-				if (m:GetAttribute("ExpireAt") or 0) < t then
-					Notify.FxAll("MeteorExpired", { Id = id })
-					removeMeteor(id)
-				end
-			end
-			publishLuck()
 		end
 	end)
 
@@ -293,21 +304,28 @@ function MeteorService.Start()
 	task.spawn(function()
 		while true do
 			task.wait(1)
-			local t = os.clock()
-			for _, player in Players:GetPlayers() do
-				if DataService.Get(player) then
-					if not personalNext[player] then
-						personalNext[player] = t + 40
-					elseif t >= personalNext[player] then
-						personalNext[player] = t + Economy.PersonalMeteorInterval
-						personalStep(player)
+			-- une erreur ne doit jamais arrêter la boucle pour tout le serveur
+			local ok, err = pcall(function()
+				local t = os.clock()
+				for _, player in Players:GetPlayers() do
+					if DataService.Get(player) then
+						if not personalNext[player] then
+							personalNext[player] = t + 40
+						elseif t >= personalNext[player] then
+							personalNext[player] = t + Economy.PersonalMeteorInterval
+							personalStep(player)
+						end
+						-- compte à rebours du prochain météore doré (affiché sur le HUD)
+						local saved = DataService.Get(player)
+						local done = personalCount[player] or (if saved then saved.GoldenCount or 0 else 0)
+						local dropsLeft = Economy.GoldenEvery - (done % Economy.GoldenEvery) - 1
+						local seconds = math.max(0, personalNext[player] - t) + dropsLeft * Economy.PersonalMeteorInterval
+						player:SetAttribute("GoldenMeteorAt", Workspace:GetServerTimeNow() + seconds)
 					end
-					-- compte à rebours du prochain météore doré (affiché sur le HUD)
-					local done = personalCount[player] or 0
-					local dropsLeft = Economy.GoldenEvery - (done % Economy.GoldenEvery) - 1
-					local seconds = math.max(0, personalNext[player] - t) + dropsLeft * Economy.PersonalMeteorInterval
-					player:SetAttribute("GoldenMeteorAt", Workspace:GetServerTimeNow() + seconds)
 				end
+			end)
+			if not ok then
+				warn("[MeteorService] boucle : " .. tostring(err))
 			end
 		end
 	end)

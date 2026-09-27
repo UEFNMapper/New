@@ -55,6 +55,9 @@ local function rebirth(player: Player): Router.Result
 	if not nextRebirth then
 		return { ok = false, msg = "Max evolution reached!" }
 	end
+	if Registry.RampageService.IsActive(player) then
+		return { ok = false, msg = "Finish your Rampage first!" }
+	end
 	if data.Level < (Levels.MenuLevels.Rebirth or 1) then
 		return { ok = false, msg = ("Reach LEVEL %d first!"):format(Levels.MenuLevels.Rebirth) }
 	end
@@ -129,6 +132,9 @@ local function fuse(player: Player, payload: any): Router.Result
 	local data = DataService.Get(player)
 	if not ua or not ub or ua == ub or not data then
 		return { ok = false, msg = "Pick two kaijus" }
+	end
+	if data.Level < (Levels.MenuLevels.Fusion or 1) then
+		return { ok = false, msg = ("Reach LEVEL %d first!"):format(Levels.MenuLevels.Fusion) }
 	end
 	local a = Registry.KaijuService.FindRecord(data, ua)
 	local b = Registry.KaijuService.FindRecord(data, ub)

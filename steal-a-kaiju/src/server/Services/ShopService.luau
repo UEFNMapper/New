@@ -59,6 +59,16 @@ local function onPassGranted(player: Player, key: string)
 	Registry.StealService.RefreshSpeed(player)
 end
 
+-- Attend que la liste des pass du joueur soit connue (appels web lents ou en échec).
+-- Renvoie vrai si elle est connue avant la limite de temps.
+function ShopService.WaitForOwnership(player: Player, timeout: number?): boolean
+	local deadline = os.clock() + (timeout or 20)
+	while owned[player] == nil and player.Parent ~= nil and os.clock() < deadline do
+		task.wait(0.1)
+	end
+	return owned[player] ~= nil
+end
+
 local function loadOwnership(player: Player)
 	local o = {}
 	for _, pass in Monetization.Passes do

@@ -207,8 +207,14 @@ function LeaderboardService.Init()
 	task.spawn(function()
 		while true do
 			task.wait(2)
-			for _, player in Players:GetPlayers() do
-				LeaderboardService.Update(player)
+			-- une erreur ne doit jamais arrêter la boucle pour tout le serveur
+			local ok, err = pcall(function()
+				for _, player in Players:GetPlayers() do
+					LeaderboardService.Update(player)
+				end
+			end)
+			if not ok then
+				warn("[LeaderboardService] boucle : " .. tostring(err))
 			end
 		end
 	end)

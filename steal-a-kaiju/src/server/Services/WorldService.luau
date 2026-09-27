@@ -54,9 +54,13 @@ function WorldService.IsUnlocked(player: Player, id: string): boolean
 end
 
 -- Un joueur peut-il se téléporter ? (pas pendant un vol ni une partie de Rampage)
-local function canTeleport(player: Player): (boolean, string?)
+local function canTeleport(player: Player, leavingHome: boolean?): (boolean, string?)
 	if Registry.StealService.IsCarrying(player) then
 		return false, "Drop the kaiju first!"
+	end
+	-- une vague en cours : on défend son île avant de partir (sinon le réacteur est pillé)
+	if leavingHome and Registry.SiegeService.IsActive(player) then
+		return false, "Defend your island first!"
 	end
 	local rampage = Registry.RampageService
 	if rampage and rampage.IsActive and rampage.IsActive(player) then
@@ -84,7 +88,7 @@ function WorldService.TravelTo(player: Player, id: string): (boolean, string?)
 	if not WorldService.IsUnlocked(player, id) then
 		return false, "Unlock this world first!"
 	end
-	local ok, msg = canTeleport(player)
+	local ok, msg = canTeleport(player, true)
 	if not ok then
 		return false, msg
 	end
@@ -203,12 +207,18 @@ function WorldService.Init()
 	task.spawn(function()
 		while true do
 			task.wait(0.5)
-			for _, player in Players:GetPlayers() do
-				local root = rootOf(player)
-				if root then
-					local at = Worlds.At(root.Position)
-					setWhere(player, at or (if Vector3.new(root.Position.X, 0, root.Position.Z).Magnitude < 130 then Worlds.Default else "Island"))
+			-- une erreur ne doit jamais arrêter la boucle pour tout le serveur
+			local ok, err = pcall(function()
+				for _, player in Players:GetPlayers() do
+					local root = rootOf(player)
+					if root then
+						local at = Worlds.At(root.Position)
+						setWhere(player, at or (if Vector3.new(root.Position.X, 0, root.Position.Z).Magnitude < 130 then Worlds.Default else "Island"))
+					end
 				end
+			end)
+			if not ok then
+				warn("[WorldService] boucle : " .. tostring(err))
 			end
 		end
 	end)

@@ -12,6 +12,7 @@ local Kaijus = require(Shared.Config.Kaijus)
 local Rarities = require(Shared.Config.Rarities)
 local Growth = require(Shared.Config.Growth)
 local Economy = require(Shared.Config.Economy)
+local Levels = require(Shared.Config.Levels)
 local Layout = require(Shared.Config.Layout)
 local Theme = require(Shared.Config.Theme)
 local Calc = require(Shared.Logic.Calc)
@@ -118,6 +119,7 @@ local function endCarry(uid: string, reason: string, by: Player?)
 			if reason == "Dropped" and by == carry.Victim then
 				Notify.Toast(carry.Victim, "You saved your kaiju! 💪", "Good")
 				Registry.RewardService.Track(carry.Victim, "Saves", 1)
+				Registry.LevelService.AddXp(carry.Victim, Levels.Xp.Save, "Save")
 			else
 				Notify.Toast(carry.Victim, "Your kaiju came back home!", "Good")
 			end
@@ -259,6 +261,7 @@ local function deliver(carry: Carry)
 	Notify.Fx(lead, "HeistSuccess", { Uid = moved.Uid, Species = speciesId, Mutation = moved.Mutation, Stage = Calc.Stage(moved) })
 	Notify.Fx(victim, "Robbed", { Thief = lead.DisplayName, Species = speciesId })
 	Registry.RewardService.Track(lead, "Steals", 1)
+	Registry.LevelService.AddXp(lead, Levels.Xp.Steal, "Steal")
 	Registry.RewardService.Track(victim, "Stolen", 1)
 	Registry.TutorialService.Notify(lead, "Steal")
 	if carry.Helper and carry.Helper.Parent == Players then
@@ -266,6 +269,7 @@ local function deliver(carry: Carry)
 		DataService.AddCash(carry.Helper, cut)
 		Notify.Fx(carry.Helper, "HeistCut", { Amount = cut, Leader = lead.DisplayName })
 		Registry.RewardService.Track(carry.Helper, "Steals", 1)
+		Registry.LevelService.AddXp(carry.Helper, Levels.Xp.Steal, "Steal")
 	end
 	local who = if carry.Helper then ("%s & %s"):format(lead.DisplayName, carry.Helper.DisplayName) else lead.DisplayName
 	Notify.Feed(("🦹 %s stole %s's %s %s!"):format(who, victim.DisplayName, stageName, if species then species.Name else "kaiju"), "Heist", rarity.Color)

@@ -65,6 +65,14 @@ end
 
 function LevelService.Init()
 	DataService.Loaded:Connect(function(player, data)
+		-- Sauvegarde d'avant les niveaux : XP estimée d'après ce que le joueur a déjà fait
+		if data.Xp == 0 and (data.TotalEarned or 0) > 0 then
+			local species = 0
+			for _ in data.Index do
+				species += 1
+			end
+			data.Xp = data.Stats.Hatches * 15 + species * 80 + data.Rebirths * 1500
+		end
 		-- remet le niveau en cohérence avec l'XP (réglages modifiés entre deux versions)
 		data.Level = Levels.FromXp(data.Xp)
 		player:SetAttribute("Level", data.Level)

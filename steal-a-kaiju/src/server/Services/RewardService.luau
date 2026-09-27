@@ -25,6 +25,7 @@ local Notify = require(script.Parent.Notify)
 local RewardService = {}
 
 local sessionStart: { [Player]: number } = {}
+local pendingSpins: { [Player]: { any } } = {} -- lots de la roue pas encore versés (animation)
 local playtimeClaimed: { [Player]: { [number]: boolean } } = {}
 
 ----------------------------------------------------------------------------
@@ -321,30 +322,24 @@ local function spin(player: Player, payload: any): Router.Result
 	local index = Roll.Weighted(weights)
 	local slot = Rewards.Wheel[index]
 	DataService.Replicate(player, "Spins", "FreeSpinAt")
-	-- La récompense arrive après l'animation de la roue
+	-- La récompense arrive après l'animation de la roue ; si le joueur part avant,
+	-- elle est quand même enregistrée (voir le vidage au départ).
+	pendingSpins[player] = pendingSpins[player] or {}
+	table.insert(pendingSpins[player], slot.Reward)
 	task.delay(4.2, function()
-		if player.Parent == Players then
-			local text = RewardService.Grant(player, slot.Reward, "Wheel")
-			Notify.Fx(player, "RewardClaimed", { Text = text, Source = "Wheel" })
-			if slot.Reward.Kind == "Egg" and (slot.Reward.Rarity == "Mythic" or slot.Reward.Rarity == "Celestial") then
-				Notify.Feed(("🎡 %s won a %s EGG on the wheel!"):format(player.DisplayName, string.upper(slot.Reward.Rarity or "")), "Rare")
-			end
+		local list = pendingSpins[player]
+		local i = list and table.find(list, slot.Reward)
+		if not i or player.Parent ~= Players then
+			return
+		end
+		table.remove(list, i)
+		local text = RewardService.Grant(player, slot.Reward, "Wheel")
+		Notify.Fx(player, "RewardClaimed", { Text = text, Source = "Wheel" })
+		if slot.Reward.Kind == "Egg" and (slot.Reward.Rarity == "Mythic" or slot.Reward.Rarity == "Celestial") then
+			Notify.Feed(("🎡 %s won a %s EGG on the wheel!"):format(player.DisplayName, string.upper(slot.Reward.Rarity or "")), "Rare")
 		end
 	end)
 	return { ok = true, index = index, source = source }
-end
-
-local function tutorial(player: Player, payload: any): Router.Result
-	local step = Router.Int(payload.Step, 0, 10)
-	local data = DataService.Get(player)
-	if not step or not data then
-		return { ok = false }
-	end
-	if step > data.Tutorial then
-		data.Tutorial = step
-		DataService.Replicate(player, "Tutorial")
-	end
-	return { ok = true }
 end
 
 local function saveSettings(player: Player, payload: any): Router.Result
@@ -376,7 +371,6 @@ function RewardService.Init()
 	Router.On("Redeem", redeem, 1)
 	Router.On("ClaimGroup", claimGroup, 1)
 	Router.On("Spin", spin, 1)
-	Router.On("Tutorial", tutorial, 4)
 	Router.On("Settings", saveSettings, 2)
 
 	DataService.Loaded:Connect(function(player, data)
@@ -394,6 +388,26 @@ function RewardService.Init()
 				Registry.KaijuService.SetInGroup(player, true)
 			end
 		end)
+	end)
+
+	-- Lots de la roue gagnés juste avant de partir : versés dans la sauvegarde
+	DataService.Releasing:Connect(function(player, data)
+		local list = pendingSpins[player]
+		pendingSpins[player] = nil
+		for _, reward in list or {} do
+			if reward.Kind == "Egg" then
+				table.insert(data.PendingEggs, reward.Rarity or "Common")
+			elseif reward.Kind == "Gems" then
+				data.Gems += reward.Amount or 0
+			elseif reward.Kind == "Spins" then
+				data.Spins += reward.Amount or 1
+			elseif reward.Kind == "Potion" then
+				local id = reward.Id or "Luck"
+				data.Potions[id] = (data.Potions[id] or 0) + (reward.Amount or 1)
+			elseif reward.Kind == "Cash" then
+				data.Cash += reward.MinCash or reward.Amount or 0
+			end
+		end
 	end)
 
 	Players.PlayerRemoving:Connect(function(player)
