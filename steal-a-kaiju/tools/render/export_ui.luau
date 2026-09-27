@@ -252,6 +252,45 @@ Notify.Feed("🦹 Rival stole Hero's Titan Kawaii Kraken!", "Heist", roblox.Colo
 Notify.Feed("☄️ LEGENDARY METEOR INCOMING!", "Meteor", roblox.Color3.fromRGB(255, 176, 32))
 Runtime.Advance(1)
 shot("Alarm")
+Notify.Fx(hero, "AlarmStop", { Uid = rec.Uid })
+Runtime.Advance(6)
+
+-- Défense de l'île : compte à rebours, sirène, Alpha, fin de vague, œuf
+local Tutorial = req(Shared.Config.Tutorial)
+local siegeFolder = S.Workspace:FindFirstChild("Siege"):FindFirstChild("Plot" .. hero:GetAttribute("Plot"))
+data.Tutorial = Tutorial.Done
+data.Siege.Wave = 5
+DataService.Replicate(hero, "Tutorial", "Siege")
+PlotService.SpawnAt(hero)
+Runtime.Advance(3)
+shot("SiegeCountdown")
+Boot.Call(hero, "SiegeStartNow")
+Runtime.Advance(0.6)
+shot("SiegeSiren")
+local alphaShot = false
+for _ = 1, 400 do
+	Runtime.Advance(0.5)
+	if not alphaShot and hero.PlayerGui.SiegeHud.SiegeAlpha.Visible then
+		Runtime.Advance(1)
+		shot("SiegeAlpha")
+		alphaShot = true
+	end
+	if not shots.SiegeEgg and hero.PlayerGui.SiegeHud:FindFirstChild("SiegeEgg") then
+		Runtime.Advance(0.5)
+		shot("SiegeEgg")
+	end
+	if siegeFolder:GetAttribute("State") ~= "Active" then
+		break
+	end
+end
+for _ = 1, 20 do
+	Runtime.Advance(0.5)
+	if hero.PlayerGui.SiegeHud:FindFirstChild("SiegeEnd") then
+		Runtime.Advance(1.5)
+		shot("SiegeEnd")
+		break
+	end
+end
 
 fs.writeFile("tools/render/ui.json", serde.encode("json", shots))
 print("erreurs :", #Runtime.Errors)

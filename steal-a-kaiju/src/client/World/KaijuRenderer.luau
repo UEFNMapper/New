@@ -56,6 +56,8 @@ type Entry = {
 	WasEgg: boolean,
 	Aura: BasePart?,
 	Parked: CFrame?,
+	AimPos: Vector3?,
+	AimAt: number,
 }
 
 local entries: { [BasePart]: Entry } = {}
@@ -390,6 +392,8 @@ local function track(anchor: BasePart)
 		WasEgg = anchor:GetAttribute("Egg") == true,
 		Aura = nil,
 		Parked = nil,
+		AimPos = nil,
+		AimAt = 0,
 	}
 	entries[anchor] = entry
 	byUid[anchor:GetAttribute("Uid") or anchor.Name] = entry
@@ -473,6 +477,19 @@ function KaijuRenderer.ByUid(uid: string): any
 	return byUid[uid]
 end
 
+-- Tour de défense de l'île : le kaiju se tourne vers sa cible et fait un petit
+-- bond. Renvoie le point de départ du tir (gueule) ou nil si le kaiju n'est pas rendu.
+function KaijuRenderer.Aim(uid: string, target: Vector3): Vector3?
+	local entry = byUid[uid]
+	if not entry or not entry.Model then
+		return nil
+	end
+	entry.AimPos = target
+	entry.AimAt = os.clock()
+	local base = entry.Current or entry.Anchor.CFrame
+	return base.Position + Vector3.new(0, entry.Height * 0.6, 0)
+end
+
 ----------------------------------------------------------------------------
 -- Boucle d'animation
 ----------------------------------------------------------------------------
@@ -522,6 +539,16 @@ local function animate(entry: Entry, dt: number, t: number, camPos: Vector3)
 			if (entry.Anchor:GetAttribute("CarriedBy") or 0) == 0 and not entry.WasEgg then
 				Effects.Dust(entry.Anchor.Position, entry.Scale * 3)
 			end
+		end
+	end
+	-- tir de défense : se tourne vers la cible, petit bond
+	local aimAge = os.clock() - entry.AimAt
+	if entry.AimPos and aimAge < 1.5 and (entry.Anchor:GetAttribute("CarriedBy") or 0) == 0 then
+		local pos = target.Position
+		local aim = Vector3.new(entry.AimPos.X, pos.Y, entry.AimPos.Z)
+		if (aim - pos).Magnitude > 0.5 then
+			local hop = if aimAge < 0.3 then math.sin(aimAge / 0.3 * math.pi) * (0.5 + entry.Scale * 0.3) else 0
+			target = CFrame.lookAt(pos, aim) + Vector3.new(0, hop, 0)
 		end
 	end
 	entry.Current = target

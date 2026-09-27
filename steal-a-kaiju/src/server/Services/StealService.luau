@@ -325,6 +325,7 @@ local function bonk(player: Player)
 		Registry.RewardService.Track(player, "Bonks", 1)
 	end
 	Registry.EventService.TryBossHit(player, root.Position, range)
+	Registry.SiegeService.TryBonk(player, root.Position, range, level)
 end
 
 ----------------------------------------------------------------------------
