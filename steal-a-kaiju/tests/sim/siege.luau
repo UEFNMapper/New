@@ -359,6 +359,10 @@ local range = Siege.TowerRange
 Siege.TowerRange = -1000 -- tours hors service pour ce test
 data.Stored = 20000
 local waveBefore = data.Siege.Wave
+local kaijusBefore = {}
+for _, rec in data.Kaijus do
+	kaijusBefore[rec.Uid] = true
+end
 log = #Runtime.ClientLog
 Boot.Call(hero, "SiegeStartNow")
 local leakFx
@@ -383,7 +387,16 @@ for _, inv in invaders() do
 	end
 end
 check("le voleur s'enfuit (chemin Out, demi-vitesse)", thief and thief:GetAttribute("Path") == "Out" and thief:GetAttribute("Speed") < 9, thief and thief:GetAttribute("Speed"))
-check("jamais de kaiju volé", hatchedCount(hero) == 4, hatchedCount(hero))
+-- (un œuf de passage de niveau peut éclore entre-temps : on vérifie qu'aucun kaiju ne manque)
+local missing = 0
+for uid in kaijusBefore do
+	local found = false
+	for _, rec in data.Kaijus do
+		found = found or rec.Uid == uid
+	end
+	missing += if found then 0 else 1
+end
+check("jamais de kaiju volé", missing == 0, missing)
 if thief then
 	local bag = thief:GetAttribute("Bag")
 	local cashBefore = data.Cash

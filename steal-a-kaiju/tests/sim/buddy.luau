@@ -397,9 +397,13 @@ Runtime.Advance(0.6)
 check("orbe hors de portée de main attrapée par l'aimant", target.Parent == nil)
 local grabbedCount = data(hero).Stats.Orbs - orbs0
 check("stat Orbs et cash versés", grabbedCount >= 1 and #Boot.FxFor(hero, "OrbGrabbed", logStart) >= 1, grabbedCount)
--- (la stat Orbs compte aussi les orbes de la défense d'île ramassées à pied : on compte les Fx de Stampede)
-local stampedeGrabbed = #Boot.FxFor(hero, "OrbGrabbed", logStart)
-check("XP compagnon +1 par orbe", data(hero).Buddy.Xp - bxp >= stampedeGrabbed * Buddy.Xp.Orb, (data(hero).Buddy.Xp - bxp) .. " xp / " .. stampedeGrabbed)
+-- seules les orbes aspirées par le compagnon (Fx BuddyMagnet) lui donnent de l'XP ;
+-- celles ramassées à la main par le client n'en donnent pas
+local magnetGrabbed = 0
+for _, e in Boot.FxFor(hero, "BuddyMagnet", logStart) do
+	magnetGrabbed += e.Count or 0
+end
+check("XP compagnon +1 par orbe aspirée", magnetGrabbed >= 1 and data(hero).Buddy.Xp - bxp == magnetGrabbed * Buddy.Xp.Orb, (data(hero).Buddy.Xp - bxp) .. " xp / " .. magnetGrabbed)
 check("effet BuddyMagnet (positions)", #Boot.FxFor(hero, "BuddyMagnet", logStart) >= 1)
 EventService.Stop()
 Runtime.Advance(1)
