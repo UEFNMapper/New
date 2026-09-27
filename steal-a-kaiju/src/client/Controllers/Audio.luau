@@ -58,8 +58,8 @@ local function template(key: string): Sound?
 end
 
 -- Joue un effet. opts : { Pitch, Volume, Parent (3D), NoVary, Cooldown }
-function Audio.Play(key: string, opts: { [string]: any }?): Sound?
-	opts = opts or {}
+function Audio.Play(key: string, options: { [string]: any }?): Sound?
+	local opts: { [string]: any } = options or {}
 	local t = template(key)
 	if not t then
 		return nil

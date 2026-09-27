@@ -316,6 +316,11 @@ local function start(id: string, by: Player?)
 	end)
 end
 
+-- Arrête l'événement en cours (admin / tests).
+function EventService.Stop()
+	stop()
+end
+
 function EventService.Force(id: string, by: Player?)
 	if current and current.Id ~= id then
 		table.insert(queue, { Id = id, By = by })

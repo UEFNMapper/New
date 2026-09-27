@@ -34,7 +34,10 @@ function Format.Short(n: number): string
 	else
 		s = string.format("%.2f", math.floor(n * 100) / 100)
 	end
-	s = string.gsub(s, "%.?0+$", "")
+	if string.find(s, ".", 1, true) then
+		s = string.gsub(s, "0+$", "")
+		s = string.gsub(s, "%.$", "")
+	end
 	return (if negative then "-" else "") .. s .. SUFFIXES[index]
 end
 

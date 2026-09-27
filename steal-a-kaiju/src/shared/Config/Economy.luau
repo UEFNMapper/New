@@ -77,12 +77,13 @@ Economy.OfflineMaxHours = 3
 Economy.OfflineMaxHoursPass = 8
 Economy.OfflineRate = 0.5
 
--- Nourriture : prix = revenu/s du kaiju x Factor, réduit le temps restant du stade
-export type Food = { Id: string, Name: string, Icon: string, Factor: number, Cut: number, MinPrice: number }
+-- Nourriture : saute une partie (Cut) du temps restant du stade.
+-- Prix = revenu/s actuel x secondes sautées x Ratio (moins cher en gros).
+export type Food = { Id: string, Name: string, Icon: string, Ratio: number, Cut: number, MinPrice: number }
 Economy.Foods = {
-	{ Id = "Snack", Name = "Kaiju Snack", Icon = "🍖", Factor = 25, Cut = 0.2, MinPrice = 40 },
-	{ Id = "Feast", Name = "Monster Feast", Icon = "🍗", Factor = 110, Cut = 0.5, MinPrice = 250 },
-	{ Id = "Steak", Name = "Meteor Steak", Icon = "🥩", Factor = 320, Cut = 1, MinPrice = 1200 },
+	{ Id = "Snack", Name = "Kaiju Snack", Icon = "🍖", Ratio = 1, Cut = 0.15, MinPrice = 40 },
+	{ Id = "Feast", Name = "Monster Feast", Icon = "🍗", Ratio = 0.9, Cut = 0.4, MinPrice = 250 },
+	{ Id = "Steak", Name = "Meteor Steak", Icon = "🥩", Ratio = 0.8, Cut = 1, MinPrice = 1200 },
 } :: { Food }
 
 Economy.FoodsById = {} :: { [string]: Food }
@@ -101,7 +102,7 @@ do
 	local eggs = { "Rare", "Epic", "Epic", "Legendary", "Legendary", "Legendary", "Mythic", "Mythic", "Mythic", "Celestial" }
 	for i = 1, 25 do
 		table.insert(Economy.Rebirths, {
-			Cost = math.floor(250000 * 5.5 ^ (i - 1)),
+			Cost = math.floor(8000000 * 6 ^ (i - 1)),
 			NeedRarity = needs[math.min(i, #needs)],
 			Mult = 1 + 0.5 * i, -- multiplicateur cumulé après ce rebirth
 			Luck = 1 + 0.1 * i,

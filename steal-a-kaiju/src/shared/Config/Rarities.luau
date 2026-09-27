@@ -19,7 +19,7 @@ local Rarities = {}
 Rarities.List = {
 	{
 		Id = "Common",
-		Name = "Commun",
+		Name = "Common",
 		Order = 1,
 		Color = Color3.fromRGB(188, 196, 206),
 		Glow = Color3.fromRGB(235, 240, 245),
@@ -43,7 +43,7 @@ Rarities.List = {
 	},
 	{
 		Id = "Epic",
-		Name = "Épique",
+		Name = "Epic",
 		Order = 3,
 		Color = Color3.fromRGB(176, 76, 255),
 		Glow = Color3.fromRGB(214, 160, 255),
@@ -55,7 +55,7 @@ Rarities.List = {
 	},
 	{
 		Id = "Legendary",
-		Name = "Légendaire",
+		Name = "Legendary",
 		Order = 4,
 		Color = Color3.fromRGB(255, 176, 32),
 		Glow = Color3.fromRGB(255, 225, 120),
@@ -67,7 +67,7 @@ Rarities.List = {
 	},
 	{
 		Id = "Mythic",
-		Name = "Mythique",
+		Name = "Mythic",
 		Order = 5,
 		Color = Color3.fromRGB(255, 45, 110),
 		Glow = Color3.fromRGB(255, 140, 180),
@@ -79,7 +79,7 @@ Rarities.List = {
 	},
 	{
 		Id = "Celestial",
-		Name = "Céleste",
+		Name = "Celestial",
 		Order = 6,
 		Color = Color3.fromRGB(80, 255, 230),
 		Glow = Color3.fromRGB(200, 255, 250),

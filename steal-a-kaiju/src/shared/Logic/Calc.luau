@@ -131,7 +131,8 @@ function Calc.FoodPrice(rec: KaijuRecord, foodId: string): number
 	if not food then
 		return math.huge
 	end
-	return math.max(food.MinPrice, math.floor(Calc.BaseIncome(rec) * food.Factor))
+	local skipped = Growth.Remaining(rec.Growth, rec.Rarity) * food.Cut
+	return math.max(food.MinPrice, math.floor(Calc.BaseIncome(rec) * skipped * food.Ratio))
 end
 
 -- Secondes de croissance gagnées en mangeant.

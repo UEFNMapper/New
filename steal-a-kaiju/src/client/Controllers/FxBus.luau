@@ -18,7 +18,8 @@ end
 
 -- Déclenche localement (ex. effets purement client).
 function FxBus.Emit(name: string, args: any?)
-	for _, fn in handlers[name] or {} do
+	local list: { (any) -> () } = handlers[name] or {}
+	for _, fn in list do
 		task.spawn(fn, args or {})
 	end
 end

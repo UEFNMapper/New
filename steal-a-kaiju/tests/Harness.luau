@@ -56,6 +56,22 @@ local game = {
 	end,
 }
 
+-- Lune inverse CFrame.lookAt par rapport à Roblox : version fidèle.
+local function lookAt(at, target, up)
+	local forward = target - at
+	if forward.Magnitude < 1e-6 then
+		return roblox.CFrame.new(at)
+	end
+	forward = forward.Unit
+	local right = forward:Cross(up or roblox.Vector3.new(0, 1, 0))
+	if right.Magnitude < 1e-6 then
+		right = forward:Cross(roblox.Vector3.new(0, 0, 1))
+	end
+	right = right.Unit
+	return roblox.CFrame.fromMatrix(at, right, right:Cross(forward), -forward)
+end
+local CFrameProxy = setmetatable({ lookAt = lookAt }, { __index = roblox.CFrame })
+
 local function makeEnv(scriptNode, requireFn)
 	return setmetatable({
 		script = scriptNode,
@@ -65,7 +81,7 @@ local function makeEnv(scriptNode, requireFn)
 		Color3 = roblox.Color3,
 		Vector3 = roblox.Vector3,
 		Vector2 = roblox.Vector2,
-		CFrame = roblox.CFrame,
+		CFrame = CFrameProxy,
 		UDim = roblox.UDim,
 		UDim2 = roblox.UDim2,
 		Enum = roblox.Enum,

@@ -168,7 +168,10 @@ function Kit.Punch(inst: GuiObject, amount: number?)
 end
 
 function Kit.Shake(inst: GuiObject, intensity: number?, duration: number?)
-	local base = inst.Position
+	-- position d'origine mémorisée une seule fois (secousses qui se chevauchent)
+	local saved = inst:GetAttribute("ShakeBase")
+	local base = if typeof(saved) == "UDim2" then saved else inst.Position
+	inst:SetAttribute("ShakeBase", base)
 	local strength = intensity or 6
 	local t0 = os.clock()
 	local d = duration or 0.35
@@ -178,6 +181,7 @@ function Kit.Shake(inst: GuiObject, intensity: number?, duration: number?)
 		if t > d or not inst.Parent then
 			conn:Disconnect()
 			inst.Position = base
+			inst:SetAttribute("ShakeBase", nil)
 			return
 		end
 		local k = (1 - t / d) * strength
@@ -393,7 +397,7 @@ function Kit.Button(props: { [string]: any }): TextButton
 		ZIndex = z,
 		Parent = props.Parent,
 	})
-	local lip = Kit.new("Frame", {
+	Kit.new("Frame", {
 		Name = "Lip",
 		Size = UDim2.new(1, 0, 1, 0),
 		Position = UDim2.fromOffset(0, 6),
@@ -735,7 +739,7 @@ function Kit.Root(): ScreenGui
 		Parent = player:WaitForChild("PlayerGui"),
 	})
 	blur = Kit.new("BlurEffect", { Name = "UIBlur", Size = 0, Parent = Lighting })
-	return root :: ScreenGui
+	return root :: any
 end
 
 -- Crée une couche plein écran (au-dessus du HUD si displayOrder plus grand).

@@ -1,0 +1,6 @@
+local Boot = require("../boot")
+local Runtime = Boot.Start()
+print("objets créés :", Runtime.Created, "erreurs :", #Runtime.Errors)
+local alice = Runtime.AddPlayer("Alice")
+Runtime.Advance(3)
+print("erreurs :", #Runtime.Errors)
