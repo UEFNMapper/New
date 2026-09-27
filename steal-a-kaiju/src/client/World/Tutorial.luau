@@ -190,7 +190,7 @@ local function celebrate(args)
 	CameraFx.FovPunch(-3, 0.4)
 	local reward = args.Reward or {}
 	local text = if reward.Cash then "+" .. Format.Cash(reward.Cash) elseif reward.Gems then "+" .. reward.Gems .. " 💎" else ""
-	UIRegistry.Announce("MISSION COMPLETE!", C.Radioactive, mission.Title .. "  —  " .. text)
+	UIRegistry.Announce("MISSION COMPLETE!", C.Radioactive, mission.Title .. "  —  " .. text, nil, true)
 	if args.Unlock and #args.Unlock > 0 then
 		task.delay(3.2, function()
 			UIRegistry.Toast("New menus unlocked: " .. table.concat(args.Unlock, ", "), "Good")
@@ -215,14 +215,15 @@ function Tutorial.Init()
 	FxBus.On("MissionComplete", celebrate)
 	FxBus.On("TutorialDone", function()
 		task.delay(3.5, function()
-			UIRegistry.Announce("YOU'RE READY!", C.Gold, "Level up to open new worlds. Follow the NEXT GOAL bar!", "hatch_legendary")
+			UIRegistry.Announce("YOU'RE READY!", C.Gold, "Level up to open new worlds. Follow the NEXT GOAL bar!", "hatch_legendary", true)
 		end)
 	end)
 
 	RunService.Heartbeat:Connect(function()
 		local plot = myPlot()
 		local carrying = (player:GetAttribute("Carrying") or "") ~= ""
-		card.Visible = TutorialConfig.Get(currentStep) ~= nil and not carrying
+		-- la carte se cache pendant un Rampage (elle couvrirait la ville) et pendant un vol
+		card.Visible = TutorialConfig.Get(currentStep) ~= nil and not carrying and player:GetAttribute("Rampage") ~= true
 		local mission = TutorialConfig.Get(currentStep)
 		local target = mission and mission.Target
 		if target == "Kaiju" then

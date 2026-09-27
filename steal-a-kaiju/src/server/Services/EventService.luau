@@ -414,7 +414,22 @@ function EventService.Start()
 					if nextEvent then
 						start(nextEvent.Id, nextEvent.By)
 					else
-						start(pickRandom())
+						-- pas d'événement aléatoire pendant qu'un nouveau joueur apprend le jeu
+						local waited = 0
+						while waited < 600 and #queue == 0 do
+							local busy = false
+							for _, p in Players:GetPlayers() do
+								busy = busy or Registry.TutorialService.InGracePeriod(p)
+							end
+							if not busy then
+								break
+							end
+							task.wait(5)
+							waited += 5
+						end
+						if #queue == 0 then
+							start(pickRandom())
+						end
 					end
 				end
 				-- attend la fin, puis une pause (sauf si un événement payant attend)

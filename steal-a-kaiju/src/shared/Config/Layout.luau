@@ -39,7 +39,7 @@ end
 Layout.Collector = Vector3.new(0, 0, 50)
 Layout.LockButton = Vector3.new(-30, 0, 50)
 Layout.PersonalPad = Vector3.new(30, 0, 50)
-Layout.Spawn = Vector3.new(0, 3, 43)
+Layout.Spawn = Vector3.new(-12, 3, 42) -- à côté du réacteur, pas dessus (sinon collecte en boucle)
 Layout.Gate = Vector3.new(0, 0, -Layout.PlotDepth / 2)
 Layout.Sign = Vector3.new(0, 0, -Layout.PlotDepth / 2 - 4)
 Layout.RampagePortal = Vector3.new(-40, 0, -46) -- portail RAMPAGE (avant-gauche, hors de la cour des nids)

@@ -628,7 +628,9 @@ local function tickPlayer(player: Player, dt: number)
 					Notify.FxAll("StageUp", { Uid = rec.Uid, Stage = after })
 					local stage = Growth.Get(after)
 					local species = Kaijus.Get(rec.Species or "")
-					Notify.Toast(player, ("%s grew into a %s!"):format(if species then species.Name else "Kaiju", string.upper(stage.Name)), "Good")
+					local stageName = string.upper(stage.Name)
+					local article = if string.find(stageName, "^[AEIOU]") then "an" else "a"
+					Notify.Toast(player, ("%s is now %s %s!"):format(if species then species.Name else "Kaiju", article, stageName), "Good")
 					Registry.RewardService.Track(player, "StageUps", after - before)
 					local xp = 0
 					for st = before + 1, after do

@@ -43,6 +43,16 @@ function TutorialService.IsDone(player: Player): boolean
 	return step(player) >= Tutorial.Done
 end
 
+-- Joueur en tutoriel ou qui vient de le finir (5 min de calme : pas d'événement mondial).
+local doneAt: { [Player]: number } = {}
+function TutorialService.InGracePeriod(player: Player): boolean
+	if step(player) < Tutorial.Done then
+		return DataService.Get(player) ~= nil
+	end
+	local t = doneAt[player]
+	return t ~= nil and os.clock() - t < 300
+end
+
 local function firstHatched(player: Player): boolean
 	local data = DataService.Get(player)
 	if not data then
@@ -117,6 +127,7 @@ function advance(player: Player)
 	Notify.Fx(player, "MissionComplete", { Step = current, Reward = mission.Reward, Unlock = mission.UnlockMenus })
 	Registry.LevelService.AddXp(player, Levels.Xp.Mission, "Mission")
 	if data.Tutorial >= Tutorial.Done then
+		doneAt[player] = os.clock()
 		Notify.Fx(player, "TutorialDone", {})
 	else
 		startStep(player, data.Tutorial)
@@ -136,6 +147,9 @@ function TutorialService.Notify(player: Player, event: string)
 end
 
 function TutorialService.Init()
+	Players.PlayerRemoving:Connect(function(player)
+		doneAt[player] = nil
+	end)
 	DataService.Loaded:Connect(function(player, data)
 		task.delay(3, function()
 			if player.Parent ~= Players then

@@ -68,7 +68,7 @@ Buddy.DigHold = 1.5
 Buddy.DigDistance = 8
 Buddy.DigHoldTolerance = 0.25 -- latence réseau tolérée sur le maintien
 function Buddy.TreasureInterval(level: number): number
-	return math.max(35, 50 - (level - 1) * 0.3)
+	return math.max(50, 75 - (level - 1) * 0.5)
 end
 
 Buddy.Loot = {
@@ -99,11 +99,12 @@ Buddy.IslandSpots = {
 	Vector3.new(44, 0, 52),
 } :: { Vector3 }
 -- Points proches du spawn (15 à 25 studs) pour le trésor du tutoriel
+-- trésor du tutoriel : 15-25 studs du spawn (-12, 42), loin des pads du réacteur et du bouclier
 Buddy.TutorialSpots = {
-	Vector3.new(-15, 0, 54),
-	Vector3.new(15, 0, 54),
-	Vector3.new(-19, 0, 46),
-	Vector3.new(19, 0, 46),
+	Vector3.new(6, 0, 57),
+	Vector3.new(-28, 0, 38),
+	Vector3.new(10, 0, 42),
+	Vector3.new(-26, 0, 57),
 } :: { Vector3 }
 Buddy.BridgeFractions = { 0.2, 0.4, 0.6, 0.8 } -- le long de ton pont (0 = cratère)
 Buddy.BridgeSide = 5 -- décalage latéral alterné sur le pont

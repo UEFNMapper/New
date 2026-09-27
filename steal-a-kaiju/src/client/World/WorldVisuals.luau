@@ -158,7 +158,7 @@ function WorldVisuals.Init()
 		if not world then
 			return
 		end
-		UIRegistry.Announce(string.upper(world.Name) .. " OPENED!", world.Palette.Glow, "Walk into its portal in the crater, or travel from the WORLD MAP!", "rebirth")
+		UIRegistry.Announce(string.upper(world.Name) .. " OPENED!", world.Palette.Glow, "Walk into its portal in the crater, or travel from the WORLD MAP!", "rebirth", true)
 		CameraFx.Shake(0.3, 0.5)
 		portalTexts()
 	end)

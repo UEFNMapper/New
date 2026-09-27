@@ -263,10 +263,10 @@ Runtime.Advance(1)
 wiggle(1)
 check("compte à rebours lancé après le tutoriel", folder:GetAttribute("State") == "Countdown", folder:GetAttribute("State"))
 local left = (folder:GetAttribute("At") or 0) - serverNow()
-check("première vague rapide (~45 s)", left > 30 and left <= Siege.FirstCountdown + 1, left)
+check("première vague après un temps de souffle (FirstCountdown)", left > Siege.FirstCountdown - 15 and left <= Siege.FirstCountdown + 1, left)
 check("HUD : compte à rebours + START NOW", status.Visible and status:FindFirstChild("StartNow", true).Visible == true)
 log = #Runtime.ClientLog
-check("la vague démarre à la fin du compte à rebours", untilState("Active", 60))
+check("la vague démarre à la fin du compte à rebours", untilState("Active", Siege.FirstCountdown + 15))
 local s1 = lastFx(hero, "SiegeWaveStart", log)
 check("sirène vague 1 (6 envahisseurs)", s1 and s1.Wave == 1 and s1.Count == 6 and not s1.Bonus, s1 and s1.Count)
 local cash0, xp0 = data.Cash, data.Xp

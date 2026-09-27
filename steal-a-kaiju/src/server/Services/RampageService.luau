@@ -803,12 +803,15 @@ local function tryOpen(player: Player, plotIndex: number, explicit: boolean)
 		end
 		return
 	end
-	if runs[player] or (openDebounce[player] or 0) > os.clock() then
+	-- en marchant sur le portail : au plus une ouverture toutes les 25 s ;
+	-- en appuyant sur l'invite : toujours
+	if runs[player] or (not explicit and (openDebounce[player] or 0) > os.clock()) then
 		return
 	end
-	openDebounce[player] = os.clock() + 3
+	openDebounce[player] = os.clock() + 25
 	if Registry.SiegeService.IsActive(player) then
-		return { ok = false, msg = "Defend your island first!" }
+		Notify.Toast(player, "Defend your island first!", "Bad")
+		return
 	end
 	if Registry.StealService.IsCarrying(player) then
 		Notify.Toast(player, "Deliver the stolen kaiju first!", "Bad")
@@ -898,12 +901,6 @@ function RampageService.Init()
 	for _, plot in Registry.PlotService.All() do
 		local pad = CityBuilder.BuildPortal(plot)
 		portals[plot.Index] = pad
-		pad.Touched:Connect(function(hit)
-			local player = Players:GetPlayerFromCharacter(hit.Parent)
-			if player then
-				tryOpen(player, plot.Index, false)
-			end
-		end)
 		local prompt = pad:FindFirstChild("RampagePrompt") :: ProximityPrompt
 		prompt.Triggered:Connect(function(player)
 			tryOpen(player, plot.Index, true)

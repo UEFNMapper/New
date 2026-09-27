@@ -12,6 +12,7 @@ local Rarities = require(Shared.Config.Rarities)
 local Mutations = require(Shared.Config.Mutations)
 local Growth = require(Shared.Config.Growth)
 local Format = require(Shared.Logic.Format)
+local TutorialConfig = require(Shared.Config.Tutorial)
 
 local Kit = require(script.Parent.Kit)
 local Viewport = require(script.Parent.Viewport)
@@ -20,6 +21,7 @@ local Audio = require(Controllers.Audio)
 local FxBus = require(Controllers.FxBus)
 local CameraFx = require(Controllers.CameraFx)
 local UIRegistry = require(Controllers.UIRegistry)
+local State = require(Controllers.State)
 
 local C = Kit.Colors
 local F = Kit.Fonts
@@ -380,10 +382,19 @@ function Cinematics.Init()
 	layer.Enabled = false
 	smallLayer = Kit.Layer("RewardCards", 35)
 
+	-- La grande cinématique est réservée aux moments forts (premier kaiju, Epic et
+	-- plus, mutation) : les éclosions ordinaires se voient dans le monde, sans
+	-- couvrir l'écran (moins de choses à l'écran, surtout sur téléphone).
+	local hatchedThisSession = 0
 	FxBus.On("Hatch", function(args)
-		enqueue(function()
-			hatchReveal(args)
-		end)
+		hatchedThisSession += 1
+		local rarity = Rarities.Get(args.Rarity or "Common")
+		local first = hatchedThisSession == 1 and (State.Get("Tutorial") or 0) <= 1
+		if first or rarity.Order >= 3 or (args.Mutation and args.Mutation ~= "") then
+			enqueue(function()
+				hatchReveal(args)
+			end)
+		end
 	end)
 	FxBus.On("Fused", function(args)
 		-- la fenêtre Fusion joue sa propre animation ; carte de rappel
@@ -425,15 +436,40 @@ function Cinematics.Init()
 		end
 		local mutation = Mutations.Get(args.Mutation)
 		if args.NewSpecies then
+			-- pendant le tutoriel, la cinématique suffit (évite l'empilement)
+			if (State.Get("Tutorial") or 0) < TutorialConfig.Done then
+				return
+			end
 			Audio.Play("quest_complete")
-			rewardCard("📖", "NEW KAIJU DISCOVERED!", species.Name .. " — +1% cash forever", Rarities.Get(species.Rarity).Color)
+			rewardCard("📖", "NEW KAIJU!", species.Name .. " — +1% cash forever", Rarities.Get(species.Rarity).Color)
 		elseif mutation then
 			rewardCard("✨", "NEW MUTATION!", mutation.Name .. " " .. species.Name, mutation.Color)
 		end
 	end)
+	local SOURCES = {
+		LevelUp = "Level-up gift",
+		Meteor = "Meteor",
+		Siege = "Alpha reward",
+		Evolution = "Evolution gift",
+		Raid = "Raid reward",
+		["Raid MVP"] = "Raid MVP",
+		Wheel = "Lucky spin",
+		Rampage = "Golden building",
+		Dig = "Buddy treasure",
+		Quest = "Quest reward",
+		["Daily Quests"] = "Daily quests",
+		Daily = "Daily reward",
+		Playtime = "Play gift",
+		Code = "Code",
+		Shop = "Shop",
+	}
 	FxBus.On("EggGift", function(args)
 		local rarity = Rarities.Get(args.Rarity or "Common")
-		rewardCard("🥚", rarity.Name:upper() .. " EGG!", (args.Source or "Gift") .. " — placed in your nest", rarity.Color)
+		-- les œufs de niveau sont déjà annoncés dans la bannière « LEVEL X! »
+		if args.Source == "LevelUp" then
+			return
+		end
+		rewardCard("🥚", rarity.Name:upper() .. " EGG!", (SOURCES[args.Source or ""] or args.Source or "Gift") .. " — placed in your nest", rarity.Color)
 	end)
 	FxBus.On("BossReward", function(args)
 		rewardCard("👹", ("+%d 💎"):format(args.Gems or 0), if args.Top then "MVP of the raid!" else "Raid reward", C.Pink)
@@ -443,8 +479,13 @@ function Cinematics.Init()
 		UIRegistry.Toast("Quest complete: " .. (args.Text or ""), "Good")
 	end)
 	FxBus.On("DailyReady", function()
-		task.delay(4, function()
-			UIRegistry.Toast("Your daily reward is ready! 📅", "Good")
+		-- pas avant que le bouton REWARDS existe (fin du tutoriel)
+		task.spawn(function()
+			while (State.Get("Tutorial") or 0) < TutorialConfig.Done do
+				task.wait(2)
+			end
+			task.wait(20)
+			UIRegistry.Toast("Your daily reward is ready in REWARDS! 📅", "Good")
 		end)
 	end)
 	FxBus.On("NestUnlocked", function(args)

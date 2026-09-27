@@ -17,7 +17,7 @@ local Siege = {}
 ----------------------------------------------------------------------------
 
 Siege.Countdown = 150 -- s entre deux vagues (ne s'écoule que chez soi)
-Siege.FirstCountdown = 45 -- première vague après la fin du tutoriel
+Siege.FirstCountdown = 90 -- première vague après la fin du tutoriel (le temps de souffler)
 Siege.JoinCountdown = 90 -- à la connexion (joueur qui a déjà joué)
 Siege.StartNowBonus = 0.1 -- +10 % de récompense avec « START NOW »
 Siege.IslandMargin = 6 -- marge (studs) autour de l'île pour « être chez soi »

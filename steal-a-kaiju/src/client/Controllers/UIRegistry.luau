@@ -8,7 +8,7 @@
 local UIRegistry = {
 	Screens = {},
 	Toast = function(_text: string, _kind: string?) end,
-	Announce = function(_text: string, _color: Color3?, _subtitle: string?, _sound: string?) end,
+	Announce = function(_text: string, _color: Color3?, _subtitle: string?, _sound: string?, _priority: boolean?) end,
 	OpenKaiju = function(_uid: string) end,
 	ShowOdds = function(_title: string, _rows: { { Label: string, Chance: number, Color: Color3? } }) end,
 	OpenWorld = function(_id: string?) end,

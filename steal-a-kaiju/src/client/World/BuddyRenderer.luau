@@ -37,6 +37,7 @@ local Viewport = require(script.Parent.Parent.UI.Viewport)
 local Effects = require(script.Parent.Effects)
 local Guide = require(script.Parent.Guide)
 
+local treasureHints = 0 -- nombre de trésors annoncés par un message
 local C = Theme.Colors
 local F = Theme.Fonts
 local player = Players.LocalPlayer
@@ -695,7 +696,12 @@ local function showSpot(part: BasePart)
 	bark()
 	refreshChip()
 	Kit.Pop(chip.Frame, 1.3, 0.5)
-	UIRegistry.Toast("🐾 Your buddy sniffed out a TREASURE! Follow the arrows!", "Good")
+	-- le message n'est montré que les premières fois : ensuite l'aboiement, la
+	-- pastille « ! » et les flèches suffisent
+	treasureHints += 1
+	if treasureHints <= 2 then
+		UIRegistry.Toast("🐾 Your buddy sniffed out a TREASURE! Follow the arrows!", "Good")
+	end
 
 	-- le compagnon creuse pendant qu'on maintient
 	local prompt = part:FindFirstChildOfClass("ProximityPrompt") or part:WaitForChild("ProximityPrompt", 5)
@@ -931,7 +937,6 @@ function BuddyRenderer.Init()
 	end)
 	FxBus.On("BuddyTreasureGone", function()
 		hideSpot()
-		UIRegistry.Toast("The treasure sank back underground... your buddy will find another!", "Info")
 	end)
 	FxBus.On("BuddyDig", function(args)
 		hideSpot()

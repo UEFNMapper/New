@@ -227,7 +227,7 @@ section("Trésor : apparition")
 local previous = spotOf(hero)
 logStart = #Runtime.ClientLog
 local spot
-for _ = 1, 110 do
+for _ = 1, math.ceil(Buddy.TreasureInterval(1) * 2) + 20 do
 	Runtime.Advance(0.5)
 	spot = spotOf(hero)
 	if spot and spot ~= previous then

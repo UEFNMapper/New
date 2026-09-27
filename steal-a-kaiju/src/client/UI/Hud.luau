@@ -235,7 +235,8 @@ local function buildCurrencies()
 	State.Observe("Income", function(value)
 		local mult = State.Get("Multiplier") or 1
 		local multText = if mult < 10 then (("%.2f"):format(mult):gsub("0+$", ""):gsub("%.$", "")) else Format.Short(mult)
-		incomeLabel.Text = ("+%s/s"):format(Format.Cash(value)) .. (if mult > 1.001 then ("  <font color=\"#FFC828\">x%s</font>"):format(multText) else "")
+		-- le multiplicateur n'est affiché que s'il compte vraiment (x1.5 et plus)
+		incomeLabel.Text = ("+%s/s"):format(Format.Cash(value)) .. (if mult >= 1.5 then ("  <font color=\"#FFC828\">x%s</font>"):format(multText) else "")
 	end)
 	State.Observe("Stored", function(value)
 		local auto = (State.Get("Passes") or {}).AutoCollect
@@ -333,7 +334,10 @@ function Hud.LeftColumn(): Frame
 	return column
 end
 
--- Le prochain objectif du joueur : un monde à ouvrir, sinon le prochain déblocage de niveau.
+-- Le prochain objectif du joueur, toujours quelque chose de faisable :
+-- 1. un monde prêt à ouvrir (ou le cash qui manque pour son péage),
+-- 2. l'Évolution quand elle est débloquée (cash qui manque), surtout si un monde l'attend,
+-- 3. l'XP qui manque pour le prochain déblocage de niveau.
 local function nextGoal(): (string, number?, string?)
 	local level = State.Get("Level") or 1
 	local rebirths = State.Get("Rebirths") or 0
@@ -344,14 +348,32 @@ local function nextGoal(): (string, number?, string?)
 			if cash >= w.Toll then
 				return ("🌍 %s is ready! TAP TO UNLOCK"):format(string.upper(w.Name)), 1, w.Id
 			end
-			return ("🌍 Save %s for %s"):format(Format.Cash(w.Toll), string.upper(w.Name)), cash / math.max(1, w.Toll), w.Id
+			return ("🌍 %s: %s / %s"):format(string.upper(w.Name), Format.Cash(cash), Format.Cash(w.Toll)), cash / math.max(1, w.Toll), w.Id
 		end
+	end
+	local nextR = Economy.Rebirths[rebirths + 1]
+	if nextR and level >= (Levels.MenuLevels.Rebirth or 1) then
+		-- un monde qui attend une Évolution ?
+		local waiting = nil
+		for _, w in Worlds.List do
+			if not unlocked[w.Id] and level >= w.Level and rebirths < w.Rebirths then
+				waiting = w
+				break
+			end
+		end
+		if cash >= nextR.Cost then
+			return "🧬 You can EVOLVE! Open EVOLVE", 1, nil
+		end
+		local label = if waiting then ("🧬 Evolve to open %s"):format(string.upper(waiting.Name)) else "🧬 EVOLVE"
+		return ("%s: %s / %s"):format(label, Format.Cash(cash), Format.Cash(nextR.Cost)), cash / nextR.Cost, nil
 	end
 	local u = Levels.NextUnlock(level)
 	if u then
-		return ("⭐ LV %d unlocks %s"):format(u.Level, u.Text), nil, if u.Kind == "World" then u.Id else nil
+		local xp = State.Get("Xp") or 0
+		local missing = math.max(0, Levels.TotalFor(u.Level) - xp)
+		return ("⭐ %s XP to LV %d: %s"):format(Format.Short(missing), u.Level, u.Text), nil, if u.Kind == "World" then u.Id else nil
 	end
-	return "⭐ Max unlocks reached — chase the Kaijudex!", nil, nil
+	return "⭐ Collect every kaiju in the KAIJUDEX!", nil, nil
 end
 
 local function buildLevel()
@@ -432,7 +454,12 @@ local function buildLevel()
 	local goalWorld: string? = nil
 	goalButton.Activated:Connect(function()
 		Audio.Play("ui_click")
-		local screen = (UIRegistry.Screens :: any).Worlds
+		local screens = UIRegistry.Screens :: any
+		if string.find(goalText.Text, "EVOLVE", 1, true) and screens.Rebirth then
+			screens.Rebirth.Open()
+			return
+		end
+		local screen = screens.Worlds
 		if screen and screen.Open and (State.Get("Level") or 1) >= (Levels.MenuLevels.Worlds or 1) then
 			screen.Open(goalWorld)
 		end
@@ -491,21 +518,41 @@ local function floatXp(amount: number)
 	end)
 end
 
+-- Plusieurs niveaux d'un coup = une seule bannière (le dernier niveau et tout ce
+-- qu'il débloque). Pendant le tutoriel : un simple toast, la carte de mission reste lisible.
+local pendingLevel: { Level: number, Gems: number, Eggs: { string }, Unlocks: { string } }? = nil
 local function levelUp(args)
-	local lines = {}
-	for _, u in args.Unlocks or {} do
-		table.insert(lines, u.Text)
+	local p = pendingLevel
+	if not p then
+		p = { Level = 0, Gems = 0, Eggs = {}, Unlocks = {} }
+		pendingLevel = p
+		task.delay(1.2, function()
+			pendingLevel = nil
+			local sub = ("+%d 💎"):format(p.Gems)
+			for _, egg in p.Eggs do
+				sub ..= "  •  " .. string.upper(egg) .. " EGG"
+			end
+			if #p.Unlocks > 0 then
+				sub = "UNLOCKED: " .. table.concat(p.Unlocks, " • ") .. "   " .. sub
+			end
+			if (State.Get("Tutorial") or 0) < TutorialConfig.Done then
+				UIRegistry.Toast(("⭐ LEVEL %d!  %s"):format(p.Level, sub), "Good")
+				Audio.Play("level_jingle")
+			else
+				UIRegistry.Announce(("LEVEL %d!"):format(p.Level), C.Gold, sub, "level_jingle")
+				CameraFx.FovPunch(-6, 0.5)
+			end
+			Hud.FlyCoins("💎", 8)
+		end)
 	end
-	local sub = ("+%d 💎"):format(args.Gems or 0)
+	p.Level = math.max(p.Level, args.Level or 1)
+	p.Gems += args.Gems or 0
 	if args.Egg then
-		sub ..= "  •  " .. string.upper(args.Egg) .. " EGG"
+		table.insert(p.Eggs, args.Egg)
 	end
-	if #lines > 0 then
-		sub = "UNLOCKED: " .. table.concat(lines, " • ") .. "   " .. sub
+	for _, u in args.Unlocks or {} do
+		table.insert(p.Unlocks, u.Text)
 	end
-	UIRegistry.Announce(("LEVEL %d!"):format(args.Level or 1), C.Gold, sub, "level_jingle")
-	CameraFx.FovPunch(-6, 0.5)
-	Hud.FlyCoins("💎", 10)
 end
 
 ----------------------------------------------------------------------------
@@ -573,7 +620,6 @@ local function buildMenus()
 		Kit.Padding(4, 8),
 	})
 	menuButton(left, { Id = "Shop", Text = "SHOP", Icon = "shop", Color = "Magma", Order = 1, Rotation = -3, OnClick = function() openScreen("Shop") end })
-	menuButton(left, { Id = "Upgrades", Text = "UPGRADES", Icon = "upgrades", Color = "Pink", Order = 2, Rotation = 3, OnClick = function() openScreen("Shop", "Upgrades") end })
 	menuButton(left, { Id = "Worlds", Text = "WORLDS", Icon = "worlds", Color = "Cyan", Order = 3, Rotation = 2, OnClick = function() openScreen("Worlds") end })
 	menuButton(left, { Id = "Index", Text = "KAIJUDEX", Icon = "kaijudex", Color = "Gold", Order = 4, Rotation = -2, OnClick = function() openScreen("Index") end })
 	menuButton(left, { Id = "Fusion", Text = "FUSION", Icon = "fusion", Color = "Purple", Order = 5, Rotation = -3, OnClick = function() openScreen("Fusion") end })

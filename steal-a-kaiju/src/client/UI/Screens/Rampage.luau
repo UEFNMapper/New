@@ -37,6 +37,7 @@ local ui: any = {}
 local cards: { any } = {}
 local selectedUid: string? = nil
 local selectedDistrict = 1
+local pickedByHand = false -- le joueur a choisi lui-même un kaiju (sinon : le plus fort)
 local lastResult: any = nil
 
 local function readyIn(): number
@@ -130,6 +131,7 @@ end
 
 local function selectKaiju(uid: string)
 	selectedUid = uid
+	pickedByHand = true
 	for _, card in cards do
 		styleCard(card)
 		if card.Uid == uid then
@@ -215,7 +217,8 @@ local function refreshCards()
 			keep = true
 		end
 	end
-	if not keep then
+	-- par défaut : le plus fort (la liste est triée par puissance)
+	if not keep or not pickedByHand then
 		selectedUid = if list[1] then list[1].Uid else nil
 	end
 	ui.Empty.Visible = #list == 0
@@ -612,8 +615,17 @@ function RampageScreen.Open(args: any?)
 	local stars = starsData()
 	if type(args) == "table" and args.District and Rampage.Unlocked(stars, args.District) then
 		selectedDistrict = args.District
-	elseif not Rampage.Unlocked(stars, selectedDistrict) then
+	else
+		-- par défaut : le meilleur quartier ouvert qui n'a pas encore ses 3 étoiles
 		selectedDistrict = 1
+		for i = 1, #Rampage.Districts do
+			if Rampage.Unlocked(stars, i) then
+				selectedDistrict = i
+				if (stars[i] or 0) < 3 then
+					break
+				end
+			end
+		end
 	end
 	refreshCards()
 	styleDistricts()

@@ -47,7 +47,7 @@ local function status(id: string): (number, string)
 	elseif id == "Spin" and screen.CanFreeSpin then
 		local free = screen.CanFreeSpin()
 		local spins = State.Get("Spins") or 0
-		local n = if free then 1 else spins
+		local n = if free then 1 else 0 -- badge seulement pour le tour gratuit
 		return n, if free then "FREE SPIN!" elseif spins > 0 then ("%d SPIN%s"):format(spins, if spins > 1 then "S" else "") else "Next free spin soon"
 	end
 	return 0, ""

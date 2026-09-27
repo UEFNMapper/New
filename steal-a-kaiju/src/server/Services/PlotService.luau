@@ -232,9 +232,10 @@ function PlotService.Init()
 	Players.PlayerRemoving:Connect(function(player)
 		debounce[player] = nil
 	end)
-	local function tryCollect(player: Player, plot: MapBuilder.PlotInfo)
+	-- auto = proximité (rester sur le pad) : une collecte toutes les 3 s au plus
+	local function tryCollect(player: Player, plot: MapBuilder.PlotInfo, auto: boolean?)
 		if ownerOf[plot.Index] == player and (debounce[player] or 0) < os.clock() then
-			debounce[player] = os.clock() + 0.6
+			debounce[player] = os.clock() + (if auto then 3 else 0.6)
 			Registry.KaijuService.Collect(player)
 		end
 	end
@@ -266,7 +267,7 @@ function PlotService.Init()
 		plot.Collector.Touched:Connect(function(hit)
 			local player = Players:GetPlayerFromCharacter(hit.Parent)
 			if player then
-				tryCollect(player, plot)
+				tryCollect(player, plot, true)
 			end
 		end)
 		prompt(plot.Collector, "COLLECT CASH", "Cash Reactor", "Radioactive", function(player)
@@ -298,7 +299,7 @@ function PlotService.Init()
 						local pad = plot.Collector.Position
 						local flat = Vector3.new(root.Position.X - pad.X, 0, root.Position.Z - pad.Z).Magnitude
 						if flat <= 6.5 and math.abs(root.Position.Y - pad.Y) < 9 then
-							tryCollect(owner, plot)
+							tryCollect(owner, plot, true)
 						end
 					end
 				end

@@ -29,12 +29,14 @@ local F = Kit.Fonts
 
 local Shop = {}
 
+-- Les améliorations (en cash du jeu) d'abord : c'est ce qu'un joueur cherche en
+-- ouvrant la boutique ; les achats Robux restent dans leurs onglets.
 local TABS = {
+	{ Id = "Upgrades", Text = "UPGRADES", Icon = "⬆️", Width = 170 },
+	{ Id = "Boosts", Text = "BOOSTS", Icon = "⚡", Width = 150 },
 	{ Id = "Passes", Text = "PASSES", Icon = "🎫", Width = 150 },
 	{ Id = "Gems", Text = "GEMS", Icon = "💎", Width = 140 },
 	{ Id = "Cash", Text = "CASH", Icon = "💵", Width = 140 },
-	{ Id = "Boosts", Text = "BOOSTS", Icon = "⚡", Width = 150 },
-	{ Id = "Upgrades", Text = "UPGRADES", Icon = "⬆️", Width = 170 },
 }
 
 local POTION_COLORS = { Luck = "Radioactive", Growth = "Gold", Cash = "Magma" }
@@ -49,7 +51,7 @@ local content: Frame
 local tabBar: Frame
 local selectTab: (string) -> ()
 local scroll: CanvasGroup? = nil
-local currentTab = "Passes"
+local currentTab = "Upgrades"
 local updaters: { () -> () } = {}
 local tickers: { () -> () } = {}
 local popCount = 0
@@ -1427,7 +1429,7 @@ end
 function Shop.Open(args: any?)
 	local tab = if type(args) == "string" then args else currentTab
 	if not BUILDERS[tab] then
-		tab = "Passes"
+		tab = "Upgrades"
 	end
 	refreshTabs()
 	window:Open()

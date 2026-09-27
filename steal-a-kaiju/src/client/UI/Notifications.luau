@@ -193,9 +193,16 @@ local ANNOUNCE_SLOT = 3.2
 
 local showAnnounce
 
-function Notifications.Announce(text: string, color: Color3?, subtitle: string?, sound: string?)
+-- priority : les annonces importantes (mission, monde ouvert) passent toujours ;
+-- les autres sont abandonnées si elles devaient trop attendre.
+function Notifications.Announce(text: string, color: Color3?, subtitle: string?, sound: string?, priority: boolean?)
 	local t = os.clock()
 	local wait = math.max(0, announceFreeAt - t)
+	-- au plus une bannière en attente : une annonce qui arriverait trop tard est
+	-- abandonnée (elle ne correspondrait plus à ce qui se passe à l'écran)
+	if wait > ANNOUNCE_SLOT + 0.5 and not priority then
+		return
+	end
 	announceFreeAt = math.max(t, announceFreeAt) + ANNOUNCE_SLOT
 	if wait <= 0 then
 		showAnnounce(text, color, subtitle, sound)
