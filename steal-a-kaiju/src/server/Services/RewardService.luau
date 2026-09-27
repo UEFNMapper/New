@@ -357,6 +357,13 @@ local function saveSettings(player: Player, payload: any): Router.Result
 			data.Settings[key] = payload[key]
 		end
 	end
+	-- volumes 0..1 par pas de 0.2 (barres des réglages)
+	for _, key in { "MusicVolume", "SfxVolume" } do
+		local v = payload[key]
+		if type(v) == "number" and v == v then
+			data.Settings[key] = math.clamp(math.floor(v * 5 + 0.5) / 5, 0, 1)
+		end
+	end
 	DataService.Replicate(player, "Settings")
 	return { ok = true }
 end

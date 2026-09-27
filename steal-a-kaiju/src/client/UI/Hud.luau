@@ -277,7 +277,7 @@ function Hud.FlyCoins(icon: string, count: number, from: Vector2?)
 				if a >= 1 then
 					conn:Disconnect()
 					coin:Destroy()
-					Audio.Play("coin_tick", { Cooldown = 0.02, Volume = 0.5 })
+					Audio.Play("coin_tick", { Cooldown = 0.09, Volume = 0.4 })
 					Kit.Punch(cashPanel, 0.05)
 				end
 			end)

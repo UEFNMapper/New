@@ -1,5 +1,5 @@
 --!nonstrict
--- Réglages : interrupteurs animés (musique, effets sonores, effets réduits),
+-- Réglages : barres de volume (musique, effets sonores), effets réduits,
 -- saisie de codes, récompense de groupe, crédits.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -21,14 +21,16 @@ local Settings = {}
 
 local VERSION = "v1.0"
 local TOGGLES = {
-	{ Key = "Music", Icon = "🎵", Title = "MUSIC", Sub = "Monster-movie soundtrack" },
-	{ Key = "Sfx", Icon = "🔊", Title = "SOUND EFFECTS", Sub = "Stomps, roars and cha-chings" },
+	{ Key = "Music", Volume = "MusicVolume", Icon = "🎵", Title = "MUSIC", Sub = "Soundtrack" },
+	{ Key = "Sfx", Volume = "SfxVolume", Icon = "🔊", Title = "SOUNDS", Sub = "Stomps & cha-chings" },
 	{ Key = "LowFx", Icon = "⚡", Title = "LOW EFFECTS", Sub = "Fewer particles for slower devices" },
 }
+local VOLUME_STEPS = 5 -- 0 %, 20 %, … 100 %
 
 local window
 local rows: { any } = {}
 local toggles: { [string]: any } = {}
+local volumes: { [string]: any } = {}
 local codeBox: Frame
 local codeStroke: UIStroke
 local codeInput: TextBox
@@ -137,6 +139,79 @@ local function makeToggle(parent: Instance, onFlip: (boolean) -> ()): any
 end
 
 ----------------------------------------------------------------------------
+-- Barre de volume : un bouton muet + 5 barres de plus en plus hautes
+----------------------------------------------------------------------------
+
+local function makeVolume(parent: Instance, onSet: (number) -> ()): any
+	local holder = Kit.new("Frame", {
+		Name = "Volume",
+		Size = UDim2.fromOffset(270, 48),
+		Position = UDim2.new(1, -148, 0.5, 0),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundTransparency = 1,
+		ZIndex = 5,
+		Parent = parent,
+	})
+	local mute = Kit.Button({
+		Name = "Mute",
+		Text = "",
+		Icon = "🔇",
+		IconSize = 26,
+		Color = "Grey",
+		Size = UDim2.fromOffset(46, 44),
+		Position = UDim2.new(0, 0, 0.5, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
+		ZIndex = 6,
+		Parent = holder,
+		OnClick = function()
+			onSet(0)
+		end,
+	})
+	local bars = {}
+	for i = 1, VOLUME_STEPS do
+		local h = 14 + i * 6
+		local bar = Kit.new("TextButton", {
+			Name = "Step" .. i,
+			Size = UDim2.fromOffset(26, h),
+			Position = UDim2.new(0, 58 + (i - 1) * 32, 1, -4),
+			AnchorPoint = Vector2.new(0, 1),
+			BackgroundColor3 = C.PaperDark,
+			AutoButtonColor = false,
+			Text = "",
+			ZIndex = 6,
+			Parent = holder,
+		}, { Kit.Corner(6), Kit.Stroke(2.5) })
+		bar.Activated:Connect(function()
+			onSet(i / VOLUME_STEPS)
+		end)
+		bars[i] = bar
+	end
+	local pct = Kit.Text({
+		Name = "Percent",
+		Size = UDim2.fromOffset(52, 30),
+		Position = UDim2.new(1, 0, 0.5, 0),
+		AnchorPoint = Vector2.new(1, 0.5),
+		Text = "60%",
+		FontFace = F.Title,
+		MaxTextSize = 22,
+		Stroke = 2,
+		ZIndex = 6,
+		Parent = holder,
+	})
+	local v = { Holder = holder, Value = nil :: number? }
+	function v.Set(value: number)
+		v.Value = value
+		local level = math.floor(value * VOLUME_STEPS + 0.5)
+		for i, bar in bars do
+			bar.BackgroundColor3 = if i <= level then C.Radioactive:Lerp(C.Gold, (i - 1) / VOLUME_STEPS) else C.PaperDark
+		end
+		Kit.SetButtonColor(mute, if level == 0 then "Red" else "Grey")
+		pct.Text = if level == 0 then "OFF" else ("%d%%"):format(level * 100 // VOLUME_STEPS)
+	end
+	return v
+end
+
+----------------------------------------------------------------------------
 -- Rangées
 ----------------------------------------------------------------------------
 
@@ -182,9 +257,10 @@ local function iconBadge(parent: Instance, icon: string, colorName: string, size
 	})
 end
 
-local function titleAndSub(parent: Instance, title: string, sub: string, x: number)
+local function titleAndSub(parent: Instance, title: string, sub: string, x: number, reserve: number?)
+	local right = reserve or 140
 	Kit.Text({
-		Size = UDim2.new(1, -(x + 140), 0, 26),
+		Size = UDim2.new(1, -(x + right), 0, 26),
 		Position = UDim2.new(0, x, 0.5, -2),
 		AnchorPoint = Vector2.new(0, 1),
 		Text = title,
@@ -195,7 +271,7 @@ local function titleAndSub(parent: Instance, title: string, sub: string, x: numb
 		Parent = parent,
 	})
 	Kit.Text({
-		Size = UDim2.new(1, -(x + 140), 0, 20),
+		Size = UDim2.new(1, -(x + right), 0, 20),
 		Position = UDim2.new(0, x, 0.5, 2),
 		Text = sub,
 		FontFace = F.Body,
@@ -213,7 +289,29 @@ end
 ----------------------------------------------------------------------------
 
 local function currentSettings(): any
-	return State.Get("Settings") or { Music = true, Sfx = true, LowFx = false }
+	return State.Get("Settings") or { Music = true, Sfx = true, LowFx = false, MusicVolume = 0.6, SfxVolume = 0.6 }
+end
+
+-- Volume effectif d'un réglage (l'ancien interrupteur OFF vaut 0).
+local function volumeOf(settings: any, def: any): number
+	if settings[def.Key] == false then
+		return 0
+	end
+	return settings[def.Volume] or 0.6
+end
+
+local function setVolume(def: any, value: number)
+	local v = volumes[def.Key]
+	v.Set(value)
+	if def.Key == "Sfx" then
+		Audio.Play("ui_click", { Cooldown = 0 })
+	end
+	task.spawn(function()
+		local r = Remote.Call("Settings", { [def.Volume] = value, [def.Key] = value > 0 })
+		if not r.ok then
+			v.Set(volumeOf(currentSettings(), def))
+		end
+	end)
 end
 
 local function flip(key: string, value: boolean)
@@ -323,10 +421,17 @@ function Settings.Init()
 	for i, def in TOGGLES do
 		local _, body = panelRow(content, (i - 1) * 70, 66, if i % 2 == 0 then 0.6 else -0.6)
 		iconBadge(body, def.Icon, if def.Key == "LowFx" then "Gold" else "Cyan", 44)
-		titleAndSub(body, def.Title, def.Sub, 68)
-		toggles[def.Key] = makeToggle(body, function(value)
-			task.spawn(flip, def.Key, value)
-		end)
+		if def.Volume then
+			titleAndSub(body, def.Title, def.Sub, 68, 300)
+			volumes[def.Key] = makeVolume(body, function(value)
+				setVolume(def, value)
+			end)
+		else
+			titleAndSub(body, def.Title, def.Sub, 68)
+			toggles[def.Key] = makeToggle(body, function(value)
+				task.spawn(flip, def.Key, value)
+			end)
+		end
 	end
 
 	-- Codes
@@ -471,10 +576,20 @@ function Settings.Init()
 				t.Set(s[key] == true, not window.IsOpen)
 			end
 		end
+		for _, def in TOGGLES do
+			if def.Volume then
+				volumes[def.Key].Set(volumeOf(s, def))
+			end
+		end
 	end)
 	State.Changed("GroupClaimed"):Connect(refreshGroup)
 	for key, t in toggles do
 		t.Set(currentSettings()[key] == true, true)
+	end
+	for _, def in TOGGLES do
+		if def.Volume then
+			volumes[def.Key].Set(volumeOf(currentSettings(), def))
+		end
 	end
 	refreshGroup()
 end

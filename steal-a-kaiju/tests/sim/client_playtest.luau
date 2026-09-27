@@ -241,6 +241,37 @@ EventService.Stop()
 Runtime.Advance(5)
 
 ----------------------------------------------------------------------------
+section("Réglages : volume des sons")
+do
+	local screen = UIRegistry.Screens.Settings
+	screen.Open()
+	Runtime.Advance(1)
+	local layer = playerGui:FindFirstChild("Window_Settings")
+	local steps = {}
+	for _, d in layer:GetDescendants() do
+		if d.Name == "Step2" then
+			table.insert(steps, d)
+		end
+	end
+	check("deux barres de volume (musique, sons)", #steps == 2, #steps)
+	steps[#steps].Activated:Fire()
+	Runtime.Advance(1)
+	local saved = DataService.Get(hero).Settings
+	check("volume des sons enregistré (40 %)", math.abs((saved.SfxVolume or 0) - 0.4) < 0.01, saved.SfxVolume)
+	local soundService = Runtime.Globals.game:GetService("SoundService")
+	local group = soundService:FindFirstChild("SFX")
+	check("volume appliqué au groupe SFX (40 % x base)", group and math.abs(group.Volume - 0.4 * 0.7) < 0.01, group and group.Volume)
+	for _, d in layer:GetDescendants() do
+		if d.Name == "Mute" and d:IsDescendantOf(steps[1].Parent) then
+			d.Activated:Fire()
+		end
+	end
+	Runtime.Advance(1)
+	check("bouton muet : musique coupée", DataService.Get(hero).Settings.MusicVolume == 0 and soundService:FindFirstChild("Music").Volume == 0)
+	screen.Close()
+	Runtime.Advance(1)
+end
+
 section("Session longue côté client (30 min)")
 n = #Runtime.Errors
 Runtime.Advance(1800)

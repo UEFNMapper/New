@@ -800,7 +800,7 @@ local function digBurst(pos: Vector3, kind: string, text: string?, color: Color3
 		end
 		for i = 1, 3 do
 			task.delay(i * 0.08, function()
-				Audio.Play("coin_tick", { Pitch = 1 + i * 0.12, Cooldown = 0 })
+				Audio.Play("coin_tick", { Pitch = 1 + i * 0.12, Cooldown = 0.08 })
 			end)
 		end
 		if text then

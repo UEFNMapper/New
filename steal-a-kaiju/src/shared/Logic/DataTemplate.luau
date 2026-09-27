@@ -57,7 +57,7 @@ local DataTemplate = {
 		Worlds = 0,
 	},
 
-	Settings = { Music = true, Sfx = true, LowFx = false },
+	Settings = { Music = true, Sfx = true, LowFx = false, MusicVolume = 0.6, SfxVolume = 0.6 },
 
 	Spins = 1,
 	FreeSpinAt = 0,

@@ -13,6 +13,11 @@ local State = require(script.Parent.State)
 
 local Audio = {}
 
+-- Volumes de base (les barres des réglages multiplient ces valeurs) : les effets
+-- sont volontairement discrets pour ne pas couvrir la musique ni fatiguer.
+Audio.SfxBase = 0.7
+Audio.MusicBase = 0.8
+
 local sfxGroup = Instance.new("SoundGroup")
 sfxGroup.Name = "SFX"
 sfxGroup.Volume = 1
@@ -64,7 +69,7 @@ function Audio.Play(key: string, options: { [string]: any }?): Sound?
 	if not t then
 		return nil
 	end
-	local cooldown = opts.Cooldown or 0.03
+	local cooldown = opts.Cooldown or 0.06 -- évite l'empilement du même son
 	local now = os.clock()
 	if (lastPlayed[key] or 0) + cooldown > now then
 		return nil
@@ -152,8 +157,10 @@ function Audio.Init()
 		if not settings then
 			return
 		end
-		sfxGroup.Volume = if settings.Sfx then 1 else 0
-		musicGroup.Volume = if settings.Music then 1 else 0
+		local sfx = if settings.Sfx == false then 0 else (settings.SfxVolume or 0.6)
+		local music = if settings.Music == false then 0 else (settings.MusicVolume or 0.6)
+		sfxGroup.Volume = sfx * Audio.SfxBase
+		musicGroup.Volume = music * Audio.MusicBase
 	end)
 	-- Pré-chargement léger des sons les plus fréquents
 	task.defer(function()
