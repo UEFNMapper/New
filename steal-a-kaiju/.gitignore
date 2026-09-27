@@ -10,3 +10,4 @@ tools/render/scene.json
 tools/render/ui.json
 tools/render/ui/
 tests/sim/scratch/
+tools/marketing/.cache/
