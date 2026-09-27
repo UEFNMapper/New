@@ -271,7 +271,7 @@ Buddy.DigHold = 1.5
 Buddy.DigDistance = 8
 Buddy.DigHoldTolerance = 0.25 -- latence réseau tolérée sur le maintien
 function Buddy.TreasureInterval(level: number): number
-	return math.max(35, 50 - (level - 1) * 0.3)
+	return math.max(50, 75 - (level - 1) * 0.5)
 end
 
 Buddy.Loot = {
@@ -302,11 +302,12 @@ Buddy.IslandSpots = {
 	Vector3.new(44, 0, 52),
 } :: { Vector3 }
 -- Points proches du spawn (15 à 25 studs) pour le trésor du tutoriel
+-- trésor du tutoriel : 15-25 studs du spawn (-12, 42), loin des pads du réacteur et du bouclier
 Buddy.TutorialSpots = {
-	Vector3.new(-15, 0, 54),
-	Vector3.new(15, 0, 54),
-	Vector3.new(-19, 0, 46),
-	Vector3.new(19, 0, 46),
+	Vector3.new(6, 0, 57),
+	Vector3.new(-28, 0, 38),
+	Vector3.new(10, 0, 42),
+	Vector3.new(-26, 0, 57),
 } :: { Vector3 }
 Buddy.BridgeFractions = { 0.2, 0.4, 0.6, 0.8 } -- le long de ton pont (0 = cratère)
 Buddy.BridgeSide = 5 -- décalage latéral alterné sur le pont
@@ -1133,7 +1134,7 @@ end
 Layout.Collector = Vector3.new(0, 0, 50)
 Layout.LockButton = Vector3.new(-30, 0, 50)
 Layout.PersonalPad = Vector3.new(30, 0, 50)
-Layout.Spawn = Vector3.new(0, 3, 43)
+Layout.Spawn = Vector3.new(-12, 3, 42) -- à côté du réacteur, pas dessus (sinon collecte en boucle)
 Layout.Gate = Vector3.new(0, 0, -Layout.PlotDepth / 2)
 Layout.Sign = Vector3.new(0, 0, -Layout.PlotDepth / 2 - 4)
 Layout.RampagePortal = Vector3.new(-40, 0, -46) -- portail RAMPAGE (avant-gauche, hors de la cour des nids)
@@ -1179,7 +1180,7 @@ Levels.Max = 100
 
 -- XP pour passer du niveau L au niveau L+1.
 function Levels.XpToNext(level: number): number
-	return math.floor(40 * level * 1.08 ^ level)
+	return math.floor(45 * level * 1.06 ^ level)
 end
 
 -- XP cumulée nécessaire pour atteindre `level`.
@@ -1717,6 +1718,7 @@ Rampage.StarGems = 5 -- par nouvelle étoile
 Rampage.UnlockStars = 2 -- étoiles au quartier N pour ouvrir N+1
 
 -- Récompenses -----------------------------------------------------------------
+Rampage.CashSecondsPerPoint = 0.3 -- 1 point = 0,3 s de revenu (quartier 1 rasé ≈ 1,5 à 3 min de revenu)
 Rampage.MinCashPerPoint = 5 -- plancher : $5 par point x numéro du quartier
 Rampage.GrowthCap = 0.25 -- croissance max : 25 % du temps restant dans le stade
 Rampage.GoldenValueMult = 5
@@ -2130,7 +2132,7 @@ local Siege = {}
 ----------------------------------------------------------------------------
 
 Siege.Countdown = 150 -- s entre deux vagues (ne s'écoule que chez soi)
-Siege.FirstCountdown = 45 -- première vague après la fin du tutoriel
+Siege.FirstCountdown = 90 -- première vague après la fin du tutoriel (le temps de souffler)
 Siege.JoinCountdown = 90 -- à la connexion (joueur qui a déjà joué)
 Siege.StartNowBonus = 0.1 -- +10 % de récompense avec « START NOW »
 Siege.IslandMargin = 6 -- marge (studs) autour de l'île pour « être chez soi »
@@ -2299,6 +2301,9 @@ Siege.Tutorial = {
 	Speed = 6,
 	Gap = 2.5,
 	Timeout = 120, -- s : sécurité, la vague se termine quoi qu'il arrive
+	-- le dernier envahisseur ignore les tirs : seul le joueur peut le bonker
+	ToughHP = 25, -- 3 bonks
+	ToughScale = 1.35,
 }
 
 function Siege.Count(wave: number): number
@@ -2473,9 +2478,9 @@ local Sounds: { [string]: SoundDef } = {
 	purchase = D(9113728049, 0.6),
 	sell = D(9113726510, 0.55),
 	-- Météores
-	meteor_whistle = D(12222095, 0.7, 0.6),
-	meteor_impact = D("rbxasset://sounds/impact_explosion_03.mp3", 0.8),
-	meteor_rare_alarm = D(9126073001, 0.8),
+	meteor_whistle = D(12222095, 0.45, 0.6),
+	meteor_impact = D("rbxasset://sounds/impact_explosion_03.mp3", 0.55),
+	meteor_rare_alarm = D(9126073001, 0.6),
 	-- Œufs / kaijus
 	egg_wobble = D(15675055424, 0.5, 0.8),
 	egg_crack = D(9113263649, 0.6),
@@ -2485,15 +2490,15 @@ local Sounds: { [string]: SoundDef } = {
 	hatch_secret = D(1845411858, 0.9),
 	stage_up = D(9116395089, 0.7),
 	roar_small = D(9113985604, 0.5, 1.4),
-	roar_big = D(9113980319, 0.8),
+	roar_big = D(9113980319, 0.6),
 	-- Vol / défense
 	steal_grab = D(17208319162, 0.6),
 	alarm = D(9119162409, 0.55, 1, true),
-	bonk = D(12222046, 0.8, 0.8),
+	bonk = D(12222046, 0.5, 0.8),
 	knockback_whoosh = D(15675012262, 0.6),
 	shield_on = D(17208327798, 0.7),
 	shield_zap = D(9113085801, 0.5, 1.6),
-	drop = D("rbxasset://sounds/action_jump_land.mp3", 0.8),
+	drop = D("rbxasset://sounds/action_jump_land.mp3", 0.5),
 	heist_success = D(1844584698, 0.8),
 	-- Progression
 	rebirth = D(9041812129, 0.9),
@@ -2504,9 +2509,9 @@ local Sounds: { [string]: SoundDef } = {
 	level_jingle = D(12222253, 0.6, 1.1),
 	spin_tick = D(15675032796, 0.35, 1.4),
 	spin_win = D(1836301731, 0.8),
-	event_horn = D(9119162409, 0.8, 0.7),
+	event_horn = D(9119162409, 0.6, 0.7),
 	countdown_beep = D(17208361335, 0.6),
-	boss_stomp = D(9114224354, 0.9),
+	boss_stomp = D(9114224354, 0.7),
 	whoosh = D(15675028888, 0.5),
 	-- Musique
 	music_main = D(9043821805, 0.32, 1, true),
@@ -2636,7 +2641,7 @@ Tutorial.Missions = {
 	{
 		Step = 4,
 		Title = "DEFEND YOUR ISLAND!",
-		Text = "Wild kaijus are invading! Your kaijus shoot them — bonk the ones that get close with your Bonker!",
+		Text = "Wild kaijus are invading your island! Your kaijus shoot them. The BIG one is for you: hit it with your Bonker!",
 		Icon = "bonk",
 		Target = "Siege",
 		Reward = { Gems = 15 },
@@ -2909,9 +2914,9 @@ Worlds.List = {
 		Order = 3,
 		Icon = "frost",
 		Tagline = "Frozen giants sleep under the snow.",
-		Level = 12,
+		Level = 9,
 		Rebirths = 0,
-		Toll = 250000,
+		Toll = 2000000,
 		Weights = { Rare = 420, Epic = 420, Legendary = 140, Mythic = 18, Celestial = 2 },
 		Species = { "Frostodon", "ThunderSquid", "Pengwing", "Snowgoon", "Yetitan", "ThunderGoose", "Kaijumbo", "Glacirex" },
 		Mutations = { { Id = "Diamond", Chance = 0.035 } },
@@ -2937,9 +2942,9 @@ Worlds.List = {
 		Order = 4,
 		Icon = "volcano",
 		Tagline = "Only evolved tamers survive the heat.",
-		Level = 18,
+		Level = 15,
 		Rebirths = 1,
-		Toll = 5000000,
+		Toll = 25000000,
 		Weights = { Epic = 480, Legendary = 400, Mythic = 110, Celestial = 10 },
 		Species = { "Magmadillo", "Magmapus", "Drakonda", "Cinderwing", "Crabageddon", "Emberwyrm", "SolarisRex" },
 		Mutations = { { Id = "Blood", Chance = 0.02 } },
@@ -2965,8 +2970,8 @@ Worlds.List = {
 		Order = 5,
 		Icon = "cosmic",
 		Tagline = "A tear in the sky. Kaijus from the stars.",
-		Level = 30,
-		Rebirths = 4,
+		Level = 24,
+		Rebirths = 3,
 		Toll = 5000000000,
 		Weights = { Legendary = 560, Mythic = 360, Celestial = 80 },
 		Species = { "Starpinch", "Nebulodon", "Astrolotl", "LunarSquid", "CosmoGoose", "Voidling" },
@@ -4046,7 +4051,9 @@ function Calc.SellValue(rec: KaijuRecord): number
 	end
 	local base = if species.Price > 0 then species.Price else species.Income * 250
 	local stage = Growth.Get(Growth.StageFor(rec.Growth, species.Rarity))
-	return math.floor(base * Economy.SellBase * stage.SellMult * Mutations.Mult(rec.Mutation))
+	local fromPrice = base * Economy.SellBase * stage.SellMult * Mutations.Mult(rec.Mutation)
+	-- un kaiju qui a grandi se revend au moins 1 minute de ce qu'il rapporte
+	return math.floor(math.max(fromPrice, Calc.BaseIncome(rec) * 60))
 end
 
 -- Prix d'une nourriture pour ce kaiju.
@@ -4161,11 +4168,12 @@ local DataTemplate = {
 		Worlds = 0,
 	},
 
-	Settings = { Music = true, Sfx = true, LowFx = false },
+	Settings = { Music = true, Sfx = true, LowFx = false, MusicVolume = 0.6, SfxVolume = 0.6 },
 
 	Spins = 1,
 	FreeSpinAt = 0,
 	Tutorial = 0,
+	GoldenCount = 0, -- météores perso tombés (1 sur 5 est doré)
 	LastOnline = 0,
 	GroupClaimed = false,
 	StarterPack = false,
@@ -4432,17 +4440,22 @@ function Roll.Rarity(luck: number, rng: Rng?, worldId: string?): string
 	return Rarities.List[index].Id
 end
 
--- Tirage « doré » : comme Roll.Rarity mais sans la rareté la plus fréquente du
--- monde (rareté supérieure garantie).
+-- Tirage « doré » : comme Roll.Rarity mais sans la rareté la plus basse du
+-- monde (rareté supérieure garantie, même avec de la chance).
 function Roll.GoldenRarity(luck: number, rng: Rng?, worldId: string?): string
-	local weights = Roll.RarityWeights(luck, worldId)
-	local top, topW = 0, -1
-	for i, w in weights do
-		if w > topW then
-			top, topW = i, w
+	local world = Worlds.Get(worldId)
+	local lowest = math.huge
+	for _, r in Rarities.List do
+		if (world.Weights[r.Id] or 0) > 0 then
+			lowest = math.min(lowest, r.Order)
 		end
 	end
-	weights[top] = 0
+	local weights = Roll.RarityWeights(luck, worldId)
+	for i, r in Rarities.List do
+		if r.Order <= lowest then
+			weights[i] = 0
+		end
+	end
 	return Rarities.List[Roll.Weighted(weights, rng)].Id
 end
 
@@ -4739,6 +4752,7 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Buddy = require(Shared.Config.Buddy)
+local TutorialConfig = require(Shared.Config.Tutorial)
 local Layout = require(Shared.Config.Layout)
 local Worlds = require(Shared.Config.Worlds)
 local Levels = require(Shared.Config.Levels)
@@ -4767,6 +4781,7 @@ type PlayerState = {
 	NextSpotAt: number,
 	Spot: Spot?,
 	LastIndex: number?,
+	RetryAt: number?, -- trésor du tutoriel : prochain essai de réapparition
 	SwapAt: number,
 }
 
@@ -5192,7 +5207,14 @@ local function tickPlayer(player: Player, st: PlayerState, withAssist: boolean)
 	if not rec or not root then
 		return
 	end
-	-- pendant le tutoriel, c'est la mission « DIG UP A TREASURE » qui fait apparaître le trésor
+	-- pendant le tutoriel, c'est la mission « DIG UP A TREASURE » qui fait apparaître
+	-- le trésor : s'il a expiré sans être creusé, on le remet (pas de blocage)
+	local tutorialStep = Registry.TutorialService.Step(player)
+	local mission = TutorialConfig.Get(tutorialStep)
+	if not st.Spot and mission and mission.Target == "Treasure" and t >= (st.RetryAt or 0) then
+		st.RetryAt = t + 3
+		BuddyService.ForceTreasure(player)
+	end
 	if not st.Spot and t >= st.NextSpotAt and Registry.TutorialService.IsDone(player) then
 		local pos, index = pickSpot(player, root.Position, st.LastIndex)
 		if pos then
@@ -5230,12 +5252,18 @@ function BuddyService.Init()
 		local tick = 0
 		while true do
 			task.wait(Buddy.MagnetTick)
-			tick += 1
-			for player, st in states do
-				local ok, err = pcall(tickPlayer, player, st, tick % assistEvery == 0)
-				if not ok then
-					warn("[BuddyService] tick : " .. tostring(err))
+			-- une erreur ne doit jamais arrêter la boucle pour tout le serveur
+			local ok, err = pcall(function()
+				tick += 1
+				for player, st in states do
+					local ok, err = pcall(tickPlayer, player, st, tick % assistEvery == 0)
+					if not ok then
+						warn("[BuddyService] tick : " .. tostring(err))
+					end
 				end
+			end)
+			if not ok then
+				warn("[BuddyService] boucle : " .. tostring(err))
 			end
 		end
 	end)
@@ -5829,23 +5857,49 @@ function EventService.Start()
 	task.spawn(function()
 		task.wait(Events.FirstDelay)
 		while true do
-			if not current then
-				local nextEvent = table.remove(queue, 1)
-				if nextEvent then
-					start(nextEvent.Id, nextEvent.By)
-				else
-					start(pickRandom())
+			-- une erreur ne doit jamais arrêter la boucle pour tout le serveur
+			local ok, err = pcall(function()
+				if not current then
+					local nextEvent = table.remove(queue, 1)
+					if nextEvent then
+						start(nextEvent.Id, nextEvent.By)
+					else
+						-- pas d'événement aléatoire pendant qu'un nouveau joueur apprend le jeu
+						local waited = 0
+						while waited < 600 and #queue == 0 do
+							local busy = false
+							for _, p in Players:GetPlayers() do
+								busy = busy or Registry.TutorialService.InGracePeriod(p)
+							end
+							if not busy then
+								break
+							end
+							task.wait(5)
+							waited += 5
+						end
+						if #queue == 0 then
+							start(pickRandom())
+						end
+					end
 				end
-			end
-			-- attend la fin, puis une pause (sauf si un événement payant attend)
-			while current do
-				task.wait(1)
-			end
-			local gap = math.random(Events.Gap[1], Events.Gap[2])
-			local waited = 0
-			while waited < gap and #queue == 0 do
-				task.wait(1)
-				waited += 1
+				-- attend la fin, puis une pause (sauf si un événement payant attend)
+				while current do
+					task.wait(1)
+				end
+				local gap = math.random(Events.Gap[1], Events.Gap[2])
+				local waited = 0
+				while waited < gap and #queue == 0 do
+					task.wait(1)
+					waited += 1
+				end
+			end)
+			if not ok then
+				warn("[EventService] boucle : " .. tostring(err))
+				-- un événement à moitié lancé ne doit pas durer pour toujours
+				if current then
+					pcall(stop)
+				end
+				task.wait(5)
 			end
 		end
 	end)
@@ -5870,10 +5924,12 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Kaijus = require(Shared.Config.Kaijus)
 local Rarities = require(Shared.Config.Rarities)
+local Mutations = require(Shared.Config.Mutations)
 local Growth = require(Shared.Config.Growth)
 local Economy = require(Shared.Config.Economy)
 local Worlds = require(Shared.Config.Worlds)
 local Levels = require(Shared.Config.Levels)
+local Layout = require(Shared.Config.Layout)
 local Calc = require(Shared.Logic.Calc)
 local Roll = require(Shared.Logic.Roll)
 local Format = require(Shared.Logic.Format)
@@ -6101,8 +6157,56 @@ function KaijuService.FreeNest(player: Player): number?
 	return nil
 end
 
-local function newUid(data: any): string
-	local uid = string.format("%x-%x", data.NextUid, math.random(0, 0xFFFF))
+-- Identifiant unique sur le serveur (les ancres sont indexées par Uid pour tous
+-- les joueurs) : on y met l'UserId du propriétaire.
+-- Nids pleins : fait de la place pour un œuf STRICTEMENT plus rare en revendant le
+-- kaiju le plus faible (jamais une mutation Diamant ou mieux, un Secret, le
+-- compagnon, un kaiju en cours de vol ou joué en Rampage). Renvoie le nid libéré.
+local function weakestFor(player: Player, rarity: string): Record?
+	local data = DataService.Get(player)
+	if not data then
+		return nil
+	end
+	local incoming = Rarities.Get(rarity).Order
+	local rampage = Registry.RampageService
+	local playing = if rampage and rampage.PlayingUid then rampage.PlayingUid(player) else nil
+	local buddyUid = data.Buddy and data.Buddy.Uid or ""
+	local worst, worstValue = nil, math.huge
+	for _, rec in data.Kaijus do
+		local anchor = anchors[rec.Uid]
+		local busy = (anchor and (anchor:GetAttribute("CarriedBy") or 0) ~= 0) or rec.Uid == playing
+		local precious = rec.Rarity == "Secret" or Mutations.Mult(rec.Mutation) >= 3 or rec.Uid == buddyUid
+		if not rec.Egg and not busy and not precious and Rarities.Get(rec.Rarity).Order < incoming then
+			local value = Calc.BaseIncome(rec)
+			if value < worstValue then
+				worst, worstValue = rec, value
+			end
+		end
+	end
+	return worst
+end
+
+function KaijuService.CanMakeRoom(player: Player, rarity: string): boolean
+	return weakestFor(player, rarity) ~= nil
+end
+
+function KaijuService.MakeRoom(player: Player, rarity: string): number?
+	local worst = weakestFor(player, rarity)
+	if not worst then
+		return nil
+	end
+	local value = Calc.SellValue(worst)
+	local species = Kaijus.Get(worst.Species or "")
+	local slot = worst.Nest
+	KaijuService.RemoveRecord(player, worst.Uid)
+	DataService.AddCash(player, value, false)
+	Notify.Fx(player, "Sold", { Amount = value, Species = worst.Species })
+	Notify.Toast(player, ("Nests full: sold %s (+%s) to make room for a %s egg!"):format(if species then species.Name else "a kaiju", Format.Cash(value), string.upper(Rarities.Get(rarity).Name)), "Info")
+	return slot
+end
+
+local function newUid(data: any, player: Player): string
+	local uid = string.format("%x-%x-%x", player.UserId, data.NextUid, math.random(0, 0xFFFF))
 	data.NextUid += 1
 	return uid
 end
@@ -6111,13 +6215,13 @@ end
 -- `world` : monde d'origine (espèces et mutations locales à l'éclosion).
 function KaijuService.AddEgg(player: Player, rarity: string, hatchSeconds: number?, world: string?): Record?
 	local data = DataService.Get(player)
-	local slot = KaijuService.FreeNest(player)
+	local slot = KaijuService.FreeNest(player) or KaijuService.MakeRoom(player, rarity)
 	if not data or not slot then
 		return nil
 	end
 	local r = Rarities.Get(rarity)
 	local rec: Record = {
-		Uid = newUid(data),
+		Uid = newUid(data, player),
 		Rarity = r.Id,
 		Growth = 0,
 		Nest = slot,
@@ -6143,7 +6247,8 @@ function KaijuService.GiveEgg(player: Player, rarity: string, source: string?, w
 	if rec then
 		Notify.Fx(player, "EggGift", { Rarity = rarity, Source = source, Uid = rec.Uid })
 	else
-		table.insert(data.PendingEggs, rarity)
+		-- l'œuf garde son monde d'origine : « Rareté@Monde »
+		table.insert(data.PendingEggs, if world then rarity .. "@" .. world else rarity)
 		DataService.Replicate(player, "PendingEggs")
 		Notify.Toast(player, ("%s egg saved! Free a nest to place it."):format(r.Name), "Info")
 	end
@@ -6155,10 +6260,17 @@ function KaijuService.PlacePending(player: Player)
 		return
 	end
 	local changed = false
-	while #data.PendingEggs > 0 and KaijuService.FreeNest(player) do
-		local rarity = table.remove(data.PendingEggs, 1) :: string
-		KaijuService.AddEgg(player, rarity)
-		changed = true
+	local i = 1
+	while i <= #data.PendingEggs do
+		local entry = data.PendingEggs[i] :: string
+		local rarity, world = string.match(entry, "^([^@]+)@?(.*)$")
+		-- un nid libre, ou de la place faite en revendant un kaiju moins rare
+		if KaijuService.AddEgg(player, rarity or entry, nil, if world and world ~= "" then world else nil) then
+			table.remove(data.PendingEggs, i)
+			changed = true
+		else
+			i += 1
+		end
 	end
 	if changed then
 		DataService.Replicate(player, "PendingEggs")
@@ -6193,7 +6305,9 @@ local function hatch(player: Player, data: any, rec: Record)
 	Registry.TutorialService.Notify(player, "Hatch")
 	if rarity.Announce and species then
 		local mut = if rec.Mutation then rec.Mutation .. " " else ""
-		Notify.Feed(("%s hatched a %s%s %s!"):format(player.DisplayName, mut, string.upper(rarity.Name), species.Name), "Rare", rarity.Color)
+		local label = mut .. string.upper(rarity.Name)
+		local article = if string.find(label, "^[AEIOU]") then "an" else "a"
+		Notify.FeedExcept(player, ("%s hatched %s %s %s!"):format(player.DisplayName, article, label, species.Name), "Rare", rarity.Color)
 	end
 	KaijuService.RefreshPlayer(player)
 end
@@ -6227,7 +6341,7 @@ function KaijuService.AddHatched(player: Player, speciesId: string, mutation: st
 		return nil
 	end
 	local rec: Record = {
-		Uid = newUid(data),
+		Uid = newUid(data, player),
 		Species = species.Id,
 		Rarity = species.Rarity,
 		Mutation = mutation,
@@ -6270,7 +6384,7 @@ function KaijuService.Transfer(from: Player, uid: string, to: Player): Record?
 		return nil
 	end
 	rec.Nest = slot
-	rec.Uid = newUid(toData)
+	rec.Uid = newUid(toData, to)
 	table.insert(toData.Kaijus, rec)
 	syncAnchor(to, rec)
 	DataService.Replicate(to, "Kaijus")
@@ -6319,7 +6433,14 @@ end
 
 function KaijuService.Collect(player: Player)
 	local data = DataService.Get(player)
-	if not data or data.Stored < 1 then
+	if not data then
+		return
+	end
+	if data.Stored < 1 then
+		-- Auto Collect : le cash va directement au portefeuille, la mission « collecte » est validée quand même
+		if Registry.ShopService.HasPass(player, "AutoCollect") then
+			Registry.TutorialService.Notify(player, "Collect")
+		end
 		return
 	end
 	local amount = math.floor(data.Stored)
@@ -6423,7 +6544,11 @@ local function tickPlayer(player: Player, dt: number)
 					Notify.FxAll("StageUp", { Uid = rec.Uid, Stage = after })
 					local stage = Growth.Get(after)
 					local species = Kaijus.Get(rec.Species or "")
-					Notify.Toast(player, ("%s grew into a %s!"):format(if species then species.Name else "Kaiju", string.upper(stage.Name)), "Good")
+					-- message seulement pour les grands stades (le « TEEN! » au-dessus du kaiju suffit sinon)
+					if after >= 4 then
+						local stageName = string.upper(stage.Name)
+						Notify.Toast(player, ("%s is now a %s!"):format(if species then species.Name else "Kaiju", stageName), "Good")
+					end
 					Registry.RewardService.Track(player, "StageUps", after - before)
 					local xp = 0
 					for st = before + 1, after do
@@ -6477,11 +6602,12 @@ local function applyOffline(player: Player, data: any)
 	end
 	local maxHours = if Registry.ShopService.HasPass(player, "Offline") then Economy.OfflineMaxHoursPass else Economy.OfflineMaxHours
 	local capped = math.min(elapsed, maxHours * 3600)
+	-- revenu au stade de départ (la croissance hors ligne ne paie pas rétroactivement)
 	local income = 0
 	for _, rec in data.Kaijus do
 		if not rec.Egg then
-			rec.Growth += elapsed
 			income += Calc.BaseIncome(rec)
+			rec.Growth += elapsed
 		end
 	end
 	local amount = math.floor(income * KaijuService.Multiplier(player) * capped * Economy.OfflineRate)
@@ -6503,10 +6629,16 @@ local function onLoaded(player: Player, data: any)
 	while not Registry.PlotService.Get(player) and os.clock() - t0 < 10 do
 		task.wait()
 	end
-	-- Attend que les pass soient connus (1re fois)
-	task.wait(0.5)
+	-- Attend que les pass soient connus (nids bonus, hors ligne, x2 cash) : sinon on
+	-- déplacerait des kaijus ou on sous-paierait les gains hors ligne.
+	Registry.ShopService.WaitForOwnership(player, 20)
+	if player.Parent == nil then
+		return
+	end
 	applyOffline(player, data)
-	local limit = Registry.PlotService.UnlockedNests(player)
+	-- Nettoyage non destructif : seuls les nids en double ou hors de l'île sont
+	-- réattribués ; un kaiju sur un nid au-delà de la limite y reste (jamais revendu).
+	local limit = #Layout.Nests
 	local used: { [number]: boolean } = {}
 	for _, rec in table.clone(data.Kaijus) do
 		if rec.Nest > limit or used[rec.Nest] then
@@ -6525,9 +6657,9 @@ local function onLoaded(player: Player, data: any)
 					table.remove(data.Kaijus, i)
 				end
 				if rec.Egg then
-					table.insert(data.PendingEggs, rec.Rarity)
+					table.insert(data.PendingEggs, if rec.World then rec.Rarity .. "@" .. rec.World else rec.Rarity)
 				elseif rec.Species then
-					-- revendu automatiquement plutôt que perdu
+					-- plus aucune place physique (impossible en pratique) : revendu plutôt que perdu
 					data.Cash += Calc.SellValue(rec)
 				end
 				continue
@@ -6628,8 +6760,14 @@ function KaijuService.Init()
 	task.spawn(function()
 		while true do
 			task.wait(10)
-			for player in ownerFolders do
-				KaijuService.RefreshPlayer(player)
+			-- une erreur ne doit jamais arrêter la boucle pour tout le serveur
+			local ok, err = pcall(function()
+				for player in ownerFolders do
+					KaijuService.RefreshPlayer(player)
+				end
+			end)
+			if not ok then
+				warn("[KaijuService] boucle : " .. tostring(err))
 			end
 		end
 	end)
@@ -6851,8 +6989,14 @@ function LeaderboardService.Init()
 	task.spawn(function()
 		while true do
 			task.wait(2)
-			for _, player in Players:GetPlayers() do
-				LeaderboardService.Update(player)
+			-- une erreur ne doit jamais arrêter la boucle pour tout le serveur
+			local ok, err = pcall(function()
+				for _, player in Players:GetPlayers() do
+					LeaderboardService.Update(player)
+				end
+			end)
+			if not ok then
+				warn("[LeaderboardService] boucle : " .. tostring(err))
 			end
 		end
 	end)
@@ -6938,9 +7082,6 @@ function LevelService.AddXp(player: Player, amount: number, reason: string?)
 		end
 		Notify.Fx(player, "LevelUp", { Level = l, Gems = reward.Gems, Egg = reward.Egg, Unlocks = unlocks })
 	end
-	if level >= 10 then
-		Notify.FeedExcept(player, ("%s reached LEVEL %d!"):format(player.DisplayName, level), "Info")
-	end
 	Registry.PlotService.RefreshNests(player)
 	Registry.KaijuService.RefreshPlayer(player)
 	Registry.KaijuService.PlacePending(player)
@@ -6954,6 +7095,14 @@ end
 
 function LevelService.Init()
 	DataService.Loaded:Connect(function(player, data)
+		-- Sauvegarde d'avant les niveaux : XP estimée d'après ce que le joueur a déjà fait
+		if data.Xp == 0 and (data.TotalEarned or 0) > 0 then
+			local species = 0
+			for _ in data.Index do
+				species += 1
+			end
+			data.Xp = data.Stats.Hatches * 15 + species * 80 + data.Rebirths * 1500
+		end
 		-- remet le niveau en cohérence avec l'XP (réglages modifiés entre deux versions)
 		data.Level = Levels.FromXp(data.Xp)
 		player:SetAttribute("Level", data.Level)
@@ -7138,7 +7287,10 @@ local function personalStep(player: Player)
 	local data = DataService.Get(player)
 	local world = Worlds.Best(if data then data.Worlds else {})
 	local luck = Registry.KaijuService.PersonalLuck(player)
-	personalCount[player] = (personalCount[player] or 0) + 1
+	personalCount[player] = (personalCount[player] or (if data then data.GoldenCount or 0 else 0)) + 1
+	if data then
+		data.GoldenCount = personalCount[player] -- le compteur du météore doré survit à une reconnexion
+	end
 	local golden = personalCount[player] % Economy.GoldenEvery == 0
 	local rarity = if golden then Roll.GoldenRarity(luck, nil, world.Id) else Roll.Rarity(luck, nil, world.Id)
 	local price = math.floor(MeteorService.EggPrice(rarity) * (if golden then Economy.GoldenPriceMult else 0.8))
@@ -7163,12 +7315,17 @@ local function buy(player: Player, payload: any): Router.Result
 	if owner ~= 0 and owner ~= player.UserId then
 		return { ok = false, msg = "This meteor belongs to someone else" }
 	end
+	-- œufs d'un monde : seulement si ce monde est débloqué (anti-téléportation)
+	local meteorWorld = m:GetAttribute("World") or Worlds.Default
+	if owner == 0 and meteorWorld ~= Worlds.Default and not Registry.WorldService.IsUnlocked(player, meteorWorld) then
+		return { ok = false, msg = "Unlock this world first!" }
+	end
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if not root or (root.Position - m.Position).Magnitude > 22 then
 		return { ok = false, msg = "Get closer!" }
 	end
-	if not Registry.KaijuService.FreeNest(player) then
+	if not Registry.KaijuService.FreeNest(player) and not Registry.KaijuService.CanMakeRoom(player, m:GetAttribute("Rarity") or "Common") then
 		return { ok = false, msg = "Your nests are full! Sell or unlock more." }
 	end
 	local price = m:GetAttribute("Price") or 0
@@ -7181,21 +7338,14 @@ local function buy(player: Player, payload: any): Router.Result
 	local from = m.Position
 	removeMeteor(id)
 	Notify.FxAll("MeteorBought", { Id = id, Buyer = player.UserId, Rarity = rarity, From = from })
-	-- l'œuf s'envole vers la base : il arrive après l'animation
-	task.delay(1.2, function()
-		if player.Parent == Players then
-			local rec = Registry.KaijuService.AddEgg(player, rarity, nil, world)
-			if not rec then
-				Registry.KaijuService.GiveEgg(player, rarity, "Meteor", world)
-			end
-		end
-	end)
+	-- l'œuf est enregistré tout de suite (rien ne se perd si le joueur part ou
+	-- évolue pendant l'animation) ; le client le fait voler jusqu'au nid
+	local rec = Registry.KaijuService.AddEgg(player, rarity, nil, world)
+	if not rec then
+		Registry.KaijuService.GiveEgg(player, rarity, "Meteor", world)
+	end
 	Registry.RewardService.Track(player, "EggsBought", 1)
 	Registry.TutorialService.Notify(player, "Meteor")
-	local r = Rarities.Get(rarity)
-	if r.Order >= 4 then
-		Notify.FeedExcept(player, ("%s grabbed the %s egg!"):format(player.DisplayName, string.upper(r.Name)), "Rare", r.Color)
-	end
 	return { ok = true, free = isFree }
 end
 
@@ -7231,31 +7381,37 @@ function MeteorService.Start()
 		end
 		while true do
 			task.wait(0.5)
-			local event = Registry.EventService.Current()
-			local rate = if event then event.MeteorRate else 1
-			for _, w in Worlds.List do
-				local isCrater = w.Id == Worlds.Default
-				local active = isCrater or Registry.WorldService.CountIn(w.Id) > 0
-				if active and rate > 0 then
-					timers[w.Id] -= 0.5 * rate
+			-- une erreur ne doit jamais arrêter la boucle pour tout le serveur
+			local ok, err = pcall(function()
+				local event = Registry.EventService.Current()
+				local rate = if event then event.MeteorRate else 1
+				for _, w in Worlds.List do
+					local isCrater = w.Id == Worlds.Default
+					local active = isCrater or Registry.WorldService.CountIn(w.Id) > 0
+					if active and rate > 0 then
+						timers[w.Id] -= 0.5 * rate
+					end
+					if timers[w.Id] <= 0 then
+						local interval = if isCrater then Economy.MeteorInterval else Worlds.MeteorInterval
+						timers[w.Id] = interval * (0.8 + math.random() * 0.4)
+						worldStep(w.Id)
+					end
+					local attr = if isCrater then "NextMeteorIn" else "NextMeteorIn_" .. w.Id
+					Workspace:SetAttribute(attr, if rate > 0 then timers[w.Id] / rate else -1)
 				end
-				if timers[w.Id] <= 0 then
-					local interval = if isCrater then Economy.MeteorInterval else Worlds.MeteorInterval
-					timers[w.Id] = interval * (0.8 + math.random() * 0.4)
-					worldStep(w.Id)
+				-- expiration
+				local t = now()
+				for id, m in meteors do
+					if (m:GetAttribute("ExpireAt") or 0) < t then
+						Notify.FxAll("MeteorExpired", { Id = id })
+						removeMeteor(id)
+					end
 				end
-				local attr = if isCrater then "NextMeteorIn" else "NextMeteorIn_" .. w.Id
-				Workspace:SetAttribute(attr, if rate > 0 then timers[w.Id] / rate else -1)
+				publishLuck()
+			end)
+			if not ok then
+				warn("[MeteorService] boucle : " .. tostring(err))
 			end
-			-- expiration
-			local t = now()
-			for id, m in meteors do
-				if (m:GetAttribute("ExpireAt") or 0) < t then
-					Notify.FxAll("MeteorExpired", { Id = id })
-					removeMeteor(id)
-				end
-			end
-			publishLuck()
 		end
 	end)
 
@@ -7263,21 +7419,28 @@ function MeteorService.Start()
 	task.spawn(function()
 		while true do
 			task.wait(1)
-			local t = os.clock()
-			for _, player in Players:GetPlayers() do
-				if DataService.Get(player) then
-					if not personalNext[player] then
-						personalNext[player] = t + 40
-					elseif t >= personalNext[player] then
-						personalNext[player] = t + Economy.PersonalMeteorInterval
-						personalStep(player)
+			-- une erreur ne doit jamais arrêter la boucle pour tout le serveur
+			local ok, err = pcall(function()
+				local t = os.clock()
+				for _, player in Players:GetPlayers() do
+					if DataService.Get(player) then
+						if not personalNext[player] then
+							personalNext[player] = t + 40
+						elseif t >= personalNext[player] then
+							personalNext[player] = t + Economy.PersonalMeteorInterval
+							personalStep(player)
+						end
+						-- compte à rebours du prochain météore doré (affiché sur le HUD)
+						local saved = DataService.Get(player)
+						local done = personalCount[player] or (if saved then saved.GoldenCount or 0 else 0)
+						local dropsLeft = Economy.GoldenEvery - (done % Economy.GoldenEvery) - 1
+						local seconds = math.max(0, personalNext[player] - t) + dropsLeft * Economy.PersonalMeteorInterval
+						player:SetAttribute("GoldenMeteorAt", Workspace:GetServerTimeNow() + seconds)
 					end
-					-- compte à rebours du prochain météore doré (affiché sur le HUD)
-					local done = personalCount[player] or 0
-					local dropsLeft = Economy.GoldenEvery - (done % Economy.GoldenEvery) - 1
-					local seconds = math.max(0, personalNext[player] - t) + dropsLeft * Economy.PersonalMeteorInterval
-					player:SetAttribute("GoldenMeteorAt", Workspace:GetServerTimeNow() + seconds)
 				end
+			end)
+			if not ok then
+				warn("[MeteorService] boucle : " .. tostring(err))
 			end
 		end
 	end)
@@ -7489,6 +7652,7 @@ local function assign(player: Player)
 				title.Text = string.upper(player.DisplayName) .. "'S ISLAND"
 				title.TextColor3 = plot.Color
 			end
+			plot.Sign.Enabled = true
 			PlotService.RefreshNests(player)
 			return plot
 		end
@@ -7512,6 +7676,8 @@ local function release(player: Player)
 		title.Text = "EMPTY ISLAND"
 		title.TextColor3 = Color3.fromRGB(255, 246, 222)
 	end
+	-- une île vide n'affiche rien (moins de texte à l'écran)
+	plot.Sign.Enabled = false
 	local amount = plot.CollectorGui:FindFirstChild("Amount") :: TextLabel?
 	if amount then
 		amount.Text = "$0"
@@ -7571,9 +7737,13 @@ function PlotService.Init()
 	-- ne jamais dépendre d'un seul mécanisme de Roblox :
 	--   1. contact (Touched), 2. proximité vérifiée par le serveur, 3. invite « E ».
 	local debounce: { [Player]: number } = {}
-	local function tryCollect(player: Player, plot: MapBuilder.PlotInfo)
+	Players.PlayerRemoving:Connect(function(player)
+		debounce[player] = nil
+	end)
+	-- auto = proximité (rester sur le pad) : une collecte toutes les 3 s au plus
+	local function tryCollect(player: Player, plot: MapBuilder.PlotInfo, auto: boolean?)
 		if ownerOf[plot.Index] == player and (debounce[player] or 0) < os.clock() then
-			debounce[player] = os.clock() + 0.6
+			debounce[player] = os.clock() + (if auto then 3 else 0.6)
 			Registry.KaijuService.Collect(player)
 		end
 	end
@@ -7605,7 +7775,7 @@ function PlotService.Init()
 		plot.Collector.Touched:Connect(function(hit)
 			local player = Players:GetPlayerFromCharacter(hit.Parent)
 			if player then
-				tryCollect(player, plot)
+				tryCollect(player, plot, true)
 			end
 		end)
 		prompt(plot.Collector, "COLLECT CASH", "Cash Reactor", "Radioactive", function(player)
@@ -7627,17 +7797,23 @@ function PlotService.Init()
 	task.spawn(function()
 		while true do
 			task.wait(0.25)
-			for _, plot in plots do
-				local owner = ownerOf[plot.Index]
-				local character = owner and owner.Character
-				local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
-				if owner and root then
-					local pad = plot.Collector.Position
-					local flat = Vector3.new(root.Position.X - pad.X, 0, root.Position.Z - pad.Z).Magnitude
-					if flat <= 6.5 and math.abs(root.Position.Y - pad.Y) < 9 then
-						tryCollect(owner, plot)
+			-- une erreur ne doit jamais arrêter la boucle pour tout le serveur
+			local ok, err = pcall(function()
+				for _, plot in plots do
+					local owner = ownerOf[plot.Index]
+					local character = owner and owner.Character
+					local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+					if owner and root then
+						local pad = plot.Collector.Position
+						local flat = Vector3.new(root.Position.X - pad.X, 0, root.Position.Z - pad.Z).Magnitude
+						if flat <= 6.5 and math.abs(root.Position.Y - pad.Y) < 9 then
+							tryCollect(owner, plot, true)
+						end
 					end
 				end
+			end)
+			if not ok then
+				warn("[PlotService] boucle : " .. tostring(err))
 			end
 		end
 	end)
@@ -7645,7 +7821,13 @@ function PlotService.Init()
 	task.spawn(function()
 		while true do
 			task.wait(0.2)
-			enforceShields()
+			-- une erreur ne doit jamais arrêter la boucle pour tout le serveur
+			local ok, err = pcall(function()
+				enforceShields()
+			end)
+			if not ok then
+				warn("[PlotService] boucle : " .. tostring(err))
+			end
 		end
 	end)
 end
@@ -7713,6 +7895,9 @@ local function rebirth(player: Player): Router.Result
 	local nextRebirth = Calc.NextRebirth(data.Rebirths)
 	if not nextRebirth then
 		return { ok = false, msg = "Max evolution reached!" }
+	end
+	if Registry.RampageService.IsActive(player) then
+		return { ok = false, msg = "Finish your Rampage first!" }
 	end
 	if data.Level < (Levels.MenuLevels.Rebirth or 1) then
 		return { ok = false, msg = ("Reach LEVEL %d first!"):format(Levels.MenuLevels.Rebirth) }
@@ -7788,6 +7973,9 @@ local function fuse(player: Player, payload: any): Router.Result
 	local data = DataService.Get(player)
 	if not ua or not ub or ua == ub or not data then
 		return { ok = false, msg = "Pick two kaijus" }
+	end
+	if data.Level < (Levels.MenuLevels.Fusion or 1) then
+		return { ok = false, msg = ("Reach LEVEL %d first!"):format(Levels.MenuLevels.Fusion) }
 	end
 	local a = Registry.KaijuService.FindRecord(data, ua)
 	local b = Registry.KaijuService.FindRecord(data, ub)
@@ -8008,6 +8196,12 @@ function RampageService.IsActive(player: Player): boolean
 	return runs[player] ~= nil
 end
 
+-- Kaiju joué en ce moment (sa copie est dans la ville) : on ne le revend pas.
+function RampageService.PlayingUid(player: Player): string?
+	local run = runs[player]
+	return if run then run.Uid else nil
+end
+
 ----------------------------------------------------------------------------
 -- Récompenses en cours de partie
 ----------------------------------------------------------------------------
@@ -8032,7 +8226,7 @@ local function scoreHit(run: Run, value: number): (number, number, number)
 	local mult = Rampage.ComboMult(run.Combo)
 	local points = value * mult * run.District.RewardMult
 	local minCash = points * Rampage.MinCashPerPoint * run.District.Index
-	local cash = Registry.KaijuService.IncomeSeconds(run.Player, points, minCash)
+	local cash = Registry.KaijuService.IncomeSeconds(run.Player, points * Rampage.CashSecondsPerPoint, minCash)
 	run.Points += points
 	run.Cash += cash
 	return mult, cash, points
@@ -8543,6 +8737,9 @@ local function start(player: Player, payload: any): Router.Result
 	if (readyAt[player] or 0) > now then
 		return { ok = false, msg = ("The city is being rebuilt... %ds"):format(math.ceil(readyAt[player] - now)) }
 	end
+	if Registry.SiegeService.IsActive(player) then
+		return { ok = false, msg = "Defend your island first!" }
+	end
 	if Registry.StealService.IsCarrying(player) then
 		return { ok = false, msg = "Deliver the stolen kaiju first!" }
 	end
@@ -8664,10 +8861,16 @@ local function tryOpen(player: Player, plotIndex: number, explicit: boolean)
 		end
 		return
 	end
-	if runs[player] or (openDebounce[player] or 0) > os.clock() then
+	-- en marchant sur le portail : au plus une ouverture toutes les 25 s ;
+	-- en appuyant sur l'invite : toujours
+	if runs[player] or (not explicit and (openDebounce[player] or 0) > os.clock()) then
 		return
 	end
-	openDebounce[player] = os.clock() + 3
+	openDebounce[player] = os.clock() + 25
+	if Registry.SiegeService.IsActive(player) then
+		Notify.Toast(player, "Defend your island first!", "Bad")
+		return
+	end
 	if Registry.StealService.IsCarrying(player) then
 		Notify.Toast(player, "Deliver the stolen kaiju first!", "Bad")
 		return
@@ -8756,12 +8959,6 @@ function RampageService.Init()
 	for _, plot in Registry.PlotService.All() do
 		local pad = CityBuilder.BuildPortal(plot)
 		portals[plot.Index] = pad
-		pad.Touched:Connect(function(hit)
-			local player = Players:GetPlayerFromCharacter(hit.Parent)
-			if player then
-				tryOpen(player, plot.Index, false)
-			end
-		end)
 		local prompt = pad:FindFirstChild("RampagePrompt") :: ProximityPrompt
 		prompt.Triggered:Connect(function(player)
 			tryOpen(player, plot.Index, true)
@@ -8784,18 +8981,24 @@ function RampageService.Init()
 		local tick = 0
 		while true do
 			task.wait(0.1)
-			tick += 1
-			for player, run in runs do
-				local ok, err = pcall(stepRun, player, run)
-				if not ok then
-					warn("[RampageService] " .. tostring(err))
+			-- une erreur ne doit jamais arrêter la boucle pour tout le serveur
+			local ok, err = pcall(function()
+				tick += 1
+				for player, run in runs do
+					local ok, err = pcall(stepRun, player, run)
+					if not ok then
+						warn("[RampageService] " .. tostring(err))
+					end
 				end
-			end
-			if tick % 3 == 0 then
-				local ok, err = pcall(checkPortals)
-				if not ok then
-					warn("[RampageService] portails : " .. tostring(err))
+				if tick % 3 == 0 then
+					local ok, err = pcall(checkPortals)
+					if not ok then
+						warn("[RampageService] portails : " .. tostring(err))
+					end
 				end
+			end)
+			if not ok then
+				warn("[RampageService] boucle : " .. tostring(err))
 			end
 		end
 	end)
@@ -8845,6 +9048,7 @@ local Notify = require(script.Parent.Notify)
 local RewardService = {}
 
 local sessionStart: { [Player]: number } = {}
+local pendingSpins: { [Player]: { any } } = {} -- lots de la roue pas encore versés (animation)
 local playtimeClaimed: { [Player]: { [number]: boolean } } = {}
 
 ----------------------------------------------------------------------------
@@ -9141,30 +9345,24 @@ local function spin(player: Player, payload: any): Router.Result
 	local index = Roll.Weighted(weights)
 	local slot = Rewards.Wheel[index]
 	DataService.Replicate(player, "Spins", "FreeSpinAt")
-	-- La récompense arrive après l'animation de la roue
+	-- La récompense arrive après l'animation de la roue ; si le joueur part avant,
+	-- elle est quand même enregistrée (voir le vidage au départ).
+	pendingSpins[player] = pendingSpins[player] or {}
+	table.insert(pendingSpins[player], slot.Reward)
 	task.delay(4.2, function()
-		if player.Parent == Players then
-			local text = RewardService.Grant(player, slot.Reward, "Wheel")
-			Notify.Fx(player, "RewardClaimed", { Text = text, Source = "Wheel" })
-			if slot.Reward.Kind == "Egg" and (slot.Reward.Rarity == "Mythic" or slot.Reward.Rarity == "Celestial") then
-				Notify.Feed(("🎡 %s won a %s EGG on the wheel!"):format(player.DisplayName, string.upper(slot.Reward.Rarity or "")), "Rare")
-			end
+		local list = pendingSpins[player]
+		local i = list and table.find(list, slot.Reward)
+		if not i or player.Parent ~= Players then
+			return
+		end
+		table.remove(list, i)
+		local text = RewardService.Grant(player, slot.Reward, "Wheel")
+		Notify.Fx(player, "RewardClaimed", { Text = text, Source = "Wheel" })
+		if slot.Reward.Kind == "Egg" and (slot.Reward.Rarity == "Mythic" or slot.Reward.Rarity == "Celestial") then
+			Notify.Feed(("🎡 %s won a %s EGG on the wheel!"):format(player.DisplayName, string.upper(slot.Reward.Rarity or "")), "Rare")
 		end
 	end)
 	return { ok = true, index = index, source = source }
-end
-
-local function tutorial(player: Player, payload: any): Router.Result
-	local step = Router.Int(payload.Step, 0, 10)
-	local data = DataService.Get(player)
-	if not step or not data then
-		return { ok = false }
-	end
-	if step > data.Tutorial then
-		data.Tutorial = step
-		DataService.Replicate(player, "Tutorial")
-	end
-	return { ok = true }
 end
 
 local function saveSettings(player: Player, payload: any): Router.Result
@@ -9175,6 +9373,13 @@ local function saveSettings(player: Player, payload: any): Router.Result
 	for _, key in { "Music", "Sfx", "LowFx" } do
 		if type(payload[key]) == "boolean" then
 			data.Settings[key] = payload[key]
+		end
+	end
+	-- volumes 0..1 par pas de 0.2 (barres des réglages)
+	for _, key in { "MusicVolume", "SfxVolume" } do
+		local v = payload[key]
+		if type(v) == "number" and v == v then
+			data.Settings[key] = math.clamp(math.floor(v * 5 + 0.5) / 5, 0, 1)
 		end
 	end
 	DataService.Replicate(player, "Settings")
@@ -9189,7 +9394,6 @@ function RewardService.Init()
 	Router.On("Redeem", redeem, 1)
 	Router.On("ClaimGroup", claimGroup, 1)
 	Router.On("Spin", spin, 1)
-	Router.On("Tutorial", tutorial, 4)
 	Router.On("Settings", saveSettings, 2)
 
 	DataService.Loaded:Connect(function(player, data)
@@ -9207,6 +9411,26 @@ function RewardService.Init()
 				Registry.KaijuService.SetInGroup(player, true)
 			end
 		end)
+	end)
+
+	-- Lots de la roue gagnés juste avant de partir : versés dans la sauvegarde
+	DataService.Releasing:Connect(function(player, data)
+		local list = pendingSpins[player]
+		pendingSpins[player] = nil
+		for _, reward in list or {} do
+			if reward.Kind == "Egg" then
+				table.insert(data.PendingEggs, reward.Rarity or "Common")
+			elseif reward.Kind == "Gems" then
+				data.Gems += reward.Amount or 0
+			elseif reward.Kind == "Spins" then
+				data.Spins += reward.Amount or 1
+			elseif reward.Kind == "Potion" then
+				local id = reward.Id or "Luck"
+				data.Potions[id] = (data.Potions[id] or 0) + (reward.Amount or 1)
+			elseif reward.Kind == "Cash" then
+				data.Cash += reward.MinCash or reward.Amount or 0
+			end
+		end
 	end)
 
 	Players.PlayerRemoving:Connect(function(player)
@@ -9403,6 +9627,16 @@ local function onPassGranted(player: Player, key: string)
 	Notify.Fx(player, "PassUnlocked", { Key = key, Name = pass and pass.Name or key })
 	Registry.KaijuService.RefreshPlayer(player)
 	Registry.StealService.RefreshSpeed(player)
+end
+
+-- Attend que la liste des pass du joueur soit connue (appels web lents ou en échec).
+-- Renvoie vrai si elle est connue avant la limite de temps.
+function ShopService.WaitForOwnership(player: Player, timeout: number?): boolean
+	local deadline = os.clock() + (timeout or 20)
+	while owned[player] == nil and player.Parent ~= nil and os.clock() < deadline do
+		task.wait(0.1)
+	end
+	return owned[player] ~= nil
 end
 
 local function loadOwnership(player: Player)
@@ -9751,6 +9985,7 @@ type Invader = {
 	Bag: number,
 	Leaked: boolean,
 	Killer: Player?,
+	TowerProof: boolean?, -- ignoré par les tours (vague d'entraînement : à bonker)
 }
 
 type Wave = {
@@ -9949,6 +10184,10 @@ local function spawnInvader(state: State, wave: Wave, spec: any, t: number, d0: 
 	part:SetAttribute("MaxHP", hp)
 	part:SetAttribute("HP", hp)
 	part:SetAttribute("Bag", 0)
+	if spec.TowerProof then
+		part:SetAttribute("TowerProof", true)
+		part:SetAttribute("Scale", Siege.Tutorial.ToughScale)
+	end
 	local inv: Invader = {
 		Id = id,
 		Type = def.Id,
@@ -9966,6 +10205,7 @@ local function spawnInvader(state: State, wave: Wave, spec: any, t: number, d0: 
 		Bag = 0,
 		Leaked = false,
 		Killer = nil,
+		TowerProof = spec.TowerProof == true,
 	}
 	setMotion(inv, t, d0 or 0, 1, speed, pathName)
 	part.Parent = state.Folder
@@ -10196,7 +10436,7 @@ local function fireTowers(state: State, wave: Wave, t: number, cache: { [Invader
 		if t >= ready then
 			local best, bestScore = nil, -math.huge
 			for inv, c in cache do
-				if inv.HP > 0 and flat(tower.Pos, c.Pos) <= tower.Range then
+				if inv.HP > 0 and not inv.TowerProof and flat(tower.Pos, c.Pos) <= tower.Range then
 					local score = priority(inv, c.D)
 					if score > bestScore then
 						best, bestScore = inv, score
@@ -10210,7 +10450,7 @@ local function fireTowers(state: State, wave: Wave, t: number, cache: { [Invader
 				if tower.Splash then
 					local center = cache[best].Pos
 					for other, c in cache do
-						if other ~= best and other.HP > 0 and flat(center, c.Pos) <= Siege.SplashRadius + other.Radius then
+						if other ~= best and other.HP > 0 and not other.TowerProof and flat(center, c.Pos) <= Siege.SplashRadius + other.Radius then
 							local splash = tower.Damage * Siege.SplashFactor
 							damage(other, splash, nil)
 							table.insert(shots, { I = other.Id, D = splash, S = true })
@@ -10242,6 +10482,7 @@ local function startWave(state: State, bonus: boolean, tutorial: boolean): boole
 		for _ = 1, Siege.Tutorial.Count do
 			table.insert(queue, { Type = "Grunt", HP = Siege.Tutorial.HP, Speed = Siege.Tutorial.Speed, Path = "Tutorial" })
 		end
+		table.insert(queue, { Type = "Tank", HP = Siege.Tutorial.ToughHP, Speed = Siege.Tutorial.Speed, Path = "Tutorial", TowerProof = true })
 	else
 		for _, id in Siege.Composition(number) do
 			table.insert(queue, { Type = id })
@@ -10538,7 +10779,7 @@ function SiegeService.DamageNearest(player: Player, position: Vector3, radius: n
 			local best, bestDist = nil, math.huge
 			for _, inv in wave.Invaders do
 				local dist = flat(here, (localPos(inv, t)))
-				if inv.HP > 0 and dist <= radius + inv.Radius and dist < bestDist then
+				if inv.HP > 0 and not inv.TowerProof and dist <= radius + inv.Radius and dist < bestDist then
 					best, bestDist = inv, dist
 				end
 			end
@@ -10646,24 +10887,30 @@ function SiegeService.Init()
 	task.spawn(function()
 		while true do
 			task.wait(Siege.Tick)
-			local t = now()
-			for player, state in states do
-				local ok, err = pcall(function()
-					if player.Parent ~= Players then
-						cleanup(player)
-					elseif state.Wave then
-						stepWave(state, state.Wave, t)
-					else
-						stepCountdown(state, t)
+			-- une erreur ne doit jamais arrêter la boucle pour tout le serveur
+			local ok, err = pcall(function()
+				local t = now()
+				for player, state in states do
+					local ok, err = pcall(function()
+						if player.Parent ~= Players then
+							cleanup(player)
+						elseif state.Wave then
+							stepWave(state, state.Wave, t)
+						else
+							stepCountdown(state, t)
+						end
+					end)
+					if not ok then
+						warn("[SiegeService] " .. tostring(err))
 					end
-				end)
-				if not ok then
-					warn("[SiegeService] " .. tostring(err))
 				end
-			end
-			local ok, err = pcall(stepOrbs, t)
+				local ok, err = pcall(stepOrbs, t)
+				if not ok then
+					warn("[SiegeService] orbes : " .. tostring(err))
+				end
+			end)
 			if not ok then
-				warn("[SiegeService] orbes : " .. tostring(err))
+				warn("[SiegeService] boucle : " .. tostring(err))
 			end
 		end
 	end)
@@ -10690,6 +10937,7 @@ local Kaijus = require(Shared.Config.Kaijus)
 local Rarities = require(Shared.Config.Rarities)
 local Growth = require(Shared.Config.Growth)
 local Economy = require(Shared.Config.Economy)
+local Levels = require(Shared.Config.Levels)
 local Layout = require(Shared.Config.Layout)
 local Theme = require(Shared.Config.Theme)
 local Calc = require(Shared.Logic.Calc)
@@ -10796,6 +11044,7 @@ local function endCarry(uid: string, reason: string, by: Player?)
 			if reason == "Dropped" and by == carry.Victim then
 				Notify.Toast(carry.Victim, "You saved your kaiju! 💪", "Good")
 				Registry.RewardService.Track(carry.Victim, "Saves", 1)
+				Registry.LevelService.AddXp(carry.Victim, Levels.Xp.Save, "Save")
 			else
 				Notify.Toast(carry.Victim, "Your kaiju came back home!", "Good")
 			end
@@ -10937,6 +11186,7 @@ local function deliver(carry: Carry)
 	Notify.Fx(lead, "HeistSuccess", { Uid = moved.Uid, Species = speciesId, Mutation = moved.Mutation, Stage = Calc.Stage(moved) })
 	Notify.Fx(victim, "Robbed", { Thief = lead.DisplayName, Species = speciesId })
 	Registry.RewardService.Track(lead, "Steals", 1)
+	Registry.LevelService.AddXp(lead, Levels.Xp.Steal, "Steal")
 	Registry.RewardService.Track(victim, "Stolen", 1)
 	Registry.TutorialService.Notify(lead, "Steal")
 	if carry.Helper and carry.Helper.Parent == Players then
@@ -10944,6 +11194,7 @@ local function deliver(carry: Carry)
 		DataService.AddCash(carry.Helper, cut)
 		Notify.Fx(carry.Helper, "HeistCut", { Amount = cut, Leader = lead.DisplayName })
 		Registry.RewardService.Track(carry.Helper, "Steals", 1)
+		Registry.LevelService.AddXp(carry.Helper, Levels.Xp.Steal, "Steal")
 	end
 	local who = if carry.Helper then ("%s & %s"):format(lead.DisplayName, carry.Helper.DisplayName) else lead.DisplayName
 	Notify.Feed(("🦹 %s stole %s's %s %s!"):format(who, victim.DisplayName, stageName, if species then species.Name else "kaiju"), "Heist", rarity.Color)
@@ -11219,6 +11470,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Tutorial = require(Shared.Config.Tutorial)
 local Levels = require(Shared.Config.Levels)
+local Layout = require(Shared.Config.Layout)
 
 local Registry = require(script.Parent.Registry)
 local DataService = require(script.Parent.DataService)
@@ -11252,6 +11504,16 @@ function TutorialService.IsDone(player: Player): boolean
 	return step(player) >= Tutorial.Done
 end
 
+-- Joueur en tutoriel ou qui vient de le finir (5 min de calme : pas d'événement mondial).
+local doneAt: { [Player]: number } = {}
+function TutorialService.InGracePeriod(player: Player): boolean
+	if step(player) < Tutorial.Done then
+		return DataService.Get(player) ~= nil
+	end
+	local t = doneAt[player]
+	return t ~= nil and os.clock() - t < 300
+end
+
 local function firstHatched(player: Player): boolean
 	local data = DataService.Get(player)
 	if not data then
@@ -11274,7 +11536,19 @@ local function startStep(player: Player, s: number)
 		return
 	end
 	if mission.Target == "Siege" then
-		task.delay(4, function()
+		task.spawn(function()
+			-- la vague d'entraînement ne commence que quand le joueur est rentré sur son île
+			local deadline = os.clock() + 120
+			while player.Parent == Players and step(player) == s and os.clock() < deadline do
+				local plot = Registry.PlotService.Get(player)
+				local character = player.Character
+				local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+				if plot and root and Layout.InPlot(plot.CFrame, root.Position, 4) then
+					break
+				end
+				task.wait(0.5)
+			end
+			task.wait(2)
 			if player.Parent == Players and step(player) == s then
 				local siege = Registry.SiegeService
 				if siege.StartTutorialWave then
@@ -11314,6 +11588,7 @@ function advance(player: Player)
 	Notify.Fx(player, "MissionComplete", { Step = current, Reward = mission.Reward, Unlock = mission.UnlockMenus })
 	Registry.LevelService.AddXp(player, Levels.Xp.Mission, "Mission")
 	if data.Tutorial >= Tutorial.Done then
+		doneAt[player] = os.clock()
 		Notify.Fx(player, "TutorialDone", {})
 	else
 		startStep(player, data.Tutorial)
@@ -11333,6 +11608,9 @@ function TutorialService.Notify(player: Player, event: string)
 end
 
 function TutorialService.Init()
+	Players.PlayerRemoving:Connect(function(player)
+		doneAt[player] = nil
+	end)
 	DataService.Loaded:Connect(function(player, data)
 		task.delay(3, function()
 			if player.Parent ~= Players then
@@ -11414,9 +11692,13 @@ function WorldService.IsUnlocked(player: Player, id: string): boolean
 end
 
 -- Un joueur peut-il se téléporter ? (pas pendant un vol ni une partie de Rampage)
-local function canTeleport(player: Player): (boolean, string?)
+local function canTeleport(player: Player, leavingHome: boolean?): (boolean, string?)
 	if Registry.StealService.IsCarrying(player) then
 		return false, "Drop the kaiju first!"
+	end
+	-- une vague en cours : on défend son île avant de partir (sinon le réacteur est pillé)
+	if leavingHome and Registry.SiegeService.IsActive(player) then
+		return false, "Defend your island first!"
 	end
 	local rampage = Registry.RampageService
 	if rampage and rampage.IsActive and rampage.IsActive(player) then
@@ -11444,7 +11726,7 @@ function WorldService.TravelTo(player: Player, id: string): (boolean, string?)
 	if not WorldService.IsUnlocked(player, id) then
 		return false, "Unlock this world first!"
 	end
-	local ok, msg = canTeleport(player)
+	local ok, msg = canTeleport(player, true)
 	if not ok then
 		return false, msg
 	end
@@ -11491,7 +11773,6 @@ local function unlock(player: Player, payload: any): Router.Result
 	DataService.Replicate(player, "Worlds", "Stats")
 	Registry.LevelService.AddXp(player, Levels.Xp.WorldUnlock * world.Order, "World")
 	Notify.Fx(player, "WorldUnlocked", { World = world.Id })
-	Notify.FeedExcept(player, ("🌍 %s opened %s!"):format(player.DisplayName, string.upper(world.Name)), "Info", world.Palette.Glow)
 	return { ok = true }
 end
 
@@ -11563,12 +11844,18 @@ function WorldService.Init()
 	task.spawn(function()
 		while true do
 			task.wait(0.5)
-			for _, player in Players:GetPlayers() do
-				local root = rootOf(player)
-				if root then
-					local at = Worlds.At(root.Position)
-					setWhere(player, at or (if Vector3.new(root.Position.X, 0, root.Position.Z).Magnitude < 130 then Worlds.Default else "Island"))
+			-- une erreur ne doit jamais arrêter la boucle pour tout le serveur
+			local ok, err = pcall(function()
+				for _, player in Players:GetPlayers() do
+					local root = rootOf(player)
+					if root then
+						local at = Worlds.At(root.Position)
+						setWhere(player, at or (if Vector3.new(root.Position.X, 0, root.Position.Z).Magnitude < 130 then Worlds.Default else "Island"))
+					end
 				end
+			end)
+			if not ok then
+				warn("[WorldService] boucle : " .. tostring(err))
 			end
 		end
 	end)
@@ -15206,7 +15493,7 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 		rail(Vector3.new(x0, 0, z1), Vector3.new(x1, 0, z1))
 		rail(Vector3.new(x0, 0, z0), Vector3.new(x0, 0, z1))
 		rail(Vector3.new(x1, 0, z0), Vector3.new(x1, 0, z1))
-		floatingSign(model, at(0, 8, z1 + 2), "🪺 NEST YARD — your kaijus grow here", color, 380, 34, 120)
+		floatingSign(model, at(0, 8, z1 + 2), "🪺 NEST YARD — your kaijus grow here", color, 380, 34, 120):SetAttribute("Hint", true) -- panneau d'aide : masqué côté client après le tutoriel
 	end
 
 	-- Nids
@@ -15299,7 +15586,7 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 	sub.Text = "STEP ON THE PAD TO COLLECT"
 	sub.Parent = gui
 
-	floatingSign(model, reactorBase * CFrame.new(0, 6, -4), "⬇ STEP HERE TO COLLECT", Theme.Colors.Cash, 300, 34, 90)
+	floatingSign(model, reactorBase * CFrame.new(0, 6, -4), "⬇ STEP HERE TO COLLECT", Theme.Colors.Cash, 300, 34, 90):SetAttribute("Hint", true) -- panneau d'aide : masqué côté client après le tutoriel
 
 	-- Bouton de verrouillage (gros bouton rouge)
 	local lockCf = at(Layout.LockButton.X, 0, Layout.LockButton.Z)
@@ -15336,7 +15623,7 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 		}, model)
 	end
 
-	floatingSign(model, lockCf * CFrame.new(0, 6, 0), "🛡️ LOCK BASE", Theme.Colors.Red, 220, 34, 90)
+	floatingSign(model, lockCf * CFrame.new(0, 6, 0), "🛡️ LOCK BASE", Theme.Colors.Red, 220, 34, 90):SetAttribute("Hint", true) -- panneau d'aide : masqué côté client après le tutoriel
 
 	-- Plateforme du météore personnel
 	local personal = cylinder(at(Layout.PersonalPad.X, 0.5, Layout.PersonalPad.Z), 1, 12, {
@@ -15351,7 +15638,7 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 		CanCollide = false,
 	}, model)
 	pring.Transparency = 0.3
-	floatingSign(model, at(Layout.PersonalPad.X, 6, Layout.PersonalPad.Z), "☄️ YOUR PERSONAL METEOR LANDS HERE", Theme.Colors.Cyan, 320, 30, 90)
+	floatingSign(model, at(Layout.PersonalPad.X, 6, Layout.PersonalPad.Z), "☄️ YOUR PERSONAL METEOR LANDS HERE", Theme.Colors.Cyan, 320, 30, 90):SetAttribute("Hint", true) -- panneau d'aide : masqué côté client après le tutoriel
 
 	-- Panneau du propriétaire
 	local signPart = part({ Name = "SignAnchor", Size = Vector3.new(1, 1, 1), CFrame = at(0, 18, -D / 2 + 1.6), Transparency = 1, CanCollide = false }, model)
@@ -15361,6 +15648,7 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 	sign.MaxDistance = 400
 	sign.LightInfluence = 0
 	sign.AlwaysOnTop = false
+	sign.Enabled = false -- allumé quand quelqu'un prend l'île
 	sign.Parent = signPart
 	local signLabel = Instance.new("TextLabel")
 	signLabel.Name = "Title"
@@ -16107,6 +16395,11 @@ local State = require(script.Parent.State)
 
 local Audio = {}
 
+-- Volumes de base (les barres des réglages multiplient ces valeurs) : les effets
+-- sont volontairement discrets pour ne pas couvrir la musique ni fatiguer.
+Audio.SfxBase = 0.7
+Audio.MusicBase = 0.8
+
 local sfxGroup = Instance.new("SoundGroup")
 sfxGroup.Name = "SFX"
 sfxGroup.Volume = 1
@@ -16158,7 +16451,7 @@ function Audio.Play(key: string, options: { [string]: any }?): Sound?
 	if not t then
 		return nil
 	end
-	local cooldown = opts.Cooldown or 0.03
+	local cooldown = opts.Cooldown or 0.06 -- évite l'empilement du même son
 	local now = os.clock()
 	if (lastPlayed[key] or 0) + cooldown > now then
 		return nil
@@ -16246,8 +16539,10 @@ function Audio.Init()
 		if not settings then
 			return
 		end
-		sfxGroup.Volume = if settings.Sfx then 1 else 0
-		musicGroup.Volume = if settings.Music then 1 else 0
+		local sfx = if settings.Sfx == false then 0 else (settings.SfxVolume or 0.6)
+		local music = if settings.Music == false then 0 else (settings.MusicVolume or 0.6)
+		sfxGroup.Volume = sfx * Audio.SfxBase
+		musicGroup.Volume = music * Audio.MusicBase
 	end)
 	-- Pré-chargement léger des sons les plus fréquents
 	task.defer(function()
@@ -16547,7 +16842,7 @@ return State
 local UIRegistry = {
 	Screens = {},
 	Toast = function(_text: string, _kind: string?) end,
-	Announce = function(_text: string, _color: Color3?, _subtitle: string?, _sound: string?) end,
+	Announce = function(_text: string, _color: Color3?, _subtitle: string?, _sound: string?, _priority: boolean?) end,
 	OpenKaiju = function(_uid: string) end,
 	ShowOdds = function(_title: string, _rows: { { Label: string, Chance: number, Color: Color3? } }) end,
 	OpenWorld = function(_id: string?) end,
@@ -16653,6 +16948,7 @@ local Rarities = require(Shared.Config.Rarities)
 local Mutations = require(Shared.Config.Mutations)
 local Growth = require(Shared.Config.Growth)
 local Format = require(Shared.Logic.Format)
+local TutorialConfig = require(Shared.Config.Tutorial)
 
 local Kit = require(script.Parent.Kit)
 local Viewport = require(script.Parent.Viewport)
@@ -16661,6 +16957,7 @@ local Audio = require(Controllers.Audio)
 local FxBus = require(Controllers.FxBus)
 local CameraFx = require(Controllers.CameraFx)
 local UIRegistry = require(Controllers.UIRegistry)
+local State = require(Controllers.State)
 
 local C = Kit.Colors
 local F = Kit.Fonts
@@ -17021,10 +17318,19 @@ function Cinematics.Init()
 	layer.Enabled = false
 	smallLayer = Kit.Layer("RewardCards", 35)
 
+	-- La grande cinématique est réservée aux moments forts (premier kaiju, Epic et
+	-- plus, mutation) : les éclosions ordinaires se voient dans le monde, sans
+	-- couvrir l'écran (moins de choses à l'écran, surtout sur téléphone).
+	local hatchedThisSession = 0
 	FxBus.On("Hatch", function(args)
-		enqueue(function()
-			hatchReveal(args)
-		end)
+		hatchedThisSession += 1
+		local rarity = Rarities.Get(args.Rarity or "Common")
+		local first = hatchedThisSession == 1 and (State.Get("Tutorial") or 0) <= 1
+		if first or rarity.Order >= 3 or (args.Mutation and args.Mutation ~= "") then
+			enqueue(function()
+				hatchReveal(args)
+			end)
+		end
 	end)
 	FxBus.On("Fused", function(args)
 		-- la fenêtre Fusion joue sa propre animation ; carte de rappel
@@ -17066,15 +17372,40 @@ function Cinematics.Init()
 		end
 		local mutation = Mutations.Get(args.Mutation)
 		if args.NewSpecies then
+			-- pendant le tutoriel, la cinématique suffit (évite l'empilement)
+			if (State.Get("Tutorial") or 0) < TutorialConfig.Done then
+				return
+			end
 			Audio.Play("quest_complete")
-			rewardCard("📖", "NEW KAIJU DISCOVERED!", species.Name .. " — +1% cash forever", Rarities.Get(species.Rarity).Color)
+			rewardCard("📖", "NEW KAIJU!", species.Name .. " — +1% cash forever", Rarities.Get(species.Rarity).Color)
 		elseif mutation then
 			rewardCard("✨", "NEW MUTATION!", mutation.Name .. " " .. species.Name, mutation.Color)
 		end
 	end)
+	local SOURCES = {
+		LevelUp = "Level-up gift",
+		Meteor = "Meteor",
+		Siege = "Alpha reward",
+		Evolution = "Evolution gift",
+		Raid = "Raid reward",
+		["Raid MVP"] = "Raid MVP",
+		Wheel = "Lucky spin",
+		Rampage = "Golden building",
+		Dig = "Buddy treasure",
+		Quest = "Quest reward",
+		["Daily Quests"] = "Daily quests",
+		Daily = "Daily reward",
+		Playtime = "Play gift",
+		Code = "Code",
+		Shop = "Shop",
+	}
 	FxBus.On("EggGift", function(args)
 		local rarity = Rarities.Get(args.Rarity or "Common")
-		rewardCard("🥚", rarity.Name:upper() .. " EGG!", (args.Source or "Gift") .. " — placed in your nest", rarity.Color)
+		-- les œufs de niveau sont déjà annoncés dans la bannière « LEVEL X! »
+		if args.Source == "LevelUp" then
+			return
+		end
+		rewardCard("🥚", rarity.Name:upper() .. " EGG!", (SOURCES[args.Source or ""] or args.Source or "Gift") .. " — placed in your nest", rarity.Color)
 	end)
 	FxBus.On("BossReward", function(args)
 		rewardCard("👹", ("+%d 💎"):format(args.Gems or 0), if args.Top then "MVP of the raid!" else "Raid reward", C.Pink)
@@ -17084,8 +17415,13 @@ function Cinematics.Init()
 		UIRegistry.Toast("Quest complete: " .. (args.Text or ""), "Good")
 	end)
 	FxBus.On("DailyReady", function()
-		task.delay(4, function()
-			UIRegistry.Toast("Your daily reward is ready! 📅", "Good")
+		-- pas avant que le bouton REWARDS existe (fin du tutoriel)
+		task.spawn(function()
+			while (State.Get("Tutorial") or 0) < TutorialConfig.Done do
+				task.wait(2)
+			end
+			task.wait(20)
+			UIRegistry.Toast("Your daily reward is ready in REWARDS! 📅", "Good")
 		end)
 	end)
 	FxBus.On("NestUnlocked", function(args)
@@ -17095,9 +17431,10 @@ function Cinematics.Init()
 	FxBus.On("PersonalMeteor", function(args)
 		local rarity = Rarities.Get(args.Rarity or "Common")
 		if args.Golden then
-			UIRegistry.Announce("🌟 GOLDEN METEOR!", C.Gold, ("A %s egg at HALF PRICE is landing on your island!"):format(string.upper(rarity.Name)), "meteor_rare_alarm")
-		else
-			UIRegistry.Toast(("☄️ A %s meteor is landing on YOUR island!"):format(rarity.Name), if rarity.Order >= 4 then "Rare" else "Info")
+			UIRegistry.Announce("🌟 GOLDEN METEOR!", C.Gold, ("%s %s egg at HALF PRICE is landing on your island!"):format(if string.find("AEIOU", string.sub(rarity.Name, 1, 1), 1, true) then "An" else "A", string.upper(rarity.Name)), "meteor_rare_alarm")
+		elseif rarity.Order >= 2 then
+			-- les météores perso Common tombent sans message (le faisceau suffit)
+			UIRegistry.Toast(("☄️ %s %s meteor is landing on YOUR island!"):format(if string.find("AEIOU", string.sub(rarity.Name, 1, 1), 1, true) then "An" else "A", rarity.Name), if rarity.Order >= 4 then "Rare" else "Info")
 		end
 	end)
 	FxBus.On("HelperJoined", function(args)
@@ -17306,13 +17643,26 @@ local function buildCurrencies()
 		local step = State.Get("Tutorial") or 0
 		local left = if at then at - now() else math.huge
 		-- n'apparaît qu'à l'approche du rendez-vous (moins de place prise à l'écran)
-		goldenChip.Visible = at ~= nil and step >= TutorialConfig.Done and left <= 90
+		goldenChip.Visible = at ~= nil and step >= TutorialConfig.Done and left <= 30
 		if at then
 			goldenText.Text = if left > 1 then "🌟 Golden meteor in " .. Format.Clock(left) else "🌟 GOLDEN METEOR INCOMING!"
 		end
 	end)
+	-- les puces visibles s'empilent sans trou sous le cash
+	local function stackChips()
+		local y = 80
+		for _, c in { storedChip, meteorChip, goldenChip } do
+			if c.Visible then
+				c.Position = UDim2.fromOffset(64, y)
+				y += c.Size.Y.Offset + 6
+			end
+		end
+	end
+	RunService.Heartbeat:Connect(stackChips)
 	local lastBest = ""
 	RunService.Heartbeat:Connect(function()
+		local step = State.Get("Tutorial") or 0
+		local meteorMission = step == 3
 		local folder = Workspace:FindFirstChild("Meteors")
 		local best, bestOrder = nil, 0
 		-- œufs du monde où l'on se trouve (le cratère quand on est sur son île)
@@ -17329,6 +17679,8 @@ local function buildCurrencies()
 				end
 			end
 		end
+		-- hors mission météore, la puce ne parle que des beaux œufs (Epic et plus)
+		meteorChip.Visible = meteorMission or (step >= TutorialConfig.Done and best ~= nil and bestOrder >= 3)
 		if best then
 			local rarity = Rarities.Get(best:GetAttribute("Rarity") or "Common")
 			local left = (best:GetAttribute("ExpireAt") or 0) - now()
@@ -17363,11 +17715,14 @@ local function buildCurrencies()
 	State.Observe("Income", function(value)
 		local mult = State.Get("Multiplier") or 1
 		local multText = if mult < 10 then (("%.2f"):format(mult):gsub("0+$", ""):gsub("%.$", "")) else Format.Short(mult)
-		incomeLabel.Text = ("+%s/s"):format(Format.Cash(value)) .. (if mult > 1.001 then ("  <font color=\"#FFC828\">x%s</font>"):format(multText) else "")
+		-- le multiplicateur n'est affiché que s'il compte vraiment (x1.5 et plus)
+		incomeLabel.Text = ("+%s/s"):format(Format.Cash(value)) .. (if mult >= 1.5 then ("  <font color=\"#FFC828\">x%s</font>"):format(multText) else "")
 	end)
 	State.Observe("Stored", function(value)
 		local auto = (State.Get("Passes") or {}).AutoCollect
-		storedChip.Visible = value >= 1 and not auto
+		-- seulement quand ça vaut le détour (≈ 20 s de revenu), ou pendant la mission « collecte »
+		local income = State.Get("Income") or 0
+		storedChip.Visible = not auto and value >= 1 and (value >= income * 20 or (State.Get("Tutorial") or 0) == 2)
 		local text = storedChip:FindFirstChild("Text") :: TextLabel
 		text.Text = ("⚛️ %s in reactor"):format(Format.Cash(value))
 	end)
@@ -17405,7 +17760,7 @@ function Hud.FlyCoins(icon: string, count: number, from: Vector2?)
 				if a >= 1 then
 					conn:Disconnect()
 					coin:Destroy()
-					Audio.Play("coin_tick", { Cooldown = 0.02, Volume = 0.5 })
+					Audio.Play("coin_tick", { Cooldown = 0.09, Volume = 0.4 })
 					Kit.Punch(cashPanel, 0.05)
 				end
 			end)
@@ -17461,7 +17816,10 @@ function Hud.LeftColumn(): Frame
 	return column
 end
 
--- Le prochain objectif du joueur : un monde à ouvrir, sinon le prochain déblocage de niveau.
+-- Le prochain objectif du joueur, toujours quelque chose de faisable :
+-- 1. un monde prêt à ouvrir (ou le cash qui manque pour son péage),
+-- 2. l'Évolution quand elle est débloquée (cash qui manque), surtout si un monde l'attend,
+-- 3. l'XP qui manque pour le prochain déblocage de niveau.
 local function nextGoal(): (string, number?, string?)
 	local level = State.Get("Level") or 1
 	local rebirths = State.Get("Rebirths") or 0
@@ -17472,14 +17830,32 @@ local function nextGoal(): (string, number?, string?)
 			if cash >= w.Toll then
 				return ("🌍 %s is ready! TAP TO UNLOCK"):format(string.upper(w.Name)), 1, w.Id
 			end
-			return ("🌍 Save %s for %s"):format(Format.Cash(w.Toll), string.upper(w.Name)), cash / math.max(1, w.Toll), w.Id
+			return ("🌍 %s: %s / %s"):format(string.upper(w.Name), Format.Cash(cash), Format.Cash(w.Toll)), cash / math.max(1, w.Toll), w.Id
 		end
+	end
+	local nextR = Economy.Rebirths[rebirths + 1]
+	if nextR and level >= (Levels.MenuLevels.Rebirth or 1) then
+		-- un monde qui attend une Évolution ?
+		local waiting = nil
+		for _, w in Worlds.List do
+			if not unlocked[w.Id] and level >= w.Level and rebirths < w.Rebirths then
+				waiting = w
+				break
+			end
+		end
+		if cash >= nextR.Cost then
+			return "🧬 You can EVOLVE! Open EVOLVE", 1, nil
+		end
+		local label = if waiting then ("🧬 Evolve to open %s"):format(string.upper(waiting.Name)) else "🧬 EVOLVE"
+		return ("%s: %s / %s"):format(label, Format.Cash(cash), Format.Cash(nextR.Cost)), cash / nextR.Cost, nil
 	end
 	local u = Levels.NextUnlock(level)
 	if u then
-		return ("⭐ LV %d unlocks %s"):format(u.Level, u.Text), nil, if u.Kind == "World" then u.Id else nil
+		local xp = State.Get("Xp") or 0
+		local missing = math.max(0, Levels.TotalFor(u.Level) - xp)
+		return ("⭐ %s XP to LV %d: %s"):format(Format.Short(missing), u.Level, u.Text), nil, if u.Kind == "World" then u.Id else nil
 	end
-	return "⭐ Max unlocks reached — chase the Kaijudex!", nil, nil
+	return "⭐ Collect every kaiju in the KAIJUDEX!", nil, nil
 end
 
 local function buildLevel()
@@ -17560,7 +17936,12 @@ local function buildLevel()
 	local goalWorld: string? = nil
 	goalButton.Activated:Connect(function()
 		Audio.Play("ui_click")
-		local screen = (UIRegistry.Screens :: any).Worlds
+		local screens = UIRegistry.Screens :: any
+		if string.find(goalText.Text, "EVOLVE", 1, true) and screens.Rebirth then
+			screens.Rebirth.Open()
+			return
+		end
+		local screen = screens.Worlds
 		if screen and screen.Open and (State.Get("Level") or 1) >= (Levels.MenuLevels.Worlds or 1) then
 			screen.Open(goalWorld)
 		end
@@ -17619,21 +18000,41 @@ local function floatXp(amount: number)
 	end)
 end
 
+-- Plusieurs niveaux d'un coup = une seule bannière (le dernier niveau et tout ce
+-- qu'il débloque). Pendant le tutoriel : un simple toast, la carte de mission reste lisible.
+local pendingLevel: { Level: number, Gems: number, Eggs: { string }, Unlocks: { string } }? = nil
 local function levelUp(args)
-	local lines = {}
-	for _, u in args.Unlocks or {} do
-		table.insert(lines, u.Text)
+	local p = pendingLevel
+	if not p then
+		p = { Level = 0, Gems = 0, Eggs = {}, Unlocks = {} }
+		pendingLevel = p
+		task.delay(1.2, function()
+			pendingLevel = nil
+			local sub = ("+%d 💎"):format(p.Gems)
+			for _, egg in p.Eggs do
+				sub ..= "  •  " .. string.upper(egg) .. " EGG"
+			end
+			if #p.Unlocks > 0 then
+				sub = "UNLOCKED: " .. table.concat(p.Unlocks, " • ") .. "   " .. sub
+			end
+			if (State.Get("Tutorial") or 0) < TutorialConfig.Done then
+				UIRegistry.Toast(("⭐ LEVEL %d!  %s"):format(p.Level, sub), "Good")
+				Audio.Play("level_jingle")
+			else
+				UIRegistry.Announce(("LEVEL %d!"):format(p.Level), C.Gold, sub, "level_jingle")
+				CameraFx.FovPunch(-6, 0.5)
+			end
+			Hud.FlyCoins("💎", 8)
+		end)
 	end
-	local sub = ("+%d 💎"):format(args.Gems or 0)
+	p.Level = math.max(p.Level, args.Level or 1)
+	p.Gems += args.Gems or 0
 	if args.Egg then
-		sub ..= "  •  " .. string.upper(args.Egg) .. " EGG"
+		table.insert(p.Eggs, args.Egg)
 	end
-	if #lines > 0 then
-		sub = "UNLOCKED: " .. table.concat(lines, " • ") .. "   " .. sub
+	for _, u in args.Unlocks or {} do
+		table.insert(p.Unlocks, u.Text)
 	end
-	UIRegistry.Announce(("LEVEL %d!"):format(args.Level or 1), C.Gold, sub, "level_jingle")
-	CameraFx.FovPunch(-6, 0.5)
-	Hud.FlyCoins("💎", 10)
 end
 
 ----------------------------------------------------------------------------
@@ -17701,7 +18102,6 @@ local function buildMenus()
 		Kit.Padding(4, 8),
 	})
 	menuButton(left, { Id = "Shop", Text = "SHOP", Icon = "shop", Color = "Magma", Order = 1, Rotation = -3, OnClick = function() openScreen("Shop") end })
-	menuButton(left, { Id = "Upgrades", Text = "UPGRADES", Icon = "upgrades", Color = "Pink", Order = 2, Rotation = 3, OnClick = function() openScreen("Shop", "Upgrades") end })
 	menuButton(left, { Id = "Worlds", Text = "WORLDS", Icon = "worlds", Color = "Cyan", Order = 3, Rotation = 2, OnClick = function() openScreen("Worlds") end })
 	menuButton(left, { Id = "Index", Text = "KAIJUDEX", Icon = "kaijudex", Color = "Gold", Order = 4, Rotation = -2, OnClick = function() openScreen("Index") end })
 	menuButton(left, { Id = "Fusion", Text = "FUSION", Icon = "fusion", Color = "Purple", Order = 5, Rotation = -3, OnClick = function() openScreen("Fusion") end })
@@ -17905,21 +18305,17 @@ local function buildBottom()
 		local boosts = State.Get("Boosts") or {}
 		local unix = os.time()
 		if (boosts.Luck or 0) > unix then
-			chip("Luck", "🍀 x2 LUCK " .. Format.Clock(boosts.Luck - unix), C.RadioactiveDark)
+			chip("Luck", "🍀 x2 " .. Format.Clock(boosts.Luck - unix), C.RadioactiveDark)
 		end
 		if (boosts.Growth or 0) > unix then
-			chip("Growth", "🌱 x2 GROWTH " .. Format.Clock(boosts.Growth - unix), Color3.fromRGB(90, 150, 40))
+			chip("Growth", "🌱 x2 " .. Format.Clock(boosts.Growth - unix), Color3.fromRGB(90, 150, 40))
 		end
 		if (boosts.Cash or 0) > unix then
-			chip("Cash", "💸 x2 CASH " .. Format.Clock(boosts.Cash - unix), C.RadioactiveDark)
+			chip("Cash", "💸 x2 " .. Format.Clock(boosts.Cash - unix), C.RadioactiveDark)
 		end
 		local serverLuckUntil = Workspace:GetAttribute("ServerLuckUntil") or 0
 		if serverLuckUntil > t then
-			chip("ServerLuck", ("🍀 SERVER LUCK x%s %s"):format(Format.Short(Workspace:GetAttribute("ServerLuck") or 2), Format.Clock(serverLuckUntil - t)), C.Purple)
-		end
-		local friends = State.Get("Friends") or 0
-		if friends > 0 then
-			chip("Friends", ("👥 +%d%% FRIENDS"):format(math.min(friends * 10, 40)), C.Cyan:Lerp(C.Ink, 0.4))
+			chip("ServerLuck", ("🍀 x%s %s"):format(Format.Short(Workspace:GetAttribute("ServerLuck") or 2), Format.Clock(serverLuckUntil - t)), C.Purple)
 		end
 		for id, c in chips do
 			if not c:GetAttribute("Seen") then
@@ -18204,8 +18600,18 @@ function Hud.Init()
 		Hud.FlyCoins("💰", 12)
 		Hud.FloatText("+" .. Format.Cash(args.Amount or 0) .. " heist cut!", C.Gold)
 	end)
+	-- l'XP est cumulée 1,5 s et n'est affichée qu'à partir de 10 (pas de pluie de « +1 XP »)
+	local xpPending = 0
 	FxBus.On("Xp", function(args)
-		floatXp(args.Amount or 0)
+		if xpPending == 0 then
+			task.delay(1.5, function()
+				if xpPending >= 10 then
+					floatXp(xpPending)
+				end
+				xpPending = 0
+			end)
+		end
+		xpPending += args.Amount or 0
 	end)
 	FxBus.On("LevelUp", levelUp)
 	FxBus.On("Alarm", startAlarm)
@@ -18531,7 +18937,15 @@ function Kit.Tween(inst: Instance, time: number, props: { [string]: any }, style
 	return tween
 end
 
+-- Échelle animable d'un élément. Un élément mis à l'échelle de l'écran
+-- (Kit.AutoScale) n'a qu'UN UIScale : Roblox n'en applique qu'un seul par
+-- élément, donc les animations (Pop, Punch, Breathe) le réutilisent et
+-- travaillent autour de l'échelle d'écran au lieu de la remplacer.
 function Kit.ScaleOf(inst: GuiObject): UIScale
+	local auto = inst:FindFirstChild("AutoScale") :: UIScale?
+	if auto then
+		return auto
+	end
 	local s = inst:FindFirstChild("KitScale") :: UIScale?
 	if not s then
 		s = Kit.new("UIScale", { Name = "KitScale", Parent = inst })
@@ -18539,20 +18953,26 @@ function Kit.ScaleOf(inst: GuiObject): UIScale
 	return s :: UIScale
 end
 
--- Apparition élastique.
+-- Échelle « au repos » d'une échelle animable (1, ou l'échelle d'écran).
+local function restScale(s: UIScale): number
+	if s.Name == "AutoScale" then
+		return if s:GetAttribute("Kind") == "Window" then ScreenScale.Window() else Kit.UIScale
+	end
+	return 1
+end
+
 function Kit.Pop(inst: GuiObject, from: number?, time: number?)
 	local s = Kit.ScaleOf(inst)
-	s.Scale = from or 0.4
-	Kit.Tween(s, time or 0.45, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	local rest = restScale(s)
+	s.Scale = (from or 0.4) * rest
+	Kit.Tween(s, time or 0.45, { Scale = rest }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 end
-
--- Petit coup (feedback).
 function Kit.Punch(inst: GuiObject, amount: number?)
 	local s = Kit.ScaleOf(inst)
-	s.Scale = 1 + (amount or 0.18)
-	Kit.Tween(s, 0.35, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	local rest = restScale(s)
+	s.Scale = rest * (1 + (amount or 0.18))
+	Kit.Tween(s, 0.35, { Scale = rest }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 end
-
 function Kit.Shake(inst: GuiObject, intensity: number?, duration: number?)
 	-- position d'origine mémorisée une seule fois (secousses qui se chevauchent)
 	local saved = inst:GetAttribute("ShakeBase")
@@ -18575,10 +18995,10 @@ function Kit.Shake(inst: GuiObject, intensity: number?, duration: number?)
 	end)
 end
 
--- Respiration continue (boutons importants).
 function Kit.Breathe(inst: GuiObject, amount: number?, period: number?)
 	local s = Kit.ScaleOf(inst)
-	Kit.Tween(s, period or 0.9, { Scale = 1 + (amount or 0.05) }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+	local rest = restScale(s)
+	Kit.Tween(s, period or 0.9, { Scale = rest * (1 + (amount or 0.05)) }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
 end
 
 -- Balancement continu.
@@ -19361,6 +19781,7 @@ return Kit
 -- probabilités (obligatoire pour le hasard payant) et « Welcome back ».
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
 local TextChatService = game:GetService("TextChatService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
@@ -19394,22 +19815,42 @@ local TOAST_STYLE = {
 }
 
 ----------------------------------------------------------------------------
--- Toasts (en bas à droite)
+-- Toasts (en bas au centre) : 2 au plus à l'écran, pas de doublon, débit limité
 ----------------------------------------------------------------------------
+
+local MAX_TOASTS = 2
+local recentToasts: { [string]: number } = {} -- texte -> heure d'affichage
+local lastToastAt = 0
 
 function Notifications.Toast(text: string, kind: string?)
 	local style = TOAST_STYLE[kind or "Info"] or TOAST_STYLE.Info
-	local order = -math.floor(os.clock() * 100)
+	local t = os.clock()
+	-- même message il y a moins de 5 s : inutile de le répéter
+	if (recentToasts[text] or -math.huge) > t - 5 then
+		return
+	end
+	-- les messages d'information cèdent la place quand ça s'enchaîne
+	if (kind == nil or kind == "Info") and t - lastToastAt < 1.2 then
+		return
+	end
+	recentToasts[text] = t
+	lastToastAt = t
+	for key, at in recentToasts do
+		if at < t - 5 then
+			recentToasts[key] = nil
+		end
+	end
+	local order = -math.floor(t * 100)
 	local holder = Kit.new("Frame", {
-		Size = UDim2.fromOffset(420, 58),
+		Size = UDim2.fromOffset(400, 52),
 		BackgroundTransparency = 1,
 		LayoutOrder = order,
 		Parent = toastHolder,
 	})
 	local container, body = Kit.Panel({
 		Size = UDim2.fromScale(1, 1),
-		Position = UDim2.fromScale(1.2, 0),
-		Rotation = math.random(-15, 15) / 10,
+		Position = UDim2.fromScale(0, 1.5),
+		Rotation = math.random(-10, 10) / 10,
 		Gradient = style.Color,
 		ShadowOffset = 5,
 		Parent = holder,
@@ -19431,12 +19872,12 @@ function Notifications.Toast(text: string, kind: string?)
 		MaxTextSize = 24,
 		Parent = body,
 	})
-	Kit.Tween(container, 0.4, { Position = UDim2.fromScale(0, 0) }, Enum.EasingStyle.Back)
+	Kit.Tween(container, 0.35, { Position = UDim2.fromScale(0, 0) }, Enum.EasingStyle.Back)
 	if kind ~= "Info" then
 		Audio.Play(style.Sound, { Volume = 0.6, Cooldown = 0.15 })
 	end
-	task.delay(3.6, function()
-		Kit.Tween(container, 0.3, { Position = UDim2.fromScale(1.3, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	task.delay(3, function()
+		Kit.Tween(container, 0.3, { Position = UDim2.fromScale(0, 1.8) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 		task.wait(0.3)
 		holder:Destroy()
 	end)
@@ -19447,7 +19888,8 @@ function Notifications.Toast(text: string, kind: string?)
 			table.insert(toasts, child)
 		end
 	end
-	if #toasts > 5 then
+	if #toasts > MAX_TOASTS then
+		-- le plus ancien s'en va
 		table.sort(toasts, function(a, b)
 			return a.LayoutOrder > b.LayoutOrder
 		end)
@@ -19486,7 +19928,13 @@ local function systemChat(text: string, color: Color3?)
 end
 
 function Notifications.Feed(text: string, style: string?, color: Color3?)
-	local icon = FEED_ICON[style or "Info"] or "📣"
+	-- seul sur le serveur, le fil ne parle que des autres... donc il se tait
+	if #Players:GetPlayers() <= 1 then
+		return
+	end
+	-- pas de double icône quand le message commence déjà par un emoji
+	local startsWithEmoji = (string.byte(text, 1) or 0) >= 0xE0
+	local icon = if startsWithEmoji then "" else (FEED_ICON[style or "Info"] or "📣") .. "  "
 	local accent = color or C.Magma
 	local row = Kit.new("Frame", {
 		Size = UDim2.new(1, 0, 0, 40),
@@ -19505,7 +19953,7 @@ function Notifications.Feed(text: string, style: string?, color: Color3?)
 	Kit.Text({
 		Size = UDim2.new(1, -24, 1, -8),
 		Position = UDim2.fromOffset(16, 4),
-		Text = icon .. "  " .. text,
+		Text = icon .. text,
 		FontFace = F.Body,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		MaxTextSize = 20,
@@ -19513,7 +19961,7 @@ function Notifications.Feed(text: string, style: string?, color: Color3?)
 		Parent = row,
 	})
 	Kit.Pop(row, 0.6, 0.35)
-	task.delay(8, function()
+	task.delay(6, function()
 		Kit.Tween(row, 0.4, { BackgroundTransparency = 1 })
 		for _, d in row:GetDescendants() do
 			if d:IsA("TextLabel") then
@@ -19533,13 +19981,16 @@ function Notifications.Feed(text: string, style: string?, color: Color3?)
 			table.insert(rows, child)
 		end
 	end
-	if #rows > 5 then
+	if #rows > 2 then
 		table.sort(rows, function(a, b)
 			return a.LayoutOrder < b.LayoutOrder
 		end)
 		rows[1]:Destroy()
 	end
-	systemChat(text, accent)
+	-- seuls les grands moments vont aussi dans le chat
+	if style == "Rare" or style == "Boss" then
+		systemChat(text, accent)
+	end
 end
 
 ----------------------------------------------------------------------------
@@ -19551,9 +20002,16 @@ local ANNOUNCE_SLOT = 3.2
 
 local showAnnounce
 
-function Notifications.Announce(text: string, color: Color3?, subtitle: string?, sound: string?)
+-- priority : les annonces importantes (mission, monde ouvert) passent toujours ;
+-- les autres sont abandonnées si elles devaient trop attendre.
+function Notifications.Announce(text: string, color: Color3?, subtitle: string?, sound: string?, priority: boolean?)
 	local t = os.clock()
 	local wait = math.max(0, announceFreeAt - t)
+	-- au plus une bannière en attente : une annonce qui arriverait trop tard est
+	-- abandonnée (elle ne correspondrait plus à ce qui se passe à l'écran)
+	if wait > ANNOUNCE_SLOT + 0.5 and not priority then
+		return
+	end
 	announceFreeAt = math.max(t, announceFreeAt) + ANNOUNCE_SLOT
 	if wait <= 0 then
 		showAnnounce(text, color, subtitle, sound)
@@ -19748,13 +20206,14 @@ function Notifications.Init()
 	layer = Kit.Layer("Notifications", 40)
 	toastHolder = Kit.new("Frame", {
 		Name = "Toasts",
-		Size = UDim2.fromOffset(440, 420),
-		Position = UDim2.new(1, -130, 1, -110),
-		AnchorPoint = Vector2.new(1, 1),
+		Size = UDim2.fromOffset(420, 130),
+		Position = UDim2.new(0.5, 0, 1, -96),
+		AnchorPoint = Vector2.new(0.5, 1),
 		BackgroundTransparency = 1,
 		Parent = layer,
-	}, { Kit.List(Enum.FillDirection.Vertical, 8, Enum.HorizontalAlignment.Right, Enum.VerticalAlignment.Bottom) })
-	Kit.AutoScale(toastHolder)
+	}, { Kit.List(Enum.FillDirection.Vertical, 8, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Bottom) })
+	-- échelle des fenêtres : les toasts restent lisibles sur téléphone
+	Kit.AutoScale(toastHolder, "Window")
 	-- Le fil vit sous les fenêtres (DisplayOrder 6 < 20) et en bas à gauche,
 	-- loin des menus et des annonces centrales.
 	local feedLayer = Kit.Layer("Feed", 6)
@@ -26672,6 +27131,7 @@ local ui: any = {}
 local cards: { any } = {}
 local selectedUid: string? = nil
 local selectedDistrict = 1
+local pickedByHand = false -- le joueur a choisi lui-même un kaiju (sinon : le plus fort)
 local lastResult: any = nil
 
 local function readyIn(): number
@@ -26765,6 +27225,7 @@ end
 
 local function selectKaiju(uid: string)
 	selectedUid = uid
+	pickedByHand = true
 	for _, card in cards do
 		styleCard(card)
 		if card.Uid == uid then
@@ -26850,7 +27311,8 @@ local function refreshCards()
 			keep = true
 		end
 	end
-	if not keep then
+	-- par défaut : le plus fort (la liste est triée par puissance)
+	if not keep or not pickedByHand then
 		selectedUid = if list[1] then list[1].Uid else nil
 	end
 	ui.Empty.Visible = #list == 0
@@ -27247,8 +27709,17 @@ function RampageScreen.Open(args: any?)
 	local stars = starsData()
 	if type(args) == "table" and args.District and Rampage.Unlocked(stars, args.District) then
 		selectedDistrict = args.District
-	elseif not Rampage.Unlocked(stars, selectedDistrict) then
+	else
+		-- par défaut : le meilleur quartier ouvert qui n'a pas encore ses 3 étoiles
 		selectedDistrict = 1
+		for i = 1, #Rampage.Districts do
+			if Rampage.Unlocked(stars, i) then
+				selectedDistrict = i
+				if (stars[i] or 0) < 3 then
+					break
+				end
+			end
+		end
 	end
 	refreshCards()
 	styleDistricts()
@@ -28414,7 +28885,7 @@ local function status(id: string): (number, string)
 	elseif id == "Spin" and screen.CanFreeSpin then
 		local free = screen.CanFreeSpin()
 		local spins = State.Get("Spins") or 0
-		local n = if free then 1 else spins
+		local n = if free then 1 else 0 -- badge seulement pour le tour gratuit
 		return n, if free then "FREE SPIN!" elseif spins > 0 then ("%d SPIN%s"):format(spins, if spins > 1 then "S" else "") else "Next free spin soon"
 	end
 	return 0, ""
@@ -28506,7 +28977,7 @@ return Rewards
               <Properties>
                 <string name="Name">Settings</string>
                 <string name="Source"><![CDATA[--!nonstrict
--- Réglages : interrupteurs animés (musique, effets sonores, effets réduits),
+-- Réglages : barres de volume (musique, effets sonores), effets réduits,
 -- saisie de codes, récompense de groupe, crédits.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -28528,14 +28999,16 @@ local Settings = {}
 
 local VERSION = "v1.0"
 local TOGGLES = {
-	{ Key = "Music", Icon = "🎵", Title = "MUSIC", Sub = "Monster-movie soundtrack" },
-	{ Key = "Sfx", Icon = "🔊", Title = "SOUND EFFECTS", Sub = "Stomps, roars and cha-chings" },
+	{ Key = "Music", Volume = "MusicVolume", Icon = "🎵", Title = "MUSIC", Sub = "Soundtrack" },
+	{ Key = "Sfx", Volume = "SfxVolume", Icon = "🔊", Title = "SOUNDS", Sub = "Stomps & cha-chings" },
 	{ Key = "LowFx", Icon = "⚡", Title = "LOW EFFECTS", Sub = "Fewer particles for slower devices" },
 }
+local VOLUME_STEPS = 5 -- 0 %, 20 %, … 100 %
 
 local window
 local rows: { any } = {}
 local toggles: { [string]: any } = {}
+local volumes: { [string]: any } = {}
 local codeBox: Frame
 local codeStroke: UIStroke
 local codeInput: TextBox
@@ -28644,6 +29117,79 @@ local function makeToggle(parent: Instance, onFlip: (boolean) -> ()): any
 end
 
 ----------------------------------------------------------------------------
+-- Barre de volume : un bouton muet + 5 barres de plus en plus hautes
+----------------------------------------------------------------------------
+
+local function makeVolume(parent: Instance, onSet: (number) -> ()): any
+	local holder = Kit.new("Frame", {
+		Name = "Volume",
+		Size = UDim2.fromOffset(270, 48),
+		Position = UDim2.new(1, -148, 0.5, 0),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundTransparency = 1,
+		ZIndex = 5,
+		Parent = parent,
+	})
+	local mute = Kit.Button({
+		Name = "Mute",
+		Text = "",
+		Icon = "🔇",
+		IconSize = 26,
+		Color = "Grey",
+		Size = UDim2.fromOffset(46, 44),
+		Position = UDim2.new(0, 0, 0.5, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
+		ZIndex = 6,
+		Parent = holder,
+		OnClick = function()
+			onSet(0)
+		end,
+	})
+	local bars = {}
+	for i = 1, VOLUME_STEPS do
+		local h = 14 + i * 6
+		local bar = Kit.new("TextButton", {
+			Name = "Step" .. i,
+			Size = UDim2.fromOffset(26, h),
+			Position = UDim2.new(0, 58 + (i - 1) * 32, 1, -4),
+			AnchorPoint = Vector2.new(0, 1),
+			BackgroundColor3 = C.PaperDark,
+			AutoButtonColor = false,
+			Text = "",
+			ZIndex = 6,
+			Parent = holder,
+		}, { Kit.Corner(6), Kit.Stroke(2.5) })
+		bar.Activated:Connect(function()
+			onSet(i / VOLUME_STEPS)
+		end)
+		bars[i] = bar
+	end
+	local pct = Kit.Text({
+		Name = "Percent",
+		Size = UDim2.fromOffset(52, 30),
+		Position = UDim2.new(1, 0, 0.5, 0),
+		AnchorPoint = Vector2.new(1, 0.5),
+		Text = "60%",
+		FontFace = F.Title,
+		MaxTextSize = 22,
+		Stroke = 2,
+		ZIndex = 6,
+		Parent = holder,
+	})
+	local v = { Holder = holder, Value = nil :: number? }
+	function v.Set(value: number)
+		v.Value = value
+		local level = math.floor(value * VOLUME_STEPS + 0.5)
+		for i, bar in bars do
+			bar.BackgroundColor3 = if i <= level then C.Radioactive:Lerp(C.Gold, (i - 1) / VOLUME_STEPS) else C.PaperDark
+		end
+		Kit.SetButtonColor(mute, if level == 0 then "Red" else "Grey")
+		pct.Text = if level == 0 then "OFF" else ("%d%%"):format(level * 100 // VOLUME_STEPS)
+	end
+	return v
+end
+
+----------------------------------------------------------------------------
 -- Rangées
 ----------------------------------------------------------------------------
 
@@ -28689,9 +29235,10 @@ local function iconBadge(parent: Instance, icon: string, colorName: string, size
 	})
 end
 
-local function titleAndSub(parent: Instance, title: string, sub: string, x: number)
+local function titleAndSub(parent: Instance, title: string, sub: string, x: number, reserve: number?)
+	local right = reserve or 140
 	Kit.Text({
-		Size = UDim2.new(1, -(x + 140), 0, 26),
+		Size = UDim2.new(1, -(x + right), 0, 26),
 		Position = UDim2.new(0, x, 0.5, -2),
 		AnchorPoint = Vector2.new(0, 1),
 		Text = title,
@@ -28702,7 +29249,7 @@ local function titleAndSub(parent: Instance, title: string, sub: string, x: numb
 		Parent = parent,
 	})
 	Kit.Text({
-		Size = UDim2.new(1, -(x + 140), 0, 20),
+		Size = UDim2.new(1, -(x + right), 0, 20),
 		Position = UDim2.new(0, x, 0.5, 2),
 		Text = sub,
 		FontFace = F.Body,
@@ -28720,7 +29267,29 @@ end
 ----------------------------------------------------------------------------
 
 local function currentSettings(): any
-	return State.Get("Settings") or { Music = true, Sfx = true, LowFx = false }
+	return State.Get("Settings") or { Music = true, Sfx = true, LowFx = false, MusicVolume = 0.6, SfxVolume = 0.6 }
+end
+
+-- Volume effectif d'un réglage (l'ancien interrupteur OFF vaut 0).
+local function volumeOf(settings: any, def: any): number
+	if settings[def.Key] == false then
+		return 0
+	end
+	return settings[def.Volume] or 0.6
+end
+
+local function setVolume(def: any, value: number)
+	local v = volumes[def.Key]
+	v.Set(value)
+	if def.Key == "Sfx" then
+		Audio.Play("ui_click", { Cooldown = 0 })
+	end
+	task.spawn(function()
+		local r = Remote.Call("Settings", { [def.Volume] = value, [def.Key] = value > 0 })
+		if not r.ok then
+			v.Set(volumeOf(currentSettings(), def))
+		end
+	end)
 end
 
 local function flip(key: string, value: boolean)
@@ -28830,10 +29399,17 @@ function Settings.Init()
 	for i, def in TOGGLES do
 		local _, body = panelRow(content, (i - 1) * 70, 66, if i % 2 == 0 then 0.6 else -0.6)
 		iconBadge(body, def.Icon, if def.Key == "LowFx" then "Gold" else "Cyan", 44)
-		titleAndSub(body, def.Title, def.Sub, 68)
-		toggles[def.Key] = makeToggle(body, function(value)
-			task.spawn(flip, def.Key, value)
-		end)
+		if def.Volume then
+			titleAndSub(body, def.Title, def.Sub, 68, 300)
+			volumes[def.Key] = makeVolume(body, function(value)
+				setVolume(def, value)
+			end)
+		else
+			titleAndSub(body, def.Title, def.Sub, 68)
+			toggles[def.Key] = makeToggle(body, function(value)
+				task.spawn(flip, def.Key, value)
+			end)
+		end
 	end
 
 	-- Codes
@@ -28978,10 +29554,20 @@ function Settings.Init()
 				t.Set(s[key] == true, not window.IsOpen)
 			end
 		end
+		for _, def in TOGGLES do
+			if def.Volume then
+				volumes[def.Key].Set(volumeOf(s, def))
+			end
+		end
 	end)
 	State.Changed("GroupClaimed"):Connect(refreshGroup)
 	for key, t in toggles do
 		t.Set(currentSettings()[key] == true, true)
+	end
+	for _, def in TOGGLES do
+		if def.Volume then
+			volumes[def.Key].Set(volumeOf(currentSettings(), def))
+		end
 	end
 	refreshGroup()
 end
@@ -29040,12 +29626,14 @@ local F = Kit.Fonts
 
 local Shop = {}
 
+-- Les améliorations (en cash du jeu) d'abord : c'est ce qu'un joueur cherche en
+-- ouvrant la boutique ; les achats Robux restent dans leurs onglets.
 local TABS = {
+	{ Id = "Upgrades", Text = "UPGRADES", Icon = "⬆️", Width = 170 },
+	{ Id = "Boosts", Text = "BOOSTS", Icon = "⚡", Width = 150 },
 	{ Id = "Passes", Text = "PASSES", Icon = "🎫", Width = 150 },
 	{ Id = "Gems", Text = "GEMS", Icon = "💎", Width = 140 },
 	{ Id = "Cash", Text = "CASH", Icon = "💵", Width = 140 },
-	{ Id = "Boosts", Text = "BOOSTS", Icon = "⚡", Width = 150 },
-	{ Id = "Upgrades", Text = "UPGRADES", Icon = "⬆️", Width = 170 },
 }
 
 local POTION_COLORS = { Luck = "Radioactive", Growth = "Gold", Cash = "Magma" }
@@ -29060,7 +29648,7 @@ local content: Frame
 local tabBar: Frame
 local selectTab: (string) -> ()
 local scroll: CanvasGroup? = nil
-local currentTab = "Passes"
+local currentTab = "Upgrades"
 local updaters: { () -> () } = {}
 local tickers: { () -> () } = {}
 local popCount = 0
@@ -30438,7 +31026,7 @@ end
 function Shop.Open(args: any?)
 	local tab = if type(args) == "string" then args else currentTab
 	if not BUILDERS[tab] then
-		tab = "Passes"
+		tab = "Upgrades"
 	end
 	refreshTabs()
 	window:Open()
@@ -31922,7 +32510,6 @@ local function waveEndCard(args)
 			table.insert(extras, "START NOW +10%")
 		end
 		Kit.Text({ Size = UDim2.new(1, -40, 0, 26), Position = UDim2.fromOffset(20, 154), Text = table.concat(extras, "   "), FontFace = F.Title, TextColor3 = C.Gem, Stroke = 3, MaxTextSize = 28, ZIndex = 6, Parent = body })
-		Kit.Text({ Size = UDim2.new(1, -40, 0, 22), Position = UDim2.fromOffset(20, 186), Text = ("👾 %d defeated   💰 %d leaked"):format(args.Kills or 0, args.Leaks or 0), FontFace = F.Body, TextColor3 = C.Ink, Stroke = false, MaxTextSize = 22, ZIndex = 6, Parent = body })
 		Audio.Play("heist_success")
 	else
 		Kit.Text({ Size = UDim2.new(1, -40, 0, 70), Position = UDim2.fromOffset(20, 50), Text = "Too many wild kaijus got away with your cash!", FontFace = F.Title, TextColor3 = C.White, Stroke = 3, MaxTextSize = 30, ZIndex = 6, Parent = body })
@@ -31930,7 +32517,8 @@ local function waveEndCard(args)
 		Audio.Play("ui_error")
 	end
 	local ok = Kit.Button({ Name = "Ok", Text = if cleared then "AWESOME!" else "I'LL GET THEM!", Color = if cleared then "Radioactive" else "Magma", Size = UDim2.fromOffset(220, 54), Position = UDim2.new(0.5, 0, 1, -26), AnchorPoint = Vector2.new(0.5, 1), ZIndex = 8, Parent = body })
-	waitClose(ok, 5)
+	-- une vague gagnée ne bloque pas longtemps l'écran
+	waitClose(ok, if cleared and not args.Tutorial then 3.5 else 5)
 	closeCard(holder)
 end
 
@@ -31983,6 +32571,17 @@ local function refresh()
 		status.Visible = false
 		ui.Alpha.Visible = false
 		return
+	end
+	-- le panneau n'apparaît que dans les 20 dernières secondes et pendant la vague
+	-- (moins de choses à l'écran ; la vague en pause reprend toute seule)
+	local currentState = folder:GetAttribute("State")
+	if currentState ~= "Active" then
+		local soon = math.max(0, (folder:GetAttribute("At") or 0) - now())
+		if currentState == "Paused" or soon > 20 then
+			status.Visible = false
+			ui.Alpha.Visible = false
+			return
+		end
 	end
 	if not status.Visible then
 		status.Visible = true
@@ -32306,6 +32905,7 @@ local Viewport = require(script.Parent.Parent.UI.Viewport)
 local Effects = require(script.Parent.Effects)
 local Guide = require(script.Parent.Guide)
 
+local treasureHints = 0 -- nombre de trésors annoncés par un message
 local C = Theme.Colors
 local F = Theme.Fonts
 local player = Players.LocalPlayer
@@ -32964,7 +33564,12 @@ local function showSpot(part: BasePart)
 	bark()
 	refreshChip()
 	Kit.Pop(chip.Frame, 1.3, 0.5)
-	UIRegistry.Toast("🐾 Your buddy sniffed out a TREASURE! Follow the arrows!", "Good")
+	-- le message n'est montré que les premières fois : ensuite l'aboiement, la
+	-- pastille « ! » et les flèches suffisent
+	treasureHints += 1
+	if treasureHints <= 2 then
+		UIRegistry.Toast("🐾 Your buddy sniffed out a TREASURE! Follow the arrows!", "Good")
+	end
 
 	-- le compagnon creuse pendant qu'on maintient
 	local prompt = part:FindFirstChildOfClass("ProximityPrompt") or part:WaitForChild("ProximityPrompt", 5)
@@ -33069,7 +33674,7 @@ local function digBurst(pos: Vector3, kind: string, text: string?, color: Color3
 		end
 		for i = 1, 3 do
 			task.delay(i * 0.08, function()
-				Audio.Play("coin_tick", { Pitch = 1 + i * 0.12, Cooldown = 0 })
+				Audio.Play("coin_tick", { Pitch = 1 + i * 0.12, Cooldown = 0.08 })
 			end)
 		end
 		if text then
@@ -33168,7 +33773,13 @@ function BuddyRenderer.Init()
 		elseif args.First then
 			-- après la cinématique d'éclosion qui vient de se jouer
 			task.delay(6, function()
-				UIRegistry.Announce("🐾 NEW BUDDY!", C.Pink, name .. " follows you everywhere and sniffs out treasure!", "reward_claim")
+				-- pendant les premières missions, pas de grande bannière : la mission
+				-- « trésor » présentera le compagnon au bon moment
+				if (State.Get("Tutorial") or 0) < 6 then
+					UIRegistry.Toast(name .. " follows you around! 🐾", "Good")
+				else
+					UIRegistry.Announce("🐾 NEW BUDDY!", C.Pink, name .. " follows you everywhere and sniffs out treasure!", "reward_claim")
+				end
 				celebrate(localPet())
 			end)
 		elseif args.Reason == "Lost" then
@@ -33193,14 +33804,16 @@ function BuddyRenderer.Init()
 		if chip.LevelChip then
 			Kit.Punch(chip.LevelChip, 0.5)
 		end
-		UIRegistry.Toast(("🐾 Buddy reached LEVEL %d! Bigger magnet, faster treasures!"):format(args.Level or 1), "Good")
+		-- message seulement tous les 5 niveaux (le « BUDDY LV X! » au-dessus de lui suffit sinon)
+		if (args.Level or 1) % 5 == 0 then
+			UIRegistry.Toast(("🐾 Buddy reached LEVEL %d! Bigger magnet, faster treasures!"):format(args.Level or 1), "Good")
+		end
 	end)
 	FxBus.On("BuddyTreasure", function()
 		refreshChip()
 	end)
 	FxBus.On("BuddyTreasureGone", function()
 		hideSpot()
-		UIRegistry.Toast("The treasure sank back underground... your buddy will find another!", "Info")
 	end)
 	FxBus.On("BuddyDig", function(args)
 		hideSpot()
@@ -34543,7 +35156,7 @@ local function buildLabel(entry: Entry)
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "KaijuLabel"
 	gui.Size = ScreenScale.Px(220, 74)
-	gui.MaxDistance = 75
+	gui.MaxDistance = 45 -- seulement les kaijus tout proches (sinon 20 étiquettes à la fois)
 	gui.LightInfluence = 0
 	gui.AlwaysOnTop = false
 	gui.StudsOffsetWorldSpace = Vector3.new(0, entry.Height + 1.5, 0)
@@ -35571,6 +36184,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Layout = require(Shared.Config.Layout)
 local Levels = require(Shared.Config.Levels)
 local Theme = require(Shared.Config.Theme)
+local TutorialConfig = require(Shared.Config.Tutorial)
 
 local Controllers = script.Parent.Parent.Controllers
 local ScreenScale = require(Controllers.ScreenScale)
@@ -35626,7 +36240,7 @@ local function makeTimer(model: Model): BillboardGui
 	gui.Name = "ShieldTimer"
 	gui.Size = ScreenScale.Px(200, 50)
 	gui.StudsOffsetWorldSpace = Vector3.new(0, 9, 0)
-	gui.MaxDistance = 260
+	gui.MaxDistance = 150
 	gui.LightInfluence = 0
 	gui.Adornee = gate
 	gui.Enabled = false
@@ -35777,6 +36391,23 @@ function PlotVisuals.Init()
 			end
 		end)
 	end
+	-- panneaux d'aide des îles : seulement sur la sienne, et seulement pendant le tutoriel
+	local function refreshHints()
+		local learning = (State.Get("Tutorial") or 0) < TutorialConfig.Done
+		local mine = player:GetAttribute("Plot")
+		for i, entry in plots do
+			for _, d in entry.Model:GetDescendants() do
+				if d:IsA("BasePart") and d:GetAttribute("Hint") then
+					local gui = d:FindFirstChildOfClass("BillboardGui")
+					if gui then
+						gui.Enabled = learning and i == mine
+					end
+				end
+			end
+		end
+	end
+	State.Observe("Tutorial", refreshHints)
+	player:GetAttributeChangedSignal("Plot"):Connect(refreshHints)
 	player:GetAttributeChangedSignal("Plot"):Connect(refreshMyNests)
 	State.Observe("Nests", refreshMyNests)
 	State.Observe("Level", refreshMyNests)
@@ -36712,6 +37343,8 @@ local function wildTint(model: Model)
 end
 
 local function healthBar(entry: Invader, alpha: boolean)
+	-- l'envahisseur d'entraînement que seul le joueur peut bonker : étiquette bien visible
+	local tough = entry.Anchor:GetAttribute("TowerProof") == true
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "SiegeBar"
 	gui.Size = if alpha then ScreenScale.Px(120, 34) else ScreenScale.Px(64, 22)
@@ -36744,13 +37377,17 @@ local function healthBar(entry: Invader, alpha: boolean)
 	label.FontFace = Theme.Fonts.Impact
 	label.TextScaled = true
 	label.TextColor3 = if alpha then C.Gold else C.Red
-	label.Text = if alpha then "👑 ALPHA" else ""
+	label.Text = if alpha then "👑 ALPHA" elseif tough then "🔨 BONK ME!" else ""
 	local stroke = Instance.new("UIStroke")
 	stroke.Thickness = 2
 	stroke.Color = C.Ink
 	stroke.Parent = label
 	label.Parent = gui
-	gui.Enabled = alpha
+	gui.Enabled = alpha or tough
+	if tough then
+		gui.Size = ScreenScale.Px(120, 34)
+		gui.MaxDistance = 220
+	end
 	gui.Parent = entry.Model.PrimaryPart
 	entry.Bar = gui
 	entry.Fill = fill
@@ -37288,7 +37925,7 @@ function SiegeRenderer.Init()
 	RunService.RenderStepped:Connect(function(dt)
 		local t = os.clock()
 		local serverT = now()
-		numbersBudget = math.min(numbersBudget + dt * 14, 10)
+		numbersBudget = math.min(numbersBudget + dt * 4, 3) -- 4 chiffres de dégâts par seconde au plus
 		for _, entry in invaders do
 			animate(entry, dt, t, serverT)
 		end
@@ -37326,7 +37963,6 @@ local Format = require(Shared.Logic.Format)
 
 local Controllers = script.Parent.Parent.Controllers
 local State = require(Controllers.State)
-local Remote = require(Controllers.Remote)
 local Audio = require(Controllers.Audio)
 local FxBus = require(Controllers.FxBus)
 local UIRegistry = require(Controllers.UIRegistry)
@@ -37499,7 +38135,7 @@ local function celebrate(args)
 	CameraFx.FovPunch(-3, 0.4)
 	local reward = args.Reward or {}
 	local text = if reward.Cash then "+" .. Format.Cash(reward.Cash) elseif reward.Gems then "+" .. reward.Gems .. " 💎" else ""
-	UIRegistry.Announce("MISSION COMPLETE!", C.Radioactive, mission.Title .. "  —  " .. text)
+	UIRegistry.Announce("MISSION COMPLETE!", C.Radioactive, mission.Title .. "  —  " .. text, nil, true)
 	if args.Unlock and #args.Unlock > 0 then
 		task.delay(3.2, function()
 			UIRegistry.Toast("New menus unlocked: " .. table.concat(args.Unlock, ", "), "Good")
@@ -37524,14 +38160,15 @@ function Tutorial.Init()
 	FxBus.On("MissionComplete", celebrate)
 	FxBus.On("TutorialDone", function()
 		task.delay(3.5, function()
-			UIRegistry.Announce("YOU'RE READY!", C.Gold, "Level up to open new worlds. Follow the NEXT GOAL bar!", "hatch_legendary")
+			UIRegistry.Announce("YOU'RE READY!", C.Gold, "Level up to open new worlds. Follow the NEXT GOAL bar!", "hatch_legendary", true)
 		end)
 	end)
 
 	RunService.Heartbeat:Connect(function()
 		local plot = myPlot()
 		local carrying = (player:GetAttribute("Carrying") or "") ~= ""
-		card.Visible = TutorialConfig.Get(currentStep) ~= nil and not carrying
+		-- la carte se cache pendant un Rampage (elle couvrirait la ville) et pendant un vol
+		card.Visible = TutorialConfig.Get(currentStep) ~= nil and not carrying and player:GetAttribute("Rampage") ~= true
 		local mission = TutorialConfig.Get(currentStep)
 		local target = mission and mission.Target
 		if target == "Kaiju" then
@@ -37622,6 +38259,7 @@ local WorldVisuals = {}
 local CLOCK = { Candy = 13.5, Frost = 11, Volcano = 18.4, Cosmic = 0.5 }
 
 local currentWorld = ""
+local visited: { [string]: boolean } = {}
 local fade: Frame
 
 local function lightingFor(id: string)
@@ -37739,7 +38377,9 @@ function WorldVisuals.Init()
 		Audio.Play("whoosh")
 		CameraFx.FovPunch(10, 0.6)
 		local world = Worlds.ById[args.World or ""]
-		if world and world.Id ~= Worlds.Default then
+		-- grande bannière seulement à la première visite de la session
+		if world and world.Id ~= Worlds.Default and not visited[world.Id] then
+			visited[world.Id] = true
 			task.delay(0.4, function()
 				UIRegistry.Announce(string.upper(world.Name), world.Palette.Glow, world.Tagline)
 			end)
@@ -37750,7 +38390,7 @@ function WorldVisuals.Init()
 		if not world then
 			return
 		end
-		UIRegistry.Announce(string.upper(world.Name) .. " OPENED!", world.Palette.Glow, "Walk into its portal in the crater, or travel from the WORLD MAP!", "rebirth")
+		UIRegistry.Announce(string.upper(world.Name) .. " OPENED!", world.Palette.Glow, "Walk into its portal in the crater, or travel from the WORLD MAP!", "rebirth", true)
 		CameraFx.Shake(0.3, 0.5)
 		portalTexts()
 	end)

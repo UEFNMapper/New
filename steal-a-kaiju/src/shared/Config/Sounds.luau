@@ -42,9 +42,9 @@ local Sounds: { [string]: SoundDef } = {
 	purchase = D(9113728049, 0.6),
 	sell = D(9113726510, 0.55),
 	-- Météores
-	meteor_whistle = D(12222095, 0.7, 0.6),
-	meteor_impact = D("rbxasset://sounds/impact_explosion_03.mp3", 0.8),
-	meteor_rare_alarm = D(9126073001, 0.8),
+	meteor_whistle = D(12222095, 0.45, 0.6),
+	meteor_impact = D("rbxasset://sounds/impact_explosion_03.mp3", 0.55),
+	meteor_rare_alarm = D(9126073001, 0.6),
 	-- Œufs / kaijus
 	egg_wobble = D(15675055424, 0.5, 0.8),
 	egg_crack = D(9113263649, 0.6),
@@ -54,15 +54,15 @@ local Sounds: { [string]: SoundDef } = {
 	hatch_secret = D(1845411858, 0.9),
 	stage_up = D(9116395089, 0.7),
 	roar_small = D(9113985604, 0.5, 1.4),
-	roar_big = D(9113980319, 0.8),
+	roar_big = D(9113980319, 0.6),
 	-- Vol / défense
 	steal_grab = D(17208319162, 0.6),
 	alarm = D(9119162409, 0.55, 1, true),
-	bonk = D(12222046, 0.8, 0.8),
+	bonk = D(12222046, 0.5, 0.8),
 	knockback_whoosh = D(15675012262, 0.6),
 	shield_on = D(17208327798, 0.7),
 	shield_zap = D(9113085801, 0.5, 1.6),
-	drop = D("rbxasset://sounds/action_jump_land.mp3", 0.8),
+	drop = D("rbxasset://sounds/action_jump_land.mp3", 0.5),
 	heist_success = D(1844584698, 0.8),
 	-- Progression
 	rebirth = D(9041812129, 0.9),
@@ -73,9 +73,9 @@ local Sounds: { [string]: SoundDef } = {
 	level_jingle = D(12222253, 0.6, 1.1),
 	spin_tick = D(15675032796, 0.35, 1.4),
 	spin_win = D(1836301731, 0.8),
-	event_horn = D(9119162409, 0.8, 0.7),
+	event_horn = D(9119162409, 0.6, 0.7),
 	countdown_beep = D(17208361335, 0.6),
-	boss_stomp = D(9114224354, 0.9),
+	boss_stomp = D(9114224354, 0.7),
 	whoosh = D(15675028888, 0.5),
 	-- Musique
 	music_main = D(9043821805, 0.32, 1, true),

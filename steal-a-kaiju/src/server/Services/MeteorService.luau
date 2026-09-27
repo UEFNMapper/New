@@ -227,10 +227,6 @@ local function buy(player: Player, payload: any): Router.Result
 	end
 	Registry.RewardService.Track(player, "EggsBought", 1)
 	Registry.TutorialService.Notify(player, "Meteor")
-	local r = Rarities.Get(rarity)
-	if r.Order >= 4 then
-		Notify.FeedExcept(player, ("%s grabbed the %s egg!"):format(player.DisplayName, string.upper(r.Name)), "Rare", r.Color)
-	end
 	return { ok = true, free = isFree }
 end
 

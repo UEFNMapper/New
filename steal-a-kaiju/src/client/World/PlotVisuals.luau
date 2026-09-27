@@ -12,6 +12,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Layout = require(Shared.Config.Layout)
 local Levels = require(Shared.Config.Levels)
 local Theme = require(Shared.Config.Theme)
+local TutorialConfig = require(Shared.Config.Tutorial)
 
 local Controllers = script.Parent.Parent.Controllers
 local ScreenScale = require(Controllers.ScreenScale)
@@ -67,7 +68,7 @@ local function makeTimer(model: Model): BillboardGui
 	gui.Name = "ShieldTimer"
 	gui.Size = ScreenScale.Px(200, 50)
 	gui.StudsOffsetWorldSpace = Vector3.new(0, 9, 0)
-	gui.MaxDistance = 260
+	gui.MaxDistance = 150
 	gui.LightInfluence = 0
 	gui.Adornee = gate
 	gui.Enabled = false
@@ -218,6 +219,23 @@ function PlotVisuals.Init()
 			end
 		end)
 	end
+	-- panneaux d'aide des îles : seulement sur la sienne, et seulement pendant le tutoriel
+	local function refreshHints()
+		local learning = (State.Get("Tutorial") or 0) < TutorialConfig.Done
+		local mine = player:GetAttribute("Plot")
+		for i, entry in plots do
+			for _, d in entry.Model:GetDescendants() do
+				if d:IsA("BasePart") and d:GetAttribute("Hint") then
+					local gui = d:FindFirstChildOfClass("BillboardGui")
+					if gui then
+						gui.Enabled = learning and i == mine
+					end
+				end
+			end
+		end
+	end
+	State.Observe("Tutorial", refreshHints)
+	player:GetAttributeChangedSignal("Plot"):Connect(refreshHints)
 	player:GetAttributeChangedSignal("Plot"):Connect(refreshMyNests)
 	State.Observe("Nests", refreshMyNests)
 	State.Observe("Level", refreshMyNests)

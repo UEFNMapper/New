@@ -49,9 +49,6 @@ function LevelService.AddXp(player: Player, amount: number, reason: string?)
 		end
 		Notify.Fx(player, "LevelUp", { Level = l, Gems = reward.Gems, Egg = reward.Egg, Unlocks = unlocks })
 	end
-	if level >= 10 then
-		Notify.FeedExcept(player, ("%s reached LEVEL %d!"):format(player.DisplayName, level), "Info")
-	end
 	Registry.PlotService.RefreshNests(player)
 	Registry.KaijuService.RefreshPlayer(player)
 	Registry.KaijuService.PlacePending(player)

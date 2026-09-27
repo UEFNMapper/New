@@ -135,7 +135,6 @@ local function unlock(player: Player, payload: any): Router.Result
 	DataService.Replicate(player, "Worlds", "Stats")
 	Registry.LevelService.AddXp(player, Levels.Xp.WorldUnlock * world.Order, "World")
 	Notify.Fx(player, "WorldUnlocked", { World = world.Id })
-	Notify.FeedExcept(player, ("🌍 %s opened %s!"):format(player.DisplayName, string.upper(world.Name)), "Info", world.Palette.Glow)
 	return { ok = true }
 end
 

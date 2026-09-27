@@ -288,7 +288,15 @@ function Kit.Tween(inst: Instance, time: number, props: { [string]: any }, style
 	return tween
 end
 
+-- Échelle animable d'un élément. Un élément mis à l'échelle de l'écran
+-- (Kit.AutoScale) n'a qu'UN UIScale : Roblox n'en applique qu'un seul par
+-- élément, donc les animations (Pop, Punch, Breathe) le réutilisent et
+-- travaillent autour de l'échelle d'écran au lieu de la remplacer.
 function Kit.ScaleOf(inst: GuiObject): UIScale
+	local auto = inst:FindFirstChild("AutoScale") :: UIScale?
+	if auto then
+		return auto
+	end
 	local s = inst:FindFirstChild("KitScale") :: UIScale?
 	if not s then
 		s = Kit.new("UIScale", { Name = "KitScale", Parent = inst })
@@ -296,20 +304,26 @@ function Kit.ScaleOf(inst: GuiObject): UIScale
 	return s :: UIScale
 end
 
--- Apparition élastique.
+-- Échelle « au repos » d'une échelle animable (1, ou l'échelle d'écran).
+local function restScale(s: UIScale): number
+	if s.Name == "AutoScale" then
+		return if s:GetAttribute("Kind") == "Window" then ScreenScale.Window() else Kit.UIScale
+	end
+	return 1
+end
+
 function Kit.Pop(inst: GuiObject, from: number?, time: number?)
 	local s = Kit.ScaleOf(inst)
-	s.Scale = from or 0.4
-	Kit.Tween(s, time or 0.45, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	local rest = restScale(s)
+	s.Scale = (from or 0.4) * rest
+	Kit.Tween(s, time or 0.45, { Scale = rest }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 end
-
--- Petit coup (feedback).
 function Kit.Punch(inst: GuiObject, amount: number?)
 	local s = Kit.ScaleOf(inst)
-	s.Scale = 1 + (amount or 0.18)
-	Kit.Tween(s, 0.35, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	local rest = restScale(s)
+	s.Scale = rest * (1 + (amount or 0.18))
+	Kit.Tween(s, 0.35, { Scale = rest }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 end
-
 function Kit.Shake(inst: GuiObject, intensity: number?, duration: number?)
 	-- position d'origine mémorisée une seule fois (secousses qui se chevauchent)
 	local saved = inst:GetAttribute("ShakeBase")
@@ -332,10 +346,10 @@ function Kit.Shake(inst: GuiObject, intensity: number?, duration: number?)
 	end)
 end
 
--- Respiration continue (boutons importants).
 function Kit.Breathe(inst: GuiObject, amount: number?, period: number?)
 	local s = Kit.ScaleOf(inst)
-	Kit.Tween(s, period or 0.9, { Scale = 1 + (amount or 0.05) }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+	local rest = restScale(s)
+	Kit.Tween(s, period or 0.9, { Scale = rest * (1 + (amount or 0.05)) }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
 end
 
 -- Balancement continu.

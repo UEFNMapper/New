@@ -258,14 +258,14 @@ end
 
 section("Ouverture de l'écran depuis le portail")
 local from = #Runtime.ClientLog + 1
-alicePad.Touched:Fire(rootOf(alice))
+alicePad:FindFirstChild("RampagePrompt").Triggered:Fire(alice)
 Runtime.Advance(0.2)
-check("toucher son portail ouvre l'écran (Fx RampageOpen)", #Boot.FxFor(alice, "RampageOpen", from) == 1)
+check("l'invite de son portail ouvre l'écran (Fx RampageOpen)", #Boot.FxFor(alice, "RampageOpen", from) == 1)
 from = #Runtime.ClientLog + 1
 alicePad:FindFirstChild("RampagePrompt").Triggered:Fire(bob)
 Runtime.Advance(0.2)
 check("le portail d'un autre joueur ne s'ouvre pas (message à la place)", #Boot.FxFor(bob, "RampageOpen", from) == 0 and #toastsFor(bob, from) == 1)
-Runtime.Advance(3.5)
+Runtime.Advance(26) -- délai anti-rouverture des portails
 from = #Runtime.ClientLog + 1
 Runtime.MoveTo(alice, alicePad.Position + V3(1, 3, 0))
 Runtime.Advance(0.6)
@@ -590,7 +590,9 @@ local hitsDuring = 0
 for _, e in Boot.FxFor(alice, "RampageDartHit", from) do
 	hitsDuring += e.Penalty
 end
-check("tank détruit au STOMP : +3 s au chrono", down and math.abs(down.EndsAt - (endsNow - hitsDuring + Rampage.Tanks.KillBonus)) < 1e-6, down and down.EndsAt - endsNow)
+-- un STOMP peut abattre deux tanks à la fois : +3 s chacun
+local downs = #Boot.FxFor(alice, "RampageTankDown", from)
+check("tank détruit au STOMP : +3 s au chrono", down and downs >= 1 and math.abs(down.EndsAt - (endsNow - hitsDuring + Rampage.Tanks.KillBonus * downs)) < 1e-6, down and (down.EndsAt - endsNow) .. " / " .. downs)
 note(("tank arrivé à t=%.0fs après le lancement"):format(elapsedAtTank))
 
 ----------------------------------------------------------------------------
@@ -687,7 +689,7 @@ check("Alice porte le kaiju de Bob", stealRes and stealRes.ok, stealRes and stea
 res = start(alice, baby.Uid, 1)
 check("lancement refusé pendant un vol", res and not res.ok and res.msg and res.msg:find("stolen"), res and res.msg)
 from = #Runtime.ClientLog + 1
-alicePad.Touched:Fire(rootOf(alice))
+alicePad:FindFirstChild("RampagePrompt").Triggered:Fire(alice)
 Runtime.Advance(0.1)
 check("le portail ne s'ouvre pas pendant un vol", #Boot.FxFor(alice, "RampageOpen", from) == 0)
 Boot.Call(alice, "Drop")
@@ -779,7 +781,7 @@ atStage(hero, "Gloop", 2)
 Runtime.Advance(1)
 local n0 = #Runtime.Errors
 local heroPad = PlotService.Get(hero).Model:FindFirstChild("RampagePortal")
-heroPad.Touched:Fire(rootOf(hero))
+heroPad:FindFirstChild("RampagePrompt").Triggered:Fire(hero)
 Runtime.Advance(1)
 local selection = playerGui:FindFirstChild("Window_Rampage")
 check("toucher le portail ouvre l'écran RAMPAGE chez le client", selection and selection.Enabled == true)

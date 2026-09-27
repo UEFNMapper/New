@@ -30,6 +30,7 @@ local WorldVisuals = {}
 local CLOCK = { Candy = 13.5, Frost = 11, Volcano = 18.4, Cosmic = 0.5 }
 
 local currentWorld = ""
+local visited: { [string]: boolean } = {}
 local fade: Frame
 
 local function lightingFor(id: string)
@@ -147,7 +148,9 @@ function WorldVisuals.Init()
 		Audio.Play("whoosh")
 		CameraFx.FovPunch(10, 0.6)
 		local world = Worlds.ById[args.World or ""]
-		if world and world.Id ~= Worlds.Default then
+		-- grande bannière seulement à la première visite de la session
+		if world and world.Id ~= Worlds.Default and not visited[world.Id] then
+			visited[world.Id] = true
 			task.delay(0.4, function()
 				UIRegistry.Announce(string.upper(world.Name), world.Palette.Glow, world.Tagline)
 			end)

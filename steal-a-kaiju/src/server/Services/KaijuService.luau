@@ -391,7 +391,9 @@ local function hatch(player: Player, data: any, rec: Record)
 	Registry.TutorialService.Notify(player, "Hatch")
 	if rarity.Announce and species then
 		local mut = if rec.Mutation then rec.Mutation .. " " else ""
-		Notify.Feed(("%s hatched a %s%s %s!"):format(player.DisplayName, mut, string.upper(rarity.Name), species.Name), "Rare", rarity.Color)
+		local label = mut .. string.upper(rarity.Name)
+		local article = if string.find(label, "^[AEIOU]") then "an" else "a"
+		Notify.FeedExcept(player, ("%s hatched %s %s %s!"):format(player.DisplayName, article, label, species.Name), "Rare", rarity.Color)
 	end
 	KaijuService.RefreshPlayer(player)
 end
@@ -628,9 +630,11 @@ local function tickPlayer(player: Player, dt: number)
 					Notify.FxAll("StageUp", { Uid = rec.Uid, Stage = after })
 					local stage = Growth.Get(after)
 					local species = Kaijus.Get(rec.Species or "")
-					local stageName = string.upper(stage.Name)
-					local article = if string.find(stageName, "^[AEIOU]") then "an" else "a"
-					Notify.Toast(player, ("%s is now %s %s!"):format(if species then species.Name else "Kaiju", article, stageName), "Good")
+					-- message seulement pour les grands stades (le « TEEN! » au-dessus du kaiju suffit sinon)
+					if after >= 4 then
+						local stageName = string.upper(stage.Name)
+						Notify.Toast(player, ("%s is now a %s!"):format(if species then species.Name else "Kaiju", stageName), "Good")
+					end
 					Registry.RewardService.Track(player, "StageUps", after - before)
 					local xp = 0
 					for st = before + 1, after do

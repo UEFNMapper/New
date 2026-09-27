@@ -310,7 +310,6 @@ local function waveEndCard(args)
 			table.insert(extras, "START NOW +10%")
 		end
 		Kit.Text({ Size = UDim2.new(1, -40, 0, 26), Position = UDim2.fromOffset(20, 154), Text = table.concat(extras, "   "), FontFace = F.Title, TextColor3 = C.Gem, Stroke = 3, MaxTextSize = 28, ZIndex = 6, Parent = body })
-		Kit.Text({ Size = UDim2.new(1, -40, 0, 22), Position = UDim2.fromOffset(20, 186), Text = ("👾 %d defeated   💰 %d leaked"):format(args.Kills or 0, args.Leaks or 0), FontFace = F.Body, TextColor3 = C.Ink, Stroke = false, MaxTextSize = 22, ZIndex = 6, Parent = body })
 		Audio.Play("heist_success")
 	else
 		Kit.Text({ Size = UDim2.new(1, -40, 0, 70), Position = UDim2.fromOffset(20, 50), Text = "Too many wild kaijus got away with your cash!", FontFace = F.Title, TextColor3 = C.White, Stroke = 3, MaxTextSize = 30, ZIndex = 6, Parent = body })
@@ -318,7 +317,8 @@ local function waveEndCard(args)
 		Audio.Play("ui_error")
 	end
 	local ok = Kit.Button({ Name = "Ok", Text = if cleared then "AWESOME!" else "I'LL GET THEM!", Color = if cleared then "Radioactive" else "Magma", Size = UDim2.fromOffset(220, 54), Position = UDim2.new(0.5, 0, 1, -26), AnchorPoint = Vector2.new(0.5, 1), ZIndex = 8, Parent = body })
-	waitClose(ok, 5)
+	-- une vague gagnée ne bloque pas longtemps l'écran
+	waitClose(ok, if cleared and not args.Tutorial then 3.5 else 5)
 	closeCard(holder)
 end
 
@@ -371,6 +371,17 @@ local function refresh()
 		status.Visible = false
 		ui.Alpha.Visible = false
 		return
+	end
+	-- le panneau n'apparaît que dans les 20 dernières secondes et pendant la vague
+	-- (moins de choses à l'écran ; la vague en pause reprend toute seule)
+	local currentState = folder:GetAttribute("State")
+	if currentState ~= "Active" then
+		local soon = math.max(0, (folder:GetAttribute("At") or 0) - now())
+		if currentState == "Paused" or soon > 20 then
+			status.Visible = false
+			ui.Alpha.Visible = false
+			return
+		end
 	end
 	if not status.Visible then
 		status.Visible = true

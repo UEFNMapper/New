@@ -17,7 +17,6 @@ local Format = require(Shared.Logic.Format)
 
 local Controllers = script.Parent.Parent.Controllers
 local State = require(Controllers.State)
-local Remote = require(Controllers.Remote)
 local Audio = require(Controllers.Audio)
 local FxBus = require(Controllers.FxBus)
 local UIRegistry = require(Controllers.UIRegistry)

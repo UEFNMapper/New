@@ -467,7 +467,7 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 		rail(Vector3.new(x0, 0, z1), Vector3.new(x1, 0, z1))
 		rail(Vector3.new(x0, 0, z0), Vector3.new(x0, 0, z1))
 		rail(Vector3.new(x1, 0, z0), Vector3.new(x1, 0, z1))
-		floatingSign(model, at(0, 8, z1 + 2), "🪺 NEST YARD — your kaijus grow here", color, 380, 34, 120)
+		floatingSign(model, at(0, 8, z1 + 2), "🪺 NEST YARD — your kaijus grow here", color, 380, 34, 120):SetAttribute("Hint", true) -- panneau d'aide : masqué côté client après le tutoriel
 	end
 
 	-- Nids
@@ -560,7 +560,7 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 	sub.Text = "STEP ON THE PAD TO COLLECT"
 	sub.Parent = gui
 
-	floatingSign(model, reactorBase * CFrame.new(0, 6, -4), "⬇ STEP HERE TO COLLECT", Theme.Colors.Cash, 300, 34, 90)
+	floatingSign(model, reactorBase * CFrame.new(0, 6, -4), "⬇ STEP HERE TO COLLECT", Theme.Colors.Cash, 300, 34, 90):SetAttribute("Hint", true) -- panneau d'aide : masqué côté client après le tutoriel
 
 	-- Bouton de verrouillage (gros bouton rouge)
 	local lockCf = at(Layout.LockButton.X, 0, Layout.LockButton.Z)
@@ -597,7 +597,7 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 		}, model)
 	end
 
-	floatingSign(model, lockCf * CFrame.new(0, 6, 0), "🛡️ LOCK BASE", Theme.Colors.Red, 220, 34, 90)
+	floatingSign(model, lockCf * CFrame.new(0, 6, 0), "🛡️ LOCK BASE", Theme.Colors.Red, 220, 34, 90):SetAttribute("Hint", true) -- panneau d'aide : masqué côté client après le tutoriel
 
 	-- Plateforme du météore personnel
 	local personal = cylinder(at(Layout.PersonalPad.X, 0.5, Layout.PersonalPad.Z), 1, 12, {
@@ -612,7 +612,7 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 		CanCollide = false,
 	}, model)
 	pring.Transparency = 0.3
-	floatingSign(model, at(Layout.PersonalPad.X, 6, Layout.PersonalPad.Z), "☄️ YOUR PERSONAL METEOR LANDS HERE", Theme.Colors.Cyan, 320, 30, 90)
+	floatingSign(model, at(Layout.PersonalPad.X, 6, Layout.PersonalPad.Z), "☄️ YOUR PERSONAL METEOR LANDS HERE", Theme.Colors.Cyan, 320, 30, 90):SetAttribute("Hint", true) -- panneau d'aide : masqué côté client après le tutoriel
 
 	-- Panneau du propriétaire
 	local signPart = part({ Name = "SignAnchor", Size = Vector3.new(1, 1, 1), CFrame = at(0, 18, -D / 2 + 1.6), Transparency = 1, CanCollide = false }, model)
@@ -622,6 +622,7 @@ local function buildPlot(folder: Folder, index: number): PlotInfo
 	sign.MaxDistance = 400
 	sign.LightInfluence = 0
 	sign.AlwaysOnTop = false
+	sign.Enabled = false -- allumé quand quelqu'un prend l'île
 	sign.Parent = signPart
 	local signLabel = Instance.new("TextLabel")
 	signLabel.Name = "Title"

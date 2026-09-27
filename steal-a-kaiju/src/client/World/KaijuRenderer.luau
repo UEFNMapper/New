@@ -152,7 +152,7 @@ local function buildLabel(entry: Entry)
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "KaijuLabel"
 	gui.Size = ScreenScale.Px(220, 74)
-	gui.MaxDistance = 75
+	gui.MaxDistance = 45 -- seulement les kaijus tout proches (sinon 20 étiquettes à la fois)
 	gui.LightInfluence = 0
 	gui.AlwaysOnTop = false
 	gui.StudsOffsetWorldSpace = Vector3.new(0, entry.Height + 1.5, 0)

@@ -178,13 +178,26 @@ local function buildCurrencies()
 		local step = State.Get("Tutorial") or 0
 		local left = if at then at - now() else math.huge
 		-- n'apparaît qu'à l'approche du rendez-vous (moins de place prise à l'écran)
-		goldenChip.Visible = at ~= nil and step >= TutorialConfig.Done and left <= 90
+		goldenChip.Visible = at ~= nil and step >= TutorialConfig.Done and left <= 30
 		if at then
 			goldenText.Text = if left > 1 then "🌟 Golden meteor in " .. Format.Clock(left) else "🌟 GOLDEN METEOR INCOMING!"
 		end
 	end)
+	-- les puces visibles s'empilent sans trou sous le cash
+	local function stackChips()
+		local y = 80
+		for _, c in { storedChip, meteorChip, goldenChip } do
+			if c.Visible then
+				c.Position = UDim2.fromOffset(64, y)
+				y += c.Size.Y.Offset + 6
+			end
+		end
+	end
+	RunService.Heartbeat:Connect(stackChips)
 	local lastBest = ""
 	RunService.Heartbeat:Connect(function()
+		local step = State.Get("Tutorial") or 0
+		local meteorMission = step == 3
 		local folder = Workspace:FindFirstChild("Meteors")
 		local best, bestOrder = nil, 0
 		-- œufs du monde où l'on se trouve (le cratère quand on est sur son île)
@@ -201,6 +214,8 @@ local function buildCurrencies()
 				end
 			end
 		end
+		-- hors mission météore, la puce ne parle que des beaux œufs (Epic et plus)
+		meteorChip.Visible = meteorMission or (step >= TutorialConfig.Done and best ~= nil and bestOrder >= 3)
 		if best then
 			local rarity = Rarities.Get(best:GetAttribute("Rarity") or "Common")
 			local left = (best:GetAttribute("ExpireAt") or 0) - now()
@@ -240,7 +255,9 @@ local function buildCurrencies()
 	end)
 	State.Observe("Stored", function(value)
 		local auto = (State.Get("Passes") or {}).AutoCollect
-		storedChip.Visible = value >= 1 and not auto
+		-- seulement quand ça vaut le détour (≈ 20 s de revenu), ou pendant la mission « collecte »
+		local income = State.Get("Income") or 0
+		storedChip.Visible = not auto and value >= 1 and (value >= income * 20 or (State.Get("Tutorial") or 0) == 2)
 		local text = storedChip:FindFirstChild("Text") :: TextLabel
 		text.Text = ("⚛️ %s in reactor"):format(Format.Cash(value))
 	end)
@@ -823,21 +840,17 @@ local function buildBottom()
 		local boosts = State.Get("Boosts") or {}
 		local unix = os.time()
 		if (boosts.Luck or 0) > unix then
-			chip("Luck", "🍀 x2 LUCK " .. Format.Clock(boosts.Luck - unix), C.RadioactiveDark)
+			chip("Luck", "🍀 x2 " .. Format.Clock(boosts.Luck - unix), C.RadioactiveDark)
 		end
 		if (boosts.Growth or 0) > unix then
-			chip("Growth", "🌱 x2 GROWTH " .. Format.Clock(boosts.Growth - unix), Color3.fromRGB(90, 150, 40))
+			chip("Growth", "🌱 x2 " .. Format.Clock(boosts.Growth - unix), Color3.fromRGB(90, 150, 40))
 		end
 		if (boosts.Cash or 0) > unix then
-			chip("Cash", "💸 x2 CASH " .. Format.Clock(boosts.Cash - unix), C.RadioactiveDark)
+			chip("Cash", "💸 x2 " .. Format.Clock(boosts.Cash - unix), C.RadioactiveDark)
 		end
 		local serverLuckUntil = Workspace:GetAttribute("ServerLuckUntil") or 0
 		if serverLuckUntil > t then
-			chip("ServerLuck", ("🍀 SERVER LUCK x%s %s"):format(Format.Short(Workspace:GetAttribute("ServerLuck") or 2), Format.Clock(serverLuckUntil - t)), C.Purple)
-		end
-		local friends = State.Get("Friends") or 0
-		if friends > 0 then
-			chip("Friends", ("👥 +%d%% FRIENDS"):format(math.min(friends * 10, 40)), C.Cyan:Lerp(C.Ink, 0.4))
+			chip("ServerLuck", ("🍀 x%s %s"):format(Format.Short(Workspace:GetAttribute("ServerLuck") or 2), Format.Clock(serverLuckUntil - t)), C.Purple)
 		end
 		for id, c in chips do
 			if not c:GetAttribute("Seen") then
@@ -1122,8 +1135,18 @@ function Hud.Init()
 		Hud.FlyCoins("💰", 12)
 		Hud.FloatText("+" .. Format.Cash(args.Amount or 0) .. " heist cut!", C.Gold)
 	end)
+	-- l'XP est cumulée 1,5 s et n'est affichée qu'à partir de 10 (pas de pluie de « +1 XP »)
+	local xpPending = 0
 	FxBus.On("Xp", function(args)
-		floatXp(args.Amount or 0)
+		if xpPending == 0 then
+			task.delay(1.5, function()
+				if xpPending >= 10 then
+					floatXp(xpPending)
+				end
+				xpPending = 0
+			end)
+		end
+		xpPending += args.Amount or 0
 	end)
 	FxBus.On("LevelUp", levelUp)
 	FxBus.On("Alarm", startAlarm)

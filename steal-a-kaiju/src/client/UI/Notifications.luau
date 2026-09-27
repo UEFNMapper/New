@@ -3,6 +3,7 @@
 -- probabilités (obligatoire pour le hasard payant) et « Welcome back ».
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
 local TextChatService = game:GetService("TextChatService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
@@ -36,22 +37,42 @@ local TOAST_STYLE = {
 }
 
 ----------------------------------------------------------------------------
--- Toasts (en bas à droite)
+-- Toasts (en bas au centre) : 2 au plus à l'écran, pas de doublon, débit limité
 ----------------------------------------------------------------------------
+
+local MAX_TOASTS = 2
+local recentToasts: { [string]: number } = {} -- texte -> heure d'affichage
+local lastToastAt = 0
 
 function Notifications.Toast(text: string, kind: string?)
 	local style = TOAST_STYLE[kind or "Info"] or TOAST_STYLE.Info
-	local order = -math.floor(os.clock() * 100)
+	local t = os.clock()
+	-- même message il y a moins de 5 s : inutile de le répéter
+	if (recentToasts[text] or -math.huge) > t - 5 then
+		return
+	end
+	-- les messages d'information cèdent la place quand ça s'enchaîne
+	if (kind == nil or kind == "Info") and t - lastToastAt < 1.2 then
+		return
+	end
+	recentToasts[text] = t
+	lastToastAt = t
+	for key, at in recentToasts do
+		if at < t - 5 then
+			recentToasts[key] = nil
+		end
+	end
+	local order = -math.floor(t * 100)
 	local holder = Kit.new("Frame", {
-		Size = UDim2.fromOffset(420, 58),
+		Size = UDim2.fromOffset(400, 52),
 		BackgroundTransparency = 1,
 		LayoutOrder = order,
 		Parent = toastHolder,
 	})
 	local container, body = Kit.Panel({
 		Size = UDim2.fromScale(1, 1),
-		Position = UDim2.fromScale(1.2, 0),
-		Rotation = math.random(-15, 15) / 10,
+		Position = UDim2.fromScale(0, 1.5),
+		Rotation = math.random(-10, 10) / 10,
 		Gradient = style.Color,
 		ShadowOffset = 5,
 		Parent = holder,
@@ -73,12 +94,12 @@ function Notifications.Toast(text: string, kind: string?)
 		MaxTextSize = 24,
 		Parent = body,
 	})
-	Kit.Tween(container, 0.4, { Position = UDim2.fromScale(0, 0) }, Enum.EasingStyle.Back)
+	Kit.Tween(container, 0.35, { Position = UDim2.fromScale(0, 0) }, Enum.EasingStyle.Back)
 	if kind ~= "Info" then
 		Audio.Play(style.Sound, { Volume = 0.6, Cooldown = 0.15 })
 	end
-	task.delay(3.6, function()
-		Kit.Tween(container, 0.3, { Position = UDim2.fromScale(1.3, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	task.delay(3, function()
+		Kit.Tween(container, 0.3, { Position = UDim2.fromScale(0, 1.8) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 		task.wait(0.3)
 		holder:Destroy()
 	end)
@@ -89,7 +110,8 @@ function Notifications.Toast(text: string, kind: string?)
 			table.insert(toasts, child)
 		end
 	end
-	if #toasts > 5 then
+	if #toasts > MAX_TOASTS then
+		-- le plus ancien s'en va
 		table.sort(toasts, function(a, b)
 			return a.LayoutOrder > b.LayoutOrder
 		end)
@@ -128,7 +150,13 @@ local function systemChat(text: string, color: Color3?)
 end
 
 function Notifications.Feed(text: string, style: string?, color: Color3?)
-	local icon = FEED_ICON[style or "Info"] or "📣"
+	-- seul sur le serveur, le fil ne parle que des autres... donc il se tait
+	if #Players:GetPlayers() <= 1 then
+		return
+	end
+	-- pas de double icône quand le message commence déjà par un emoji
+	local startsWithEmoji = (string.byte(text, 1) or 0) >= 0xE0
+	local icon = if startsWithEmoji then "" else (FEED_ICON[style or "Info"] or "📣") .. "  "
 	local accent = color or C.Magma
 	local row = Kit.new("Frame", {
 		Size = UDim2.new(1, 0, 0, 40),
@@ -147,7 +175,7 @@ function Notifications.Feed(text: string, style: string?, color: Color3?)
 	Kit.Text({
 		Size = UDim2.new(1, -24, 1, -8),
 		Position = UDim2.fromOffset(16, 4),
-		Text = icon .. "  " .. text,
+		Text = icon .. text,
 		FontFace = F.Body,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		MaxTextSize = 20,
@@ -155,7 +183,7 @@ function Notifications.Feed(text: string, style: string?, color: Color3?)
 		Parent = row,
 	})
 	Kit.Pop(row, 0.6, 0.35)
-	task.delay(8, function()
+	task.delay(6, function()
 		Kit.Tween(row, 0.4, { BackgroundTransparency = 1 })
 		for _, d in row:GetDescendants() do
 			if d:IsA("TextLabel") then
@@ -175,13 +203,16 @@ function Notifications.Feed(text: string, style: string?, color: Color3?)
 			table.insert(rows, child)
 		end
 	end
-	if #rows > 5 then
+	if #rows > 2 then
 		table.sort(rows, function(a, b)
 			return a.LayoutOrder < b.LayoutOrder
 		end)
 		rows[1]:Destroy()
 	end
-	systemChat(text, accent)
+	-- seuls les grands moments vont aussi dans le chat
+	if style == "Rare" or style == "Boss" then
+		systemChat(text, accent)
+	end
 end
 
 ----------------------------------------------------------------------------
@@ -397,13 +428,14 @@ function Notifications.Init()
 	layer = Kit.Layer("Notifications", 40)
 	toastHolder = Kit.new("Frame", {
 		Name = "Toasts",
-		Size = UDim2.fromOffset(440, 420),
-		Position = UDim2.new(1, -130, 1, -110),
-		AnchorPoint = Vector2.new(1, 1),
+		Size = UDim2.fromOffset(420, 130),
+		Position = UDim2.new(0.5, 0, 1, -96),
+		AnchorPoint = Vector2.new(0.5, 1),
 		BackgroundTransparency = 1,
 		Parent = layer,
-	}, { Kit.List(Enum.FillDirection.Vertical, 8, Enum.HorizontalAlignment.Right, Enum.VerticalAlignment.Bottom) })
-	Kit.AutoScale(toastHolder)
+	}, { Kit.List(Enum.FillDirection.Vertical, 8, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Bottom) })
+	-- échelle des fenêtres : les toasts restent lisibles sur téléphone
+	Kit.AutoScale(toastHolder, "Window")
 	-- Le fil vit sous les fenêtres (DisplayOrder 6 < 20) et en bas à gauche,
 	-- loin des menus et des annonces centrales.
 	local feedLayer = Kit.Layer("Feed", 6)

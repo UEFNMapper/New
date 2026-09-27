@@ -289,7 +289,7 @@ def gradient_image(rect, grad, size):
 def rounded_mask(size, rect, radius):
     m = Image.new("L", size, 0)
     x, y, w, h = rect
-    if w <= 0 or h <= 0:
+    if w < 1 or h < 1:
         return m
     ImageDraw.Draw(m).rounded_rectangle([x, y, x + w - 1, y + h - 1], radius=max(0, min(radius, w / 2, h / 2)), fill=255)
     return m

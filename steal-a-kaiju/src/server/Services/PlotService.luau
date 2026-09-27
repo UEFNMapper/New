@@ -147,6 +147,7 @@ local function assign(player: Player)
 				title.Text = string.upper(player.DisplayName) .. "'S ISLAND"
 				title.TextColor3 = plot.Color
 			end
+			plot.Sign.Enabled = true
 			PlotService.RefreshNests(player)
 			return plot
 		end
@@ -170,6 +171,8 @@ local function release(player: Player)
 		title.Text = "EMPTY ISLAND"
 		title.TextColor3 = Color3.fromRGB(255, 246, 222)
 	end
+	-- une île vide n'affiche rien (moins de texte à l'écran)
+	plot.Sign.Enabled = false
 	local amount = plot.CollectorGui:FindFirstChild("Amount") :: TextLabel?
 	if amount then
 		amount.Text = "$0"

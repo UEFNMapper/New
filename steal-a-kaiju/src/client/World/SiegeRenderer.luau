@@ -671,7 +671,7 @@ function SiegeRenderer.Init()
 	RunService.RenderStepped:Connect(function(dt)
 		local t = os.clock()
 		local serverT = now()
-		numbersBudget = math.min(numbersBudget + dt * 14, 10)
+		numbersBudget = math.min(numbersBudget + dt * 4, 3) -- 4 chiffres de dégâts par seconde au plus
 		for _, entry in invaders do
 			animate(entry, dt, t, serverT)
 		end

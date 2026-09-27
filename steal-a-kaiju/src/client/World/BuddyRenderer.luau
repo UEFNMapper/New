@@ -905,7 +905,13 @@ function BuddyRenderer.Init()
 		elseif args.First then
 			-- après la cinématique d'éclosion qui vient de se jouer
 			task.delay(6, function()
-				UIRegistry.Announce("🐾 NEW BUDDY!", C.Pink, name .. " follows you everywhere and sniffs out treasure!", "reward_claim")
+				-- pendant les premières missions, pas de grande bannière : la mission
+				-- « trésor » présentera le compagnon au bon moment
+				if (State.Get("Tutorial") or 0) < 6 then
+					UIRegistry.Toast(name .. " follows you around! 🐾", "Good")
+				else
+					UIRegistry.Announce("🐾 NEW BUDDY!", C.Pink, name .. " follows you everywhere and sniffs out treasure!", "reward_claim")
+				end
 				celebrate(localPet())
 			end)
 		elseif args.Reason == "Lost" then
@@ -930,7 +936,10 @@ function BuddyRenderer.Init()
 		if chip.LevelChip then
 			Kit.Punch(chip.LevelChip, 0.5)
 		end
-		UIRegistry.Toast(("🐾 Buddy reached LEVEL %d! Bigger magnet, faster treasures!"):format(args.Level or 1), "Good")
+		-- message seulement tous les 5 niveaux (le « BUDDY LV X! » au-dessus de lui suffit sinon)
+		if (args.Level or 1) % 5 == 0 then
+			UIRegistry.Toast(("🐾 Buddy reached LEVEL %d! Bigger magnet, faster treasures!"):format(args.Level or 1), "Good")
+		end
 	end)
 	FxBus.On("BuddyTreasure", function()
 		refreshChip()

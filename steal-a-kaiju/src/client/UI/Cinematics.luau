@@ -495,9 +495,10 @@ function Cinematics.Init()
 	FxBus.On("PersonalMeteor", function(args)
 		local rarity = Rarities.Get(args.Rarity or "Common")
 		if args.Golden then
-			UIRegistry.Announce("🌟 GOLDEN METEOR!", C.Gold, ("A %s egg at HALF PRICE is landing on your island!"):format(string.upper(rarity.Name)), "meteor_rare_alarm")
-		else
-			UIRegistry.Toast(("☄️ A %s meteor is landing on YOUR island!"):format(rarity.Name), if rarity.Order >= 4 then "Rare" else "Info")
+			UIRegistry.Announce("🌟 GOLDEN METEOR!", C.Gold, ("%s %s egg at HALF PRICE is landing on your island!"):format(if string.find("AEIOU", string.sub(rarity.Name, 1, 1), 1, true) then "An" else "A", string.upper(rarity.Name)), "meteor_rare_alarm")
+		elseif rarity.Order >= 2 then
+			-- les météores perso Common tombent sans message (le faisceau suffit)
+			UIRegistry.Toast(("☄️ %s %s meteor is landing on YOUR island!"):format(if string.find("AEIOU", string.sub(rarity.Name, 1, 1), 1, true) then "An" else "A", rarity.Name), if rarity.Order >= 4 then "Rare" else "Info")
 		end
 	end)
 	FxBus.On("HelperJoined", function(args)
