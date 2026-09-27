@@ -39,7 +39,8 @@ for _, name in order do
 end
 
 Registry.PlotService.SetMap(map)
-Registry.MeteorService.SetPads(map.MeteorPads)
+Registry.MeteorService.SetWorlds(map.Worlds)
+Registry.WorldService.SetWorlds(map.Worlds)
 
 -- Init dans l'ordre inverse des dépendances de données : DataService en
 -- dernier pour que tous les services soient abonnés à Loaded avant le 1er joueur.

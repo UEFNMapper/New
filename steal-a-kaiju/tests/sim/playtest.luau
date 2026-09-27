@@ -33,6 +33,9 @@ local DataService = req(Services:FindFirstChild("DataService"))
 local KaijuService = req(Services:FindFirstChild("KaijuService"))
 local PlotService = req(Services:FindFirstChild("PlotService"))
 local EventService = req(Services:FindFirstChild("EventService"))
+local LevelService = req(Services:FindFirstChild("LevelService"))
+local Levels = req(Shared.Config.Levels)
+local Layout = req(Shared.Config.Layout)
 local Growth = req(Shared.Config.Growth)
 local Kaijus = req(Shared.Config.Kaijus)
 local Calc = req(Shared.Logic.Calc)
@@ -401,8 +404,10 @@ data(alice).Cash += 100000
 local up = Boot.Call(alice, "BuyUpgrade", { Id = "Sneakers" })
 Runtime.Advance(0.1)
 check("amélioration Rocket Sneakers", up and up.ok and alice.Character.Humanoid.WalkSpeed == 24, alice.Character.Humanoid.WalkSpeed)
-local nest = Boot.Call(alice, "BuyNest")
-check("achat d'un nid", nest and nest.ok and data(alice).Nests == 7)
+local nestsBefore = PlotService.UnlockedNests(alice)
+LevelService.AddXp(alice, Levels.TotalFor(Levels.NestLevels[1]) - data(alice).Xp + 1, "Test")
+check("nids gagnés en montant de niveau", PlotService.UnlockedNests(alice) >= math.max(nestsBefore, Levels.NestsFor(data(alice).Level)) and data(alice).Level >= Levels.NestLevels[1], PlotService.UnlockedNests(alice))
+check("achat de nid retiré (les nids viennent des niveaux)", not (Boot.Call(alice, "BuyNest") or {}).ok)
 
 -- Politique : joueur en zone restreinte
 Runtime.PaidRandomRestricted = true
@@ -448,6 +453,12 @@ local a = KaijuService.AddHatched(alice, "Toastzilla", nil, Growth.Threshold(3, 
 local b = KaijuService.AddHatched(alice, "Sharkapillar", nil, Growth.Threshold(3, "Rare") + 1)
 Runtime.Advance(1.2)
 if a and b then
+	local early = Boot.Call(alice, "FuseOdds", { A = a.Uid, B = b.Uid })
+	check("recette secrète trop tôt : stade requis affiché", early and early.ok and early.odds[1].Chance == 0 and string.find(early.odds[1].Label, "COLOSSUS") ~= nil)
+	local refused = Boot.Call(alice, "Fuse", { A = a.Uid, B = b.Uid })
+	check("recette secrète refusée avant le stade requis (anti-exploit)", refused and not refused.ok, refused and refused.msg)
+	a.Growth = Growth.Threshold(5, "Common") + 1
+	b.Growth = Growth.Threshold(5, "Rare") + 1
 	local odds = Boot.Call(alice, "FuseOdds", { A = a.Uid, B = b.Uid })
 	check("probabilités de fusion affichées", odds and odds.ok and odds.odds[1].Chance == 1)
 	local f = Boot.Call(alice, "Fuse", { A = a.Uid, B = b.Uid })
@@ -468,11 +479,20 @@ for _, rec in table.clone(data(alice).Kaijus) do
 end
 local legend = KaijuService.AddHatched(alice, "Rexplosion", nil, Growth.Threshold(3, "Legendary") + 1)
 data(alice).Cash = 10 ^ 7
+local tooLow = if data(alice).Level < Levels.MenuLevels.Rebirth then Boot.Call(alice, "Rebirth") else { ok = false }
+check("évolution verrouillée avant le niveau 10", tooLow and not tooLow.ok)
+LevelService.AddXp(alice, math.max(0, Levels.TotalFor(Levels.MenuLevels.Rebirth) - data(alice).Xp), "Test")
+data(alice).Cash = 10 ^ 7
 local rebirth = Boot.Call(alice, "Rebirth")
 Runtime.Advance(1)
 check("évolution réussie", rebirth and rebirth.ok and data(alice).Rebirths == 1, rebirth and rebirth.msg)
 check("évolution : cash remis à zéro", data(alice).Cash == 100, data(alice).Cash)
-check("évolution : œuf bonus offert", #data(alice).Kaijus == 1 and data(alice).Kaijus[1].Egg)
+local rareEgg, hatchedLeft = false, 0
+for _, r in data(alice).Kaijus do
+	rareEgg = rareEgg or (r.Egg and r.Rarity == "Rare")
+	hatchedLeft += if r.Egg then 0 else 1
+end
+check("évolution : kaijus remis à zéro + œuf bonus offert", rareEgg and hatchedLeft == 0)
 check("évolution : multiplicateur x1.5", Calc.RebirthMult(1) == 1.5)
 
 
@@ -533,6 +553,73 @@ local bob2 = Runtime.AddPlayer("Bob", bobId)
 Runtime.Advance(3)
 check("Bob retrouve ses kaijus", data(bob2) and #data(bob2).Kaijus >= bobKaijus, data(bob2) and #data(bob2).Kaijus)
 check("gains hors ligne crédités", #Boot.FxFor(bob2, "WelcomeBack") >= 1)
+
+----------------------------------------------------------------------------
+section("Niveaux et mondes")
+local bob = bob2
+local Worlds = req(Shared.Config.Worlds)
+local WorldService = req(Services:FindFirstChild("WorldService"))
+check("XP gagnée en jouant (éclosions, croissance)", data(bob).Xp > 0 and data(bob).Level >= 1, data(bob).Xp)
+check("leaderstat Level", bob.leaderstats.Level.Value == data(bob).Level)
+local lockedWorld = Boot.Call(bob, "UnlockWorld", { Id = "Frost" })
+check("monde verrouillé par le niveau", lockedWorld and not lockedWorld.ok and string.find(lockedWorld.msg or "", "LEVEL") ~= nil, lockedWorld and lockedWorld.msg)
+local noTravel = Boot.Call(bob, "Travel", { Id = "Candy" })
+check("voyage refusé vers un monde non débloqué", noTravel and not noTravel.ok)
+LevelService.AddXp(bob, math.max(0, Levels.TotalFor(5) - data(bob).Xp), "Test")
+check("niveau 5 atteint", data(bob).Level >= 5, data(bob).Level)
+data(bob).Cash = 1000
+local poor = Boot.Call(bob, "UnlockWorld", { Id = "Candy" })
+check("péage refusé sans assez de cash", poor and not poor.ok)
+data(bob).Cash = 3000
+local opened = Boot.Call(bob, "UnlockWorld", { Id = "Candy" })
+check("Candy Coast débloqué (péage payé)", opened and opened.ok and data(bob).Worlds.Candy == true and data(bob).Cash == 500, data(bob).Cash)
+local go = Boot.Call(bob, "Travel", { Id = "Candy" })
+Runtime.Advance(1)
+local bobRoot = bob.Character.HumanoidRootPart
+check("voyage vers Candy Coast", go and go.ok and Worlds.At(bobRoot.Position) == "Candy", go and go.msg)
+check("présence du joueur dans le monde suivie", WorldService.CountIn("Candy") == 1 and bob:GetAttribute("World") == "Candy")
+-- libère des nids pour les œufs du monde
+for _, rec in table.clone(data(bob).Kaijus) do
+	KaijuService.RemoveRecord(bob, rec.Uid)
+end
+data(bob).Cash = 10 ^ 7
+local worldMeteor
+for _ = 1, 40 do
+	Runtime.Advance(1)
+	for _, m in meteorsFolder:GetChildren() do
+		if m:GetAttribute("World") == "Candy" and (m:GetAttribute("LandAt") or 0) <= S.Workspace:GetServerTimeNow() then
+			worldMeteor = m
+		end
+	end
+	if worldMeteor then
+		break
+	end
+end
+check("des œufs tombent dans le monde visité", worldMeteor ~= nil)
+check("minuteur des météores du monde publié", (S.Workspace:GetAttribute("NextMeteorIn_Candy") or -1) >= 0)
+if worldMeteor then
+	Runtime.MoveTo(bob, worldMeteor.Position + V3(3, 0, 0))
+	local bought = Boot.Call(bob, "BuyMeteor", { Id = worldMeteor:GetAttribute("Id") })
+	check("achat d'un œuf de Candy Coast", bought and bought.ok, bought and bought.msg)
+	Runtime.Advance(40)
+	local rec = data(bob).Kaijus[1]
+	local native = false
+	if rec and rec.Species then
+		for _, id in Worlds.Get("Candy").Species do
+			native = native or id == rec.Species
+		end
+		native = native or Kaijus.Get(rec.Species).Rarity == "Celestial"
+	end
+	check("l'œuf éclôt en espèce de Candy Coast", rec and rec.World == "Candy" and native, rec and rec.Species)
+end
+local home = Boot.Call(bob, "Home")
+Runtime.Advance(1)
+check("retour à la maison", home and home.ok and Layout.InPlot(PlotService.Get(bob).CFrame, bob.Character.HumanoidRootPart.Position, 2))
+check("le monde vide ne fait plus tomber d'œufs", WorldService.CountIn("Candy") == 0)
+Runtime.Advance(1)
+local crater = Boot.Call(bob, "Travel", { Id = "Crater" })
+Runtime.Advance(1)
+check("voyage vers le cratère", crater and crater.ok and bob:GetAttribute("World") == "Crater")
 
 ----------------------------------------------------------------------------
 section("Longue session (2 h de jeu simulé)")

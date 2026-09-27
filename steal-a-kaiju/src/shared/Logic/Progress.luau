@@ -13,9 +13,15 @@ function Progress.DayNumber(t: number): number
 end
 
 -- Tire les quêtes du jour de façon déterministe (même joueur, même jour = mêmes quêtes).
-function Progress.PickQuests(userId: number, day: number): { string }
+-- `level` : les quêtes dont la fonctionnalité n'est pas encore débloquée sont écartées.
+function Progress.PickQuests(userId: number, day: number, level: number?): { string }
 	local rng = Random.new(userId * 7919 + day * 104729)
-	local pool = table.clone(Rewards.Quests)
+	local pool = {}
+	for _, q in Rewards.Quests do
+		if (q.MinLevel or 1) <= (level or 1) then
+			table.insert(pool, q)
+		end
+	end
 	local picked: { string } = {}
 	local usedStats: { [string]: boolean } = {}
 	while #picked < Rewards.QuestsPerDay and #pool > 0 do

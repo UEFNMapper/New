@@ -7,16 +7,9 @@ Economy.StartCash = 100
 Economy.StartGems = 10
 
 -- Nids --------------------------------------------------------------------
+-- Les nids se gagnent avec les niveaux (Config/Levels : NestLevels).
 Economy.StartNests = 6
-Economy.MaxNests = 16 -- hors gamepass
 Economy.PassBonusNests = 3
-Economy.NestBasePrice = 400
-Economy.NestPriceGrowth = 3.2
-
-function Economy.NestPrice(currentNests: number): number
-	local bought = currentNests - Economy.StartNests
-	return math.floor(Economy.NestBasePrice * Economy.NestPriceGrowth ^ bought)
-end
 
 -- Améliorations (achetées en cash) ----------------------------------------
 export type Upgrade = {

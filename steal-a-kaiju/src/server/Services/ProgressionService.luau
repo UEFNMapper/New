@@ -7,6 +7,8 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Kaijus = require(Shared.Config.Kaijus)
 local Rarities = require(Shared.Config.Rarities)
 local Economy = require(Shared.Config.Economy)
+local Growth = require(Shared.Config.Growth)
+local Levels = require(Shared.Config.Levels)
 local Calc = require(Shared.Logic.Calc)
 local Roll = require(Shared.Logic.Roll)
 local Format = require(Shared.Logic.Format)
@@ -53,6 +55,9 @@ local function rebirth(player: Player): Router.Result
 	if not nextRebirth then
 		return { ok = false, msg = "Max evolution reached!" }
 	end
+	if data.Level < (Levels.MenuLevels.Rebirth or 1) then
+		return { ok = false, msg = ("Reach LEVEL %d first!"):format(Levels.MenuLevels.Rebirth) }
+	end
 	if data.Cash < nextRebirth.Cost then
 		return { ok = false, msg = "Need " .. Format.Cash(nextRebirth.Cost) }
 	end
@@ -80,6 +85,7 @@ local function rebirth(player: Player): Router.Result
 	Registry.PlotService.RefreshNests(player)
 	Registry.KaijuService.RefreshPlayer(player)
 	Registry.KaijuService.GiveEgg(player, nextRebirth.EggRarity, "Evolution")
+	Registry.LevelService.AddXp(player, Levels.Xp.Rebirth * data.Rebirths, "Rebirth")
 	Registry.LeaderboardService.Update(player)
 
 	Notify.FxAll("Rebirth", { UserId = player.UserId, Level = data.Rebirths })
@@ -95,6 +101,10 @@ end
 function ProgressionService.FuseOdds(a: Calc.KaijuRecord, b: Calc.KaijuRecord): { { Label: string, Chance: number } }
 	local recipe = Kaijus.FindRecipe(a.Species or "", b.Species or "")
 	if recipe then
+		local need = recipe.RecipeStage or ProgressionService.FuseMinStage
+		if Calc.Stage(a) < need or Calc.Stage(b) < need then
+			return { { Label = ("SECRET recipe! Grow both to %s"):format(string.upper(Growth.Get(need).Name)), Chance = 0 } }
+		end
 		return { { Label = recipe.Name .. " (SECRET)", Chance = 1 } }
 	end
 	local ra, rb = Rarities.Get(a.Rarity), Rarities.Get(b.Rarity)
@@ -136,6 +146,13 @@ local function fuse(player: Player, payload: any): Router.Result
 	local resultMutation: string? = nil
 	local recipe = Kaijus.FindRecipe(a.Species, b.Species)
 	if recipe then
+		-- les recettes secrètes demandent des ingrédients bien grandis
+		local need = recipe.RecipeStage or ProgressionService.FuseMinStage
+		if Calc.Stage(a) < need or Calc.Stage(b) < need then
+			return { ok = false, msg = ("Secret recipe! Grow both to %s first"):format(string.upper(Growth.Get(need).Name)) }
+		end
+	end
+	if recipe then
 		resultSpecies = recipe.Id
 		resultMutation = a.Mutation or b.Mutation
 	elseif a.Species == b.Species then
@@ -154,6 +171,7 @@ local function fuse(player: Player, payload: any): Router.Result
 	Registry.KaijuService.RemoveRecord(player, ub)
 	local rec = Registry.KaijuService.AddHatched(player, resultSpecies, resultMutation, 0)
 	Registry.RewardService.Track(player, "Fusions", 1)
+	Registry.LevelService.AddXp(player, Levels.Xp.Fusion, "Fusion")
 	local species = Kaijus.Get(resultSpecies)
 	if rec and species then
 		Notify.Fx(player, "Fused", { Uid = rec.Uid, Species = resultSpecies, Mutation = resultMutation, Secret = recipe ~= nil })

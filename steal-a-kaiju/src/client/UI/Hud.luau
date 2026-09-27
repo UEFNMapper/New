@@ -17,6 +17,8 @@ local Kaijus = require(Shared.Config.Kaijus)
 local Growth = require(Shared.Config.Growth)
 local Rarities = require(Shared.Config.Rarities)
 local TutorialConfig = require(Shared.Config.Tutorial)
+local Levels = require(Shared.Config.Levels)
+local Worlds = require(Shared.Config.Worlds)
 local Tutorial = require(script.Parent.Parent.World.Tutorial)
 
 local Kit = require(script.Parent.Kit)
@@ -283,6 +285,188 @@ function Hud.FloatText(text: string, color: Color3)
 end
 
 ----------------------------------------------------------------------------
+-- Niveau + « NEXT GOAL » (en haut à gauche)
+----------------------------------------------------------------------------
+
+local levelPanel: Frame
+
+-- Le prochain objectif du joueur : un monde à ouvrir, sinon le prochain déblocage de niveau.
+local function nextGoal(): (string, number?, string?)
+	local level = State.Get("Level") or 1
+	local rebirths = State.Get("Rebirths") or 0
+	local cash = State.Get("Cash") or 0
+	local unlocked = State.Get("Worlds") or {}
+	for _, w in Worlds.List do
+		if not unlocked[w.Id] and Worlds.MeetsGate(w, level, rebirths) then
+			if cash >= w.Toll then
+				return ("🌍 %s is ready! TAP TO UNLOCK"):format(string.upper(w.Name)), 1, w.Id
+			end
+			return ("🌍 Save %s for %s"):format(Format.Cash(w.Toll), string.upper(w.Name)), cash / math.max(1, w.Toll), w.Id
+		end
+	end
+	local u = Levels.NextUnlock(level)
+	if u then
+		return ("⭐ LV %d unlocks %s"):format(u.Level, u.Text), nil, if u.Kind == "World" then u.Id else nil
+	end
+	return "⭐ Max unlocks reached — chase the Kaijudex!", nil, nil
+end
+
+local function buildLevel()
+	levelPanel = Kit.new("Frame", {
+		Name = "Level",
+		Size = UDim2.fromOffset(330, 84),
+		Position = UDim2.fromOffset(16, 66),
+		BackgroundTransparency = 1,
+		Parent = layer,
+	})
+	Kit.AutoScale(levelPanel)
+	local _, body = Kit.Panel({ Size = UDim2.fromScale(1, 1), Rotation = -1, Gradient = "Ink", Parent = levelPanel })
+	local star = Kit.Icon("level", { Size = UDim2.fromOffset(70, 70), Position = UDim2.fromOffset(-10, -6), ZIndex = 5, Parent = body })
+	Kit.Wobble(star, 5, 1.6)
+	local levelNumber = Kit.Text({
+		Name = "Number",
+		Size = UDim2.fromOffset(70, 40),
+		Position = UDim2.fromOffset(-10, 12),
+		Text = "1",
+		FontFace = F.Impact,
+		MaxTextSize = 30,
+		Stroke = 3,
+		ZIndex = 7,
+		Parent = body,
+	})
+	local title = Kit.Text({
+		Name = "Title",
+		Size = UDim2.new(1, -80, 0, 26),
+		Position = UDim2.fromOffset(64, 4),
+		Text = "LEVEL 1",
+		FontFace = F.Title,
+		TextColor3 = C.Gold,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		MaxTextSize = 22,
+		ZIndex = 5,
+		Parent = body,
+	})
+	local xpText = Kit.Text({
+		Name = "Xp",
+		Size = UDim2.new(1, -80, 0, 18),
+		Position = UDim2.fromOffset(64, 4),
+		Text = "0 / 40 XP",
+		FontFace = F.Body,
+		TextColor3 = C.Paper,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		MaxTextSize = 14,
+		ZIndex = 5,
+		Parent = body,
+	})
+	local _, setXp = Kit.ProgressBar({ Name = "XpBar", Size = UDim2.new(1, -80, 0, 14), Position = UDim2.fromOffset(64, 32), Color = "Gold", Parent = body })
+	local goalButton = Kit.new("TextButton", {
+		Name = "Goal",
+		Size = UDim2.new(1, -16, 0, 26),
+		Position = UDim2.new(0, 8, 1, -30),
+		BackgroundColor3 = C.InkSoft,
+		Text = "",
+		AutoButtonColor = true,
+		ZIndex = 5,
+		Parent = body,
+	}, { Kit.Round() })
+	local goalFill = Kit.new("Frame", {
+		Name = "Fill",
+		Size = UDim2.fromScale(0, 1),
+		BackgroundColor3 = C.RadioactiveDark,
+		ZIndex = 5,
+		Parent = goalButton,
+	}, { Kit.Round() })
+	local goalText = Kit.Text({
+		Name = "Text",
+		Size = UDim2.new(1, -12, 1, 0),
+		Position = UDim2.fromOffset(6, 0),
+		Text = "",
+		FontFace = F.Title,
+		MaxTextSize = 15,
+		Stroke = 2,
+		ZIndex = 6,
+		Parent = goalButton,
+	})
+	local goalWorld: string? = nil
+	goalButton.Activated:Connect(function()
+		Audio.Play("ui_click")
+		local screen = (UIRegistry.Screens :: any).Worlds
+		if screen and screen.Open and (State.Get("Level") or 1) >= (Levels.MenuLevels.Worlds or 1) then
+			screen.Open(goalWorld)
+		end
+	end)
+
+	local lastLevel = 0
+	local function refresh()
+		local xp = State.Get("Xp") or 0
+		local level, progress, into, need = Levels.FromXp(xp)
+		levelNumber.Text = tostring(level)
+		title.Text = "LEVEL " .. level
+		xpText.Text = if need > 0 then ("%s / %s XP"):format(Format.Short(into), Format.Short(need)) else "MAX"
+		setXp(progress, lastLevel == level)
+		if lastLevel ~= 0 and level > lastLevel then
+			Kit.Punch(levelPanel, 0.2)
+		end
+		lastLevel = level
+		local text, fill, world = nextGoal()
+		goalText.Text = text
+		goalWorld = world
+		goalFill.Visible = fill ~= nil
+		goalFill.Size = UDim2.fromScale(math.clamp(fill or 0, 0, 1), 1)
+		goalFill.BackgroundColor3 = if fill and fill >= 1 then C.Gold else C.RadioactiveDark
+	end
+	for _, key in { "Xp", "Level", "Cash", "Worlds", "Rebirths" } do
+		State.Observe(key, refresh)
+	end
+	-- l'objectif « prêt à ouvrir » respire pour attirer l'œil
+	Kit.Breathe(goalButton, 0.03, 0.8)
+end
+
+-- « +10 XP » qui monte depuis la barre de niveau.
+local function floatXp(amount: number)
+	if not levelPanel then
+		return
+	end
+	local label = Kit.Text({
+		Size = UDim2.fromOffset(120, 30),
+		Position = UDim2.new(0, levelPanel.AbsolutePosition.X + levelPanel.AbsoluteSize.X * 0.7 + math.random(-20, 20), 0, levelPanel.AbsolutePosition.Y + levelPanel.AbsoluteSize.Y * 0.4),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Text = ("+%d XP"):format(amount),
+		FontFace = F.Impact,
+		TextColor3 = C.Gold,
+		Stroke = 3,
+		ZIndex = 62,
+		Parent = layer,
+	})
+	Kit.Pop(label, 1.5, 0.25)
+	Kit.Tween(label, 1, { Position = label.Position - UDim2.fromOffset(0, 40), TextTransparency = 1 }, Enum.EasingStyle.Quad)
+	local stroke = label:FindFirstChildOfClass("UIStroke")
+	if stroke then
+		Kit.Tween(stroke, 1, { Transparency = 1 })
+	end
+	task.delay(1.1, function()
+		label:Destroy()
+	end)
+end
+
+local function levelUp(args)
+	local lines = {}
+	for _, u in args.Unlocks or {} do
+		table.insert(lines, u.Text)
+	end
+	local sub = ("+%d 💎"):format(args.Gems or 0)
+	if args.Egg then
+		sub ..= "  •  " .. string.upper(args.Egg) .. " EGG"
+	end
+	if #lines > 0 then
+		sub = "UNLOCKED: " .. table.concat(lines, " • ") .. "   " .. sub
+	end
+	UIRegistry.Announce(("LEVEL %d!"):format(args.Level or 1), C.Gold, sub, "level_jingle")
+	CameraFx.FovPunch(-6, 0.5)
+	Hud.FlyCoins("💎", 10)
+end
+
+----------------------------------------------------------------------------
 -- Menus latéraux
 ----------------------------------------------------------------------------
 
@@ -348,30 +532,38 @@ local function buildMenus()
 	})
 	Kit.AutoScale(left)
 	menuButton(left, { Id = "Shop", Text = "SHOP", Icon = "shop", Color = "Magma", Order = 1, Rotation = -3, OnClick = function() openScreen("Shop") end })
-	menuButton(left, { Id = "Index", Text = "KAIJUDEX", Icon = "kaijudex", Color = "Cyan", Order = 2, Rotation = 2, OnClick = function() openScreen("Index") end })
-	menuButton(left, { Id = "Rebirth", Text = "EVOLVE", Icon = "evolve", Color = "Radioactive", Order = 3, Rotation = 2, OnClick = function() openScreen("Rebirth") end })
-	menuButton(left, { Id = "Fusion", Text = "FUSION", Icon = "fusion", Color = "Purple", Order = 4, Rotation = -3, OnClick = function() openScreen("Fusion") end })
-	menuButton(left, { Id = "Quests", Text = "QUESTS", Icon = "quests", Color = "Gold", Order = 5, Rotation = -2, OnClick = function() openScreen("Quests") end })
-	menuButton(left, { Id = "Upgrades", Text = "UPGRADES", Icon = "upgrades", Color = "Pink", Order = 6, Rotation = 3, OnClick = function() openScreen("Shop", "Upgrades") end })
+	menuButton(left, { Id = "Upgrades", Text = "UPGRADES", Icon = "upgrades", Color = "Pink", Order = 2, Rotation = 3, OnClick = function() openScreen("Shop", "Upgrades") end })
+	menuButton(left, { Id = "Worlds", Text = "WORLDS", Icon = "worlds", Color = "Cyan", Order = 3, Rotation = 2, OnClick = function() openScreen("Worlds") end })
+	menuButton(left, { Id = "Index", Text = "KAIJUDEX", Icon = "kaijudex", Color = "Gold", Order = 4, Rotation = -2, OnClick = function() openScreen("Index") end })
+	menuButton(left, { Id = "Fusion", Text = "FUSION", Icon = "fusion", Color = "Purple", Order = 5, Rotation = -3, OnClick = function() openScreen("Fusion") end })
+	menuButton(left, { Id = "Rebirth", Text = "EVOLVE", Icon = "evolve", Color = "Radioactive", Order = 6, Rotation = 2, OnClick = function() openScreen("Rebirth") end })
 
 	local right = Kit.new("Frame", {
 		Name = "RightMenu",
-		Size = UDim2.fromOffset(100, 560),
-		Position = UDim2.new(1, -16, 0.5, 20),
+		Size = UDim2.fromOffset(100, 500),
+		Position = UDim2.new(1, -16, 0.5, 40),
 		AnchorPoint = Vector2.new(1, 0.5),
 		BackgroundTransparency = 1,
 		Parent = layer,
 	}, { Kit.List(Enum.FillDirection.Vertical, 38, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Center) })
 	Kit.AutoScale(right)
-	menuButton(right, { Id = "Playtime", Text = "GIFTS", Icon = "gifts", Color = "Pink", Order = 1, Rotation = 3, OnClick = function() openScreen("Playtime") end })
-	menuButton(right, { Id = "Daily", Text = "DAILY", Icon = "daily", Color = "Gold", Order = 2, Rotation = -2, OnClick = function() openScreen("Daily") end })
-	menuButton(right, { Id = "Spin", Text = "SPIN", Icon = "spin", Color = "Cyan", Order = 3, Rotation = 2, OnClick = function() openScreen("Spin") end })
-	menuButton(right, { Id = "Settings", Text = "SETTINGS", Icon = "settings", Color = "Ink", Order = 4, Rotation = -2, OnClick = function() openScreen("Settings") end })
-	menuButton(right, { Id = "HowToPlay", Text = "HELP", Icon = "howtoplay", Color = "Cyan", Order = 5, Rotation = 2, OnClick = function() openScreen("HowToPlay") end })
+	menuButton(right, { Id = "Rewards", Text = "REWARDS", Icon = "rewards", Color = "Pink", Order = 1, Rotation = 3, OnClick = function() openScreen("Rewards") end })
+	menuButton(right, { Id = "Rampage", Text = "RAMPAGE", Icon = "rampage", Color = "Red", Order = 2, Rotation = -2, OnClick = function() openScreen("Rampage") end })
+	menuButton(right, { Id = "Settings", Text = "SETTINGS", Icon = "settings", Color = "Ink", Order = 3, Rotation = -2, OnClick = function() openScreen("Settings") end })
+	menuButton(right, { Id = "HowToPlay", Text = "HELP", Icon = "howtoplay", Color = "Cyan", Order = 4, Rotation = 2, OnClick = function() openScreen("HowToPlay") end })
 
-	-- Déblocage progressif des menus au fil des missions
-	State.Observe("Tutorial", function(step)
-		local visible = TutorialConfig.VisibleMenus(math.max(1, step or 1))
+	-- Déblocage progressif des menus : missions du tutoriel, puis niveaux
+	local function refreshMenus()
+		local step = math.max(1, State.Get("Tutorial") or 1)
+		local visible = TutorialConfig.VisibleMenus(step)
+		if step >= TutorialConfig.Done then
+			local level = State.Get("Level") or 1
+			for id, need in Levels.MenuLevels do
+				if level >= need then
+					visible[id] = true
+				end
+			end
+		end
 		for id, button in menuButtons do
 			local show = visible[id] == true
 			if show and not button.Visible then
@@ -381,11 +573,9 @@ local function buildMenus()
 				button.Visible = false
 			end
 		end
-	end)
-
-	-- Minuteur des cadeaux sous le bouton
-	local giftTimer = Kit.Chip({ Name = "GiftTimer", Text = "0:00", Size = UDim2.fromOffset(84, 24), Position = UDim2.new(0.5, 0, 1, 14), AnchorPoint = Vector2.new(0.5, 0), Color = C.Pink, Parent = menuButtons.Playtime })
-	giftTimer.ZIndex = 20
+	end
+	State.Observe("Tutorial", refreshMenus)
+	State.Observe("Level", refreshMenus)
 
 	-- Badges : rafraîchis régulièrement
 	task.spawn(function()
@@ -397,26 +587,17 @@ local function buildMenus()
 					Kit.SetBadge(b, count > 0, if count > 1 then tostring(count) else "!")
 				end
 			end
-			if screens.Playtime and screens.Playtime.ClaimableCount then
-				badge("Playtime", screens.Playtime.ClaimableCount())
-				local wait = if screens.Playtime.NextReadyIn then screens.Playtime.NextReadyIn() else -1
-				local text = giftTimer:FindFirstChild("Text") :: TextLabel
-				giftTimer.Visible = wait ~= 0
-				text.Text = if wait < 0 then "DONE" else Format.Clock(wait)
+			if screens.Rewards and screens.Rewards.ClaimableCount then
+				badge("Rewards", screens.Rewards.ClaimableCount())
 			end
-			if screens.Daily and screens.Daily.CanClaim then
-				badge("Daily", if screens.Daily.CanClaim() then 1 else 0)
-			end
-			if screens.Spin and screens.Spin.CanFreeSpin then
-				badge("Spin", if screens.Spin.CanFreeSpin() then 1 else (State.Get("Spins") or 0))
-			end
-			if screens.Quests and screens.Quests.ClaimableCount then
-				badge("Quests", screens.Quests.ClaimableCount())
+			if screens.Worlds and screens.Worlds.UnlockableCount then
+				badge("Worlds", screens.Worlds.UnlockableCount())
 			end
 			-- Évolution disponible ?
 			local rebirths = State.Get("Rebirths") or 0
 			local nextR = Economy.Rebirths[rebirths + 1]
-			badge("Rebirth", if nextR and (State.Get("Cash") or 0) >= nextR.Cost then 1 else 0)
+			local canEvolve = nextR and (State.Get("Cash") or 0) >= nextR.Cost and (State.Get("Level") or 1) >= (Levels.MenuLevels.Rebirth or 1)
+			badge("Rebirth", if canEvolve then 1 else 0)
 			task.wait(0.5)
 		end
 	end)
@@ -471,6 +652,40 @@ local function buildBottom()
 		ZIndex = 20,
 		Parent = lockButton,
 	})
+
+	-- Retour à la maison (quand on est loin de son île)
+	local homeButton = Kit.Button({
+		Name = "Home",
+		Text = "HOME",
+		Icon = "home",
+		Color = "Radioactive",
+		Size = UDim2.fromOffset(190, 70),
+		Position = UDim2.new(0.5, 0, 1, -8),
+		AnchorPoint = Vector2.new(0.5, 1),
+		TextSize = 28,
+		Sound = "whoosh",
+		OnClick = function()
+			Remote.Call("Home")
+		end,
+		Parent = bottom,
+	})
+	homeButton.Visible = false
+	RunService.Heartbeat:Connect(function()
+		local where = player:GetAttribute("World") or "Island"
+		local away = where ~= "Island"
+		local plot = myPlot()
+		local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		local floor = plot and plot:FindFirstChild("Floor") :: BasePart?
+		if floor and root and not away then
+			away = (root.Position - floor.Position).Magnitude > 170
+		end
+		local inRampage = player:GetAttribute("InRampage") == true
+		homeButton.Visible = away and not inRampage
+		-- le bouclier ne sert que contre d'autres joueurs
+		local others = #Players:GetPlayers() > 1
+		lockButton.Visible = others and not homeButton.Visible and not inRampage
+		lockButton.Position = UDim2.new(0.5, 0, 1, -8)
+	end)
 
 	boostRow = Kit.new("Frame", {
 		Name = "Boosts",
@@ -572,6 +787,22 @@ local function buildEventBanner()
 	Kit.Text({ Name = "Name", Size = UDim2.new(1, -86, 0, 34), Position = UDim2.fromOffset(76, 8), Text = "EVENT", FontFace = F.Impact, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 4, Parent = body })
 	Kit.Text({ Name = "Time", Size = UDim2.new(1, -86, 0, 22), Position = UDim2.fromOffset(76, 42), Text = "0:00", FontFace = F.Body, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 4, Parent = body })
 	local _, setBar = Kit.ProgressBar({ Size = UDim2.new(1, -24, 0, 12), Position = UDim2.new(0, 12, 1, -18), Color = "Magma", Parent = body })
+	-- Raid : bouton pour rejoindre le cratère en un clic
+	local goButton = Kit.Button({
+		Name = "Go",
+		Text = "GO!",
+		Color = "Radioactive",
+		Size = UDim2.fromOffset(84, 44),
+		Position = UDim2.new(1, -10, 0, 30),
+		AnchorPoint = Vector2.new(1, 0.5),
+		TextSize = 22,
+		ZIndex = 8,
+		OnClick = function()
+			Remote.Call("Travel", { Id = Worlds.Default })
+		end,
+		Parent = body,
+	})
+	goButton.Visible = false
 
 	local function refresh()
 		local id = Workspace:GetAttribute("EventId")
@@ -597,6 +828,7 @@ local function buildEventBanner()
 		local left = (Workspace:GetAttribute("EventEnds") or 0) - now()
 		local timeLabel = body:FindFirstChild("Time") :: TextLabel
 		timeLabel.Text = "⏱️ " .. Format.Clock(left) .. " left"
+		goButton.Visible = id == "BossRaid" and player:GetAttribute("World") ~= Worlds.Default and player:GetAttribute("InRampage") ~= true
 		if event then
 			setBar(left / event.Duration, true)
 		end
@@ -740,21 +972,11 @@ local function startAlarm(args)
 		alarmSound = Audio.Loop("alarm", { Volume = 0.7 })
 	end
 	CameraFx.Shake(0.4, 0.5)
-	-- flèches rouges vers le voleur (joueur ou voleur d'entraînement)
+	-- flèches rouges vers le voleur
 	local target = nil
 	for _, other in Players:GetPlayers() do
 		if other.DisplayName == args.Thief and other.Character then
 			target = other.Character:FindFirstChild("HumanoidRootPart")
-		end
-	end
-	if not target then
-		local effects = Workspace:FindFirstChild("Effects")
-		if effects then
-			for _, m in effects:GetChildren() do
-				if m.Name == "TrainingThief" and m:GetAttribute("Owner") == player.UserId then
-					target = m.PrimaryPart
-				end
-			end
 		end
 	end
 	if target then
@@ -777,6 +999,7 @@ end
 function Hud.Init()
 	layer = Kit.Root()
 	buildCurrencies()
+	buildLevel()
 	buildMenus()
 	buildBottom()
 	buildEventBanner()
@@ -812,6 +1035,10 @@ function Hud.Init()
 		Hud.FlyCoins("💰", 12)
 		Hud.FloatText("+" .. Format.Cash(args.Amount or 0) .. " heist cut!", C.Gold)
 	end)
+	FxBus.On("Xp", function(args)
+		floatXp(args.Amount or 0)
+	end)
+	FxBus.On("LevelUp", levelUp)
 	FxBus.On("Alarm", startAlarm)
 	FxBus.On("AlarmStop", stopAlarm)
 	FxBus.On("Robbed", stopAlarm)

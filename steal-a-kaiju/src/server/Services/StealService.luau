@@ -176,9 +176,6 @@ local function steal(player: Player, payload: any): Router.Result
 	if anchor:GetAttribute("Egg") then
 		return { ok = false, msg = "Eggs are too fragile to steal!" }
 	end
-	if (anchor:GetAttribute("CarriedBy") or 0) == -1 then
-		return { ok = false, msg = "Someone is already stealing it!" }
-	end
 	if carries[uid] then
 		local carry = carries[uid]
 		if carry.Lifting and not carry.Helper then
@@ -328,9 +325,6 @@ local function bonk(player: Player)
 		Registry.RewardService.Track(player, "Bonks", 1)
 	end
 	Registry.EventService.TryBossHit(player, root.Position, range)
-	if Registry.TutorialService.TryBonkThief(player, root.Position, range) then
-		Registry.RewardService.Track(player, "Bonks", 1)
-	end
 end
 
 ----------------------------------------------------------------------------

@@ -64,6 +64,22 @@
     "license": "MIT",
     "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
   },
+  "buddy": {
+    "file": "buddy.png",
+    "source": "fluent-3d",
+    "sourceName": "Paw prints",
+    "sourcePath": "assets/Paw prints/3D/paw_prints_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "candy": {
+    "file": "candy.png",
+    "source": "fluent-3d",
+    "sourceName": "Lollipop",
+    "sourcePath": "assets/Lollipop/3D/lollipop_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
   "cash": {
     "file": "cash.png",
     "source": "fluent-3d",
@@ -101,6 +117,14 @@
     "source": "fluent-3d",
     "sourceName": "Money bag",
     "sourcePath": "assets/Money bag/3D/money_bag_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "cosmic": {
+    "file": "cosmic.png",
+    "source": "fluent-3d",
+    "sourceName": "Milky way",
+    "sourcePath": "assets/Milky way/3D/milky_way_3d.png",
     "license": "MIT",
     "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
   },
@@ -278,6 +302,14 @@
     "license": "MIT",
     "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
   },
+  "frost": {
+    "file": "frost.png",
+    "source": "fluent-3d",
+    "sourceName": "Snowflake",
+    "sourcePath": "assets/Snowflake/3D/snowflake_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
   "fusion": {
     "file": "fusion.png",
     "source": "fluent-3d",
@@ -406,6 +438,14 @@
     "license": "MIT",
     "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
   },
+  "level": {
+    "file": "level.png",
+    "source": "fluent-3d",
+    "sourceName": "Glowing star",
+    "sourcePath": "assets/Glowing star/3D/glowing_star_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
   "lightning": {
     "file": "lightning.png",
     "source": "fluent-3d",
@@ -518,11 +558,27 @@
     "license": "MIT",
     "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
   },
+  "planet": {
+    "file": "planet.png",
+    "source": "fluent-3d",
+    "sourceName": "Ringed planet",
+    "sourcePath": "assets/Ringed planet/3D/ringed_planet_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
   "play": {
     "file": "play.png",
     "source": "fluent-3d",
     "sourceName": "Play button",
     "sourcePath": "assets/Play button/3D/play_button_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "portal": {
+    "file": "portal.png",
+    "source": "fluent-3d",
+    "sourceName": "Cyclone",
+    "sourcePath": "assets/Cyclone/3D/cyclone_3d.png",
     "license": "MIT",
     "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
   },
@@ -582,6 +638,14 @@
     "license": "MIT",
     "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
   },
+  "rampage": {
+    "file": "rampage.png",
+    "source": "fluent-3d",
+    "sourceName": "Cityscape",
+    "sourcePath": "assets/Cityscape/3D/cityscape_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
   "reactor": {
     "file": "reactor.png",
     "source": "fluent-3d",
@@ -595,6 +659,14 @@
     "source": "fluent-3d",
     "sourceName": "Dna",
     "sourcePath": "assets/Dna/3D/dna_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "rewards": {
+    "file": "rewards.png",
+    "source": "fluent-3d",
+    "sourceName": "Wrapped gift",
+    "sourcePath": "assets/Wrapped gift/3D/wrapped_gift_3d.png",
     "license": "MIT",
     "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
   },
@@ -641,11 +713,27 @@
     "license": "MIT",
     "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
   },
+  "siege": {
+    "file": "siege.png",
+    "source": "fluent-3d",
+    "sourceName": "Crossed swords",
+    "sourcePath": "assets/Crossed swords/3D/crossed_swords_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
   "skull": {
     "file": "skull.png",
     "source": "fluent-3d",
     "sourceName": "Skull",
     "sourcePath": "assets/Skull/3D/skull_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "smash": {
+    "file": "smash.png",
+    "source": "fluent-3d",
+    "sourceName": "Collision",
+    "sourcePath": "assets/Collision/3D/collision_3d.png",
     "license": "MIT",
     "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
   },
@@ -801,6 +889,14 @@
     "license": "MIT",
     "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
   },
+  "treasure": {
+    "file": "treasure.png",
+    "source": "fluent-3d",
+    "sourceName": "Toolbox",
+    "sourcePath": "assets/Toolbox/3D/toolbox_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
   "trophy": {
     "file": "trophy.png",
     "source": "fluent-3d",
@@ -830,6 +926,14 @@
     "source": "fluent-3d",
     "sourceName": "Warning",
     "sourcePath": "assets/Warning/3D/warning_3d.png",
+    "license": "MIT",
+    "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
+  },
+  "worlds": {
+    "file": "worlds.png",
+    "source": "fluent-3d",
+    "sourceName": "World map",
+    "sourcePath": "assets/World map/3D/world_map_3d.png",
     "license": "MIT",
     "attribution": "Fluent Emoji (3D) - (c) Microsoft Corporation - https://github.com/microsoft/fluentui-emoji"
   }

@@ -216,13 +216,29 @@ function Worlds.PadPosition(id: string, i: number): Vector3
 	return Worlds.Origin(id) + Vector3.new(math.sin(a) * 40, 0, math.cos(a) * 40)
 end
 
--- Point d'arrivée des joueurs qui voyagent vers ce monde.
+-- Direction (à plat) du centre de l'arène vers le cratère : c'est le côté
+-- « entrée » de l'arène (arrivée des voyageurs, portail du retour).
+function Worlds.EntryDirection(id: string): Vector3
+	local origin = Worlds.Origin(id)
+	if origin.Magnitude < 1 then
+		return Vector3.new(0, 0, 1)
+	end
+	return -origin.Unit
+end
+
+-- Point d'arrivée des joueurs qui voyagent vers ce monde : côté entrée, face au centre.
 function Worlds.SpawnPoint(id: string): CFrame
 	local origin = Worlds.Origin(id)
-	-- au bord de l'arène, face au centre
-	local back = if origin.Magnitude > 1 then origin.Unit else Vector3.new(0, 0, 1)
-	local pos = origin + back * (Worlds.ArenaRadius - 16) + Vector3.new(0, 4, 0)
+	local pos = origin + Worlds.EntryDirection(id) * (Worlds.ArenaRadius - 22) + Vector3.new(0, 4, 0)
 	return CFrame.lookAt(pos, Vector3.new(origin.X, pos.Y, origin.Z))
+end
+
+-- Portail d'un monde dans le cratère central (dans l'axe de son île-arène).
+function Worlds.HubPortal(id: string): CFrame
+	local w = Worlds.Get(id)
+	local a = math.rad(w.Angle - 22.5)
+	local pos = Vector3.new(math.sin(a) * 60, 0, math.cos(a) * 60)
+	return CFrame.lookAt(pos, Vector3.new(0, 0, 0))
 end
 
 -- Le monde où se trouve une position (nil = carte principale hors arènes).

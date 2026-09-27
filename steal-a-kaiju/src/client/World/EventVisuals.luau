@@ -42,6 +42,7 @@ local weather: Part
 local emitters: { ParticleEmitter } = {}
 local skyParts: { BasePart } = {}
 local currentId: string? = nil
+local worldLighting = nil -- éclairage d'un monde (prioritaire tant qu'on y est)
 
 ----------------------------------------------------------------------------
 -- Éclairage et météo
@@ -59,6 +60,17 @@ local function applyLighting(cfg)
 	if grade then
 		TweenService:Create(grade, info, { TintColor = cfg.Tint or DEFAULT.Tint }):Play()
 	end
+end
+
+-- Éclairage effectif : celui du monde visité, sinon celui de l'événement, sinon le défaut.
+local function refreshLighting()
+	local event = currentId and Events.ById[currentId]
+	applyLighting(worldLighting or (if event then event.Lighting else DEFAULT))
+end
+
+function EventVisuals.SetWorldLighting(cfg: any?)
+	worldLighting = cfg
+	refreshLighting()
 end
 
 local function clearWeather()
@@ -150,12 +162,11 @@ local function onEventChanged()
 	end
 	currentId = id
 	local event = id and Events.ById[id]
+	refreshLighting()
 	if event then
-		applyLighting(event.Lighting)
 		startWeather(event.Id)
 		Audio.Music(event.Music or "music_main")
 	else
-		applyLighting(DEFAULT)
 		clearWeather()
 		Audio.Music("music_main")
 	end

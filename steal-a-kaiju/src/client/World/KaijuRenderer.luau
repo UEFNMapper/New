@@ -68,18 +68,6 @@ local function now(): number
 end
 
 local function characterOf(userId: number): Model?
-	if userId == -1 then
-		-- voleur d'entraînement (PNJ) : modèle dans workspace.Effects
-		local effects = Workspace:FindFirstChild("Effects")
-		if effects then
-			for _, m in effects:GetChildren() do
-				if m.Name == "TrainingThief" then
-					return m
-				end
-			end
-		end
-		return nil
-	end
 	local p = Players:GetPlayerByUserId(userId)
 	return p and p.Character
 end

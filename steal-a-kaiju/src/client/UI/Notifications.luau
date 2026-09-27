@@ -188,7 +188,23 @@ end
 -- Grande annonce centrale (style titre de film)
 ----------------------------------------------------------------------------
 
+local announceFreeAt = 0 -- les grandes annonces passent l'une après l'autre
+local ANNOUNCE_SLOT = 3.2
+
+local showAnnounce
+
 function Notifications.Announce(text: string, color: Color3?, subtitle: string?, sound: string?)
+	local t = os.clock()
+	local wait = math.max(0, announceFreeAt - t)
+	announceFreeAt = math.max(t, announceFreeAt) + ANNOUNCE_SLOT
+	if wait <= 0 then
+		showAnnounce(text, color, subtitle, sound)
+	else
+		task.delay(wait, showAnnounce, text, color, subtitle, sound)
+	end
+end
+
+function showAnnounce(text: string, color: Color3?, subtitle: string?, sound: string?)
 	for _, child in announceHolder:GetChildren() do
 		child:Destroy()
 	end

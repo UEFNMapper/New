@@ -124,7 +124,7 @@ Events.List = {
 	{
 		Id = "BossRaid",
 		Name = "COLOSSAL RAID",
-		Tagline = "A giant kaiju attacks! Bonk it together!",
+		Tagline = "A giant kaiju attacks the crater! Bonk it before it escapes!",
 		Icon = "👹",
 		Color = rgb(255, 45, 110),
 		Duration = 180,
@@ -144,8 +144,8 @@ end
 
 -- Raid de boss
 Events.Boss = {
-	Health = 400, -- PV par joueur présent (mis à l'échelle au lancement)
-	MinHealth = 600,
+	Health = 320, -- PV par joueur présent (mis à l'échelle au lancement)
+	MinHealth = 380, -- faisable en solo en ~1 minute de bonks
 	DamagePerBonk = 10,
 	RewardGems = 30,
 	TopEggRarity = "Mythic",

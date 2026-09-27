@@ -53,19 +53,19 @@ Rewards.Wheel = {
 } :: { { Weight: number, Label: string, Color: Color3, Reward: Reward } }
 
 -- Quêtes quotidiennes : 3 tirées chaque jour dans ce pool
-export type QuestDef = { Id: string, Text: string, Stat: string, Goal: number, Reward: Reward }
+export type QuestDef = { Id: string, Text: string, Stat: string, Goal: number, Reward: Reward, MinLevel: number? }
 Rewards.Quests = {
 	{ Id = "Buy3", Text = "Buy %d meteor eggs", Stat = "EggsBought", Goal = 3, Reward = { Kind = "Gems", Amount = 10 } },
 	{ Id = "Buy8", Text = "Buy %d meteor eggs", Stat = "EggsBought", Goal = 8, Reward = { Kind = "Gems", Amount = 25 } },
-	{ Id = "Steal1", Text = "Steal %d kaiju", Stat = "Steals", Goal = 1, Reward = { Kind = "Gems", Amount = 15 } },
-	{ Id = "Steal3", Text = "Steal %d kaijus", Stat = "Steals", Goal = 3, Reward = { Kind = "Gems", Amount = 35 } },
-	{ Id = "Bonk5", Text = "Bonk %d players", Stat = "Bonks", Goal = 5, Reward = { Kind = "Potion", Id = "Luck", Amount = 1 } },
-	{ Id = "Save2", Text = "Stop %d thieves", Stat = "Saves", Goal = 2, Reward = { Kind = "Gems", Amount = 20 } },
+	{ Id = "Waves3", Text = "Defend your island %d times", Stat = "SiegeWaves", Goal = 3, Reward = { Kind = "Gems", Amount = 15 } },
+	{ Id = "Kills30", Text = "Defeat %d invaders", Stat = "SiegeKills", Goal = 30, Reward = { Kind = "Potion", Id = "Luck", Amount = 1 } },
+	{ Id = "Rampage2", Text = "Play %d Rampages", Stat = "Rampages", Goal = 2, Reward = { Kind = "Gems", Amount = 20 } },
+	{ Id = "Smash80", Text = "Smash %d buildings", Stat = "Smashed", Goal = 80, Reward = { Kind = "Cash", Amount = 600, MinCash = 1500 } },
+	{ Id = "Dig3", Text = "Dig up %d treasures", Stat = "Digs", Goal = 3, Reward = { Kind = "Spins", Amount = 1 } },
 	{ Id = "Feed5", Text = "Feed your kaijus %d times", Stat = "Feeds", Goal = 5, Reward = { Kind = "Potion", Id = "Growth", Amount = 1 } },
 	{ Id = "Grow3", Text = "Grow kaijus %d stages", Stat = "StageUps", Goal = 3, Reward = { Kind = "Gems", Amount = 15 } },
-	{ Id = "Fuse1", Text = "Fuse %d kaijus", Stat = "Fusions", Goal = 1, Reward = { Kind = "Gems", Amount = 25 } },
+	{ Id = "Fuse1", Text = "Fuse %d kaijus", Stat = "Fusions", Goal = 1, Reward = { Kind = "Gems", Amount = 25 }, MinLevel = 6 },
 	{ Id = "Collect", Text = "Collect cash %d times", Stat = "Collects", Goal = 10, Reward = { Kind = "Cash", Amount = 600, MinCash = 1500 } },
-	{ Id = "Orbs", Text = "Grab %d stampede orbs", Stat = "Orbs", Goal = 10, Reward = { Kind = "Gems", Amount = 15 } },
 	{ Id = "Hatch", Text = "Hatch %d eggs", Stat = "Hatches", Goal = 5, Reward = { Kind = "Spins", Amount = 1 } },
 } :: { QuestDef }
 Rewards.QuestsPerDay = 3

@@ -70,7 +70,7 @@ local function ensureQuests(player: Player, data: any)
 	local today = Progress.DayNumber(os.time())
 	if data.Quests.Day ~= today then
 		local list = {}
-		for _, id in Progress.PickQuests(player.UserId, today) do
+		for _, id in Progress.PickQuests(player.UserId, today, data.Level) do
 			table.insert(list, { Id = id, Progress = 0, Claimed = false })
 		end
 		data.Quests = { Day = today, List = list, BonusClaimed = false }

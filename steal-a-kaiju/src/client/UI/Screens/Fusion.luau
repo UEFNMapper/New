@@ -796,10 +796,10 @@ local function refreshBook()
 		local recipe = s.Recipe or {}
 		if found then
 			r.Recipe.Text = ("<b>%s</b>  +  <b>%s</b>"):format(speciesName(recipe[1]), speciesName(recipe[2]))
-			r.Hint.Text = "✓ Discovered! Fuse these two ADULTS again anytime."
+			r.Hint.Text = ("✓ Discovered! Fuse these two at %s+ again anytime."):format(string.upper(Growth.Get(s.RecipeStage or 3).Name))
 		else
 			r.Recipe.Text = "<b>???  +  ???</b>"
-			r.Hint.Text = ('Hint: "%s"'):format(s.Hint or "...")
+			r.Hint.Text = ('Hint: "%s" (both %s+)'):format(s.Hint or "...", string.upper(Growth.Get(s.RecipeStage or 3).Name))
 		end
 		r.Lock.Text = if found then "✓" else "🔒"
 		r.Lock.TextColor3 = if found then C.Radioactive else C.Gold

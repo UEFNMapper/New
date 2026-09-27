@@ -288,26 +288,6 @@ local function buyUpgrade(player: Player, payload: any): Router.Result
 	return { ok = true }
 end
 
-local function buyNest(player: Player): Router.Result
-	local data = DataService.Get(player)
-	if not data then
-		return { ok = false }
-	end
-	if data.Nests >= Economy.MaxNests then
-		return { ok = false, msg = "All nests unlocked!" }
-	end
-	local price = Economy.NestPrice(data.Nests)
-	if not DataService.Spend(player, "Cash", price) then
-		return { ok = false, msg = "Not enough cash (" .. Format.Cash(price) .. ")" }
-	end
-	data.Nests += 1
-	DataService.Replicate(player, "Nests")
-	Registry.PlotService.RefreshNests(player)
-	Registry.KaijuService.PlacePending(player)
-	Notify.Fx(player, "NestUnlocked", { Count = data.Nests })
-	return { ok = true }
-end
-
 local function buyPotion(player: Player, payload: any): Router.Result
 	local id = Router.String(payload.Id)
 	local potion = id and Economy.PotionsById[id]
@@ -358,7 +338,6 @@ function ShopService.Init()
 
 	Router.On("Buy", buy, 2)
 	Router.On("BuyUpgrade", buyUpgrade, 6)
-	Router.On("BuyNest", buyNest, 3)
 	Router.On("BuyPotion", buyPotion, 4)
 	Router.On("UsePotion", usePotion, 4)
 

@@ -8,6 +8,7 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Events = require(Shared.Config.Events)
+local Levels = require(Shared.Config.Levels)
 local Kaijus = require(Shared.Config.Kaijus)
 local Mutations = require(Shared.Config.Mutations)
 local Layout = require(Shared.Config.Layout)
@@ -145,6 +146,7 @@ local function finishBoss(defeated: boolean)
 				local share = d / math.max(total, 1)
 				local gems = math.max(5, math.floor(Events.Boss.RewardGems * (0.5 + share * 3)))
 				DataService.AddGems(p, gems)
+				Registry.LevelService.AddXp(p, Levels.Xp.BossWin, "Boss")
 				Notify.Fx(p, "BossReward", { Gems = gems, Top = p == best })
 				if math.random() < Events.Boss.EggChance then
 					Registry.KaijuService.GiveEgg(p, "Legendary", "Raid")
@@ -180,6 +182,7 @@ function EventService.TryBossHit(player: Player, position: Vector3, range: numbe
 		dmg *= 1.5
 	end
 	bossDamage[player] = (bossDamage[player] or 0) + dmg
+	Registry.LevelService.AddXp(player, Levels.Xp.BossHit, "Boss")
 	if data then
 		data.Stats.BossDamage += dmg
 	end
@@ -344,9 +347,6 @@ local function pickRandom(): string
 	local weights = {}
 	for i, e in Events.List do
 		weights[i] = e.Weight
-		if e.Id == "BossRaid" and #Players:GetPlayers() < 2 then
-			weights[i] = 0
-		end
 	end
 	return Events.List[Roll.Weighted(weights)].Id
 end

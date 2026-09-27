@@ -11,6 +11,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Monetization = require(Shared.Config.Monetization)
 local Theme = require(Shared.Config.Theme)
 local Economy = require(Shared.Config.Economy)
+local Levels = require(Shared.Config.Levels)
 local Rarities = require(Shared.Config.Rarities)
 local Events = require(Shared.Config.Events)
 local Mutations = require(Shared.Config.Mutations)
@@ -1178,7 +1179,7 @@ local function nestRow(list: Instance, order: number)
 	text(b, {
 		Size = UDim2.new(0, 330, 0, 30),
 		Position = UDim2.fromOffset(102, 10),
-		Text = "UNLOCK NEST",
+		Text = "NESTS",
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Stroke = 2.5,
 		MaxTextSize = 26,
@@ -1197,7 +1198,7 @@ local function nestRow(list: Instance, order: number)
 	text(b, {
 		Size = UDim2.new(0, 360, 0, 20),
 		Position = UDim2.fromOffset(102, 40),
-		Text = "More nests = more kaijus = more cash!",
+		Text = "Level up to get more nests!",
 		FontFace = F.Body,
 		TextColor3 = C.InkSoft,
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -1205,54 +1206,30 @@ local function nestRow(list: Instance, order: number)
 		MaxTextSize = 17,
 		ZIndex = 3,
 	})
-	local setPips = pips(b, Economy.MaxNests - Economy.StartNests, { Size = UDim2.fromOffset(300, 26), Position = UDim2.fromOffset(104, 64), Color = C.Magma })
-	local slot, button, breather = slotButton(b, {
-		Name = "BuyNest",
-		Text = "$0",
-		Color = "Radioactive",
-		Size = UDim2.fromOffset(180, 60),
-		Position = UDim2.new(1, -110, 0.5, 0),
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		MaxTextSize = 28,
-		OnClick = function()
-			if busy.nest then
-				return
-			end
-			busy.nest = true
-			local r = Remote.Call("BuyNest")
-			busy.nest = nil
-			if r.ok then
-				Audio.Play("purchase")
-				Kit.Punch(box, 0.08)
-				Kit.Punch(countLabel, 0.5)
-			end
-		end,
-	})
-	local maxed = chip(b, {
-		Text = "ALL UNLOCKED ★",
-		Color = C.RadioactiveDark,
-		Size = UDim2.fromOffset(180, 40),
+	local setPips = pips(b, #Levels.NestLevels, { Size = UDim2.fromOffset(300, 26), Position = UDim2.fromOffset(104, 64), Color = C.Magma })
+	local nextChip = chip(b, {
+		Text = "NEXT AT LV 2",
+		Color = C.MagmaDark,
+		Size = UDim2.fromOffset(180, 44),
 		Position = UDim2.new(1, -110, 0.5, 0),
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		ZIndex = 5,
 	})
 	table.insert(updaters, function()
-		local nests = State.Get("Nests") or Economy.StartNests
-		local cash = State.Get("Cash") or 0
-		setPips(nests - Economy.StartNests)
-		countLabel.Text = string.format("%d / %d", nests, Economy.MaxNests)
-		local isMax = nests >= Economy.MaxNests
-		slot.Visible = not isMax
-		maxed.Visible = isMax
-		if isMax then
-			setBreathe(breather, false)
-		else
-			local price = Economy.NestPrice(nests)
-			Kit.SetButtonText(button, Format.Cash(price))
-			local can = cash >= price
-			styleButton(button, if can then "Radioactive" else "Grey")
-			setBreathe(breather, can)
+		local level = State.Get("Level") or 1
+		local nests = math.max(State.Get("Nests") or Economy.StartNests, Levels.NestsFor(level))
+		setPips(nests - Levels.StartNests)
+		countLabel.Text = string.format("%d / %d", nests, Levels.NestsFor(Levels.Max))
+		local nextLevel = nil
+		for _, l in Levels.NestLevels do
+			if l > level then
+				nextLevel = l
+				break
+			end
 		end
+		local chipText = nextChip:FindFirstChild("Text") :: TextLabel
+		chipText.Text = if nextLevel then ("NEXT AT LEVEL %d"):format(nextLevel) else "ALL UNLOCKED ★"
+		nextChip.BackgroundColor3 = if nextLevel then C.MagmaDark else C.RadioactiveDark
 	end)
 	popIn(box)
 end

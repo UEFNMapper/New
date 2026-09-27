@@ -1,7 +1,7 @@
 """Rendu d'une scène complète exportée par export_scene.luau (aperçu du jeu).
 
 Usage : python3 tools/render/render_scene.py [scene.json] [sortie.png] [vue]
-vue : island (défaut) | crater | wide
+vue : island (défaut) | crater | wide | world:<Candy|Frost|Volcano|Cosmic> | horizon
 """
 
 import json
@@ -56,6 +56,19 @@ def camera_for(scene, view):
     look[1] = 0
     look = look / np.linalg.norm(look)
     side = np.cross(look, [0, 1, 0])
+    if view.startswith("world:"):
+        angles = {"Candy": 45, "Frost": 135, "Volcano": 225, "Cosmic": 315}
+        a = math.radians(angles[view.split(":")[1]])
+        origin = np.array([math.sin(a) * 860, 0.0, math.cos(a) * 860])
+        entry = -origin / np.linalg.norm(origin)
+        side_w = np.cross(entry, [0, 1, 0])
+        cam = origin + entry * 150 + side_w * 40 + np.array([0, 95.0, 0])
+        return cam, origin + np.array([0, 5.0, 0]), 58
+    if view == "horizon":
+        cam = np.array([30.0, 45.0, 70.0])
+        a = math.radians(45)
+        target = np.array([math.sin(a) * 860, 20.0, math.cos(a) * 860])
+        return cam, target, 70
     if view == "crater":
         target = np.array([0.0, 0.0, 0.0])
         cam = target + np.array([60.0, 70.0, 110.0])

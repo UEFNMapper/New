@@ -1,7 +1,7 @@
 --!nonstrict
 -- Missions d'introduction (côté client) : carte d'objectif animée, flèches
 -- au sol vers la cible, célébration à chaque mission, guidage pendant un vol
--- et vers le voleur d'entraînement.
+-- et vers un voleur (alarme).
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -9,7 +9,6 @@ local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
-local Layout = require(Shared.Config.Layout)
 local Rarities = require(Shared.Config.Rarities)
 local Economy = require(Shared.Config.Economy)
 local TutorialConfig = require(Shared.Config.Tutorial)
@@ -39,12 +38,10 @@ local cardStep: TextLabel
 local cardTitle: TextLabel
 local cardText: TextLabel
 local cardHint: TextLabel
-local skipButton: TextButton
 local guide = Guide.new(C.Radioactive)
 local carryGuide = Guide.new(C.Gold)
 local thiefGuide = Guide.new(C.Red)
 local currentStep = 0
-local stepStarted = 0
 
 local function myPlot(): Model?
 	local index = player:GetAttribute("Plot")
@@ -88,39 +85,25 @@ local function nearestFreeMeteor(): BasePart?
 	return best
 end
 
-local function nearestOtherPlot(): Model?
-	local map = Workspace:FindFirstChild("Map")
+-- Envahisseur le plus proche pendant la vague (défense de l'île).
+local function nearestInvader(): BasePart?
+	local siege = Workspace:FindFirstChild("Siege")
+	local index = player:GetAttribute("Plot")
+	local mine = siege and index and siege:FindFirstChild(tostring(index))
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
-	if not map or not root then
+	if not mine or not root then
 		return nil
 	end
 	local best, bestD = nil, math.huge
-	for i = 1, Layout.PlotCount do
-		local plot = map:FindFirstChild("Plot" .. i)
-		if plot and plot:GetAttribute("OwnerId") and plot:GetAttribute("OwnerId") ~= player.UserId then
-			local floor = plot:FindFirstChild("Floor") :: BasePart?
-			if floor then
-				local d = (floor.Position - root.Position).Magnitude
-				if d < bestD then
-					best, bestD = plot, d
-				end
+	for _, inv in mine:GetDescendants() do
+		if inv:IsA("BasePart") and (inv:GetAttribute("HP") or 0) > 0 then
+			local d = (inv.Position - root.Position).Magnitude
+			if d < bestD then
+				best, bestD = inv, d
 			end
 		end
 	end
 	return best
-end
-
-local function thiefModel(): Model?
-	local effects = Workspace:FindFirstChild("Effects")
-	if not effects then
-		return nil
-	end
-	for _, m in effects:GetChildren() do
-		if m.Name == "TrainingThief" and m:GetAttribute("Owner") == player.UserId then
-			return m
-		end
-	end
-	return nil
 end
 
 ----------------------------------------------------------------------------
@@ -192,21 +175,6 @@ local function buildCard()
 		ZIndex = 4,
 		Parent = body,
 	})
-	skipButton = Kit.Button({
-		Text = "SKIP",
-		Color = "Grey",
-		Size = UDim2.fromOffset(80, 30),
-		Position = UDim2.new(1, -12, 1, -10),
-		AnchorPoint = Vector2.new(1, 1),
-		TextSize = 16,
-		MaxTextSize = 16,
-		ZIndex = 6,
-		OnClick = function()
-			Remote.Call("SkipMission")
-		end,
-		Parent = body,
-	})
-	skipButton.Visible = false
 end
 
 local function showStep(step: number)
@@ -223,7 +191,6 @@ local function showStep(step: number)
 	Kit.SetIcon(cardIcon, mission.Icon)
 	local reward = mission.Reward
 	cardHint.Text = "Reward: " .. (if reward.Cash then Format.Cash(reward.Cash) elseif reward.Gems then reward.Gems .. " 💎" else "")
-	skipButton.Visible = false
 	Kit.Pop(card, 0.4, 0.5)
 end
 
@@ -254,7 +221,6 @@ function Tutorial.Init()
 		step = math.max(1, step or 1)
 		if step ~= currentStep then
 			currentStep = step
-			stepStarted = os.clock()
 			showStep(step)
 		end
 	end)
@@ -262,14 +228,8 @@ function Tutorial.Init()
 	FxBus.On("MissionComplete", celebrate)
 	FxBus.On("TutorialDone", function()
 		task.delay(3.5, function()
-			UIRegistry.Announce("YOU'RE READY!", C.Gold, "Grow the biggest kaijus. Guard them. Steal the rest.", "hatch_legendary")
+			UIRegistry.Announce("YOU'RE READY!", C.Gold, "Level up to open new worlds. Follow the NEXT GOAL bar!", "hatch_legendary")
 		end)
-	end)
-	FxBus.On("ThiefSpawn", function()
-		UIRegistry.Announce("🥷 TRAINING THIEF!", C.Red, "He's coming for your kaiju — equip your Bonker and hit him!", "alarm")
-	end)
-	FxBus.On("ThiefBonked", function()
-		UIRegistry.Toast("BONK! The thief dropped your kaiju 💪", "Good")
 	end)
 
 	RunService.Heartbeat:Connect(function()
@@ -292,22 +252,25 @@ function Tutorial.Init()
 				local wait = Workspace:GetAttribute("NextMeteorIn") or 0
 				cardHint.Text = if wait > 0 then ("Next meteor in %ds"):format(math.ceil(wait)) else "Head to the crater!"
 			end
-		elseif target == "LockButton" and plot then
-			guide:Point(plot:FindFirstChild("LockButton"))
-		elseif target == "Thief" then
-			local thief = thiefModel()
-			guide:Point(if thief then thief.PrimaryPart else nil)
-			cardHint.Text = if thief then "He's on your island!" else "He's on his way..."
-		elseif target == "OtherPlot" then
-			local other = nearestOtherPlot()
-			if other then
-				guide:Point(other:FindFirstChild("Floor"))
-				cardHint.Text = (other:GetAttribute("OwnerName") or "Someone") .. "'s island is closest"
-				skipButton.Visible = false
+		elseif target == "Siege" then
+			local invader = nearestInvader()
+			if invader then
+				guide:Point(invader)
+				cardHint.Text = "BONK the invaders!"
+			else
+				guide:Point(if plot then plot:FindFirstChild("Floor") else nil)
+				cardHint.Text = if player:GetAttribute("SiegeActive") then "Your kaijus are fighting!" else "They're coming... get home!"
+			end
+		elseif target == "RampagePortal" and plot then
+			guide:Point(plot:FindFirstChild("RampagePortal"))
+		elseif target == "Treasure" then
+			local pos = player:GetAttribute("TreasurePos")
+			if typeof(pos) == "Vector3" then
+				guide:Point(pos)
+				cardHint.Text = "Hold E on the glowing spot!"
 			else
 				guide:Hide()
-				cardHint.Text = "No other player yet — invite friends!"
-				skipButton.Visible = os.clock() - stepStarted > 20
+				cardHint.Text = "Your buddy is sniffing around..."
 			end
 		else
 			guide:Hide()

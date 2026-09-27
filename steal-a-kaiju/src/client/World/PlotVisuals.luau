@@ -10,13 +10,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Layout = require(Shared.Config.Layout)
-local Economy = require(Shared.Config.Economy)
+local Levels = require(Shared.Config.Levels)
 local Theme = require(Shared.Config.Theme)
-local Format = require(Shared.Logic.Format)
 
 local Controllers = script.Parent.Parent.Controllers
 local State = require(Controllers.State)
-local Remote = require(Controllers.Remote)
 local Audio = require(Controllers.Audio)
 local FxBus = require(Controllers.FxBus)
 local Effects = require(script.Parent.Effects)
@@ -37,7 +35,6 @@ type PlotEntry = {
 
 local plots: { PlotEntry } = {}
 local folder: Folder
-local nestPrompt: ProximityPrompt? = nil
 
 local function now(): number
 	return Workspace:GetServerTimeNow()
@@ -119,6 +116,17 @@ local function nestLockLabel(model: Model, slot: number): BillboardGui?
 end
 
 -- Nids verrouillés sur MON île : grisés, cadenas, et prompt d'achat sur le suivant.
+-- Niveau qui débloque le prochain nid (nil s'il n'y en a plus à gagner).
+local function nextNestLevel(): number?
+	local level = State.Get("Level") or 1
+	for _, l in Levels.NestLevels do
+		if l > level then
+			return l
+		end
+	end
+	return nil
+end
+
 local function refreshMyNests()
 	local myIndex = player:GetAttribute("Plot")
 	for _, entry in plots do
@@ -170,9 +178,10 @@ local function refreshMyNests()
 					entry.NestLocks[slot] = lock :: any
 				end
 				local text = (lock :: any).Text :: TextLabel
-				if slot == unlocked + 1 and unlocked < Economy.MaxNests then
-					text.Text = "🔒 " .. Format.Cash(Economy.NestPrice(State.Get("Nests") or Economy.StartNests))
-					text.TextColor3 = if (State.Get("Cash") or 0) >= Economy.NestPrice(State.Get("Nests") or 6) then C.Cash else C.Paper
+				local needLevel = nextNestLevel()
+				if slot == unlocked + 1 and needLevel then
+					text.Text = "🔒 LV " .. needLevel
+					text.TextColor3 = C.Gold
 				else
 					text.Text = "🔒"
 					text.TextColor3 = C.Paper
@@ -182,36 +191,7 @@ local function refreshMyNests()
 				entry.NestLocks[slot] = nil
 			end
 		end
-		-- prompt d'achat sur le prochain nid
-		if mine then
-			local nextSlot = unlocked + 1
-			local nest = model:FindFirstChild("Nest" .. nextSlot) :: BasePart?
-			if nestPrompt and (not nest or nestPrompt.Parent ~= nest or unlocked >= Economy.MaxNests) then
-				nestPrompt:Destroy()
-				nestPrompt = nil
-			end
-			if nest and not nestPrompt and unlocked < Economy.MaxNests then
-				local prompt = Instance.new("ProximityPrompt")
-				prompt.Style = Enum.ProximityPromptStyle.Custom
-				prompt.ActionText = "UNLOCK NEST"
-				prompt.ObjectText = "New nest"
-				prompt.HoldDuration = 0
-				prompt.MaxActivationDistance = 12
-				prompt.RequiresLineOfSight = false
-				prompt:SetAttribute("Color", "Gold")
-				prompt.Triggered:Connect(function()
-					local r = Remote.Call("BuyNest")
-					if r.ok then
-						Effects.Burst(nest.Position + Vector3.new(0, 2, 0), C.Gold, 40, 3)
-						Effects.Shockwave(nest.Position, C.Gold, 12, 0.6)
-						Audio.Play("purchase")
-					end
-				end)
-				prompt.Parent = nest
-				nestPrompt = prompt
-			end
-		end
-	end
+end
 end
 
 function PlotVisuals.Init()
@@ -239,6 +219,7 @@ function PlotVisuals.Init()
 	end
 	player:GetAttributeChangedSignal("Plot"):Connect(refreshMyNests)
 	State.Observe("Nests", refreshMyNests)
+	State.Observe("Level", refreshMyNests)
 	State.Observe("Kaijus", refreshMyNests)
 	State.Changed("Cash"):Connect(function()
 		-- rafraîchit la couleur du prix (léger)
