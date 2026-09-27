@@ -81,7 +81,7 @@ local function buildLabel(entry: Entry)
 	local owner = anchor:GetAttribute("Owner") or 0
 	local title = string.upper(rarity.Name) .. " EGG"
 	if owner == player.UserId then
-		title = "⭐ YOUR METEOR ⭐"
+		title = if anchor:GetAttribute("Golden") then "🌟 GOLDEN METEOR 🌟" else "⭐ YOUR METEOR ⭐"
 	end
 	line("Title", 0, 28, Theme.Fonts.Title, if rarity.Id == "Secret" then C.White else rarity.Color, title)
 	line("Price", 28, 30, Theme.Fonts.Impact, C.Cash, Format.Cash(anchor:GetAttribute("Price") or 0))

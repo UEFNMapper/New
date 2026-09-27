@@ -9,6 +9,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Kaijus = require(Shared.Config.Kaijus)
 local Rarities = require(Shared.Config.Rarities)
 local Mutations = require(Shared.Config.Mutations)
+local Worlds = require(Shared.Config.Worlds)
 local Economy = require(Shared.Config.Economy)
 local Format = require(Shared.Logic.Format)
 
@@ -506,8 +507,14 @@ local function renderDetail(speciesId: string, pop: boolean)
 
 	d.Flavor.Text = if found then '"' .. species.Flavor .. '"' else "Discover this kaiju to read its file."
 	d.Income.Text = ("💵 Base income  <b>%s/s</b>"):format(Format.Cash(species.Income))
+	local home = nil
+	for _, w in Worlds.List do
+		if table.find(w.Species, species.Id) then
+			home = w
+		end
+	end
 	d.Price.Text = if species.Price > 0
-		then ("☄️ Egg price  <b>%s</b>"):format(Format.Cash(species.Price))
+		then ("☄️ Found in <b>%s</b>  •  egg %s"):format(if home then string.upper(home.Name) else "METEORS", Format.Cash(species.Price))
 		else "🧪 <b>Fusion only</b> — not sold in meteors"
 
 	-- recette (Secrets)

@@ -107,6 +107,11 @@ test("mondes : espèces, poids, portes", function()
 		local sp = Roll.Species(r, rng, "Frost")
 		expect(Kaijus.Get(sp).Rarity == r)
 	end
+	-- météore doré : jamais la rareté la plus fréquente du monde
+	for _ = 1, 200 do
+		expect(Roll.GoldenRarity(1, rng, "Crater") ~= "Common")
+		expect(Roll.GoldenRarity(1, rng, "Cosmic") ~= "Legendary")
+	end
 	expect(Worlds.At(Worlds.Origin("Candy") + Vector3.new(10, 3, 5)) == "Candy")
 	expect(Worlds.At(Vector3.new(0, 3, 0)) == nil)
 end)

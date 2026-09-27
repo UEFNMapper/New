@@ -34,6 +34,7 @@ local nextId = 0
 local serverLuck = 1
 local serverLuckUntil = 0
 local personalNext: { [Player]: number } = {}
+local personalCount: { [Player]: number } = {}
 
 local function now(): number
 	return Workspace:GetServerTimeNow()
@@ -167,11 +168,14 @@ local function personalStep(player: Player)
 	local data = DataService.Get(player)
 	local world = Worlds.Best(if data then data.Worlds else {})
 	local luck = Registry.KaijuService.PersonalLuck(player)
-	local rarity = Roll.Rarity(luck, nil, world.Id)
-	local price = math.floor(MeteorService.EggPrice(rarity) * 0.8)
+	personalCount[player] = (personalCount[player] or 0) + 1
+	local golden = personalCount[player] % Economy.GoldenEvery == 0
+	local rarity = if golden then Roll.GoldenRarity(luck, nil, world.Id) else Roll.Rarity(luck, nil, world.Id)
+	local price = math.floor(MeteorService.EggPrice(rarity) * (if golden then Economy.GoldenPriceMult else 0.8))
 	local pos = (plot.CFrame * CFrame.new(Layout.PersonalPad.X, 1.2, Layout.PersonalPad.Z)).Position
-	spawnMeteor(pos, rarity, price, player, nil, Economy.PersonalMeteorLifetime, world.Id)
-	Notify.Fx(player, "PersonalMeteor", { Rarity = rarity, World = world.Id })
+	local m = spawnMeteor(pos, rarity, price, player, nil, Economy.PersonalMeteorLifetime, world.Id)
+	m:SetAttribute("Golden", golden)
+	Notify.Fx(player, "PersonalMeteor", { Rarity = rarity, World = world.Id, Golden = golden })
 end
 
 local function buy(player: Player, payload: any): Router.Result
@@ -231,6 +235,7 @@ function MeteorService.Init()
 
 	Players.PlayerRemoving:Connect(function(player)
 		personalNext[player] = nil
+		personalCount[player] = nil
 		for id, m in meteors do
 			if m:GetAttribute("Owner") == player.UserId then
 				removeMeteor(id)
@@ -297,6 +302,11 @@ function MeteorService.Start()
 						personalNext[player] = t + Economy.PersonalMeteorInterval
 						personalStep(player)
 					end
+					-- compte à rebours du prochain météore doré (affiché sur le HUD)
+					local done = personalCount[player] or 0
+					local dropsLeft = Economy.GoldenEvery - (done % Economy.GoldenEvery) - 1
+					local seconds = math.max(0, personalNext[player] - t) + dropsLeft * Economy.PersonalMeteorInterval
+					player:SetAttribute("GoldenMeteorAt", Workspace:GetServerTimeNow() + seconds)
 				end
 			end
 		end

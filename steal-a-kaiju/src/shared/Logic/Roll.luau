@@ -73,6 +73,20 @@ function Roll.Rarity(luck: number, rng: Rng?, worldId: string?): string
 	return Rarities.List[index].Id
 end
 
+-- Tirage « doré » : comme Roll.Rarity mais sans la rareté la plus fréquente du
+-- monde (rareté supérieure garantie).
+function Roll.GoldenRarity(luck: number, rng: Rng?, worldId: string?): string
+	local weights = Roll.RarityWeights(luck, worldId)
+	local top, topW = 0, -1
+	for i, w in weights do
+		if w > topW then
+			top, topW = i, w
+		end
+	end
+	weights[top] = 0
+	return Rarities.List[Roll.Weighted(weights, rng)].Id
+end
+
 -- Espèces d'une rareté pour un monde : ses natives d'abord, sinon toutes celles
 -- de cette rareté (un jackpot peut venir d'ailleurs).
 function Roll.SpeciesPool(rarity: string, worldId: string?): { Kaijus.Species }

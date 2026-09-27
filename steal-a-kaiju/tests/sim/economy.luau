@@ -24,6 +24,8 @@ local Calc = req(Shared.Logic.Calc)
 local Format = req(Shared.Logic.Format)
 local Growth = req(Shared.Config.Growth)
 local Kaijus = req(Shared.Config.Kaijus)
+local Worlds = req(Shared.Config.Worlds)
+local Levels = req(Shared.Config.Levels)
 
 local bot = Runtime.AddPlayer("Bot")
 Runtime.Advance(3)
@@ -59,18 +61,14 @@ local function tryBuyMeteors()
 			-- prend l'œuf s'il est abordable (garde 30 % de marge pour les nids/améliorations au début)
 			if price <= data.Cash then
 				if not KaijuService.FreeNest(bot) then
-					-- nids pleins : acheter un nid ou revendre le plus faible si l'œuf vaut mieux
-					if data.Nests < Economy.MaxNests and data.Cash >= Economy.NestPrice(data.Nests) + price then
-						Boot.Call(bot, "BuyNest")
-					else
-						local worst, income = lowestKaiju()
-						local eggIncome = 0
-						for _, s in Kaijus.ByRarity[rarity.Id] or {} do
-							eggIncome = math.max(eggIncome, s.Income)
-						end
-						if worst and eggIncome * 2.5 > income then
-							Boot.Call(bot, "Sell", { Uid = worst.Uid })
-						end
+					-- nids pleins : revendre le plus faible si l'œuf vaut mieux
+					local worst, income = lowestKaiju()
+					local eggIncome = 0
+					for _, s in Kaijus.ByRarity[rarity.Id] or {} do
+						eggIncome = math.max(eggIncome, s.Income)
+					end
+					if worst and eggIncome * 2.5 > income then
+						Boot.Call(bot, "Sell", { Uid = worst.Uid })
 					end
 				end
 				if KaijuService.FreeNest(bot) then
@@ -96,8 +94,23 @@ local function tryUpgrades()
 			end
 		end
 	end
-	if data.Nests < Economy.MaxNests and data.Cash > Economy.NestPrice(data.Nests) * 3 then
-		Boot.Call(bot, "BuyNest")
+end
+
+-- Mondes : ouvre le suivant dès que possible et s'installe dans le meilleur.
+local lastTravel = -100
+local function tryWorlds()
+	for _, w in Worlds.List do
+		if not data.Worlds[w.Id] and Worlds.MeetsGate(w, data.Level, data.Rebirths) and data.Cash >= w.Toll * 1.2 then
+			local r = Boot.Call(bot, "UnlockWorld", { Id = w.Id })
+			if r and r.ok then
+				milestone("world_" .. w.Id, ("MONDE %s ouvert (niveau %d)"):format(w.Name, data.Level))
+			end
+		end
+	end
+	local best = Worlds.Best(data.Worlds)
+	if Runtime.Now() - lastTravel > 60 and bot:GetAttribute("World") ~= best.Id then
+		lastTravel = Runtime.Now()
+		Boot.Call(bot, "Travel", { Id = best.Id })
 	end
 end
 
@@ -127,6 +140,12 @@ while Runtime.Now() < total do
 	tryBuyMeteors()
 	tryUpgrades()
 	tryFeed()
+	tryWorlds()
+	for _, l in { 5, 10, 15, 20, 25, 30, 40 } do
+		if data.Level >= l then
+			milestone("level" .. l, ("NIVEAU %d"):format(l))
+		end
+	end
 	if Calc.NextRebirth(data.Rebirths) then
 		local r = Boot.Call(bot, "Rebirth")
 		if r and r.ok then
@@ -156,8 +175,8 @@ while Runtime.Now() < total do
 	end
 	if t >= nextSample then
 		nextSample += if t < 3600 then 600 else 3600
-		table.insert(samples, ("  %8s | revenu %10s/s | cash %10s | gagné %10s | nids %2d | kaijus %2d | évol %d"):format(
-			Format.Clock(t), Format.Cash(income), Format.Cash(data.Cash), Format.Cash(data.TotalEarned), data.Nests, #data.Kaijus, data.Rebirths))
+		table.insert(samples, ("  %8s | revenu %10s/s | cash %10s | niv %2d | nids %2d | kaijus %2d | évol %d | monde %s"):format(
+			Format.Clock(t), Format.Cash(income), Format.Cash(data.Cash), data.Level, PlotService.UnlockedNests(bot), #data.Kaijus, data.Rebirths, Worlds.Best(data.Worlds).Id))
 	end
 end
 
@@ -173,3 +192,8 @@ for k, v in counts do
 	print("  " .. k .. " x" .. v)
 end
 print("Erreurs Lua :", #Runtime.Errors)
+for i, e in Runtime.Errors do
+	if i <= 3 then
+		print(tostring(e):sub(1, 600))
+	end
+end

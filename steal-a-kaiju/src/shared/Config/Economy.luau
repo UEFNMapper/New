@@ -64,6 +64,8 @@ Economy.MeteorLifetime = 45 -- durée de vie d'un œuf non acheté
 Economy.MeteorPads = 6
 Economy.PersonalMeteorInterval = 150 -- météore perso sur ton île
 Economy.PersonalMeteorLifetime = 60
+Economy.GoldenEvery = 5 -- 1 météore perso sur 5 est DORÉ : rareté supérieure garantie, moitié prix
+Economy.GoldenPriceMult = 0.5
 Economy.FreeFirstEggMaxOrder = 2 -- le tout premier œuf acheté est offert s'il est Commun ou Rare
 
 -- Collecteur ----------------------------------------------------------------

@@ -6,7 +6,7 @@ licences permissives. La provenance exacte de chaque fichier est dans
 
 | Source | Fichiers | Licence |
 |---|---|---|
-| Microsoft Fluent Emoji — style « 3D » | 102 icônes (`source: "fluent-3d"`) | MIT |
+| Microsoft Fluent Emoji — style « 3D » | 115 icônes (`source: "fluent-3d"`) | MIT |
 | game-icons.net | `robux.png`, `robux_white.png` (`source: "game-icons"`) | CC BY 3.0 |
 | Kenney | *(aucune utilisée)* | CC0 |
 

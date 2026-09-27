@@ -98,7 +98,7 @@ end
 local function buildCurrencies()
 	local top = Kit.new("Frame", {
 		Name = "Top",
-		Size = UDim2.fromOffset(560, 150),
+		Size = UDim2.fromOffset(560, 180),
 		Position = UDim2.new(0.5, 0, 0, 12),
 		AnchorPoint = Vector2.new(0.5, 0),
 		BackgroundTransparency = 1,
@@ -162,13 +162,37 @@ local function buildCurrencies()
 		Parent = top,
 	})
 	local meteorText = meteorChip:FindFirstChild("Text") :: TextLabel
+	-- Prochain météore doré (rendez-vous régulier sur ton île)
+	local goldenChip = Kit.Chip({
+		Name = "Golden",
+		Text = "🌟 Golden meteor in 0:00",
+		Color = C.Gold:Lerp(C.Ink, 0.45),
+		Size = UDim2.fromOffset(250, 26),
+		Position = UDim2.fromOffset(64, 150),
+		TextSize = 16,
+		Parent = top,
+	})
+	local goldenText = goldenChip:FindFirstChild("Text") :: TextLabel
+	RunService.Heartbeat:Connect(function()
+		local at = player:GetAttribute("GoldenMeteorAt")
+		local step = State.Get("Tutorial") or 0
+		goldenChip.Visible = at ~= nil and step >= TutorialConfig.Done
+		if at then
+			local left = at - now()
+			goldenText.Text = if left > 1 then "🌟 Golden meteor in " .. Format.Clock(left) else "🌟 GOLDEN METEOR INCOMING!"
+		end
+	end)
 	local lastBest = ""
 	RunService.Heartbeat:Connect(function()
 		local folder = Workspace:FindFirstChild("Meteors")
 		local best, bestOrder = nil, 0
+		-- œufs du monde où l'on se trouve (le cratère quand on est sur son île)
+		local here = player:GetAttribute("World") or "Island"
+		local worldId = if Worlds.ById[here] then here else Worlds.Default
+		local inWorld = worldId ~= Worlds.Default
 		if folder then
 			for _, m in folder:GetChildren() do
-				if m:IsA("BasePart") and (m:GetAttribute("Owner") or 0) == 0 and (m:GetAttribute("LandAt") or 0) <= now() then
+				if m:IsA("BasePart") and (m:GetAttribute("Owner") or 0) == 0 and (m:GetAttribute("LandAt") or 0) <= now() and (m:GetAttribute("World") or Worlds.Default) == worldId then
 					local order = Rarities.Get(m:GetAttribute("Rarity") or "Common").Order
 					if order > bestOrder then
 						best, bestOrder = m, order
@@ -179,7 +203,7 @@ local function buildCurrencies()
 		if best then
 			local rarity = Rarities.Get(best:GetAttribute("Rarity") or "Common")
 			local left = (best:GetAttribute("ExpireAt") or 0) - now()
-			meteorText.Text = ("☄️ %s EGG in the crater! %ds"):format(string.upper(rarity.Name), math.max(0, math.ceil(left)))
+			meteorText.Text = ("☄️ %s EGG %s! %ds"):format(string.upper(rarity.Name), if inWorld then "landed here" else "in the crater", math.max(0, math.ceil(left)))
 			meteorChip.BackgroundColor3 = rarity.Color:Lerp(C.Ink, 0.35)
 			if lastBest ~= best.Name then
 				lastBest = best.Name
@@ -187,7 +211,7 @@ local function buildCurrencies()
 			end
 		else
 			lastBest = ""
-			local wait = Workspace:GetAttribute("NextMeteorIn") or -1
+			local wait = Workspace:GetAttribute(if inWorld then "NextMeteorIn_" .. worldId else "NextMeteorIn") or -1
 			meteorText.Text = if wait >= 0 then ("☄️ Next meteor in %ds"):format(math.ceil(wait)) else "☄️ Meteors paused (raid!)"
 			meteorChip.BackgroundColor3 = C.MagmaDark
 		end
@@ -289,21 +313,23 @@ end
 ----------------------------------------------------------------------------
 
 local levelPanel: Frame
-local leftColumn: Frame -- colonne de gauche : niveau, compagnon, menus (une seule échelle)
+local leftColumn: Frame? = nil -- colonne de gauche : niveau, compagnon, menus (une seule échelle)
 
 -- Colonne de gauche, partagée avec la pastille du compagnon (BuddyRenderer).
 function Hud.LeftColumn(): Frame
-	if not leftColumn then
-		leftColumn = Kit.new("Frame", {
+	local column = leftColumn
+	if not column then
+		column = Kit.new("Frame", {
 			Name = "LeftColumn",
 			Size = UDim2.fromOffset(350, 500),
 			Position = UDim2.fromOffset(16, 62),
 			BackgroundTransparency = 1,
 			Parent = layer,
 		}, { Kit.List(Enum.FillDirection.Vertical, 10, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top) })
-		Kit.AutoScale(leftColumn)
+		Kit.AutoScale(column)
+		leftColumn = column
 	end
-	return leftColumn
+	return column
 end
 
 -- Le prochain objectif du joueur : un monde à ouvrir, sinon le prochain déblocage de niveau.
