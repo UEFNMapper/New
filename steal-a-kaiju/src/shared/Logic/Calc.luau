@@ -6,6 +6,7 @@ local Kaijus = require(Config.Kaijus)
 local Growth = require(Config.Growth)
 local Mutations = require(Config.Mutations)
 local Economy = require(Config.Economy)
+local Levels = require(Config.Levels)
 
 local Calc = {}
 
@@ -19,6 +20,7 @@ export type KaijuRecord = {
 	Egg: boolean?,
 	HatchAt: number?,
 	Born: number?,
+	World: string?, -- monde d'origine de l'œuf
 }
 
 export type Multipliers = {
@@ -32,6 +34,7 @@ export type Multipliers = {
 	IndexCount: number,
 	CashPotion: boolean,
 	EventCash: number,
+	Level: number?,
 }
 
 function Calc.DefaultMultipliers(): Multipliers
@@ -79,6 +82,7 @@ function Calc.CashMultiplier(m: Multipliers): number
 		additive += Economy.GroupBoost
 	end
 	additive += m.IndexCount * Economy.IndexBoostPerSpecies
+	additive += math.max(0, (m.Level or 1) - 1) * Levels.CashPerLevel
 
 	local mult = additive * Calc.RebirthMult(m.Rebirths)
 	if m.DoubleCash then
@@ -148,6 +152,18 @@ end
 -- Montant d'une récompense « Cash » exprimée en secondes de revenu.
 function Calc.CashReward(seconds: number, incomePerSecond: number, minCash: number?): number
 	return math.max(minCash or 0, math.floor(seconds * incomePerSecond))
+end
+
+-- Puissance d'un kaiju en combat (défense de l'île, Rampage, compagnon) :
+-- grandir le rend plus fort, la rareté et la mutation aussi.
+function Calc.Power(rec: KaijuRecord): number
+	if rec.Egg or not rec.Species then
+		return 0
+	end
+	local stage = Growth.Get(Calc.Stage(rec))
+	local rarityPower = Growth.RarityTimeMult[rec.Rarity] or 1
+	local mutation = 1 + 0.1 * (Mutations.Mult(rec.Mutation) - 1)
+	return math.sqrt(stage.IncomeMult) * rarityPower * mutation
 end
 
 -- Coût du prochain rebirth (nil si max atteint).

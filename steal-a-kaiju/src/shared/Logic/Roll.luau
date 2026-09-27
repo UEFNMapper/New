@@ -6,6 +6,7 @@ local Config = script.Parent.Parent.Config
 local Rarities = require(Config.Rarities)
 local Kaijus = require(Config.Kaijus)
 local Mutations = require(Config.Mutations)
+local Worlds = require(Config.Worlds)
 
 local Roll = {}
 
@@ -39,10 +40,12 @@ end
 
 -- Poids effectifs des raretés avec un facteur de chance : la chance multiplie
 -- les poids des raretés Épique et au-delà (plus fortement pour les plus rares).
-function Roll.RarityWeights(luck: number): { number }
+-- `worldId` : poids propres au monde (sinon ceux du cratère).
+function Roll.RarityWeights(luck: number, worldId: string?): { number }
+	local world = Worlds.Get(worldId)
 	local weights = {}
 	for i, r in Rarities.List do
-		local w = r.Weight
+		local w = world.Weights[r.Id] or 0
 		if r.Order >= 3 and luck > 1 then
 			w *= luck ^ (1 + (r.Order - 3) * 0.25)
 		end
@@ -52,8 +55,8 @@ function Roll.RarityWeights(luck: number): { number }
 end
 
 -- Chances (0..1) par rareté pour l'affichage.
-function Roll.RarityOdds(luck: number): { [string]: number }
-	local weights = Roll.RarityWeights(luck)
+function Roll.RarityOdds(luck: number, worldId: string?): { [string]: number }
+	local weights = Roll.RarityWeights(luck, worldId)
 	local total = 0
 	for _, w in weights do
 		total += w
@@ -65,15 +68,34 @@ function Roll.RarityOdds(luck: number): { [string]: number }
 	return odds
 end
 
-function Roll.Rarity(luck: number, rng: Rng?): string
-	local index = Roll.Weighted(Roll.RarityWeights(luck), rng)
+function Roll.Rarity(luck: number, rng: Rng?, worldId: string?): string
+	local index = Roll.Weighted(Roll.RarityWeights(luck, worldId), rng)
 	return Rarities.List[index].Id
 end
 
+-- Espèces d'une rareté pour un monde : ses natives d'abord, sinon toutes celles
+-- de cette rareté (un jackpot peut venir d'ailleurs).
+function Roll.SpeciesPool(rarity: string, worldId: string?): { Kaijus.Species }
+	local all = Kaijus.ByRarity[rarity] or {}
+	if worldId then
+		local native = {}
+		for _, id in Worlds.Get(worldId).Species do
+			local s = Kaijus.Get(id)
+			if s and s.Rarity == rarity then
+				table.insert(native, s)
+			end
+		end
+		if #native > 0 then
+			return native
+		end
+	end
+	return all
+end
+
 -- Espèce aléatoire d'une rareté donnée (les moins chères sont plus fréquentes).
-function Roll.Species(rarity: string, rng: Rng?): string
-	local pool = Kaijus.ByRarity[rarity]
-	if not pool or #pool == 0 then
+function Roll.Species(rarity: string, rng: Rng?, worldId: string?): string
+	local pool = Roll.SpeciesPool(rarity, worldId)
+	if #pool == 0 then
 		pool = Kaijus.ByRarity.Common
 	end
 	local weights = {}
@@ -83,10 +105,20 @@ function Roll.Species(rarity: string, rng: Rng?): string
 	return pool[Roll.Weighted(weights, rng)].Id
 end
 
--- Mutation à l'éclosion. `bonus` = mutation d'événement { Id, Chance } éventuelle.
-function Roll.Mutation(luck: number, bonus: { Id: string, Chance: number }?, rng: Rng?): string?
+-- Mutation à l'éclosion. `bonus` = mutation d'événement { Id, Chance } éventuelle,
+-- `local_` = mutations propres au monde d'origine de l'œuf.
+function Roll.Mutation(luck: number, bonus: { Id: string, Chance: number }?, rng: Rng?, local_: { { Id: string, Chance: number } }?): string?
 	if bonus and rand(rng) < math.min(0.9, bonus.Chance * math.sqrt(luck)) then
 		return bonus.Id
+	end
+	if local_ then
+		-- de la plus rare à la plus commune
+		for i = #local_, 1, -1 do
+			local m = local_[i]
+			if rand(rng) < math.min(0.5, m.Chance * luck) then
+				return m.Id
+			end
+		end
 	end
 	-- Des plus rares aux plus communes
 	for i = #Mutations.List, 1, -1 do

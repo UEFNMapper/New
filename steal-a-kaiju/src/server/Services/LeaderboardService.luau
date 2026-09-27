@@ -17,7 +17,7 @@ local LeaderboardService = {}
 
 local BOARDS = {
 	{ Key = "TotalEarned", Title = "💰 RICHEST TYCOONS", Store = "LB_Earned_v1", Format = Format.Cash, Color = Theme.Colors.Cash },
-	{ Key = "Steals", Title = "🦹 MASTER THIEVES", Store = "LB_Steals_v1", Format = Format.Short, Color = Theme.Colors.Pink },
+	{ Key = "Level", Title = "⭐ TOP TAMERS", Store = "LB_Level_v1", Format = Format.Short, Color = Theme.Colors.Gold },
 	{ Key = "Rebirths", Title = "🧬 TOP EVOLVERS", Store = "LB_Rebirths_v1", Format = Format.Short, Color = Theme.Colors.Radioactive },
 }
 
@@ -38,13 +38,13 @@ function LeaderboardService.Update(player: Player)
 		return
 	end
 	local cash = stats:FindFirstChild("Cash") :: StringValue?
-	local steals = stats:FindFirstChild("Steals") :: IntValue?
+	local level = stats:FindFirstChild("Level") :: IntValue?
 	local rebirths = stats:FindFirstChild("Evolution") :: IntValue?
 	if cash then
 		cash.Value = Format.Cash(data.Cash)
 	end
-	if steals then
-		steals.Value = data.Stats.Steals
+	if level then
+		level.Value = data.Level
 	end
 	if rebirths then
 		rebirths.Value = data.Rebirths
@@ -192,9 +192,10 @@ function LeaderboardService.Init()
 		cash.Name = "Cash"
 		cash.Value = "$0"
 		cash.Parent = stats
-		local steals = Instance.new("IntValue")
-		steals.Name = "Steals"
-		steals.Parent = stats
+		local level = Instance.new("IntValue")
+		level.Name = "Level"
+		level.Value = 1
+		level.Parent = stats
 		local rebirths = Instance.new("IntValue")
 		rebirths.Name = "Evolution"
 		rebirths.Parent = stats

@@ -11,6 +11,7 @@ local Rewards = require(Shared.Config.Rewards)
 local Economy = require(Shared.Config.Economy)
 local Kaijus = require(Shared.Config.Kaijus)
 local Rarities = require(Shared.Config.Rarities)
+local Levels = require(Shared.Config.Levels)
 local Progress = require(Shared.Logic.Progress)
 local Calc = require(Shared.Logic.Calc)
 local Roll = require(Shared.Logic.Roll)
@@ -117,6 +118,7 @@ local function claimQuest(player: Player, payload: any): Router.Result
 			end
 			q.Claimed = true
 			local text = RewardService.Grant(player, def.Reward, "Quest")
+			Registry.LevelService.AddXp(player, Levels.Xp.Quest, "Quest")
 			DataService.Replicate(player, "Quests")
 			Notify.Fx(player, "RewardClaimed", { Text = text, Source = "Quest" })
 			return { ok = true, text = text }
@@ -141,6 +143,7 @@ local function claimQuestBonus(player: Player): Router.Result
 	end
 	data.Quests.BonusClaimed = true
 	local text = RewardService.Grant(player, Rewards.AllQuestsBonus, "Daily Quests")
+	Registry.LevelService.AddXp(player, Levels.Xp.QuestBonus, "Quest")
 	DataService.Replicate(player, "Quests")
 	Notify.Fx(player, "RewardClaimed", { Text = text, Source = "All quests" })
 	return { ok = true, text = text }
@@ -168,6 +171,10 @@ function RewardService.Discover(player: Player, speciesId: string, mutation: str
 		Notify.Fx(player, "Discovered", { Species = speciesId, Mutation = mutation, NewSpecies = isNewSpecies })
 		if isNewSpecies then
 			Registry.KaijuService.RefreshPlayer(player)
+			local species = Kaijus.Get(speciesId)
+			Registry.LevelService.AddXp(player, Registry.LevelService.HatchXp(species.Rarity) * (Levels.NewSpeciesMult - 1), "NewSpecies")
+		elseif mutation then
+			Registry.LevelService.AddXp(player, Levels.NewMutationXp, "NewMutation")
 		end
 	end
 end

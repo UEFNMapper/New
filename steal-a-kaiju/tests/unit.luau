@@ -18,6 +18,7 @@ local Rewards = req(Shared.Config.Rewards)
 local Monetization = req(Shared.Config.Monetization)
 local Events = req(Shared.Config.Events)
 local Builder = req(Shared.KaijuBuilder)
+local Vector3 = require("@lune/roblox").Vector3
 
 test("Format.Short", function()
 	local cases = { [0] = "0", [5.5] = "5.5", [999] = "999", [1000] = "1K", [1234] = "1.23K", [15300] = "15.3K", [100000] = "100K", [280e9] = "280B", [1e12] = "1T", [2.5e15] = "2.5Qa" }
@@ -36,7 +37,7 @@ test("Format.Clock / Duration / Comma", function()
 end)
 
 test("roster cohérent", function()
-	expect(#Kaijus.List == 36, #Kaijus.List)
+	expect(#Kaijus.List == 46, #Kaijus.List)
 	for _, s in Kaijus.List do
 		expect(Rarities.ById[s.Rarity] ~= nil, s.Id)
 		expect(s.Income > 0, s.Id)
@@ -49,7 +50,84 @@ test("roster cohérent", function()
 	end
 end)
 
-test("tous les kaijus se construisent (36 modèles + œufs)", function()
+test("mondes : espèces, poids, portes", function()
+	local Worlds = req(Shared.Config.Worlds)
+	local seen = {}
+	local prevOrder = 0
+	for _, w in Worlds.List do
+		expect(w.Order == prevOrder + 1, w.Id)
+		prevOrder = w.Order
+		for _, id in w.Species do
+			local s = Kaijus.Get(id)
+			expect(s ~= nil and s.Rarity ~= "Secret", "espèce " .. id)
+			expect(not seen[id], "espèce dans 2 mondes : " .. id)
+			seen[id] = true
+		end
+		for rarity, weight in w.Weights do
+			expect(Rarities.ById[rarity] ~= nil and weight > 0, w.Id .. " " .. rarity)
+			expect(#Roll.SpeciesPool(rarity, w.Id) > 0, w.Id .. " pool " .. rarity)
+		end
+		for _, m in w.Mutations do
+			expect(Mutations.ById[m.Id] ~= nil, m.Id)
+		end
+	end
+	-- toutes les espèces achetables sont natives d'un monde
+	for _, s in Kaijus.List do
+		if s.Rarity ~= "Secret" then
+			expect(seen[s.Id], "sans monde : " .. s.Id)
+		end
+	end
+	-- les mondes suivants donnent de meilleurs œufs
+	local function meanIncome(worldId)
+		local odds = Roll.RarityOdds(1, worldId)
+		local total = 0
+		for rarity, p in odds do
+			local pool = Roll.SpeciesPool(rarity, worldId)
+			local sum = 0
+			for _, s in pool do
+				sum += s.Income
+			end
+			if #pool > 0 then
+				total += p * sum / #pool
+			end
+		end
+		return total
+	end
+	local prev = 0
+	for _, w in Worlds.List do
+		local m = meanIncome(w.Id)
+		expect(m > prev * 2.5, w.Id .. " " .. m)
+		prev = m
+	end
+	-- le tirage respecte les natives
+	local rng = Harness.Random.new(3)
+	for _ = 1, 200 do
+		local r = Roll.Rarity(1, rng, "Frost")
+		expect(r ~= "Common", "pas de Common dans Frost")
+		local sp = Roll.Species(r, rng, "Frost")
+		expect(Kaijus.Get(sp).Rarity == r)
+	end
+	expect(Worlds.At(Worlds.Origin("Candy") + Vector3.new(10, 3, 5)) == "Candy")
+	expect(Worlds.At(Vector3.new(0, 3, 0)) == nil)
+end)
+
+test("niveaux : courbe, nids, déblocages", function()
+	local Levels = req(Shared.Config.Levels)
+	expect(Levels.FromXp(0) == 1)
+	expect(Levels.FromXp(Levels.TotalFor(5)) == 5)
+	expect(Levels.FromXp(Levels.TotalFor(5) - 1) == 4)
+	expect(Levels.NestsFor(1) == 6 and Levels.NestsFor(30) == 16 and Levels.NestsFor(100) == 16)
+	local nxt = Levels.NextUnlock(4)
+	expect(nxt and nxt.Level == 5 and nxt.Kind == "World" and nxt.Id == "Candy", nxt and nxt.Text)
+	expect(Levels.Reward(5).Egg == "Rare" and Levels.Reward(6).Egg == nil)
+	-- la puissance grandit avec le stade
+	local rec = { Uid = "x", Species = "Gloop", Rarity = "Common", Growth = 0, Nest = 1 }
+	local p1 = Calc.Power(rec)
+	rec.Growth = 1e7
+	expect(Calc.Power(rec) > p1 * 5, Calc.Power(rec))
+end)
+
+test("tous les kaijus se construisent (46 modèles + œufs)", function()
 	for _, s in Kaijus.List do
 		local model = Builder.Build(s.Id, nil, 1)
 		expect(#model:GetChildren() > 8, s.Id)

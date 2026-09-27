@@ -11,7 +11,13 @@ local DataTemplate = {
 	Gems = Economy.StartGems,
 	TotalEarned = 0,
 	Rebirths = 0,
-	Nests = Economy.StartNests,
+	Nests = Economy.StartNests, -- nids achetés (ancienne V1) ; les niveaux en donnent aussi
+	Xp = 0, -- XP cumulée (le niveau s'en déduit, jamais remis à zéro)
+	Level = 1,
+	Worlds = { Crater = true }, -- mondes débloqués
+	Siege = { Wave = 1, Best = 0, Cleared = 0 }, -- défense de l'île
+	Rampage = { Stars = {}, Best = 0, Runs = 0 }, -- [quartier] = étoiles
+	Buddy = { Uid = "", Xp = 0 }, -- compagnon
 	Stored = 0, -- cash en attente dans le réacteur de la base
 
 	Kaijus = {}, -- { KaijuRecord }
@@ -43,6 +49,12 @@ local DataTemplate = {
 		BossDamage = 0,
 		PlaySeconds = 0,
 		Locks = 0,
+		SiegeWaves = 0,
+		SiegeKills = 0,
+		Rampages = 0,
+		Smashed = 0,
+		Digs = 0,
+		Worlds = 0,
 	},
 
 	Settings = { Music = true, Sfx = true, LowFx = false },

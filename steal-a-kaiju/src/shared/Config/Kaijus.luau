@@ -17,6 +17,7 @@ export type Species = {
 	Accessories: { string },
 	Flavor: string,
 	Recipe: { string }?, -- pour les Secrets : les deux espèces à fusionner
+	RecipeStage: number?, -- stade minimum des deux ingrédients
 	Hint: string?,
 }
 
@@ -76,6 +77,9 @@ local List: { Species } = {
 	S("Bananadon", "Bananadon", "Epic", 45, 120, "Rex", rgb(255, 225, 70), rgb(255, 245, 180), rgb(110, 80, 30), { "Spikes" }, "Slippery when defeated."),
 	S("Crabzooka", "Crabzooka", "Epic", 50, 120, "Crab", rgb(80, 90, 110), rgb(255, 150, 60), rgb(255, 60, 60), { "Cannon" }, "Fires bubbles at 300 km/h."),
 	S("Pizzapocalypse", "Pizzapocalypse", "Epic", 60, 120, "Food", rgb(255, 190, 70), rgb(255, 240, 150), rgb(210, 50, 40), { "Cheese" }, "The final slice.", "Pizza"),
+	S("Pengwing", "Pengwing", "Epic", 42, 120, "Bird", rgb(40, 50, 70), rgb(245, 250, 255), rgb(255, 170, 40), { "Visor" }, "Slides into your nest at 90 km/h."),
+	S("Snowgoon", "Snowgoon", "Epic", 55, 120, "Blob", rgb(240, 248, 255), rgb(190, 225, 255), rgb(255, 120, 60), { "Horn", "Blush" }, "Built by kids. Came alive. Unimpressed."),
+	S("Magmapus", "Magmapus", "Epic", 58, 120, "Squid", rgb(90, 30, 30), rgb(255, 120, 30), rgb(255, 220, 80), { "Glow" }, "Eight arms. All of them on fire."),
 
 	-- LEGENDARY ------------------------------------------------------------
 	S("Rexplosion", "Rexplosion", "Legendary", 180, 240, "Rex", rgb(60, 110, 70), rgb(120, 170, 110), rgb(90, 255, 200), { "Spikes", "Glow" }, "Its roar has been measured on the Richter scale."),
@@ -83,17 +87,24 @@ local List: { Species } = {
 	S("ThunderGoose", "Thunder Goose", "Legendary", 220, 240, "Bird", rgb(250, 250, 255), rgb(255, 170, 40), rgb(80, 180, 255), { "Bolt", "Glow" }, "HONK. (Thunder sounds.)"),
 	S("Donutron", "Donutron", "Legendary", 250, 240, "Food", rgb(210, 140, 80), rgb(255, 120, 190), rgb(120, 230, 255), { "Sprinkles", "Visor" }, "Part donut, part war machine.", "Donut"),
 	S("Drakonda", "Drakonda", "Legendary", 280, 240, "Serpent", rgb(170, 30, 50), rgb(255, 190, 80), rgb(255, 120, 30), { "Wings", "Horn", "Glow" }, "A dragon that refused to grow legs."),
+	S("Yetitan", "Yetitan", "Legendary", 240, 240, "Quad", rgb(235, 240, 250), rgb(150, 200, 240), rgb(60, 120, 200), { "Tusks", "Spikes" }, "Footprints the size of swimming pools."),
+	S("Cinderwing", "Cinderwing", "Legendary", 265, 240, "Bird", rgb(60, 30, 30), rgb(255, 150, 40), rgb(255, 230, 90), { "Wings", "Glow" }, "Every flap is a tiny barbecue."),
+	S("Starpinch", "Starpinch", "Legendary", 300, 240, "Crab", rgb(60, 40, 130), rgb(255, 230, 120), rgb(120, 255, 230), { "Stars", "Glow" }, "Snips comets out of the sky."),
 
 	-- MYTHIC ---------------------------------------------------------------
 	S("Kaijumbo", "Kaijumbo", "Mythic", 1000, 480, "Quad", rgb(140, 150, 200), rgb(200, 210, 240), rgb(255, 230, 120), { "Tusks", "Crown" }, "Never forgets who stole from it."),
 	S("Nebulodon", "Nebulodon", "Mythic", 1200, 480, "Rex", rgb(40, 30, 90), rgb(120, 80, 220), rgb(255, 255, 255), { "Spikes", "Glow", "Stars" }, "Made of 30% dinosaur, 70% space."),
 	S("Hydroblob", "Hydroblob", "Mythic", 1400, 480, "Blob", rgb(40, 170, 255), rgb(170, 230, 255), rgb(0, 90, 200), { "Crown", "Glow" }, "Three blobs in a trench coat."),
 	S("Crabageddon", "Crabageddon", "Mythic", 1600, 480, "Crab", rgb(40, 20, 30), rgb(255, 60, 60), rgb(255, 200, 40), { "Spikes", "Glow", "Crown" }, "The end is near. And pinchy."),
+	S("Glacirex", "Glacirex", "Mythic", 1300, 480, "Rex", rgb(120, 200, 255), rgb(230, 250, 255), rgb(40, 110, 220), { "Spikes", "Crown", "Glow" }, "Its roar freezes waterfalls mid-air."),
+	S("Emberwyrm", "Emberwyrm", "Mythic", 1500, 480, "Serpent", rgb(40, 20, 20), rgb(255, 90, 20), rgb(255, 210, 60), { "Wings", "Horn", "Glow" }, "Swims through lava like it's a bubble bath."),
+	S("Astrolotl", "Astrolotl", "Mythic", 1800, 480, "Serpent", rgb(255, 150, 210), rgb(90, 60, 200), rgb(120, 255, 240), { "Stars", "Halo", "Glow" }, "Regrows a whole galaxy if you cut its tail."),
 
 	-- CELESTIAL ------------------------------------------------------------
 	S("SolarisRex", "Solaris Rex", "Celestial", 7000, 900, "Rex", rgb(255, 170, 30), rgb(255, 240, 150), rgb(255, 90, 20), { "Halo", "Glow", "Spikes" }, "It rises in the east every morning."),
 	S("LunarSquid", "Lunar Squid", "Celestial", 8000, 900, "Squid", rgb(200, 210, 255), rgb(250, 250, 255), rgb(120, 140, 255), { "Halo", "Glow", "Stars" }, "Controls the tides. And your wifi."),
 	S("CosmoGoose", "Cosmo Goose", "Celestial", 9000, 900, "Bird", rgb(30, 20, 60), rgb(90, 60, 200), rgb(80, 255, 230), { "Halo", "Glow", "Stars", "Wings" }, "Honks in 11 dimensions."),
+	S("Voidling", "Voidling", "Celestial", 10000, 900, "Blob", rgb(20, 10, 40), rgb(120, 60, 255), rgb(255, 255, 255), { "Halo", "Stars", "Crown", "Glow" }, "Small, cute, and technically a black hole."),
 }
 
 -- SECRETS : uniquement par fusion (recette) ----------------------------------
@@ -108,22 +119,24 @@ local function Secret(
 	accessories: { string },
 	flavor: string,
 	recipe: { string },
+	recipeStage: number,
 	hint: string,
 	shape: string?
 )
 	local s = S(id, name, "Secret", income, 250, archetype, primary, secondary, accent, accessories, flavor, shape)
 	s.Price = 0
 	s.Recipe = recipe
+	s.RecipeStage = recipeStage
 	s.Hint = hint
 	table.insert(List, s)
 end
 
-Secret("SharktoastSupreme", "Sharktoast Supreme", 40000, "Food", rgb(90, 130, 170), rgb(222, 164, 92), rgb(255, 255, 255), { "Fin", "Teeth", "Glow" }, "Breakfast has teeth now.", { "Toastzilla", "Sharkapillar" }, "Fuse bread with a fin.", "Toast")
-Secret("CroissantKraken", "Croissant Kraken", 50000, "Squid", rgb(230, 160, 60), rgb(250, 210, 120), rgb(255, 90, 160), { "Crown", "Glow" }, "Unleash the pastry.", { "Croissantosaurus", "KawaiiKraken" }, "A flaky friend meets the deep.")
-Secret("NuclearPigeon", "Nuclear Pigeon", 60000, "Bird", rgb(90, 255, 90), rgb(40, 80, 40), rgb(255, 255, 80), { "Glow", "Bolt", "Crown" }, "Do NOT feed it bread.", { "Pigeonator", "ThunderGoose" }, "Two birds, one storm.")
-Secret("OmegaSushiMech", "Omega Sushi Mech", 70000, "Mech", rgb(250, 250, 245), rgb(255, 120, 80), rgb(60, 220, 255), { "Cannon", "Visor", "Nori", "Glow" }, "Sashimi-grade firepower.", { "SushiRex", "Robotank" }, "Raw fish, heavy metal.")
-Secret("InfiniteBlob", "The Infinite Blob", 80000, "Blob", rgb(255, 255, 255), rgb(200, 120, 255), rgb(80, 255, 230), { "Halo", "Glow", "Stars" }, "It's blobs all the way down.", { "Gloop", "Hydroblob" }, "The smallest and the biggest goo.")
-Secret("KingKaiju", "KING KAIJU", 120000, "Rex", rgb(20, 20, 30), rgb(255, 200, 40), rgb(255, 60, 60), { "Crown", "Spikes", "Glow", "Halo" }, "Bow before the king.", { "Rexplosion", "SolarisRex" }, "Two tyrants. One throne.")
+Secret("SharktoastSupreme", "Sharktoast Supreme", 12000, "Food", rgb(90, 130, 170), rgb(222, 164, 92), rgb(255, 255, 255), { "Fin", "Teeth", "Glow" }, "Breakfast has teeth now.", { "Toastzilla", "Sharkapillar" }, 5, "Fuse bread with a fin.", "Toast")
+Secret("CroissantKraken", "Croissant Kraken", 15000, "Squid", rgb(230, 160, 60), rgb(250, 210, 120), rgb(255, 90, 160), { "Crown", "Glow" }, "Unleash the pastry.", { "Croissantosaurus", "KawaiiKraken" }, 4, "A flaky friend meets the deep.")
+Secret("NuclearPigeon", "Nuclear Pigeon", 18000, "Bird", rgb(90, 255, 90), rgb(40, 80, 40), rgb(255, 255, 80), { "Glow", "Bolt", "Crown" }, "Do NOT feed it bread.", { "Pigeonator", "ThunderGoose" }, 5, "Two birds, one storm.")
+Secret("OmegaSushiMech", "Omega Sushi Mech", 22000, "Mech", rgb(250, 250, 245), rgb(255, 120, 80), rgb(60, 220, 255), { "Cannon", "Visor", "Nori", "Glow" }, "Sashimi-grade firepower.", { "SushiRex", "Robotank" }, 4, "Raw fish, heavy metal.")
+Secret("InfiniteBlob", "The Infinite Blob", 28000, "Blob", rgb(255, 255, 255), rgb(200, 120, 255), rgb(80, 255, 230), { "Halo", "Glow", "Stars" }, "It's blobs all the way down.", { "Gloop", "Hydroblob" }, 4, "The smallest and the biggest goo.")
+Secret("KingKaiju", "KING KAIJU", 40000, "Rex", rgb(20, 20, 30), rgb(255, 200, 40), rgb(255, 60, 60), { "Crown", "Spikes", "Glow", "Halo" }, "Bow before the king.", { "Rexplosion", "SolarisRex" }, 3, "Two tyrants. One throne.")
 
 local ById: { [string]: Species } = {}
 local ByRarity: { [string]: { Species } } = {}

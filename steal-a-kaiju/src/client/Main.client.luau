@@ -55,7 +55,7 @@ for _, module in screensFolder:GetChildren() do
 end
 
 -- Monde
-for _, name in { "KaijuRenderer", "MeteorRenderer", "PlotVisuals", "EventVisuals", "CharacterFx", "Tutorial" } do
+for _, name in { "KaijuRenderer", "MeteorRenderer", "PlotVisuals", "EventVisuals", "CharacterFx", "WorldVisuals", "SiegeRenderer", "RampageController", "BuddyRenderer", "Tutorial" } do
 	safeInit(name, require(World:WaitForChild(name)))
 end
 

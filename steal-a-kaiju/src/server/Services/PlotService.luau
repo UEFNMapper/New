@@ -9,6 +9,7 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Layout = require(Shared.Config.Layout)
 local Economy = require(Shared.Config.Economy)
+local Levels = require(Shared.Config.Levels)
 
 local Registry = require(script.Parent.Registry)
 local DataService = require(script.Parent.DataService)
@@ -55,7 +56,8 @@ function PlotService.UnlockedNests(player: Player): number
 		return 0
 	end
 	local extra = if Registry.ShopService.HasPass(player, "ExtraNests") then Economy.PassBonusNests else 0
-	return math.min(#Layout.Nests, data.Nests + extra)
+	local base = math.max(data.Nests, Levels.NestsFor(data.Level or 1))
+	return math.min(#Layout.Nests, base + extra)
 end
 
 function PlotService.RefreshNests(player: Player)

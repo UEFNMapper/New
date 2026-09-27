@@ -26,6 +26,11 @@ local order = {
 	"RewardService",
 	"ProgressionService",
 	"LeaderboardService",
+	"LevelService",
+	"WorldService",
+	"SiegeService",
+	"RampageService",
+	"BuddyService",
 	"TutorialService",
 }
 

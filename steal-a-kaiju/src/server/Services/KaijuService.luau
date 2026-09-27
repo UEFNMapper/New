@@ -12,6 +12,8 @@ local Kaijus = require(Shared.Config.Kaijus)
 local Rarities = require(Shared.Config.Rarities)
 local Growth = require(Shared.Config.Growth)
 local Economy = require(Shared.Config.Economy)
+local Worlds = require(Shared.Config.Worlds)
+local Levels = require(Shared.Config.Levels)
 local Calc = require(Shared.Logic.Calc)
 local Roll = require(Shared.Logic.Roll)
 local Format = require(Shared.Logic.Format)
@@ -91,6 +93,7 @@ function KaijuService.Multiplier(player: Player): number
 		IndexCount = indexCount(data),
 		CashPotion = data.Boosts.Cash > os.time(),
 		EventCash = if event then event.CashMult else 1,
+		Level = data.Level,
 	}
 	return Calc.CashMultiplier(m)
 end
@@ -135,6 +138,11 @@ function KaijuService.IncomePerSecond(player: Player): number
 		end
 	end
 	return total * (multCache[player] or KaijuService.Multiplier(player))
+end
+
+-- Récompense exprimée en secondes de revenu (s'adapte à la progression).
+function KaijuService.IncomeSeconds(player: Player, seconds: number, minCash: number?): number
+	return Calc.CashReward(seconds, KaijuService.IncomePerSecond(player), minCash)
 end
 
 function KaijuService.RefreshPlayer(player: Player)
@@ -240,7 +248,8 @@ local function newUid(data: any): string
 end
 
 -- Ajoute un œuf dans un nid libre. Renvoie le record ou nil si plein.
-function KaijuService.AddEgg(player: Player, rarity: string, hatchSeconds: number?): Record?
+-- `world` : monde d'origine (espèces et mutations locales à l'éclosion).
+function KaijuService.AddEgg(player: Player, rarity: string, hatchSeconds: number?, world: string?): Record?
 	local data = DataService.Get(player)
 	local slot = KaijuService.FreeNest(player)
 	if not data or not slot then
@@ -255,6 +264,7 @@ function KaijuService.AddEgg(player: Player, rarity: string, hatchSeconds: numbe
 		Egg = true,
 		HatchAt = os.time() + (hatchSeconds or r.HatchTime),
 		Born = os.time(),
+		World = world,
 	}
 	table.insert(data.Kaijus, rec)
 	syncAnchor(player, rec)
@@ -263,12 +273,12 @@ function KaijuService.AddEgg(player: Player, rarity: string, hatchSeconds: numbe
 end
 
 -- Œuf offert (récompenses, rebirth…) : mis en attente si aucun nid libre.
-function KaijuService.GiveEgg(player: Player, rarity: string, source: string?)
+function KaijuService.GiveEgg(player: Player, rarity: string, source: string?, world: string?)
 	local data = DataService.Get(player)
 	if not data then
 		return
 	end
-	local rec = KaijuService.AddEgg(player, rarity)
+	local rec = KaijuService.AddEgg(player, rarity, nil, world)
 	local r = Rarities.Get(rarity)
 	if rec then
 		Notify.Fx(player, "EggGift", { Rarity = rarity, Source = source, Uid = rec.Uid })
@@ -302,9 +312,10 @@ local function hatch(player: Player, data: any, rec: Record)
 	if event and event.Mutation and event.MutationChance then
 		bonus = { Id = event.Mutation, Chance = event.MutationChance }
 	end
-	rec.Species = rec.Species or Roll.Species(rec.Rarity)
+	local world = if rec.World then Worlds.Get(rec.World) else nil
+	rec.Species = rec.Species or Roll.Species(rec.Rarity, nil, rec.World)
 	if rec.Mutation == nil then
-		rec.Mutation = Roll.Mutation(luck, bonus)
+		rec.Mutation = Roll.Mutation(luck, bonus, nil, if world then world.Mutations else nil)
 	end
 	rec.Egg = nil
 	rec.HatchAt = nil
@@ -316,6 +327,7 @@ local function hatch(player: Player, data: any, rec: Record)
 	local rarity = Rarities.Get(rec.Rarity)
 	Notify.Fx(player, "Hatch", { Uid = rec.Uid, Species = rec.Species, Mutation = rec.Mutation, Rarity = rec.Rarity })
 	Notify.FxAll("HatchWorld", { Uid = rec.Uid, Rarity = rec.Rarity })
+	Registry.LevelService.AddXp(player, Registry.LevelService.HatchXp(rec.Rarity), "Hatch")
 	Registry.RewardService.Discover(player, rec.Species :: string, rec.Mutation)
 	Registry.RewardService.Track(player, "Hatches", 1)
 	Registry.TutorialService.Notify(player, "Hatch")
@@ -553,6 +565,11 @@ local function tickPlayer(player: Player, dt: number)
 					local species = Kaijus.Get(rec.Species or "")
 					Notify.Toast(player, ("%s grew into a %s!"):format(if species then species.Name else "Kaiju", string.upper(stage.Name)), "Good")
 					Registry.RewardService.Track(player, "StageUps", after - before)
+					local xp = 0
+					for st = before + 1, after do
+						xp += Registry.LevelService.HatchXp(rec.Rarity) * (Levels.StageXpMult[st] or 1)
+					end
+					Registry.LevelService.AddXp(player, xp, "Grow")
 				end
 				income += Calc.BaseIncome(rec)
 			end
