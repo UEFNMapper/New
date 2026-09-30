@@ -1,331 +1,101 @@
-# AngAInOne — Game Design Document v1.0
+# AngAInOne — Deathrun dans la tour PC · GDD v2
 
-> Statut : **validé et implémenté** (voir `README.md`). Les chiffres ci-dessous sont ceux du code, vérifiés par `tests/pacing.spec.luau`.
-> Plateforme : Roblox, cross-plateforme équilibré (PC / mobile / console), 13+. Objectif : jeu monétisé sérieux.
-
----
+> Remplace le GDD tycoon v1 (trop compliqué pour les enfants). Le code du tycoon a été retiré.
 
 ## 1. Pitch
 
-**Tu es rétréci à la taille d'un électron et tu vis à l'intérieur de ton propre PC gamer.**
-Guidé par **Anga** (la mascotte : barbe blonde, t-shirt rouge « A »), tu explores un **PC géant** zone par zone : alimentation, RAM, SSD, refroidissement, CPU, GPU… jusqu'au **Neural Nexus**, la puce IA dont le faisceau violet se voit de partout. Chaque zone correspond à une section du logiciel partenaire **AngAInOne** (l'app qui s'occupe de tout ton PC).
-Chaque pièce améliorée fait monter ton **Benchmark**. Ton objectif : le PC le plus puissant du serveur, puis la **Singularité**.
+**Un virus a infecté le PC d'Anga.** Tu es miniaturisé à l'intérieur de sa tour géante et tu dois
+la **grimper de bas en haut**, en traversant chaque composant (alimentation, RAM, SSD,
+refroidissement, processeur, carte graphique, puce IA) en survivant aux pièges du virus :
+décharges électriques, ventilateurs, barrettes qui écrasent, lasers, virus gardiens…
+À la fin de chaque monde, un **terminal antivirus** : un mini-jeu 2D pour nettoyer le monde et
+ouvrir la porte suivante. Tout en haut : le cœur du virus.
 
-**Fantasy** : « construire le setup de rêve » + « explorer l'intérieur de sa machine » + « voir son PC s'illuminer de plus en plus ».
+- **Genre** : deathrun / obby à pièges automatiques (PvE), solo ou à plusieurs sur la même tour.
+- **Public** : 8–14 ans, cross-plateforme (mobile d'abord).
+- **Règle d'or** : compréhensible en 5 secondes. *Cours, saute, n'touche pas ce qui brille en rouge.*
 
-### Piliers
-1. **Voir sa puissance** : chaque achat change visiblement ses machines (lumière, vitesse des flux de données, taille des pièces).
-2. **Toujours un prochain objectif à moins de 5 min** au début, moins de 20 min en milieu de partie.
-3. **Une vraie décision de joueur PC** : puissance ↔ énergie (Watts) ↔ chaleur (°C).
-4. **Beau et doux** : néon RGB tamisé, UI en verre sombre, musique lo-fi électronique.
-5. **Jamais pay-to-win abusif**, pas de dark patterns.
+## 2. Boucle de jeu
 
----
+1. **Lobby** (Salle de démarrage, au pied de la tour) : Anga raconte l'histoire, écran géant de
+   l'app partenaire AngAInOne, boutique, classements, borne d'arcade. Pad **JOUER**.
+2. **Étapes** : chaque monde = 5 étapes courtes (30–60 s), chacune finit par un **checkpoint**.
+   On meurt → on réapparaît au dernier checkpoint. Aucun game over.
+3. **Terminal antivirus** (5ᵉ étape du monde, salle sûre) : mini-jeu 2D de 20–40 s.
+   Réussi → le portail s'ouvre + récompense. Raté → on peut réessayer tout de suite.
+4. **Sommet** : la puce IA et le cœur du virus. Victoire → cinématique d'Anga, récompense,
+   temps enregistré, retour au lobby. On peut recommencer pour battre son record.
 
-## 2. Monde et structure
+Durée : ~25–40 min pour une première ascension, 8–12 min pour un bon speedrun.
 
-### 2.1 Le PC géant (monde partagé)
-- **Un seul PC géant par serveur**, couché sur le flanc : la **carte mère** est le sol, la **vitre latérale** est le plafond (330 studs), la lumière du jour de la pièce entre à travers. Parois d'acier du boîtier avec liseré RGB.
-- Vue de dessus, la carte mère est découpée en **3 × 3 districts** séparés par des cloisons de verre (44 studs). Chaque zone a **un portail d'énergie** (barrière ForceField à ses couleurs) qui la relie à sa zone « parente » : la carte forme un arbre enraciné au hub.
-- Le monde est **partagé**, mais chacun y voit **sa** progression (calculée côté client avec ses données) : tier des machines, portails ouverts/verrouillés, fragments restants, ses virus. Le serveur renvoie derrière le portail tout joueur entré dans une zone qu'il n'a pas débloquée.
-- On se croise, on se like (Menu > Joueurs), le bonus d'amis s'applique à tout le serveur. Nombre de joueurs conseillé : 12.
+## 3. Les 7 mondes (config : `src/shared/Config/Tower.luau`)
 
-```
-          A (façade, ventilateurs)   B (centre)             C (arrière, ports I/O)
- nord 1 : Cryo Tower (4)             The Core (5)           Neural Nexus (7)
-      2 : Data Vault (3)        ←    HUB (chipset)     →    Memory Lanes (2)
- sud  3 : ───────── La Centrale (1) ─────────               Render Canyon (6)
- Portails : 1, 2, 3, 5 ← hub · 4 ← Data Vault · 6, 7 ← Memory Lanes
-```
-
-### 2.2 Les zones (et leur section de l'app AngAInOne)
-Le **hub** : chipset, dissipateurs M.2, pile BIOS, connecteur ATX 24 broches, classements, et un **écran géant qui reproduit le Tableau de bord de l'app AngAInOne** avec les stats du PC du joueur (barre latérale : une section par zone, verrouillée tant que la zone l'est).
-
-| # | Zone | Section de l'app | Rôle gameplay | Décor héros | Palette |
+| # | Monde | Composant | Section AngAInOne | Pièges vedettes | Mini-jeu |
 |---|---|---|---|---|---|
-| 1 | **La Centrale** (PSU) | Démarrage | Départ, tutoriel ; **capacité en Watts** | Cache d'alimentation (plafond bas aux fentes ambrées), bloc PSU de 250 studs avec ventilateur sur le dessus (rampe pour y monter), condensateurs | Ambre |
-| 2 | **Memory Lanes** (RAM) | Applications | 1ʳᵉ zone débloquée ; production rapide | 4 barrettes-gratte-ciels de 124 studs, avenues RGB | Violet |
-| 3 | **Data Vault** (SSD) | Nettoyage & réparation | **Téléchargements** | Baie de 5 SSD empilés, LEDs d'activité, câbles SATA | Teal |
-| 4 | **Cryo Tower** (Refroidissement) | Diagnostic | **Chaleur** et radiateurs | 2 ventilateurs frontaux de 96 studs, radiateur, réservoir de liquide lumineux, brume froide | Cyan glacé |
-| 5 | **The Core** (CPU) | Optimisations | **Overclock** | Socket, ventirad tour à caloducs de cuivre (on passe dessous), VRM, selfs | Or |
-| 6 | **Render Canyon** (GPU) | Gaming | **Reboot** | Carte graphique de 330 studs à 3 ventilateurs, canyon derrière, câbles d'alim en arc jusqu'au PSU | Vert / magenta |
-| 7 | **Neural Nexus** (IA) | Réseau | **Singularité** | Plaque I/O (USB, HDMI, LAN), puce NPU flottante, anneaux, cerveau holographique, faisceau | Blanc / violet |
+| 1 | La Centrale | Alimentation | Démarrage | Décharges, trampolines condensateurs, pales | Scan |
+| 2 | Memory Lanes | RAM | Applications | Barrettes qui écrasent, tapis de données, plateformes mobiles | Memory |
+| 3 | Data Vault | SSD | Nettoyage & réparation | Plateformes qui s'effacent, blocs, tapis | Dodge |
+| 4 | Cryo Tower | Refroidissement | Diagnostic | Vent des ventilateurs, pales, plateformes gelées | Firewall |
+| 5 | The Core | CPU | Optimisations | Lasers, bouches de chaleur, plateformes mobiles | Scan |
+| 6 | Render Canyon | GPU | Gaming | Pales de ventilateurs géants, lasers, décharges | Memory |
+| 7 | Neural Nexus | Puce IA | Réseau | Virus gardiens, lasers, plateformes mobiles | Firewall (boss) |
 
-Chaque zone a une **plaza** standard : 3 machines en arc face au portail, pistes de données vers le **collecteur** doré, un **téléporteur** (dock « Voyager »), le terminal de la zone et **3 fragments de données** cachés dans les coins. Au sol, des centaines de composants CMS donnent l'échelle.
+Pièges (tag `Trap`, attribut `Kind`) : Zapper, SpinBar, Crusher, Mover, Vanish, Wind, Laser,
+Virus, Conveyor, Bounce, Heat. Tout ce qui tue est **rouge / violet glitch** et prévenu par un
+signal (clignotement, son) avant de s'activer. Les pièges sont animés côté client avec l'heure du
+serveur : tous les joueurs voient la même chose au même moment.
 
-### 2.3 Composants (marques fictives, pour éviter tout problème de marque déposée)
-Chaque zone contient **3 modules** améliorables de niv. 1 à 250 (ex. RAM : *Kryo DDR* ×3 barrettes). Tous les 10 niveaux, le module change de **tier visuel** : Bronze → Argent → Or → Diamant → RGB-Prisme.
-Marques : VoltCore (PSU), Kryo (RAM), NovaDrive (SSD), Frostbyte (refroidissement), Helion (CPU), Prism (GPU), ANGA Neural Unit (AI).
+## 4. Mini-jeux 2D antivirus
 
----
-
-## 3. Boucles de jeu
-
-### 3.1 Core loop (en une phrase)
-**Collecter les Bits produits par tes composants → améliorer les pièces → ton Benchmark grimpe → débloquer la zone suivante.**
-
-Les données sortent des composants sous forme de **paquets lumineux** qui voyagent sur les pistes (l'équivalent des convoyeurs d'un tycoon classique) jusqu'au **Collecteur** doré de chaque zone. On marche dessus pour encaisser. Avec le pass Auto-Collect, l'encaissement est automatique.
-
-### 3.2 Boucles secondaires
-| Boucle | Fréquence | Récompense | Pourquoi |
-|---|---|---|---|
-| **Énergie et chaleur** : garder Watts ≤ capacité PSU et °C ≤ refroidissement | Continue | Production à 100 % | La vraie décision « builder de PC » |
-| **Overclock** : mini-jeu de timing (jauge + zone verte) sur un composant | Cooldown de 5 min | ×2 production pendant 3 min, mais +30 % de chaleur | Jeu actif, skill |
-| **Virus / Glitches** : petites créatures glitchées qui apparaissent près de toi (chacun voit les siens) ; on les zappe avec le **Debugger** | Toutes les 2 à 4 min | Bits + chance de Chips | Mouvement, action |
-| **Nanobots** (« pets ») : capsules → compagnons qui donnent des bonus | En continu | +% Bits, vitesse, rayon de collecte, -chaleur | Collection, long terme |
-| **Téléchargements** : lancer un DL de 30 min / 4 h / 8 h | Rendez-vous | Gros paquet de Bits / Chips / capsule | Raison de revenir |
-| **Fragments de données** | Exploration | Lore + bonus permanent de +1 % | Exploration |
-| **Reboot** (prestige) | Toutes les 2 à 7 h | Firmware (multiplicateur permanent) + Génération suivante | Rejouabilité |
-
-### 3.3 Énergie et chaleur (système signature)
-- Chaque module consomme des **Watts** et produit de la **Chaleur**.
-- `efficacitéÉnergie = min(1, capacitéPSU / wattsConsommés)`
-- `efficacitéThermique = min(1, capacitéRefroidissement / chaleurProduite)`
-- `production = Σ prod(modules) × efficacitéÉnergie × efficacitéThermique × multiplicateurs`
-- L'UI affiche deux jauges fines (⚡ et 🌡️) qui passent à l'ambre puis au rouge. Anga prévient : *« Ton CPU chauffe ! Passe à la Cryo Tower. »*
-- Pas de punition cachée : le joueur voit exactement combien de % il perd.
-
----
-
-## 4. Économie
-
-### 4.1 Monnaies
-| Monnaie | Type | Source | Utilisation |
-|---|---|---|---|
-| **Bits** | Soft, principale | Production, virus, téléchargements | Upgrades, zones, capsules standard |
-| **Chips** 💠 | Premium gagnable | Quotidien, quêtes, succès, events, pass gratuit, Robux | Cosmétiques, boosts, capsules premium, skip de DL |
-| **Firmware** | Prestige | Reboot | Multiplicateur permanent (+5 %/pt) + arbre de talents |
-
-Un joueur F2P gagne **environ 120 à 180 Chips par jour** en jouant normalement : le premium est atteignable sans payer.
-
-### 4.2 Formules (code : `src/shared/Economy/Formulas.luau`, config : `Config/GameConfig.luau`)
-```
-coût(module, niveau)   = coûtBase × 1.12^niveau
-prod(module, niveau)   = prodBase × niveau × 2^(paliers atteints parmi 10, 25, 50, 100, 150, 200)
-coûtBase(zone z)       = 10 × 20^z   (modules relatifs ×1, ×6, ×36)
-prodBase(zone z)       = 0.9 × 15^z  (idem)
-Watts / chaleur par niv = 4 (resp. 3) × 1.9^z × (1, 2, 3 selon le module)
-capacité PSU(L)        = 60 × 1.2^L      coût = 15 × 1.45^L
-capacité radiateurs(L) = 2500 × 1.2^L    coût = 2e8 × 1.45^L   (la chaleur compte à partir du SSD)
-efficacité             = min(1, capacité / demande)   (énergie × thermique)
-Firmware gagné         = floor( sqrt( BitsGagnésDuRun / 1e11 ) )
-multFirmware           = 1 + 0.10 × Firmware
-```
-
-| Déblocage | Coût (Bits) |
-|---|---|
-| RAM | 25 K |
-| SSD | 25 M |
-| Cryo Tower | 2,5 B |
-| CPU | 75 B |
-| GPU | 3 T |
-| AI Core | 100 T |
-| **Singularité** (5 phases) | 10 Qa · 50 Qa · 150 Qa · 300 Qa · 500 Qa (≈ 1e18 au total) |
-
-### 4.3 Pacing mesuré (simulation avec la vraie config, joueur optimal ; un vrai joueur ≈ ×1,3)
-| Génération | Déblocages (minutes) | Durée du run | Firmware cumulé |
-|---|---|---|---|
-| 1 | RAM 3 · SSD 11 · Cryo 39 · CPU 114 · GPU 302 | 6,0 h | 13 (x2,3) |
-| 2 | RAM 2 · SSD 6 · Cryo 18 · CPU 47 · GPU 111 · AI 230 | 4,3 h | 105 |
-| 3 | … GPU 15 · AI 27 | 0,9 h | 344 |
-| 4–5 | runs « speedrun » de 35 à 45 min | 0,6–0,7 h | 1 496 |
-| **6** | AI Core en 6 min, puis les 5 phases | **Singularité à ≈ 15 h cumulées** (≈ 20 h réelles) | — |
-
-Garde-fous testés automatiquement : 1er run dans les fenêtres ci-dessus, énergie et refroidissement entre 3 et 20 % des dépenses, jamais bloquants, 1er Reboot ≥ ×1,5, fin entre 10 et 25 h.
-
-### 4.4 Gains hors ligne
-50 % de la production, plafonnés à 2 h (upgradable à 4 h via Firmware ; 8 h à 100 % avec le Game Pass). Écran de retour : « Pendant ton absence, ton PC a produit… », avec un bouton ×2 via pub récompensée si elle est disponible.
-
-### 4.5 Sinks (contrôle de l'inflation)
-Upgrades, zones, capsules (coût indexé sur la production courante), fusion de Nanobots (5 identiques → 1 doré), cosmétiques en Chips, boosts temporaires.
-
----
-
-## 5. Nanobots (collection)
-- Capsules par zone. Coût en Bits indexé sur la production (≈ 5 min de prod), capsules premium en Chips.
-- **Probabilités affichées en permanence** : Commun 60 % · Rare 28 % · Épique 9 % · Légendaire 2,7 % · Mythique 0,3 %.
-- 3 slots équipés (+2 avec Game Pass). Fusion 5 → 1 doré (×1,5 stats). Index de collection avec récompenses par zone complétée.
-- **Conformité** : `PolicyService:GetPolicyInfoForPlayerAsync().ArePaidRandomItemsRestricted` → si vrai, les capsules achetables en Robux (et en Chips achetés) sont masquées pour ce joueur ; seules les capsules en Bits restent.
-- **Échanges (Trade)** : en V2 après le lancement, avec double confirmation, compte à rebours de 5 s, validation serveur et logs.
-
----
-
-## 6. Rétention
-
-| Levier | Détail | Vise |
+| Mini-jeu | But | Contrôles |
 |---|---|---|
-| **Récompense quotidienne** | Calendrier de 7 jours à série croissante (J7 = capsule Épique garantie). Une série cassée recule d'un jour au lieu de revenir à zéro (pas de punition brutale). | J1, J7 |
-| **Quêtes** | 3 quotidiennes + 5 hebdomadaires (collecter X, overclocker 3 fois, zapper 20 virus…), 1 reroll gratuit par jour | J1–J30 |
-| **Téléchargements** | Rendez-vous de 30 min / 4 h / 8 h | J1 |
-| **Gains hors ligne** | Voir 4.4 | J1 |
-| **Patch Pass** (saison de 30 jours) | Piste gratuite + premium, 40 paliers, cosmétiques exclusifs | J30 |
-| **Events limités (48 h)** | *Canicule* (chaleur ×1,5, récompenses cooling), *Épidémie de virus* (virus ×3 + Nanobot d'event), *Black Friday* (-30 % sur les upgrades en Bits), saisonniers (*Malware Manor* à Halloween, *Frost Cooling* à Noël) | J7–J30 |
-| **Mises à jour** | Chaque samedi (compte à rebours dans le hub), nouvelles zones/tiers mensuels | J7–J30 |
-| **Classements** | Benchmark (all-time), Bits hebdomadaires (reset le lundi, top 100 = badge + cosmétique), Génération | Compétition |
-| **Social** | +10 % de Bits par ami dans le serveur (max +30 %), *Like* du PC d'un joueur (quotidien), « Setup du jour » affiché en hologramme dans le hub, bonus de groupe Roblox (+5 %), **LAN Party** : objectif coopératif de serveur (récompense pour tous) | Viralité |
-| **Notifications** | Notifications d'expérience Roblox en opt-in (« Ton téléchargement est terminé ») — API à vérifier au moment de coder | J1 |
+| **Scan** | Tape les virus qui surgissent dans une grille avant qu'ils disparaissent (atteindre un score). | Tap / clic |
+| **Firewall** | Déplace le pare-feu en bas de l'écran et tire sur les virus qui tombent. | Glisser / flèches / stick |
+| **Memory** | Retrouve les paires de cartes (icônes de composants) en un nombre d'essais limité. | Tap / clic |
+| **Dodge** | Guide le paquet de données vers le haut entre les virus. | Tap pour monter / espace |
 
-**KPIs visés** : J1 ≥ 30 %, J7 ≥ 10 %, J30 ≥ 3,5 %, session moyenne ≥ 25 min, 1ʳᵉ session ≥ 30 min, conversion payeurs de 2 à 4 %.
+Difficulté croissante avec le monde. Rejouables à la **borne d'arcade** du lobby (petites
+récompenses, avec délai entre deux gains).
 
----
+## 5. Features
 
-## 7. Monétisation (grille Robux)
+- **Checkpoints**, bouton « Revenir au checkpoint », bouton « Lobby ».
+- **Chrono** de l'ascension + record perso ; **classements** : victoires, meilleur temps, étape max.
+- **Bits** : on les ramasse sur le parcours (orbes) et en réussissant les mini-jeux.
+- **Boutique** : traînées lumineuses, effets de mort (glitch, pixels…), auras de victoire.
+- **Récompenses quotidiennes** (calendrier 7 jours) et **missions du jour** (3).
+- **Multijoueur** : les joueurs ne se bousculent pas (pas de collision entre eux), on voit la
+  progression des autres (étape au-dessus de la tête), bonus d'amis.
+- **Histoire** : intro d'Anga, une réplique à l'entrée de chaque monde, fin.
+- **Réglages** : volumes, animations réduites.
 
-### Game Passes (permanents)
-| Pass | Prix | Justification |
+## 6. Monétisation (éthique, rien d'obligatoire)
+
+| Article | Type | Prix indicatif |
 |---|---|---|
-| **Bits ×2** | 399 R$ | Standard du genre (300–500) ; le pass le plus vendu des tycoons |
-| **VIP** (tag, lounge VIP du hub, thème RGB exclusif, +10 % de Chips quotidiens) | 249 R$ | Surtout statut et cosmétique |
-| **Auto-Collect** | 149 R$ | Confort, pas de puissance brute |
-| **+2 slots de Nanobots** | 199 R$ | Profondeur pour les collectionneurs |
-| **Overclock Pro** (cooldown -50 %, durée +50 %) | 179 R$ | Récompense les joueurs actifs |
-| **Hors ligne max** (8 h à 100 %) | 199 R$ | Rétention |
-| **RGB Studio** (couleurs perso des néons du PC) | 99 R$ | Cosmétique pur, prix d'impulsion |
+| Passer l'étape | Developer Product | 19 R$ |
+| Bouclier 30 s (invincible) | Developer Product | 29 R$ |
+| Packs de Bits | Developer Product | 49 / 149 / 399 R$ |
+| VIP (x2 Bits, traînée VIP) | Game Pass | 249 R$ |
+| Bottes anti-gravité (saut plus haut, activable) | Game Pass | 149 R$ |
+| Puce de vitesse (+20 % vitesse, activable) | Game Pass | 149 R$ |
 
-### Developer Products (consommables)
-| Produit | Prix | Note |
-|---|---|---|
-| Pack de Bits S / M / L | 39 / 149 / 499 R$ | = 10 min / 1 h / 6 h de **ta** production actuelle (reste utile à tout stade) |
-| Chips 100 / 550 / 1 200 / 2 600 | 49 / 249 / 499 / 999 R$ | Bonus de +0 / +10 / +20 / +30 % |
-| Capsule premium ×1 / ×3 | 99 / 279 R$ | Probabilités affichées ; masquée si PolicyService l'interdit |
-| **Server Boost** (×2 pour tout le serveur pendant 15 min) | 149 R$ | Achat social positif, annoncé dans le chat |
-| Téléchargement instantané | 25 R$ | Petit confort |
-| Reboot Boost (Firmware ×1,5 au prochain Reboot) | 149 R$ | |
-| **Patch Pass premium** (saison) | 399 R$ | |
-| **Starter Pack** (unique : Nanobot Rare + 300 Chips + 30 min de ×2) | 99 R$ | Proposé une fois après 10 min de jeu, sans faux timer |
+Pas de loot box. Les passes « avantage » sont activables/désactivables et n'affectent pas les
+classements de temps (course marquée « assistée »).
 
-### Autres
-- **Premium Payouts** : les joueurs Premium ont +10 % de Bits et +20 Chips par jour. Le temps de jeu Premium est rémunéré par Roblox.
-- **Pubs vidéo récompensées** (si l'expérience y est éligible ; vérifier la doc actuelle) : ×2 sur les gains hors ligne, 1 capsule gratuite par jour. Toujours facultatives.
+## 7. Anti-triche (serveur)
 
-### Règles éthiques (non négociables)
-Pas de PvP, donc payer ne permet pas de battre qui que ce soit. Maximum **1 offre non sollicitée par session**, jamais pendant l'action. Aucun faux compte à rebours. Probabilités toujours visibles. Tout ce qui est payant reste atteignable en jouant (sauf les cosmétiques VIP). Achats traités de façon idempotente (`ProcessReceipt` + historique des `PurchaseId` dans le profil).
+Checkpoints validés dans l'ordre, temps minimum par étape, portail d'un monde franchissable
+seulement après le mini-jeu, durée minimale d'un mini-jeu, orbes ramassées à proximité et une
+seule fois par ascension. Les morts sont signalées par le client (pièges animés côté client) :
+tricher ne fait qu'éviter de mourir soi-même, le serveur garde la main sur la progression.
 
----
+## 8. Technique
 
-## 8. Direction artistique et UI
-
-### 8.1 Palette (tokens, zéro couleur en dur)
-| Token | Hex | Usage |
-|---|---|---|
-| `bg.base` | `#0B0F1A` | Fonds |
-| `surface.glass` | `#141A2B` à 18 % de transparence | Panneaux en verre sombre |
-| `stroke.soft` | `#FFFFFF` à 90 % de transparence | Contours 1 px |
-| `text.primary` / `text.muted` | `#E8EBF4` / `#8A93A8` | Textes |
-| `brand.anga` | `#F0565B` | **CTA principal** (rouge corail doux, repris du t-shirt de la mascotte) |
-| `accent.cyan` | `#4FD1C5` | Info, énergie |
-| `accent.violet` | `#8B7CFF` | Rareté, prestige |
-| `currency.bits` | `#F6C453` | Bits |
-| `currency.chips` | `#7FDBFF` | Chips |
-| `state.success` / `state.warning` / `state.danger` | `#68D391` / `#F6AD55` / `#FC8181` | États |
-
-Typo : **Builder Sans** (textes, lisible sur mobile) + une police display technologique pour les titres (Michroma si disponible dans l'enum Font, à vérifier). Espacements 4 / 8 / 12 / 16 / 24 / 32. Coins arrondis 12 (panneaux), 999 (pilules).
-
-### 8.2 Écrans
-- **HUD** (minimal) : haut gauche = Bits (compteur qui défile) + Chips ; haut centre = Benchmark ; bas = 3 boutons ronds (Boutique, Nanobots, Quêtes) + jauges ⚡/🌡️ ; toasts en haut à droite.
-- **Menus** en panneau de verre coulissant (ease Quint Out, 0,28 s) avec fond flouté (DepthOfField désactivé sur mobile bas de gamme).
-- **Écrans** : Upgrade de module (panneau contextuel en 3D au-dessus du pad, via BillboardGui/SurfaceGui), Boutique, Nanobots (inventaire + index), Quêtes / Pass, Quotidien, Reboot (arbre de Firmware), Classements, Paramètres (volumes, qualité graphique, reduced motion).
-- **Transitions** : changement de zone = « scanline » horizontale + teinte ColorCorrection qui glisse vers la palette de la zone (0,6 s) ; Reboot = écran BIOS stylisé avec barre de chargement (3 s, passable).
-- **Game feel** : press scale 0,95 ; hover 1,04 ; compteurs qui roulent ; particules de Bits aspirées vers le compteur du HUD ; léger screen shake à l'achat d'un tier ; hitstop de 60 ms sur un virus zappé.
-- **Mobile-first** : boutons ≥ 44 px, ScreenInsets CoreUISafeInsets, UIScale + UIAspectRatioConstraint, tests en 16:9, 19,5:9 et 4:3 (tablette). Système de style centralisé en **StyleSheets** (UI Styling) — vérifier l'état de l'API à l'étape 3.
-
-### 8.3 Onboarding (le joueur s'amuse dans les 30 premières secondes)
-1. **0 s** : spawn dans La Centrale, dans le noir. Seul un gros bouton POWER pulse. Bulle d'Anga : *« On est dans TON PC ! Allume-le ! »*
-2. **5 s** : appui → son de boot, léger screen shake, **vague de lumière sur toutes les machines**, la musique entre en fondu.
-3. **10 s** : les premiers paquets de données coulent vers le Collecteur. Un Beam lumineux guide au sol.
-4. **15 s** : collecte → compteur qui roule + particules + son.
-5. **25 s** : flèche vers le 1ᵉʳ upgrade (abordable tout de suite) → les paquets accélèrent.
-6. **45 s** : 2ᵉ upgrade, puis la quête « Débloque la RAM » apparaît avec une barre de progression.
-7. **~3 min** : la porte de la RAM s'ouvre (mini-cinématique caméra de 2 s, passable).
-
-Chaque étape est loggée dans le funnel d'onboarding (AnalyticsService).
-
----
-
-## 9. Audio
-- **Musique adaptative** : un pad lo-fi / synthwave doux en boucle dans le hub + une couche (stem) par zone, en fondu enchaîné de 2,5 s au changement de zone. Volume musique 0,35 par défaut. Sources : bibliothèque musicale sous licence du Creator Store (APM / Monstercat si toujours disponibles, à vérifier) ; mots-clés : « lofi », « chillwave », « ambient electronic », « synthwave calm ».
-- **SoundGroups** Music / SFX / UI avec sliders séparés. Ducking de la musique (-4 dB) sur les gros gains.
-- SFX doux : clic UI feutré, « blip » de collecte dont le pitch monte avec les combos, boot de PC, ventilateur ambiant (spatialisé), zap du Debugger.
-
----
-
-## 10. Level design, éclairage, performance
-
-### 10.1 Éclairage (valeurs de départ, ajustées zone par zone)
-- **Lighting** : Technology = Future, ClockTime = 0, Brightness = 1, Ambient = (20, 22, 35), OutdoorAmbient = (30, 32, 50), EnvironmentDiffuseScale = 0,4, EnvironmentSpecularScale = 1, ExposureCompensation = 0,2, GlobalShadows = true.
-- **Atmosphere** : Density = 0,35, Offset = 0,1, Color = (40, 35, 70), Decay = (15, 20, 40), Glare = 0, Haze = 1,2.
-- **Bloom** (léger) : Intensity = 0,6, Size = 24, Threshold = 1,6.
-- **ColorCorrection** : Brightness = 0,02, Contrast = 0,08, Saturation = 0,05, TintColor = (245, 245, 255) ; teinte tweenée par zone.
-- **SunRays** : Intensity = 0,03, Spread = 0,6 (quasi invisible : on est dans un boîtier).
-- Chemins guidés par des bandes de néon au sol vers le prochain objectif ; les zones verrouillées restent sombres et désaturées derrière une vitre.
-
-### 10.2 Performance
-- StreamingEnabled ; modèles de zone en ModelStreamingMode Atomic ; portails, hub et boîtier en Persistent (collision locale des portails toujours chargée).
-- Pièces Anchored ; CanCollide / CanTouch / CanQuery désactivés sur le décor ; meshes réutilisés (instancing) ; RenderFidelity Automatic (LOD).
-- Budget par zone : ≤ 150 k triangles visibles, ≤ 2 500 parts, ≤ 30 lumières dynamiques (Shadows seulement sur 3 ou 4 d'entre elles). Paquets de données et ventilateurs animés **côté client uniquement**.
-
----
-
-## 11. Assets
-
-Sources : **Creator Store** (créateurs vérifiés) → **Kenney / Quaternius / Poly Haven** (CC0) → les liens que tu m'as donnés → Sketchfab (CC0 / CC-BY seulement, avec crédit).
-- **kitsblox.com/free**, **itch.io (tag roblox, free)** : vérifier la licence **de chaque pack** (tous ne sont pas autorisés en usage commercial).
-- **BuiltByBit** : la plupart des ressources sont payantes, sous licence d'usage (utilisables dans ton jeu, **interdites de redistribution**). Ne jamais les committer dans un dépôt git.
-- La liste précise par zone (mots-clés Creator Store, style visé, raison du choix) sera fournie à l'étape « Map ».
-
-**Sécurité de tout modèle gratuit** (un script d'audit pour la barre de commande Studio sera fourni) : lister chaque Script / LocalScript / ModuleScript ; chercher `require(` suivi d'un ID numérique, `getfenv`, `setfenv`, `loadstring`, `string.reverse`, du code obfusqué (`\x`, longues chaînes), `MarketplaceService`, `TeleportService`, `HttpService` ; chercher les scripts cachés (noms vides ou trompeurs comme « Weld », « Vaccine »). Supprimer tout script inconnu. Laisser LoadStringEnabled désactivé et « Allow Third Party Sales / Teleports » désactivés dans les paramètres de sécurité.
-
----
-
-## 12. Architecture technique
-
-- **Rojo + git** dans ce dépôt (`AngAInOne/`), avec l'outillage **Rokit** : rojo, wally, selene, stylua, luau-lsp, lune.
-- Packages : ProfileStore (sessions verrouillées), Trove (nettoyage), Signal.
-- Luau `--!strict` partout, un module par responsabilité.
-
-```
-src/server/Services/   DataService, WorldService, EconomyService, ComponentService, PowerThermalService,
-                       OverclockService, VirusService, NanobotService, DownloadService, QuestService,
-                       DailyService, RebootService, LeaderboardService, MonetizationService,
-                       AnalyticsService, SocialService
-src/server/Security/   RateLimiter, RemoteGuard (types, distance, cooldown, fréquence)
-src/shared/Config/     Zones, Components, Nanobots, Products, Quests (données pures)
-src/shared/Economy/    EconomyFormulas (pures, testées avec Lune), NumberFormat
-src/shared/Net/        Remotes (déclaration centralisée)
-src/client/Controllers/ UI, HUD, Shop, Nanobots, Quests, Onboarding, Audio, ZoneTransition, Toast, Input
-src/client/UI/Style/   StyleSheets + tokens
-tests/                 Tests Lune (formules, pacing, validation des remotes)
-```
-
-**Schéma de données v1** : `{ Version, Bits, Chips, Firmware, Generation, UnlockedZones, ModuleLevels, Nanobots = { Owned, Equipped }, Daily = { Streak, LastClaim }, Quests, Downloads, Stats = { TotalBitsEarned, Playtime }, Tutorial, Settings, ProcessedReceipts, CreatedAt }`, avec des migrations versionnées.
-
-**Ce que je peux vérifier moi-même ici** : typecheck strict, lint, format, tests unitaires Lune (économie, validation) et build Rojo du `.rbxl`, le tout en CI GitHub Actions.
-**Ce que je ne peux pas faire ici** : lancer Roblox Studio ni un playtest. Le Studio MCP n'est pas connecté à cet environnement cloud. Chaque étape inclura donc une checklist de test Studio précise à dérouler de ton côté.
-
----
-
-## 13. Analytics
-- Funnel d'onboarding (`LogOnboardingStepEvent`) : les 7 étapes du §8.3 + 1ᵉʳ Nanobot + 1ʳᵉ quête.
-- Économie (`LogEconomyEvent`) : chaque source et chaque sink de Bits et de Chips.
-- Progression (`LogProgressionEvent`) : chaque zone, chaque Reboot, la Singularité.
-- Événements custom : overclock réussi / raté, virus zappés, temps passé par zone, ouverture de la boutique → achat.
-
----
-
-## 14. Roadmap (une fonctionnalité testable par étape)
-1. Fondations : projet Rojo, outils, CI, DataService (ProfileStore), Remotes sécurisés, RateLimiter.
-2. Économie de base : monde partagé, modules, upgrades, collecteur, Bits, HUD minimal → **premier prototype jouable**.
-3. Design system UI (StyleSheets, tokens), transitions, audio, onboarding de 30 s.
-4. Zones et portes, Watts / Chaleur, éclairage par zone, **Map** (liste d'assets + script d'audit).
-5. Overclock, virus, fragments.
-6. Nanobots et capsules (probabilités + PolicyService).
-7. Reboot / Générations / arbre de Firmware / Singularité et fin.
-8. Rétention : quotidien, quêtes, téléchargements, hors ligne, classements, social.
-9. Monétisation : passes, produits, ProcessReceipt, boutique.
-10. Analytics, optimisation, QA multi-appareils, checklist de lancement.
-
-## 15. Points ouverts
-- **Logo Anga** : importer l'image et coller l'ID dans `Config/Branding.luau` (sinon, monogramme « A »).
-- **IDs de monétisation** : à créer sur le Creator Dashboard, puis à coller dans `Config/Products.luau`.
-- **Habillage 3D** : la map est procédurale et cohérente. Pour la remplacer pièce par pièce par des modèles (audités), voir `docs/ASSETS.md`.
-- **Pas encore implémenté (V2)** : échanges de Nanobots, Patch Pass (saison), événements de 48 h, LAN Party, « Setup du jour », notifications d'expérience (opt-in), pubs récompensées. Le code est prêt à les accueillir : `QuestService` pour le pass, `GameEvents` pour les événements, `MonetizationService.RegisterProduct` pour les produits.
+- Luau `--!strict`, Rojo. Serveur : `Core/` (Session, événements, télémétrie), `Security/`
+  (RemoteGuard), `Services/` (Data, State, Run, Minigame, Shop/Monetization, Daily/Missions,
+  Leaderboard, Dev), `World/` (Build, Props, TowerBuilder).
+- Client : `Controllers/` (Net, Store, Audio, TrapController, Story, Fx…), `UI/` (design
+  system existant : StyleSheets, Keycap, Panel…), `UI/Minigames/` (mini-jeux 2D).
+- Tests Lune : construction réelle de la tour (checkpoints, portails, budget pièces/lumières),
+  contrats client/serveur, schéma de données.
