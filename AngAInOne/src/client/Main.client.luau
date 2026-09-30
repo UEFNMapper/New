@@ -76,6 +76,13 @@ step("App", function()
 	gui = App.Mount()
 end)
 
+step("Dialogue", function()
+	local Dialogue = load(Screens.Dialogue)
+	Dialogue.OnBlip = function(pitch: number)
+		Audio.Play("Voice", pitch)
+	end
+	Dialogue.Mount(App.Layers.Moments)
+end)
 step("HUD", function()
 	HUD.Mount(App.Layers.Hud)
 end)

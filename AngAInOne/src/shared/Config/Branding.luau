@@ -12,5 +12,6 @@ return table.freeze({
 	GameName = "AngAInOne",
 	Tagline = "Ton PC. De l'intérieur.",
 	MascotName = "Anga",
+	ChannelName = "AngaTV",
 	AngaImageId = "", -- ex. "rbxassetid://1234567890"
 })

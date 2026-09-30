@@ -36,5 +36,6 @@ return table.freeze({
 		Error = { Id = id(9119100090), Volume = 0.3 }, -- Robot bleep
 		Achievement = { Id = id(1836473467), Volume = 0.55 }, -- Golden Achievement Sting (APM)
 		Toast = { Id = id(9116394876), Volume = 0.3 }, -- Soft chiming hits 2
+		Voice = { Id = id(9114650491), Volume = 0.12 }, -- "voix" d'Anga dans les dialogues (bip aigu)
 	}),
 })

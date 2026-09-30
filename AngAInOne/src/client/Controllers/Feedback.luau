@@ -25,6 +25,7 @@ local Icon = require(script.Parent.Parent.UI.Components.Icon)
 local Toasts = require(script.Parent.Parent.UI.Screens.Toasts)
 local Moments = require(script.Parent.Parent.UI.Screens.Moments)
 local HUD = require(script.Parent.Parent.UI.Screens.HUD)
+local Dialogue = require(script.Parent.Parent.UI.Screens.Dialogue)
 
 local New = Create.New
 
@@ -34,6 +35,16 @@ local Feedback = {}
 Feedback.OnWorldFx = nil :: ((kind: string, payload: any) -> ())?
 
 local shakeToken = 0
+
+-- Ce que dit Anga en découvrant chaque étage.
+local ZONE_LINES: { [number]: string } = {
+	[2] = "Memory Lanes ! Ici, tout va à la vitesse de la lumière. Et regarde : un terminal à capsules de Nanobots !",
+	[3] = "Le Data Vault… Chaque cellule garde un secret. Essaie les téléchargements : lance-en un et reviens plus tard !",
+	[4] = "Brrr, la Cryo Tower ! Surveille ta jauge de chaleur : si ton PC chauffe, améliore les radiateurs.",
+	[5] = "The Core, le cœur du réacteur. La station d'overclock t'attend : arrête l'aiguille dans la zone dorée !",
+	[6] = "Render Canyon ! C'est ici que naissent les pixels. Et la console BIOS permet de faire un Reboot…",
+	[7] = "Le Neural Nexus… Ton PC commence à rêver. Construis la Singularité, on y est presque !",
+}
 
 -- Léger tremblement de caméra (respecte "Réduire les animations").
 function Feedback.Shake(strength: number, duration: number)
@@ -152,11 +163,23 @@ local function onFx(kind: string, payload: any)
 		Moments.ShowPowerOn(false)
 		Moments.BootFlash()
 		Feedback.Shake(0.35, 0.6)
+		task.delay(1.2, function()
+			Dialogue.Say(
+				"Wouhou, ton PC est VIVANT ! Bienvenue chez toi. On va en faire la machine la plus puissante de l'univers.",
+				5
+			)
+		end)
 	elseif kind == "ZoneUnlocked" then
 		Audio.Play("Unlock")
 		Audio.Duck(3)
 		Moments.ZoneUnlocked(payload.Zone)
 		Feedback.Shake(0.3, 0.5)
+		local line = ZONE_LINES[payload.Zone]
+		if line then
+			task.delay(2, function()
+				Dialogue.Say(line, 6)
+			end)
+		end
 	elseif kind == "Zap" then
 		Audio.Play("Zap", 0.95 + math.random() * 0.15)
 		Feedback.Shake(0.2, 0.15)
@@ -171,6 +194,7 @@ local function onFx(kind: string, payload: any)
 		Audio.Play("Achievement")
 		local def = Nanobots.ById[payload.NanobotId]
 		Toasts.Show("Milestone", `Fusion réussie : {if def then def.Name else "Nanobot"} doré !`)
+		Dialogue.Say("Un Nanobot DORÉ ! Il est 50 % plus puissant. Bien joué !", 4)
 	elseif kind == "Reward" then
 		Audio.Play("Toast")
 		local parts = {}
@@ -200,6 +224,12 @@ local function onFx(kind: string, payload: any)
 		Audio.Play("Whoosh")
 		Audio.Duck(3)
 		Moments.Reboot(payload.Firmware, payload.Generation)
+		task.delay(3.5, function()
+			Dialogue.Say(
+				`Génération {payload.Generation} ! Tout recommence… mais avec +{payload.Firmware} Firmware, ça va aller BEAUCOUP plus vite.`,
+				6
+			)
+		end)
 	elseif kind == "SingularityPhase" then
 		Audio.Play("Unlock")
 		Toasts.Show("Milestone", `Singularité : phase {payload.Phase} terminée !`)

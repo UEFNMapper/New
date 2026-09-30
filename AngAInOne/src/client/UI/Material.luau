@@ -116,8 +116,10 @@ function Material.Brushed(object: GuiObject)
 	local keypoints = {}
 	local rng = Random.new(7)
 	for i = 0, 18 do
-		local shade = 0.82 + rng:NextNumber() * 0.18
-		table.insert(keypoints, ColorSequenceKeypoint.new(i / 18, Color3.new(shade, shade, shade * 1.03)))
+		local shade = 0.8 + rng:NextNumber() * 0.17
+		-- Roblox refuse toute composante > 1 dans un ColorSequence : on borne explicitement.
+		local blue = math.min(shade * 1.03, 1)
+		table.insert(keypoints, ColorSequenceKeypoint.new(i / 18, Color3.new(shade, shade, blue)))
 	end
 	local gradient = Instance.new("UIGradient")
 	gradient.Rotation = 90

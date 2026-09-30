@@ -26,6 +26,7 @@ local Material = require(script.Parent.Parent.Material)
 local Keycap = require(script.Parent.Parent.Components.Keycap)
 local Widgets = require(script.Parent.Parent.Components.Widgets)
 local Icon = require(script.Parent.Parent.Components.Icon)
+local Dialogue = require(script.Parent.Dialogue)
 local App = require(script.Parent.Parent.App)
 local Store = require(script.Parent.Parent.Parent.Controllers.Store)
 
@@ -56,13 +57,13 @@ local powerText: TextLabel
 local heatText: TextLabel
 local heatRow: Frame
 local gauges: Frame
-local bubble: Frame
-local bubbleText: TextLabel
 local badges: { [string]: Frame } = {}
 local objectiveAction: string = ""
 local objectiveArg: any = nil
 local lastBits = 0
 local lastChips = -1
+local warnedHeat = false
+local warnedPower = false
 
 local function formatBits(n: number): string
 	return NumberFormat.Compact(n)
@@ -83,12 +84,11 @@ type Objective = {
 }
 
 local TUTORIAL_TEXT = {
-	[1] = "Salut, moi c'est Anga ! On est À L'INTÉRIEUR de ton PC. Allume-le !",
-	[2] = "Les données coulent vers le collecteur doré. Marche dessus pour encaisser tes Bits !",
-	[3] = "Joli ! Maintenant améliore ta Cellule VoltCore : plus de niveaux = plus de Bits.",
-	[4] = "Encore une ! Chaque palier (niv. 10, 25, 50…) double la production.",
-	[5] = "Prochain objectif : débloquer Memory Lanes, l'étage de la RAM.",
-	[6] = "Bienvenue dans la RAM ! Ouvre ta première capsule de Nanobot au terminal violet.",
+	[2] = "Tu vois ces paquets de lumière ? Ce sont tes données ! Suis le faisceau et marche sur le collecteur doré pour encaisser tes Bits.",
+	[3] = "Joli ! Maintenant on améliore ta Cellule VoltCore. Plus de niveaux, plus de Bits. Clique sur « AMÉLIORER » à droite.",
+	[4] = "Encore une ! Petit secret : aux niveaux 10, 25, 50… la production DOUBLE.",
+	[5] = "Prochaine étape : débloquer Memory Lanes, l'étage de la RAM. Collecte et améliore jusqu'à 25K Bits !",
+	[6] = "Bienvenue dans la RAM ! Va au terminal violet et ouvre ta première capsule de Nanobot.",
 }
 
 local function computeObjective(state: any): Objective
@@ -413,49 +413,6 @@ local function buildBottomLeft(layer: Frame)
 	local _powerRow: Frame
 	_powerRow, powerBar, powerText = gauge(gauges, "Bolt", "CurrencyBits", 1)
 	heatRow, heatBar, heatText = gauge(gauges, "Heat", "AccentCyan", 2)
-
-	-- Bulle d'Anga (tutoriel / conseils)
-	bubble = New("Frame", {
-		Name = "AngaBubble",
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.new(0, 16, 1, -(96 + 14 + 12)),
-		Size = UDim2.fromOffset(380, 84),
-		BackgroundTransparency = Theme.Alpha.GlassStrong,
-		BorderSizePixel = 0,
-		Visible = false,
-		Tag = { "Glass", "RoundL" },
-		Parent = layer,
-	}, {
-		New("UIShadow", {
-			BlurRadius = UDim.new(0, 16),
-			Transparency = 0.45,
-			Offset = UDim2.fromOffset(0, 6),
-			Color = Style.Color("BgDeep"),
-		}),
-	})
-	Material.RgbEdge(bubble, 1.5, 0.3)
-	local avatar = Widgets.Avatar(60, bubble)
-	avatar.Position = UDim2.fromOffset(12, 12)
-	New("TextLabel", {
-		Position = UDim2.fromOffset(84, 10),
-		Size = UDim2.new(1, -96, 0, 14),
-		BackgroundTransparency = 1,
-		Text = "ANGA",
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Tag = "TextCaption",
-		Parent = bubble,
-	})
-	bubbleText = New("TextLabel", {
-		Position = UDim2.fromOffset(84, 26),
-		Size = UDim2.new(1, -96, 1, -32),
-		BackgroundTransparency = 1,
-		Text = "",
-		TextWrapped = true,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		TextYAlignment = Enum.TextYAlignment.Top,
-		Tag = "TextBody",
-		Parent = bubble,
-	})
 end
 
 local DOCK = {
@@ -660,18 +617,23 @@ local function refreshFull(state: any)
 	)
 	heatText.Text = NumberFormat.Percent(heatRatio)
 	Material.SetThermalStress(if heatRow.Visible then math.clamp((heatRatio - 0.8) * 2.5, 0, 1) else 0)
+	if heatRatio > 1 and heatRow.Visible and not warnedHeat then
+		warnedHeat = true
+		Dialogue.Say(
+			"Aïe, ça chauffe ! Quand la jauge dépasse 100 %, ton PC ralentit. Il faut plus de refroidissement !",
+			6
+		)
+	end
+	if powerRatio > 1 and not warnedPower then
+		warnedPower = true
+		Dialogue.Say("Oups, pas assez de Watts ! Améliore le bloc d'alimentation au terminal doré de La Centrale.", 6)
+	end
 	-- Collecteur
 	collectorCard.Visible = data.PoweredOn and not state.Passes.AutoCollect
 	-- Tutoriel
+	-- Anga guide le tutoriel dans sa boîte de dialogue (avant l'allumage, c'est l'écran central qui parle).
 	local tip = TUTORIAL_TEXT[data.Tutorial]
-	if data.Tutorial == 0 then
-		tip = TUTORIAL_TEXT[1]
-	end
-	bubble.Visible = tip ~= nil and data.Tutorial < 8
-	if tip and bubbleText.Text ~= tip then
-		bubbleText.Text = tip
-		Motion.Pop(bubble, 0.05)
-	end
+	Dialogue.SetPersistent(if data.PoweredOn and data.Tutorial < 8 then tip else nil)
 	refreshBadges(state)
 	refreshEffects()
 end
