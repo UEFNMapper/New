@@ -1,6 +1,6 @@
-# AngAInOne — Tycoon Roblox « à l'intérieur de ton PC »
+# AngAInOne — Deathrun dans la tour PC
 
-Tu es rétréci dans ton PC gamer. Guidé par **Anga**, tu améliores chaque pièce (alimentation, RAM, SSD, refroidissement, CPU, GPU, AI Core) pour construire la machine la plus puissante… jusqu'à la **Singularité**.
+**Un virus a infecté le PC d'Anga.** Tu es miniaturisé dans sa tour géante et tu dois la grimper de bas en haut en survivant aux pièges (décharges électriques, ventilateurs, barrettes qui écrasent, lasers, virus…). À la fin de chaque monde, un **terminal antivirus** : un mini-jeu 2D pour ouvrir la porte suivante. Solo ou à plusieurs.
 
 - Game design complet : [`docs/GDD.md`](docs/GDD.md)
 - Assets, licences et sécurité : [`docs/ASSETS.md`](docs/ASSETS.md)
@@ -25,11 +25,11 @@ Le code est un projet **Rojo** : les fichiers `.luau` de `src/` deviennent les s
 | Où | Réglage | Pourquoi |
 |---|---|---|
 | Accueil > Paramètres du jeu > Sécurité | **Enable Studio Access to API Services** : ON | Sauvegardes (DataStore) et classements en test. Sans ça, le jeu bascule automatiquement sur une sauvegarde simulée. |
-| Paramètres du jeu > Places > Nombre max. de joueurs | **12** | Un seul PC géant partagé : 12 joueurs restent confortables. |
+| Paramètres du jeu > Places > Nombre max. de joueurs | **12** | Tout le monde grimpe la même tour (les joueurs ne se bousculent pas). |
 | Paramètres du jeu > Avatar | R15 | Animations modernes. |
 | Paramètres du jeu > Sécurité | Allow HTTP Requests : OFF · Third Party Sales/Teleports : OFF | Rien n'en a besoin. |
 
-L'éclairage (Future, lumière de jour à travers la vitre du boîtier, Atmosphere claire, Bloom, ColorCorrection, SunRays) et le StreamingEnabled sont déjà réglés par `default.project.json`. La map est construite au démarrage du serveur (`src/server/World/MapBuilder.luau`) : ne place rien à la main dans Workspace.
+L'éclairage (Future, lumière de jour à travers la vitre du boîtier, Atmosphere claire, Bloom, ColorCorrection, SunRays) et le StreamingEnabled sont déjà réglés par `default.project.json`. La tour est construite au démarrage du serveur (`src/server/World/TowerBuilder.luau`) : ne place rien à la main dans Workspace.
 
 ---
 
@@ -44,33 +44,30 @@ L'éclairage (Future, lumière de jour à travers la vitre du boîtier, Atmosphe
 
 ## 3. Tester dans Studio (checklist)
 
-Lance **Play** (F5). En Studio, un bouton **DEV** (ou **F8**) ouvre un panneau de test : ajouter des Bits ou des Chips, passer à la zone suivante, finir le tutoriel, activer les virus, réinitialiser la sauvegarde. Le serveur ignore ces commandes en ligne.
+Lance **Play** (F5). En Studio, un bouton **DEV** (ou **F8**) ouvre un panneau de test : +1 000 Bits, étape suivante, monde suivant, réussir le terminal, aller au sommet, bouclier, RESET de la sauvegarde. Le serveur ignore ces commandes en ligne.
 
 | # | Action | Résultat attendu |
 |---|---|---|
-| 1 | Lancer Play | Tu apparais au hub, au centre de la carte mère, en plein jour sous la vitre du boîtier. Face à toi : l'écran géant de l'app AngAInOne au-dessus du portail de The Core. Une carte « ALLUMER LE PC » avec Anga apparaît au centre. Sortie : `[AngAInOne] Serveur prêt.` |
-| 2 | Cliquer **ALLUMER LE PC** | Flash « SYSTEM ONLINE », son de démarrage, léger tremblement, les néons des machines flashent, la musique démarre. Bulle d'Anga. Les chevrons au sol te guident vers le portail ambré de La Centrale (derrière toi), puis vers le collecteur doré. |
-| 3 | Marcher sur le pad doré | Particules de Bits qui volent vers le compteur, son de collecte, compteur qui défile. |
-| 4 | Objectif « AMÉLIORER » (carte « TON BUT » à droite) | Le panneau Améliorer s'ouvre sur la Cellule VoltCore : un gros bouton vert AMÉLIORER avec le prix, les étoiles de tier et une barre « Bonus x2 au niveau 10 ». |
-| 5 | Encore une amélioration | L'objectif devient « Débloque Memory Lanes (25K) » avec une barre de progression. |
-| 6 | DEV > « +10 min de Bits », puis le terminal « Débloquer » au portail violet du hub (est) | Bannière « MEMORY LANES », la barrière du portail s'ouvre (flash), bouton « Y ALLER » qui te téléporte dans la zone (musique et teinte violette). Un toast « Memory Lanes · Applications » s'affiche à l'entrée. |
-| 7 | Terminal « Capsules » de Memory Lanes | Panneau Robots > Capsules avec les probabilités affichées. Ouvrir : révélation de la capsule avec halo de rareté. Le robot est équipé automatiquement. |
-| 8 | Minimap (haut droite) ou dock **Carte** (ou un pad téléporteur) | Grande carte du PC vue de dessus : ta position (point + direction), ton objectif (étoile), zones fermées grisées avec cadenas et prix. Toucher une zone ouverte = téléportation ; une zone fermée explique où l'ouvrir. En jeu, un panneau flotte au-dessus de chaque zone et le nom de la zone actuelle s'affiche en haut à droite. Essaie aussi de traverser un portail verrouillé : il est solide, et le serveur te renvoie si tu forces. |
-| 9 | DEV > « Zone suivante » jusqu'au SSD (3) | Jauge 🌡 visible. En achetant beaucoup de niveaux SSD, la chaleur monte, la bordure RGB des panneaux vire à l'ambre puis au rouge, et l'objectif affiche « SURCHAUFFE ». |
-| 10 | Cryo Tower (4), terminal « Radiateurs » | La capacité thermique augmente, la jauge redescend, les bordures redeviennent RGB. |
-| 11 | The Core (5), terminal d'overclock | Mini-jeu : l'aiguille oscille. STOP (clic, Espace ou A manette) dans la zone dorée donne « PARFAIT ! x2 », et une pilule « OVERCLOCK x2 · 2:59 » apparaît sous le Benchmark. |
-| 12 | DEV > « Activer les virus », attendre ~30 s | Une boule rouge glitchée apparaît. Prompt « Zapper » (F) : son électrique, « +X » flottant, tremblement. |
-| 13 | Dock **Missions** | Calendrier de 7 jours, bouton « RÉCUPÉRER », 3 quêtes du jour et 4 de la semaine, téléchargements (dès le SSD). |
-| 14 | Render Canyon (6), console BIOS | Aperçu du Firmware. **Maintenir** 1,5 s déclenche l'écran BIOS, puis la Génération 2 (Bits et zones réinitialisés, Chips et robots conservés) et un retour au hub. |
-| 15 | DEV > zone 7 + « +1e15 Bits » plusieurs fois, BIOS > Singularité | 5 phases. La dernière déclenche la cinématique de fin. |
-| 16 | Quitter puis relancer Play | Tout est sauvegardé. Après plus d'une minute d'absence, la carte « CONTENT DE TE REVOIR » affiche les gains hors ligne. |
-| 17 | Test > Clients et serveurs > 2 joueurs | Les deux joueurs sont dans le même PC. Chacun voit SES niveaux sur les machines, SES portails ouverts, SES virus (ceux de l'autre sont invisibles). Menu > Joueurs : « LIKER » le PC de l'autre joueur, qui reçoit une notification. |
-| 18 | Émulateur d'appareil (téléphone 19,5:9, tablette) | Le HUD tient à l'écran, les boutons restent confortables au doigt, les panneaux sont centrés. |
+| 1 | Lancer Play (première fois) | Tu apparais au **lobby**. Anga raconte l'histoire en 3 cartes (« SUITE », puis « C'EST PARTI ! »). Sortie : `[AngAInOne] Serveur prêt.` |
+| 2 | Regarder le lobby | Titre holographique, écran géant de l'app **AngAInOne** (tes stats), 3 classements, bornes Boutique / Arcade / Cadeaux. En haut : « LOBBY · Salle de démarrage », barre de la tour, et un gros bouton **JOUER**. |
+| 3 | Appuyer sur **JOUER**, passer la ligne de départ | Bannière « MONDE 1 · LA CENTRALE », Anga explique les pièges, le chrono ⏱ démarre. |
+| 4 | Atteindre un checkpoint | « Checkpoint 1 ✓ », +Bits, la barre de la tour avance, le checkpoint suivant pulse en doré. |
+| 5 | Toucher un piège ou tomber | Flash « OUPS ! », effet de mort, réapparition au dernier checkpoint en 1,5 s. |
+| 6 | Ramasser des orbes | Son + étincelles dorées, +1 Bit ; l'orbe disparaît pour toi jusqu'à la fin de l'ascension. |
+| 7 | Salle du terminal (étape 5) | But : « Élimine les virus au terminal 💻 ». Le portail est solide. Prompt **E** sur le terminal → mini-jeu 2D. Réussi : « VIRUS ÉLIMINÉS ! », le portail s'ouvre. |
+| 8 | Boutons à droite | **Checkpoint** (revenir), **Passer l'étape** (Robux, visible si le produit est configuré), **Lobby** (la progression est gardée ; au lobby, le bouton devient **CONTINUER · Étape X**). |
+| 9 | DEV > « Aller au sommet », DEV > « Réussir le terminal », toucher le cœur tout en haut | Écran **TU AS SAUVÉ LE PC !** avec ton temps (record ?), Bits, puis retour au lobby ; les classements se mettent à jour. |
+| 10 | Dock **Boutique** | Onglets Traînées / Effets / Robux. Acheter une traînée avec des Bits l'équipe directement (visible par tous). |
+| 11 | Dock **Missions** | Calendrier 7 jours (« RÉCUPÉRER ») + 3 missions du jour avec barres de progression. |
+| 12 | Borne **Arcade** au lobby | 4 mini-jeux jouables pour quelques Bits (délai entre deux récompenses). |
+| 13 | Quitter puis relancer Play | Tout est sauvegardé : tu reprends à ton étape (bouton CONTINUER), le chrono reprend là où il s'était arrêté. |
+| 14 | Test > Clients et serveurs > 2 joueurs | Les deux joueurs grimpent la même tour sans se pousser ; « Étape X » s'affiche au-dessus de l'autre ; Menu > Joueurs liste son étape. |
+| 15 | Émulateur d'appareil (téléphone, tablette) | Le HUD tient à l'écran, les boutons restent confortables au doigt. |
 
 **Contrôles** :
-- **Clavier** : C Améliorer · N Robots · Q Missions · T Carte · B Boutique · M Menu (roue en haut à droite) · Échap ferme · E interagir · F zapper un virus · Espace STOP à l'overclock.
-- **Manette** : Y donne le focus au dock (croix + A) · B ferme · X interagir · A STOP à l'overclock.
-- **Tactile** : les boutons du dock et les prompts à l'écran.
+- **Clavier** : B Boutique · Q Missions · M Menu · Échap ferme · E interagir.
+- **Manette** : Y donne le focus au dock (croix + A) · B ferme · X interagir.
+- **Tactile** : les boutons à l'écran et les prompts.
 
 **À surveiller dans la Sortie** : aucune erreur rouge. Un message `[Style] Le moteur UI Styling ne s'applique pas : bascule sur le mode direct` est normal si ta version de Studio n'applique pas les StyleSheets : le rendu reste identique.
 
@@ -81,25 +78,26 @@ Lance **Play** (F5). En Studio, un bouton **DEV** (ou **F8**) ouvre un panneau d
 ```
 src/
 ├─ shared/  (ReplicatedStorage.Shared)
-│  ├─ Config/      Zones, Modules, Nanobots, Products, Quests, Audio, Theme, Branding, GameConfig, WorldLayout
-│  ├─ Economy/     Formulas, Production, Bonuses          ← purs, testés avec Lune
+│  ├─ Config/      Tower (le contrat du deathrun), GameConfig, Cosmetics, Missions, Products,
+│  │               Audio, Theme, Branding
 │  ├─ Data/        DataSchema (schéma versionné + migrations)
 │  ├─ Net/         Remotes (déclaration centralisée)
-│  ├─ Util/        NumberFormat
+│  ├─ Util/        NumberFormat, Time
 │  └─ Packages/    Signal, Trove (RbxUtil, MIT)
 ├─ server/  (ServerScriptService.Server)
 │  ├─ Main.server.luau
-│  ├─ Core/        Session, GameEvents, Telemetry, ServerState
+│  ├─ Core/        Session, GameEvents, Telemetry, Wallet (Bits + messages)
 │  ├─ Security/    RemoteGuard (types, cadence, session), RateLimiter
-│  ├─ World/       MapBuilder (map procédurale), Build
-│  ├─ Services/    Data, State, Economy, World, Upgrade, Overclock, Virus, Nanobot, Quest,
-│  │               Download, Reboot, Monetization, Leaderboard, Social, Onboarding, Dev
+│  ├─ World/       TowerBuilder (la tour procédurale), Props (pièces de PC), Build
+│  ├─ Services/    Data, State, Progress, Minigame, Shop, Monetization, Mission,
+│  │               Leaderboard, Social, Dev
 │  └─ Packages/    ProfileStore (loleris, Apache 2.0)
 └─ client/  (StarterPlayerScripts.Client)
    ├─ Main.client.luau
-   ├─ Controllers/ Net, Store, Audio, Feedback, WorldFx, ZoneTracker, Interactions, Guide
-   └─ UI/          App, Style (StyleSheets), Motion, Material (matériaux dynamiques),
-                   Components (Keycap, Panel, Icon, Widgets), Screens (HUD, panneaux, moments)
+   ├─ Controllers/ Net, Store, Audio, Feedback, WorldFx, TrapController, Interactions, AppScreen
+   └─ UI/          App, Style (StyleSheets), Motion, Material, Components (Keycap, Panel, Icon,
+                   Widgets), Screens (HUD, Boutique, Missions, Menu, Arcade, Moments…),
+                   Minigames (Scan, Firewall, Memory, Dodge)
 ```
 
 **Principes** : le serveur a toujours l'autorité. Chaque requête client passe par `RemoteGuard` : limite de fréquence, session chargée, type et nombre d'arguments. Côté données, les sauvegardes utilisent ProfileStore (verrouillage de session, sauvegarde auto et à l'arrêt), et les achats sont traités de façon idempotente avec confirmation de sauvegarde.
@@ -112,9 +110,9 @@ src/
 ./scripts/verify.sh
 ```
 Enchaîne : analyse de types **stricte** contre l'API Roblox (luau-lsp), lint (selene), format (StyLua), **tests Lune** et build Rojo. Les tests couvrent :
-- les formules d'économie ;
-- le **rythme de progression** : une partie simulée avec la vraie config doit respecter les fenêtres du GDD ;
-- le schéma de données et ses migrations ;
+- la **tour réelle**, construite dans Lune : checkpoints dans l'ordre, terminaux, portails, arrivée, orbes, pièges valides, budget de pièces et de lumières ;
+- les **mini-jeux** : difficulté, conditions de victoire ;
+- le contrat de la tour (mondes, étapes), les configs, le schéma de données et ses migrations ;
 - le limiteur de fréquence ;
 - le **contrat client/serveur** : chaque requête du client existe côté serveur avec le bon nombre d'arguments, et chaque champ d'état lu par le client est bien envoyé ;
 - la **validité de chaque nom de propriété** affectée dynamiquement, contrôlée contre l'API Roblox.
