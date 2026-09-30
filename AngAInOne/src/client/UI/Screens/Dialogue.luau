@@ -1,7 +1,7 @@
 --!strict
 --[[
-	Dialogue : Anga te parle, façon boîte de dialogue de jeu.
-	- Portrait encadré qui déborde de la boîte + plaque de nom
+	Dialogue : Anga te parle, dans une bulle DISCRÈTE (compacte, translucide, au-dessus du dock).
+	- Petit portrait rond à gauche + plaque de nom
 	- Texte qui s'écrit lettre par lettre, avec une petite "voix" (bip) toutes les 3 lettres
 	- Le portrait s'anime pendant qu'il parle
 	- Clic / tap sur la boîte : termine la phrase, puis passe à la suivante
@@ -67,10 +67,10 @@ local function setVisible(value: boolean)
 	local scale = Motion.ScaleOf(box)
 	if value then
 		box.Visible = true
-		scale.Scale = 0.85
+		scale.Scale = 0.96
 		box.Position = UDim2.new(0.5, 0, 1, -(96 + 14 + 4 + lift))
-		Motion.Tween(scale, { Scale = 1 }, 0.3, Enum.EasingStyle.Back)
-		Motion.Tween(box, { Position = UDim2.new(0.5, 0, 1, -(96 + 14 + 18 + lift)) }, 0.3)
+		Motion.Tween(scale, { Scale = 1 }, 0.2)
+		Motion.Tween(box, { Position = UDim2.new(0.5, 0, 1, -(96 + 14 + 12 + lift)) }, 0.2)
 	else
 		Motion.Tween(scale, { Scale = 0.9 }, 0.18).Completed:Once(function()
 			if not visible then
@@ -200,7 +200,7 @@ end
 function Dialogue.SetLift(pixels: number)
 	lift = pixels
 	if box and visible then
-		box.Position = UDim2.new(0.5, 0, 1, -(96 + 14 + 18 + lift))
+		box.Position = UDim2.new(0.5, 0, 1, -(96 + 14 + 12 + lift))
 	end
 end
 
@@ -208,38 +208,31 @@ function Dialogue.Mount(layer: Frame)
 	box = New("TextButton", {
 		Name = "Dialogue",
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -(96 + 14 + 18)),
-		Size = UDim2.fromOffset(640, 118),
-		BackgroundTransparency = Theme.Alpha.GlassStrong,
+		Position = UDim2.new(0.5, 0, 1, -(96 + 14 + 12)),
+		-- Bulle compacte et translucide : on voit le jeu à travers, elle ne masque presque rien.
+		Size = UDim2.fromOffset(470, 70),
+		BackgroundTransparency = Theme.Alpha.Glass,
 		BorderSizePixel = 0,
 		Text = "",
 		AutoButtonColor = false,
 		Visible = false,
-		Tag = { "Glass", "RoundL" },
+		Tag = { "Glass", "RoundPill" },
 		Parent = layer,
-	}, {
-		New("UIShadow", {
-			BlurRadius = UDim.new(0, 22),
-			Transparency = 0.35,
-			Offset = UDim2.fromOffset(0, 8),
-			Color = Style.Color("BgDeep"),
-		}),
 	})
-	Material.Glass(box, true)
-	Material.RgbEdge(box, 1.8, 0.2, 35)
+	Material.Glass(box, false)
 
-	-- Portrait qui déborde en haut à gauche (style "speaker")
+	-- Petit portrait rond, dans la bulle
 	portrait = New("Frame", {
 		Name = "Portrait",
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.new(0, 16, 1, -14),
-		Size = UDim2.fromOffset(112, 112),
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 9, 0.5, 0),
+		Size = UDim2.fromOffset(52, 52),
 		BorderSizePixel = 0,
 		ZIndex = 5,
-		Tag = { "MetalDark", "RoundL" },
+		Tag = { "MetalDark", "RoundPill" },
 		Parent = box,
 	})
-	portraitStroke = New("UIStroke", { Color = Style.Color("BrandAnga"), Thickness = 3, Parent = portrait })
+	portraitStroke = New("UIStroke", { Color = Style.Color("BrandAnga"), Thickness = 2, Parent = portrait })
 	if Branding.AngaImageId ~= "" then
 		-- Portrait importé (logo AngaTV) : remplit tout le cadre.
 		local image = New("ImageLabel", {
@@ -251,18 +244,18 @@ function Dialogue.Mount(layer: Frame)
 			ZIndex = 6,
 			Parent = portrait,
 		}, {
-			New("UICorner", { CornerRadius = UDim.new(0, Theme.Radius.M) }),
+			New("UICorner", { CornerRadius = UDim.new(1, 0) }),
 		})
 		table.insert(angaLook, image)
 	else
-		local avatar = Widgets.Avatar(100, portrait)
+		local avatar = Widgets.Avatar(46, portrait)
 		avatar.AnchorPoint = Vector2.new(0.5, 0.5)
 		avatar.Position = UDim2.fromScale(0.5, 0.5)
 		avatar.ZIndex = 6
 		table.insert(angaLook, avatar)
 	end
 	-- Portrait de LAGZ (caché tant qu'Anga parle)
-	local lagzFace = Lagz.Face(96, portrait)
+	local lagzFace = Lagz.Face(44, portrait)
 	lagzFace.AnchorPoint = Vector2.new(0.5, 0.5)
 	lagzFace.Position = UDim2.fromScale(0.5, 0.52)
 	lagzFace.ZIndex = 6
@@ -277,38 +270,38 @@ function Dialogue.Mount(layer: Frame)
 	-- Plaque de nom
 	local plate: Frame = New("Frame", {
 		Name = "NamePlate",
-		Position = UDim2.fromOffset(142, -16),
-		Size = UDim2.fromOffset(0, 32),
+		Position = UDim2.fromOffset(70, -11),
+		Size = UDim2.fromOffset(0, 22),
 		AutomaticSize = Enum.AutomaticSize.X,
 		BorderSizePixel = 0,
 		ZIndex = 5,
 		Tag = { "FillBrand", "RoundPill" },
 		Parent = box,
 	}, {
-		Create.Padding(4, 16) :: Instance,
-		Create.List(Enum.FillDirection.Horizontal, 8, { VerticalAlignment = Enum.VerticalAlignment.Center }),
+		Create.Padding(2, 10) :: Instance,
+		Create.List(Enum.FillDirection.Horizontal, 6, { VerticalAlignment = Enum.VerticalAlignment.Center }),
 	})
 	New("TextLabel", {
-		Size = UDim2.fromOffset(0, 24),
+		Size = UDim2.fromOffset(0, 18),
 		AutomaticSize = Enum.AutomaticSize.X,
 		BackgroundTransparency = 1,
 		Text = string.upper(Branding.MascotName),
 		LayoutOrder = 1,
 		ZIndex = 6,
 		Tag = "FontDisplay",
-		TextSize = 16,
+		TextSize = 12,
 		TextColor3 = Style.Color("TextPrimary"),
 		Parent = plate,
 	})
 	New("TextLabel", {
-		Size = UDim2.fromOffset(0, 24),
+		Size = UDim2.fromOffset(0, 18),
 		AutomaticSize = Enum.AutomaticSize.X,
 		BackgroundTransparency = 1,
 		Text = Branding.ChannelName,
 		LayoutOrder = 2,
 		ZIndex = 6,
 		Tag = "FontBold",
-		TextSize = 13,
+		TextSize = 11,
 		TextColor3 = Style.Color("TextPrimary"),
 		TextTransparency = 0.25,
 		Parent = plate,
@@ -318,8 +311,8 @@ function Dialogue.Mount(layer: Frame)
 	-- Plaque de LAGZ (violet, couleur posée par le code : pas de tag de remplissage)
 	local lagzPlate: Frame = New("Frame", {
 		Name = "LagzPlate",
-		Position = UDim2.fromOffset(142, -16),
-		Size = UDim2.fromOffset(0, 32),
+		Position = UDim2.fromOffset(70, -11),
+		Size = UDim2.fromOffset(0, 22),
 		AutomaticSize = Enum.AutomaticSize.X,
 		BackgroundColor3 = Lagz.Dark,
 		BorderSizePixel = 0,
@@ -328,31 +321,31 @@ function Dialogue.Mount(layer: Frame)
 		Tag = "RoundPill",
 		Parent = box,
 	}, {
-		Create.Padding(4, 16) :: Instance,
-		Create.List(Enum.FillDirection.Horizontal, 8, { VerticalAlignment = Enum.VerticalAlignment.Center }),
+		Create.Padding(2, 10) :: Instance,
+		Create.List(Enum.FillDirection.Horizontal, 6, { VerticalAlignment = Enum.VerticalAlignment.Center }),
 		New("UIStroke", { Color = Lagz.Color, Thickness = 2 }),
 	})
 	New("TextLabel", {
-		Size = UDim2.fromOffset(0, 24),
+		Size = UDim2.fromOffset(0, 18),
 		AutomaticSize = Enum.AutomaticSize.X,
 		BackgroundTransparency = 1,
 		Text = "LAGZ",
 		LayoutOrder = 1,
 		ZIndex = 6,
 		Tag = "FontDisplay",
-		TextSize = 16,
+		TextSize = 12,
 		TextColor3 = Style.Color("TextPrimary"),
 		Parent = lagzPlate,
 	})
 	New("TextLabel", {
-		Size = UDim2.fromOffset(0, 24),
+		Size = UDim2.fromOffset(0, 18),
 		AutomaticSize = Enum.AutomaticSize.X,
 		BackgroundTransparency = 1,
 		Text = "virus",
 		LayoutOrder = 2,
 		ZIndex = 6,
 		Tag = "FontBold",
-		TextSize = 13,
+		TextSize = 11,
 		TextColor3 = Style.Color("TextPrimary"),
 		TextTransparency = 0.25,
 		Parent = lagzPlate,
@@ -361,8 +354,8 @@ function Dialogue.Mount(layer: Frame)
 
 	textLabel = New("TextLabel", {
 		Name = "Text",
-		Position = UDim2.fromOffset(146, 26),
-		Size = UDim2.new(1, -176, 1, -40),
+		Position = UDim2.fromOffset(72, 15),
+		Size = UDim2.new(1, -100, 1, -22),
 		BackgroundTransparency = 1,
 		Text = "",
 		TextWrapped = true,
@@ -370,17 +363,18 @@ function Dialogue.Mount(layer: Frame)
 		TextYAlignment = Enum.TextYAlignment.Top,
 		ZIndex = 5,
 		Tag = "FontMedium",
-		TextSize = 19,
+		TextSize = 16,
+		TextScaled = true, -- les longues répliques rétrécissent au lieu de déborder de la bulle
 		TextColor3 = Style.Color("TextPrimary"),
 		Parent = box,
-	})
+	}, { New("UITextSizeConstraint", { MaxTextSize = 16, MinTextSize = 11 }) :: Instance })
 
 	-- Flèche "continuer" qui clignote
 	arrow = New("Frame", {
 		Name = "Continue",
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.new(1, -24, 1, -20),
-		Size = UDim2.fromOffset(10, 10),
+		Position = UDim2.new(1, -20, 0.5, 0),
+		Size = UDim2.fromOffset(7, 7),
 		Rotation = 45,
 		BorderSizePixel = 0,
 		Visible = false,
@@ -402,7 +396,7 @@ function Dialogue.Mount(layer: Frame)
 		if arrow.Visible then
 			blink += dt
 			arrow.BackgroundTransparency = if math.floor(blink * 2.5) % 2 == 0 then 0 else 0.7
-			arrow.Position = UDim2.new(1, -24, 1, -20 + math.sin(blink * 6) * 2)
+			arrow.Position = UDim2.new(1, -20, 0.5, math.sin(blink * 6) * 2)
 		end
 	end)
 end
