@@ -79,11 +79,14 @@ Tag `UsbKey`, attribut `KeyId` = `W{n}K{i}` (i = 1..3), non collidable, touchabl
 
 
 ## v3 — « AngAInOne en avant » (voir [`AUDIT_V3.md`](AUDIT_V3.md) ; boîte à outils écartée)
-- [ ] **V1 · Compagnon AIO** : drone de l'app qui suit le joueur, bulles de dialogue au-dessus de lui,
+- [x] **V1 · Compagnon AIO** : drone de l'app qui suit le joueur, bulles de dialogue au-dessus de lui,
       indique le prochain checkpoint, réagit aux incidents (modèle 3D + secours).
-- [ ] **V2 · Scénario par l'image** : rôle « Technicien·ne AngAInOne », intro « mission acceptée »,
+- [x] **V2 · Scénario par l'image** : rôle « Technicien·ne AngAInOne », intro « mission acceptée »,
       tour qui s'allume monde par monde, apparitions de LAGZ en 3D, **Rapport d'optimisation** final.
-- [ ] **V3 · Gameplay** : sensations de saut (coyote time, saut mémorisé), médailles par monde,
+- [x] **V3 · Gameplay** : sensations de saut (coyote time, saut mémorisé), médailles par monde,
       « points de restauration ».
-- [ ] **V4 · Design** : ambiance par monde (atmosphère, lumière, particules), fond de carte mère sous
+- [x] **V4 · Design** : ambiance par monde (atmosphère, lumière, particules), fond de carte mère sous
       les mondes, HUD allégé.
+- [x] **V5 · L'app AngAInOne partout** : mondes = pages de l'app, fenêtres de l'app sur les parois,
+      morts = « Plantages », intros de terminal façon app, Anga géant ; compagnon = mini-Anga.
+- [x] Relecture indépendante v3 (15 constats corrigés) + test anti-marques.
