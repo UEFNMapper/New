@@ -1,6 +1,6 @@
-# AngAInOne — Game Design Document v0.1
+# AngAInOne — Game Design Document v1.0
 
-> Statut : **proposition, en attente de validation**. Aucun code de jeu n'est écrit avant ton feu vert.
+> Statut : **validé et implémenté** (voir `README.md`). Les chiffres ci-dessous sont ceux du code, vérifiés par `tests/pacing.spec.luau`.
 > Plateforme : Roblox, cross-plateforme équilibré (PC / mobile / console), 13+. Objectif : jeu monétisé sérieux.
 
 ---
@@ -89,15 +89,18 @@ Les données sortent des composants sous forme de **paquets lumineux** qui voyag
 
 Un joueur F2P gagne **environ 120 à 180 Chips par jour** en jouant normalement : le premium est atteignable sans payer.
 
-### 4.2 Formules (validées par simulation, voir `tools/economy_sim.py`)
+### 4.2 Formules (code : `src/shared/Economy/Formulas.luau`, config : `Config/GameConfig.luau`)
 ```
-coût(module, niveau)  = coûtBase × 1.12^niveau
-prod(module, niveau)  = prodBase × niveau × 2^(nb de paliers atteints parmi 10, 25, 50, 100)
-coûtBase(zone z)      = 10 × 20^z   (modules relatifs ×1, ×6, ×36)
-prodBase(zone z)      = 0.9 × 15^z  (idem)
-Firmware gagné        = floor( sqrt( BitsGagnésDuRun / 1e11 ) )
-multFirmware          = 1 + 0.05 × Firmware
-Benchmark (score)     = Σ niveaux × poidsZone, affiché en FLOPS (K, M, G, T, P)
+coût(module, niveau)   = coûtBase × 1.12^niveau
+prod(module, niveau)   = prodBase × niveau × 2^(paliers atteints parmi 10, 25, 50, 100, 150, 200)
+coûtBase(zone z)       = 10 × 20^z   (modules relatifs ×1, ×6, ×36)
+prodBase(zone z)       = 0.9 × 15^z  (idem)
+Watts / chaleur par niv = 4 (resp. 3) × 1.9^z × (1, 2, 3 selon le module)
+capacité PSU(L)        = 60 × 1.2^L      coût = 15 × 1.45^L
+capacité radiateurs(L) = 2500 × 1.2^L    coût = 2e8 × 1.45^L   (la chaleur compte à partir du SSD)
+efficacité             = min(1, capacité / demande)   (énergie × thermique)
+Firmware gagné         = floor( sqrt( BitsGagnésDuRun / 1e11 ) )
+multFirmware           = 1 + 0.10 × Firmware
 ```
 
 | Déblocage | Coût (Bits) |
@@ -108,24 +111,18 @@ Benchmark (score)     = Σ niveaux × poidsZone, affiché en FLOPS (K, M, G, T, 
 | CPU | 75 B |
 | GPU | 3 T |
 | AI Core | 100 T |
-| **Singularité** (fin) | **100 Qa (1e17)** |
+| **Singularité** (5 phases) | 10 Qa · 50 Qa · 150 Qa · 300 Qa · 500 Qa (≈ 1e18 au total) |
 
-### 4.3 Pacing mesuré (joueur optimal simulé ; un vrai joueur ≈ ×1,3 à 1,5)
-| Moment | Temps simulé | Ce qui se passe |
-|---|---|---|
-| 0:00 → 0:30 | — | Allumer le PC (moment « waouh »), 1ʳᵉ collecte, 1ᵉʳ upgrade |
-| 3 min | 3 min | RAM débloquée |
-| ~6 min | — | 1ʳᵉ capsule de Nanobot (offerte par la quête du tutoriel) |
-| 10 min | 10 min | SSD + 1ᵉʳ Téléchargement |
-| ~30–45 min | 36 min | Cryo Tower : la chaleur entre en jeu (**fin de la 1ʳᵉ session visée**) |
-| ~1 h 30–2 h | 91 min | CPU + Overclock |
-| ~4–6 h | 240 min | GPU, puis 1ᵉʳ Reboot disponible |
-| Génération 2 | +6,7 h | AI Core atteint pour la 1ʳᵉ fois |
-| Génération 3 | +2,4 h | Runs rapides, plaisir du « speedrun » |
-| **Génération 4** | **≈ 22 h cumulées** (≈ 30 h réelles) | **Singularité → cinématique de fin** |
-| Après la fin | ∞ | Générations 5 à 10 (nouveaux skins de tiers), events, classements hebdo |
+### 4.3 Pacing mesuré (simulation avec la vraie config, joueur optimal ; un vrai joueur ≈ ×1,3)
+| Génération | Déblocages (minutes) | Durée du run | Firmware cumulé |
+|---|---|---|---|
+| 1 | RAM 3 · SSD 11 · Cryo 39 · CPU 114 · GPU 302 | 6,0 h | 13 (x2,3) |
+| 2 | RAM 2 · SSD 6 · Cryo 18 · CPU 47 · GPU 111 · AI 230 | 4,3 h | 105 |
+| 3 | … GPU 15 · AI 27 | 0,9 h | 344 |
+| 4–5 | runs « speedrun » de 35 à 45 min | 0,6–0,7 h | 1 496 |
+| **6** | AI Core en 6 min, puis les 5 phases | **Singularité à ≈ 15 h cumulées** (≈ 20 h réelles) | — |
 
-⚠️ **À corriger à l'étape Économie** : la Gen 2 (6,7 h) et le dernier run de la Gen 4 (7,7 h) sont trop longs. On ajoutera l'arbre de Firmware et des paliers intermédiaires dans l'AI Core pour garder un objectif toutes les 20 min maximum.
+Garde-fous testés automatiquement : 1er run dans les fenêtres ci-dessus, énergie et refroidissement entre 3 et 20 % des dépenses, jamais bloquants, 1er Reboot ≥ ×1,5, fin entre 10 et 25 h.
 
 ### 4.4 Gains hors ligne
 50 % de la production, plafonnés à 2 h (upgradable à 4 h via Firmware ; 8 h à 100 % avec le Game Pass). Écran de retour : « Pendant ton absence, ton PC a produit… », avec un bouton ×2 via pub récompensée si elle est disponible.
@@ -319,5 +316,7 @@ tests/                 Tests Lune (formules, pacing, validation des remotes)
 10. Analytics, optimisation, QA multi-appareils, checklist de lancement.
 
 ## 15. Points ouverts
-- Le logo et la mascotte : fichier à ajouter dans `AngAInOne/assets/branding/`, ou à uploader dans Studio en Decal (ID à me donner).
-- À vérifier dans la doc officielle au moment de coder : UI Styling (StyleSheets), ombres UI natives, notifications d'expérience, pubs récompensées, disponibilité des polices, bibliothèque musicale.
+- **Logo Anga** : importer l'image et coller l'ID dans `Config/Branding.luau` (sinon, monogramme « A »).
+- **IDs de monétisation** : à créer sur le Creator Dashboard, puis à coller dans `Config/Products.luau`.
+- **Habillage 3D** : la map est procédurale et cohérente. Pour la remplacer pièce par pièce par des modèles (audités), voir `docs/ASSETS.md`.
+- **Pas encore implémenté (V2)** : échanges de Nanobots, Patch Pass (saison), événements de 48 h, LAN Party, « Setup du jour », notifications d'expérience (opt-in), pubs récompensées. Le code est prêt à les accueillir : `QuestService` pour le pass, `GameEvents` pour les événements, `MonetizationService.RegisterProduct` pour les produits.

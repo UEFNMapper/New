@@ -1,0 +1,31 @@
+name: AngAInOne
+
+on:
+  push:
+    paths: ["AngAInOne/**", ".github/workflows/angainone.yml"]
+  pull_request:
+    paths: ["AngAInOne/**", ".github/workflows/angainone.yml"]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: AngAInOne
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer les outils (versions de rokit.toml)
+        run: |
+          mkdir -p "$HOME/bin" && cd "$HOME/bin"
+          get() { curl -sSLf -o t.zip "$1" && unzip -oq t.zip && rm t.zip; }
+          get https://github.com/rojo-rbx/rojo/releases/download/v7.6.1/rojo-7.6.1-linux-x86_64.zip
+          get https://github.com/lune-org/lune/releases/download/v0.10.4/lune-0.10.4-linux-x86_64.zip
+          get https://github.com/Kampfkarren/selene/releases/download/0.28.0/selene-0.28.0-linux.zip
+          get https://github.com/JohnnyMorganz/StyLua/releases/download/v2.3.0/stylua-linux-x86_64.zip
+          get https://github.com/JohnnyMorganz/luau-lsp/releases/download/1.58.0/luau-lsp-linux-x86_64.zip
+          chmod +x rojo lune selene stylua luau-lsp
+          echo "$HOME/bin" >> "$GITHUB_PATH"
+
+      - name: Vérification complète (types, lint, format, build, tests)
+        run: ./scripts/verify.sh

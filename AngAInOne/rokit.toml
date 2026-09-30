@@ -1,0 +1,7 @@
+# Outils du projet : installe-les avec `rokit install` (https://github.com/rojo-rbx/rokit)
+[tools]
+rojo = "rojo-rbx/rojo@7.6.1"
+lune = "lune-org/lune@0.10.4"
+selene = "Kampfkarren/selene@0.28.0"
+stylua = "JohnnyMorganz/StyLua@2.3.0"
+luau-lsp = "JohnnyMorganz/luau-lsp@1.58.0"

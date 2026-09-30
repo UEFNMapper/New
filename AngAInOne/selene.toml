@@ -1,0 +1,6 @@
+std = "roblox"
+exclude = ["src/server/Packages/*", "src/shared/Packages/*"]
+
+[lints]
+global_usage = "deny"
+shadowing = "allow"
