@@ -72,6 +72,8 @@ Tower.MinigameKinds = {
 	"Firewall", -- déplace le pare-feu et tire sur les virus qui tombent
 	"Memory", -- retrouve les paires de cartes mémoire
 	"Dodge", -- guide le paquet de données entre les virus
+	"Popup", -- Pop-up Killer : ferme les pubs (✕) avant que la RAM soit pleine, pas les faux boutons
+	"Defrag", -- Défrag : échange les blocs pour regrouper chaque fichier
 }
 
 Tower.Worlds = {
@@ -102,7 +104,7 @@ Tower.Worlds = {
 		Secondary = "C084FC",
 		Tint = "F1EEFF",
 		Traps = { "Crusher", "Conveyor", "Mover" },
-		Minigame = "Memory",
+		Minigame = "Popup",
 		Intro = "Les barrettes de RAM s'écrasent en rythme. Attends le bon moment pour passer !",
 		Symptom = "Mémoire saturée : 200 onglets ouverts",
 		Minion = "Pop-Up",
@@ -119,7 +121,7 @@ Tower.Worlds = {
 		Secondary = "4FD1C5",
 		Tint = "E9FFFB",
 		Traps = { "Vanish", "Crusher", "Conveyor" },
-		Minigame = "Dodge",
+		Minigame = "Defrag",
 		Intro = "Le virus efface les données : les plateformes disparaissent. Ne traîne pas !",
 		Symptom = "Fichiers corrompus",
 		Minion = "Corrupto",

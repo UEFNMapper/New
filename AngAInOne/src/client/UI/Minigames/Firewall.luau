@@ -4,6 +4,9 @@
 	tire tout seul. Des virus tombent sur les fichiers du PC : détruis-les avant qu'ils
 	n'infectent tous les fichiers !
 
+	Combat final (difficulté 8) : la grosse tête de LAGZ flotte en haut, crache les virus
+	et glitche l'écran ; une barre de vie du boss (HUD) remplace le compteur de virus.
+
 	Contrôles : glisser le doigt, souris (le pare-feu suit le curseur), flèches / A-D,
 	stick gauche ou croix de la manette. Règles et chiffres : FirewallLogic (pur, testé).
 ]]
@@ -16,6 +19,7 @@ local Motion = require(script.Parent.Parent.Motion)
 local Core = require(script.Parent.Core)
 local Common = require(script.Parent.Common)
 local FirewallLogic = require(script.Parent.FirewallLogic)
+local Minions = require(script.Parent.Minions)
 
 local New = Create.New
 local C = Common.Colors
@@ -31,6 +35,23 @@ local FILE_Y = Core.FIELD_H - 24
 
 function Firewall.Info(difficulty: number, device: Common.Device): Common.Info
 	local p = FirewallLogic.Params(difficulty)
+	local hp = p.BossHp
+	if hp then
+		return {
+			Title = "PARE-FEU : BOSS LAGZ",
+			Rule = "Tire sur LAGZ et arrête ses virus !",
+			Target = "Détruis LAGZ !",
+			Controls = if device == "Gamepad"
+				then "Stick gauche pour bouger"
+				elseif device == "Touch" then "Glisse ton doigt à gauche et à droite"
+				else "Souris ou flèches ← →",
+			Tip = "Astuce : arrête les virus d'abord, puis vise LAGZ quand sa bulle disparaît !",
+			Goal = hp,
+			Unit = "PV",
+			Icon = "Virus",
+			Accent = "AccentViolet",
+		}
+	end
 	return {
 		Title = "PARE-FEU",
 		Rule = "Bouge le pare-feu : il tire tout seul !",
@@ -166,12 +187,56 @@ function Firewall.Run(container: Frame, difficulty: number, finish: Common.Finis
 	local viruses: { [number]: Frame } = {}
 	local bullets: { [number]: Frame } = {}
 
+	-- Combat final : la tête de LAGZ, sa bulle de protection et les glitchs de l'écran.
+	local boss = sim.Boss
+	local lagz: Frame? = nil
+	local bubble: Frame? = nil
+	if boss then
+		local sprite = Minions.Build("LAGZ", Box(boss.R * 2.3, boss.R * 2.3), "Evil")
+		sprite.Position = At(boss.X, boss.Y)
+		sprite.ZIndex = 2
+		sprite.Parent = stage
+		lagz = sprite
+		local shieldBubble =
+			Common.Shape(stage, At(boss.X, boss.Y), Box(boss.R * 2.6, boss.R * 2.6), C.Cyan, UDim.new(1, 0), {
+				Name = "Bubble",
+				BackgroundTransparency = 0.8,
+				Visible = false,
+				ZIndex = 3,
+			})
+		New("UIStroke", { Color = C.Cyan, Thickness = 4, Transparency = 0.1, Parent = shieldBubble })
+		bubble = shieldBubble
+	end
+
+	-- Déchirures de l'écran (barres colorées décalées, très brèves, jamais bloquantes).
+	local function glitchScreen(strength: number)
+		if Motion.IsReduced() then
+			return
+		end
+		for _ = 1, strength do
+			local bar: Frame = New("Frame", {
+				Name = "Tear",
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(0.5 + (math.random() - 0.5) * 0.1, math.random()),
+				Size = UDim2.new(1.1, 0, 0.02 + math.random() * 0.05, 0),
+				BackgroundColor3 = if math.random() < 0.5 then C.GlitchA else C.GlitchB,
+				BackgroundTransparency = 0.55,
+				BorderSizePixel = 0,
+				ZIndex = 25,
+				Parent = stage,
+			})
+			task.delay(0.08 + math.random() * 0.12, function()
+				bar:Destroy()
+			end)
+		end
+	end
+
 	local function done(success: boolean)
 		if finished then
 			return
 		end
 		finished = true
-		finish(success, sim.Kills)
+		finish(success, FirewallLogic.Score(sim))
 	end
 
 	local function infectNearest(x: number)
@@ -258,7 +323,9 @@ function Firewall.Run(container: Frame, difficulty: number, finish: Common.Finis
 			)
 			Common.Sound(if event.Blocked then "Collect" else "Zap", 0.95 + math.random() * 0.2)
 			Motion.Pop(shield, 0.12)
-			ui.SetProgress(sim.Kills, p.Target)
+			if not boss then
+				ui.SetProgress(sim.Kills, p.Target)
+			end
 		elseif kind == "Leak" then
 			local sprite = viruses[event.Id]
 			viruses[event.Id] = nil
@@ -270,7 +337,48 @@ function Firewall.Run(container: Frame, difficulty: number, finish: Common.Finis
 			Common.Sound("Error")
 			Common.Shake(stage, 10, 0.3)
 			ui.SetLives(FirewallLogic.LivesLeft(sim), p.Lives)
+		elseif kind == "BossHit" then
+			local current = sim.Boss
+			local sprite = lagz
+			if sprite and current then
+				Motion.Pop(sprite, 0.06)
+				Common.Burst(stage, At(event.X or current.X, event.Y or current.Y), C.Gold, 4, 36)
+				Common.Sound("Zap", 0.7 + math.random() * 0.1)
+				ui.SetBoss(current.Hp, current.MaxHp)
+			end
+		elseif kind == "BossBlock" then
+			Common.Burst(stage, At(event.X or 0, event.Y or 0), C.Cyan, 3, 26)
+		elseif kind == "BossShield" then
+			glitchScreen(5)
+			local sprite = lagz
+			if sprite then
+				Common.Glitch(sprite)
+			end
+			Common.Shake(stage, 6, 0.25)
+			Common.Sound("Whoosh", 0.7)
+		elseif kind == "BossRage" then
+			glitchScreen(8)
+			Common.Shake(stage, 12, 0.4)
+			Common.Popup(stage, UDim2.fromScale(0.5, 0.42), "LAGZ S'ÉNERVE !", C.Bad, 34)
+			Common.Sound("Error", 0.7)
 		elseif kind == "Win" then
+			local current = sim.Boss
+			local sprite = lagz
+			if sprite and current then
+				-- LAGZ explose : il ne reste qu'un blob K.O.
+				local where = sprite.Position
+				sprite:Destroy()
+				lagz = nil
+				local defeated = Minions.Build("LAGZ", Box(current.R * 2.3, current.R * 2.3), "Defeated")
+				defeated.Position = where
+				defeated.ZIndex = 2
+				defeated.Parent = stage
+				Common.Burst(stage, where, C.VirusHot, 24, 160)
+				Common.Burst(stage, where, C.Gold, 12, 110)
+				glitchScreen(10)
+				Common.Shake(stage, 16, 0.5)
+				ui.SetBoss(0, current.MaxHp)
+			end
 			done(true)
 		elseif kind == "Lose" then
 			done(false)
@@ -340,7 +448,11 @@ function Firewall.Run(container: Frame, difficulty: number, finish: Common.Finis
 		return math.clamp(value, -1, 1)
 	end
 
-	ui.SetProgress(0, p.Target)
+	if boss then
+		ui.SetBoss(boss.Hp, boss.MaxHp)
+	else
+		ui.SetProgress(0, p.Target)
+	end
 	ui.SetLives(p.Lives, p.Lives)
 	ui.SetTimer(FirewallLogic.TimeLeft(sim))
 
@@ -373,6 +485,21 @@ function Firewall.Run(container: Frame, difficulty: number, finish: Common.Finis
 			local shot = bullets[bullet.Id]
 			if shot then
 				shot.Position = At(bullet.X, bullet.Y)
+			end
+		end
+		local current = sim.Boss
+		local sprite = lagz
+		if current and sprite then
+			sprite.Position = At(current.X, current.Y)
+			local shieldBubble = bubble
+			if shieldBubble then
+				shieldBubble.Position = sprite.Position
+				shieldBubble.Visible = FirewallLogic.BossShielded(sim)
+			end
+			-- Petits glitchs réguliers (plus fréquents quand LAGZ s'énerve).
+			if math.random() < (if current.Enraged then 0.02 else 0.01) then
+				glitchScreen(2)
+				Common.Glitch(sprite)
 			end
 		end
 		ui.SetTimer(FirewallLogic.TimeLeft(sim))

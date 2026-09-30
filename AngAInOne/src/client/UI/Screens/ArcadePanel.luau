@@ -1,6 +1,6 @@
 --!strict
 --[[
-	ArcadePanel : la borne d'arcade du lobby. On choisit un des 4 mini-jeux antivirus
+	ArcadePanel : la borne d'arcade du lobby. On choisit un des 6 mini-jeux antivirus (grille 3 x 2)
 	pour s'entraîner et gagner quelques Bits (avec un délai entre deux récompenses).
 ]]
 
@@ -22,6 +22,8 @@ local GAMES = {
 	{ Kind = "Firewall", Name = "Firewall", Rule = "Tire sur les virus qui tombent !", Icon = "Bolt" },
 	{ Kind = "Memory", Name = "Memory", Rule = "Retrouve les paires de cartes !", Icon = "Cpu" },
 	{ Kind = "Dodge", Name = "Dodge", Rule = "Évite les virus en sautant !", Icon = "Star" },
+	{ Kind = "Popup", Name = "Pop-up Killer", Rule = "Ferme les pubs avant que la RAM explose !", Icon = "Close" },
+	{ Kind = "Defrag", Name = "Défrag", Rule = "Regroupe les blocs de chaque fichier !", Icon = "Check" },
 }
 
 function ArcadePanel.Mount(layer: Frame)
@@ -29,7 +31,7 @@ function ArcadePanel.Mount(layer: Frame)
 		Name = "ArcadePanel",
 		Title = "ARCADE ANTIVIRUS",
 		Subtitle = "Entraîne-toi et gagne des Bits !",
-		Size = UDim2.fromScale(0.62, 0.7),
+		Size = UDim2.fromScale(0.72, 0.74),
 		Parent = layer,
 		Accent = Style.Color("AccentCyan"),
 	})
@@ -39,7 +41,8 @@ function ArcadePanel.Mount(layer: Frame)
 		Parent = panel.Body,
 	}, {
 		New("UIGridLayout", {
-			CellSize = UDim2.new(0.5, -8, 0.5, -8),
+			-- 3 colonnes x 2 lignes : 2 espacements de 12 px à répartir sur 3 cases.
+			CellSize = UDim2.new(1 / 3, -8, 0.5, -6),
 			CellPadding = UDim2.fromOffset(12, 12),
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}) :: Instance,
@@ -53,21 +56,23 @@ function ArcadePanel.Mount(layer: Frame)
 			Parent = grid,
 		})
 		New("TextLabel", {
-			Position = UDim2.fromOffset(16, 10),
-			Size = UDim2.new(1, -32, 0, 30),
+			Position = UDim2.fromOffset(14, 10),
+			Size = UDim2.new(1, -28, 0, 30),
 			BackgroundTransparency = 1,
 			Text = game_.Name,
 			TextXAlignment = Enum.TextXAlignment.Left,
+			TextTruncate = Enum.TextTruncate.AtEnd,
 			Tag = "TextTitle",
 			Parent = cell,
 		})
 		New("TextLabel", {
-			Position = UDim2.fromOffset(16, 44),
-			Size = UDim2.new(1, -32, 0, 22),
+			Position = UDim2.fromOffset(14, 42),
+			Size = UDim2.new(1, -28, 1, -110), -- deux lignes au besoin, au-dessus du bouton
 			BackgroundTransparency = 1,
 			Text = game_.Rule,
 			TextWrapped = true,
 			TextXAlignment = Enum.TextXAlignment.Left,
+			TextYAlignment = Enum.TextYAlignment.Top,
 			Tag = "TextMuted",
 			Parent = cell,
 		})
@@ -75,7 +80,7 @@ function ArcadePanel.Mount(layer: Frame)
 			Text = "JOUER",
 			Icon = game_.Icon,
 			Variant = "Primary",
-			Size = UDim2.new(1, -32, 0, 52),
+			Size = UDim2.new(1, -28, 0, 52),
 			AnchorPoint = Vector2.new(0.5, 1),
 			Position = UDim2.new(0.5, 0, 1, -12),
 			Small = true,

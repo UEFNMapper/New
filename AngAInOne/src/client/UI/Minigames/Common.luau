@@ -40,6 +40,8 @@ export type Hud = {
 	SetTimer: (secondsLeft: number?) -> (), -- nil = chrono caché
 	SetProgress: (value: number, target: number) -> (),
 	SetLives: (lives: number?, max: number?) -> (), -- nil = pas de vies
+	-- Combat final : barre de vie de LAGZ à la place de la progression (nil = cachée).
+	SetBoss: (hp: number?, max: number?) -> (),
 }
 
 export type Finish = (success: boolean, score: number) -> ()
@@ -67,6 +69,7 @@ Common.NullHud = table.freeze({
 	SetTimer = function(_seconds: number?) end,
 	SetProgress = function(_value: number, _target: number) end,
 	SetLives = function(_lives: number?, _max: number?) end,
+	SetBoss = function(_hp: number?, _max: number?) end,
 }) :: Hud
 
 ------------------------------------------------------------------------------------

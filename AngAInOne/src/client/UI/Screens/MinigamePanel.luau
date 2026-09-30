@@ -4,12 +4,19 @@
 
 	Déroulé d'une partie :
 		voile sombre + flou
-		-> carte d'intro : titre, règle illustrée, objectif, gros bouton JOUER (+ Quitter)
+		-> carte d'intro : le sbire du monde qui nargue, titre, règle illustrée, objectif,
+		   gros bouton JOUER (+ Quitter)
 		-> compte à rebours 3-2-1
 		-> partie (HUD : chrono, progression vers l'objectif, vies, bouton X)
 		-> bandeau "BRAVO !" / "OH NON !"
-		-> carte de résultat : réussite (confettis, CONTINUER) ou échec (RÉESSAYER / Quitter)
+		-> carte de résultat : réussite (sbire K.O., confettis, CONTINUER) ou échec (le sbire
+		   ricane, RÉESSAYER / Quitter)
 		-> onDone(success, score, duration)
+
+	Sbire : Tower.Worlds[difficulté].Minion (1..7). Difficulté 8 = combat final contre LAGZ
+	(Core.IsBoss) : LAGZ sur les cartes, écran qui glitche pendant la partie, victoire
+	« LAGZ EST DÉTRUIT ! ». Le Firewall a sa vraie variante boss (FirewallLogic) ; les
+	autres jeux se jouent alors avec les réglages du niveau 7.
 
 	`duration` = secondes réellement jouées pendant la manche qui donne le résultat
 	(compte à rebours et cartes exclus) : le serveur vérifie une durée minimale.
@@ -17,7 +24,7 @@
 
 	API :
 		MinigamePanel.Mount(layer)                         -- une fois (App.Layers.Overlays)
-		MinigamePanel.Play(kind, difficulty, onDone)       -- kind : Tower.MinigameKinds
+		MinigamePanel.Play(kind, difficulty, onDone)       -- kind : Tower.MinigameKinds ; 1..7, 8 = boss
 		MinigamePanel.IsPlaying()
 		MinigamePanel.Cancel()                             -- ferme : onDone(false, 0, elapsed)
 ]]
@@ -29,7 +36,9 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
-local Theme = require(ReplicatedStorage:WaitForChild("Shared").Config.Theme)
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Theme = require(Shared.Config.Theme)
+local Tower = require(Shared.Config.Tower)
 
 local Create = require(script.Parent.Parent.Create)
 local Style = require(script.Parent.Parent.Style)
@@ -41,6 +50,7 @@ local Icon = require(script.Parent.Parent.Components.Icon)
 local Minigames = script.Parent.Parent.Minigames
 local Core = require(Minigames.Core)
 local Common = require(Minigames.Common)
+local Minions = require(Minigames.Minions)
 
 local New = Create.New
 local C = Common.Colors
@@ -54,6 +64,8 @@ local GAMES: { [string]: Common.Game } = {
 	Firewall = require(Minigames.Firewall),
 	Memory = require(Minigames.Memory),
 	Dodge = require(Minigames.Dodge),
+	Popup = require(Minigames.Popup),
+	Defrag = require(Minigames.Defrag),
 }
 
 local BACK_ACTION = "AngAInOneMinigameBack"
@@ -67,6 +79,8 @@ type Phase = "Intro" | "Countdown" | "Playing" | "Ending" | "Result"
 type Session = {
 	Kind: string,
 	Difficulty: number,
+	Boss: boolean, -- combat final contre LAGZ (difficulté 8)
+	Minion: string, -- sbire affiché sur les cartes
 	Game: Common.Game,
 	Info: Common.Info,
 	OnDone: OnDone,
@@ -88,6 +102,7 @@ type Session = {
 	AttemptStart: number?,
 	LastScore: number,
 	LastDuration: number,
+	Attempt: number, -- numéro de manche (arrête les effets d'une manche finie)
 	Connections: { RBXScriptConnection },
 }
 
@@ -301,6 +316,33 @@ local function buildHud(s: Session, parent: Frame): (Common.Hud, () -> ())
 		Tag = "FontHeavy",
 		Parent = progress,
 	})
+	-- Combat final : la même pastille devient la barre de vie de LAGZ.
+	local bossGroup: Frame = New("Frame", {
+		Name = "Boss",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		Visible = false,
+		Parent = progress,
+	})
+	local bossFace = Minions.Build("LAGZ", UDim2.fromOffset(44, 44), "Evil", bossGroup)
+	bossFace.Position = UDim2.new(0, 30, 0.5, 0)
+	local bossBar = Widgets.Bar(UDim2.fromOffset(190, 18), C.Bad, bossGroup)
+	bossBar.Root.AnchorPoint = Vector2.new(0, 0.5)
+	bossBar.Root.Position = UDim2.new(0, 58, 0.5, 0)
+	local bossHp = label({
+		Name = "Hp",
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -16, 0.5, 0),
+		Size = UDim2.fromOffset(64, 40),
+		TextWrapped = false,
+		Text = "",
+		TextSize = 22,
+		TextColor3 = C.Bad,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		Tag = "FontHeavy",
+		Parent = bossGroup,
+	})
+	local normalParts: { GuiObject } = { icon, bar.Root, count }
 
 	-- Droite : vies, chrono, quitter
 	local right: Frame = New("Frame", {
@@ -379,6 +421,7 @@ local function buildHud(s: Session, parent: Frame): (Common.Hud, () -> ())
 	local shownValue, shownTarget = -1, -1
 	local shownLives: number? = nil
 	local shownMax: number? = nil
+	local shownBoss: number? = nil
 	local hearts: { Frame } = {}
 	local livesCount: TextLabel? = nil
 
@@ -481,10 +524,32 @@ local function buildHud(s: Session, parent: Frame): (Common.Hud, () -> ())
 				Motion.Pop(lives, 0.25)
 			end
 		end,
+		SetBoss = function(hp: number?, max: number?)
+			local active = hp ~= nil and max ~= nil and max > 0
+			bossGroup.Visible = active
+			for _, part in normalParts do
+				part.Visible = not active
+			end
+			if hp == nil or max == nil or max <= 0 then
+				shownBoss = nil
+				return
+			end
+			if hp == shownBoss then
+				return
+			end
+			local hit = shownBoss ~= nil and hp < (shownBoss :: number)
+			shownBoss = hp
+			bossBar:Set(hp / max)
+			bossHp.Text = `{math.max(0, hp)} PV`
+			if hit then
+				Motion.Pop(bossFace, 0.12)
+			end
+		end,
 	}
 
 	local function reset()
 		shownValue, shownTarget = -1, -1
+		hud.SetBoss(nil)
 		hud.SetProgress(0, info.Goal)
 		hud.SetTimer(nil)
 		hud.SetLives(nil)
@@ -577,32 +642,89 @@ end
 local close: (s: Session, success: boolean, cancelled: boolean) -> ()
 local startCountdown: (s: Session) -> ()
 
+-- Le sbire (ou LAGZ) dans un médaillon qui déborde du coin de la carte.
+local function minionBadge(s: Session, card: Frame, mood: Minions.Mood, position: UDim2): Frame
+	local badge: Frame = New("Frame", {
+		Name = "Minion",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = position,
+		Size = UDim2.fromOffset(124, 124),
+		BackgroundColor3 = C.Ink,
+		BackgroundTransparency = 0.15,
+		BorderSizePixel = 0,
+		ZIndex = 6,
+		Parent = card,
+	}, {
+		Common.Corner(),
+		New("UIStroke", {
+			Color = if mood == "Defeated" then C.Good else C.VirusHot,
+			Thickness = 3,
+			Transparency = 0.1,
+		}),
+	})
+	local character = Minions.Build(s.Minion, UDim2.fromScale(0.86, 0.86), mood, badge)
+	character.ZIndex = 7
+	Motion.Pop(badge, 0.3)
+	return badge
+end
+
+-- Bulle de dialogue du sbire (une phrase).
+local function speech(card: Frame, text: string, y: number, color: Color3): TextLabel
+	return label({
+		Name = "Speech",
+		Position = UDim2.fromOffset(20, y),
+		Size = UDim2.new(1, -170, 0, 36),
+		BackgroundColor3 = C.Ink,
+		BackgroundTransparency = 0.35,
+		TextWrapped = true,
+		TextScaled = true,
+		Text = text,
+		TextColor3 = color,
+		Tag = "FontBold",
+		Parent = card,
+		ZIndex = 6,
+	}) :: TextLabel
+end
+
 local function showIntro(s: Session)
 	s.Phase = "Intro"
 	local info = s.Info
-	local card = newCard(s, 600, 476)
+	local card = newCard(s, 600, 520)
 	label({
 		Name = "Kicker",
 		Position = UDim2.fromOffset(20, 18),
-		Size = UDim2.new(1, -40, 0, 18),
-		Text = "TERMINAL ANTIVIRUS",
+		Size = UDim2.new(1, -170, 0, 18),
+		Text = if s.Boss then "COMBAT FINAL" else "TERMINAL ANTIVIRUS",
+		TextXAlignment = Enum.TextXAlignment.Left,
 		Tag = "TextCaption",
 		Parent = card,
 	})
-	label({
+	local titleLabel = label({
 		Name = "Title",
 		Position = UDim2.fromOffset(20, 38),
-		Size = UDim2.new(1, -40, 0, 40),
+		Size = UDim2.new(1, -170, 0, 40),
 		Text = info.Title,
-		TextSize = 32,
+		TextScaled = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
 		TextColor3 = Style.Color(info.Accent),
 		Tag = "FontDisplay",
 		Parent = card,
 	})
+	New("UITextSizeConstraint", { MaxTextSize = 32, Parent = titleLabel })
+	local line = speech(
+		card,
+		if s.Boss then "LAGZ te défie : détruis-le !" else Minions.Taunt(s.Minion),
+		84,
+		C.VirusHot:Lerp(C.White, 0.35)
+	)
+	New("UICorner", { CornerRadius = UDim.new(0, 12), Parent = line })
+	New("UIPadding", { PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12), Parent = line })
+	New("UITextSizeConstraint", { MaxTextSize = 20, MinTextSize = 12, Parent = line })
+	minionBadge(s, card, "Evil", UDim2.new(1, -72, 0, 58))
 	local art: Frame = New("Frame", {
 		Name = "Illustration",
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 88),
+		Position = UDim2.new(0.5, 0, 0, 132),
 		Size = UDim2.fromOffset(540, 150),
 		BackgroundTransparency = 0.3,
 		BorderSizePixel = 0,
@@ -615,7 +737,7 @@ local function showIntro(s: Session)
 	end, art)
 	label({
 		Name = "Rule",
-		Position = UDim2.fromOffset(20, 250),
+		Position = UDim2.fromOffset(20, 294),
 		Size = UDim2.new(1, -40, 0, 30),
 		Text = info.Rule,
 		TextSize = 24,
@@ -627,7 +749,7 @@ local function showIntro(s: Session)
 	local chip: Frame = New("Frame", {
 		Name = "Target",
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 290),
+		Position = UDim2.new(0.5, 0, 0, 334),
 		Size = UDim2.fromOffset(0, 50),
 		AutomaticSize = Enum.AutomaticSize.X,
 		BackgroundTransparency = 0.2,
@@ -656,13 +778,13 @@ local function showIntro(s: Session)
 	})
 	label({
 		Name = "Controls",
-		Position = UDim2.fromOffset(20, 350),
+		Position = UDim2.fromOffset(20, 394),
 		Size = UDim2.new(1, -40, 0, 20),
 		Text = info.Controls,
 		Tag = "TextMuted",
 		Parent = card,
 	})
-	local row = buttonRow(card, 384)
+	local row = buttonRow(card, 428)
 	local play = bigKeycap({
 		Text = "JOUER",
 		Variant = "Primary",
@@ -715,21 +837,29 @@ local function showResult(s: Session, success: boolean)
 	medalIcon.Position = UDim2.fromScale(0.5, 0.5)
 	medalIcon.Parent = medal
 	Motion.Pop(medal, 0.4)
-	label({
+	-- Le sbire : K.O. après une victoire, narquois après un échec.
+	minionBadge(s, card, if success then "Defeated" else "Evil", UDim2.new(1, -40, 0, 20))
+	local title = if success
+		then (if s.Boss then "LAGZ EST DÉTRUIT !" else "VIRUS ÉLIMINÉS !")
+		else "Presque ! Réessaie"
+	local titleLabel = label({
 		Name = "Title",
-		Position = UDim2.fromOffset(20, 60),
-		Size = UDim2.new(1, -40, 0, 44),
-		Text = if success then "VIRUS ÉLIMINÉS !" else "Presque ! Réessaie",
-		TextSize = if success then 32 else 30,
+		Position = UDim2.fromOffset(130, 60),
+		Size = UDim2.new(1, -260, 0, 44),
+		Text = title,
+		TextScaled = true,
 		TextColor3 = if success then C.Good else C.Amber,
 		Tag = "FontDisplay",
 		Parent = card,
 	})
+	New("UITextSizeConstraint", { MaxTextSize = if success then 32 else 30, Parent = titleLabel })
 	label({
 		Name = "Subtitle",
 		Position = UDim2.fromOffset(20, 108),
 		Size = UDim2.new(1, -40, 0, 26),
-		Text = if success then "Bravo, le PC est plus propre !" else "Tu y étais presque, tu peux le faire !",
+		Text = if success
+			then (if s.Boss then "Le PC tourne à 144 FPS !" else Minions.Defeat(s.Minion))
+			else Minions.Gloat(s.Minion),
 		TextSize = 20,
 		TextColor3 = C.White,
 		Tag = "FontBold",
@@ -914,12 +1044,49 @@ local function onFinish(s: Session, success: boolean, score: number)
 	end)
 end
 
+-- Combat final : LAGZ glitche l'écran (barres colorées brèves, jamais bloquantes :
+-- ce sont des Frames sans entrée, posées au-dessus du jeu dans le terrain).
+local function bossGlitches(s: Session)
+	local attempt = s.Attempt
+	task.spawn(function()
+		while true do
+			task.wait(1.6 + math.random() * 2.2)
+			if s.Closed or s.Attempt ~= attempt or phaseOf(s) ~= "Playing" then
+				return
+			end
+			if not Motion.IsReduced() then
+				for _ = 1, math.random(2, 4) do
+					local bar: Frame = New("Frame", {
+						Name = "BossGlitch",
+						AnchorPoint = Vector2.new(0.5, 0.5),
+						Position = UDim2.fromScale(0.5 + (math.random() - 0.5) * 0.08, math.random()),
+						Size = UDim2.new(1.1, 0, 0.015 + math.random() * 0.04, 0),
+						BackgroundColor3 = if math.random() < 0.5 then C.GlitchA else C.GlitchB,
+						BackgroundTransparency = 0.6,
+						BorderSizePixel = 0,
+						Active = false,
+						ZIndex = 10,
+						Parent = s.Field,
+					})
+					task.delay(0.07 + math.random() * 0.12, function()
+						bar:Destroy()
+					end)
+				end
+			end
+		end
+	end)
+end
+
 local function startGame(s: Session)
 	if s.Closed then
 		return
 	end
 	s.Phase = "Playing"
+	s.Attempt += 1
 	s.AttemptStart = os.clock()
+	if s.Boss then
+		bossGlitches(s)
+	end
 	local ok, result = pcall(s.Game.Run, s.Field, s.Difficulty, function(success: boolean, score: number)
 		onFinish(s, success, score)
 	end, s.Hud)
@@ -1114,7 +1281,10 @@ function MinigamePanel.Play(kind: string, difficulty: number, onDone: OnDone)
 		return
 	end
 	MinigamePanel.Cancel()
-	local level = Core.Level(difficulty)
+	local boss = Core.IsBoss(difficulty)
+	local level = if boss then Core.BOSS_LEVEL else Core.Level(difficulty)
+	local world = Tower.Worlds[Core.Level(difficulty)]
+	local minion = if boss or not world then "LAGZ" else world.Minion
 
 	local root: Frame = New("Frame", {
 		Name = "Minigame",
@@ -1155,6 +1325,8 @@ function MinigamePanel.Play(kind: string, difficulty: number, onDone: OnDone)
 	local s: Session = {
 		Kind = kind,
 		Difficulty = level,
+		Boss = boss,
+		Minion = minion,
 		Game = entry,
 		Info = entry.Info(level, Common.Device()),
 		OnDone = onDone,
@@ -1176,6 +1348,7 @@ function MinigamePanel.Play(kind: string, difficulty: number, onDone: OnDone)
 		AttemptStart = nil,
 		LastScore = 0,
 		LastDuration = 0,
+		Attempt = 0,
 		Connections = {},
 	}
 	session = s

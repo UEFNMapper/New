@@ -6,6 +6,12 @@
 	Des virus tombent : il faut en détruire `Target` avant que `Lives` virus n'atteignent
 	le bas (ou avant la fin du chrono). Un virus qui percute le bouclier est détruit.
 
+	Combat final (difficulté 8, Core.IsBoss) : LAGZ flotte en haut de l'écran et crache
+	les virus. Les tirs qui l'atteignent lui retirent des PV (barre de vie du boss au lieu
+	du compteur de virus) ; de temps en temps il glitche et se protège d'une bulle
+	(tirs bloqués). À mi-vie, il s'énerve : il bouge et tire plus vite. Gagné quand ses PV
+	tombent à zéro ; perdu si `Lives` virus passent ou à la fin du chrono.
+
 	Entrées (fournies par l'interface à chaque image) :
 		FirewallLogic.SetAxis(sim, -1..1)     -- clavier / manette
 		FirewallLogic.SetPointer(sim, x?)     -- doigt / souris (nil = relâché)
@@ -25,6 +31,10 @@ export type Params = {
 	Wobble: number, -- amplitude du zigzag horizontal (0 = chute droite)
 	ToughChance: number, -- probabilité d'un virus casqué (2 tirs)
 	FireEvery: number, -- cadence de tir automatique
+	-- Combat final uniquement
+	BossHp: number?, -- PV de LAGZ
+	BossSpeed: number?, -- vitesse de balancement (rad/s)
+	BossRange: number?, -- amplitude du balancement (unités)
 }
 
 local ROWS: { Params } = {
@@ -107,6 +117,28 @@ local ROWS: { Params } = {
 	},
 }
 
+-- Combat final contre LAGZ : plus dur que le niveau 7 mais juste (une vie de plus).
+local BOSS: Params = {
+	Target = 36, -- = BossHp (objectif affiché)
+	Lives = 4,
+	Duration = 75,
+	SpawnEvery = 1.0,
+	FallSpeed = 125,
+	Radius = 32,
+	Wobble = 35,
+	ToughChance = 0.15,
+	FireEvery = 0.24,
+	BossHp = 36,
+	BossSpeed = 0.75,
+	BossRange = 290,
+}
+
+FirewallLogic.BOSS_Y = 92 -- centre de la tête de LAGZ
+FirewallLogic.BOSS_RADIUS = 74
+FirewallLogic.BOSS_SHIELD_EVERY = 7 -- secondes (en moyenne) entre deux bulles
+FirewallLogic.BOSS_SHIELD_TIME = 1.4
+FirewallLogic.BOSS_RAGE = 0.5 -- fraction de PV sous laquelle LAGZ s'énerve
+
 FirewallLogic.SHIELD_Y = Core.FIELD_H - 70 -- centre du bouclier (les fichiers à protéger sont dessous)
 FirewallLogic.SHIELD_HALF_W = 62
 FirewallLogic.SHIELD_HALF_H = 18
@@ -130,8 +162,31 @@ export type Virus = {
 
 export type Bullet = { Id: number, X: number, Y: number }
 
+export type Boss = {
+	Hp: number,
+	MaxHp: number,
+	X: number,
+	Y: number,
+	R: number,
+	Swing: number, -- phase du balancement
+	ShieldUntil: number, -- bulle active jusqu'à ce temps
+	NextShield: number,
+	Enraged: boolean,
+}
+
 export type Event = {
-	Kind: "Spawn" | "Fire" | "BulletGone" | "Damage" | "Kill" | "Leak" | "Win" | "Lose",
+	Kind: "Spawn"
+		| "Fire"
+		| "BulletGone"
+		| "Damage"
+		| "Kill"
+		| "Leak"
+		| "BossHit"
+		| "BossBlock"
+		| "BossShield"
+		| "BossRage"
+		| "Win"
+		| "Lose",
 	Id: number, -- virus ou tir concerné (0 pour Win / Lose)
 	X: number?,
 	Y: number?,
@@ -154,17 +209,37 @@ export type State = {
 	LastSpawnX: number,
 	Kills: number,
 	Leaks: number,
+	Boss: Boss?, -- combat final uniquement
 	Done: boolean,
 	Success: boolean,
 }
 
 function FirewallLogic.Params(difficulty: number): Params
+	if Core.IsBoss(difficulty) then
+		return BOSS
+	end
 	return Core.Row(ROWS, difficulty)
 end
 
 function FirewallLogic.new(difficulty: number, seed: number): State
+	local params = FirewallLogic.Params(difficulty)
+	local boss: Boss? = nil
+	local hp = params.BossHp
+	if hp then
+		boss = {
+			Hp = hp,
+			MaxHp = hp,
+			X = Core.FIELD_W / 2,
+			Y = FirewallLogic.BOSS_Y,
+			R = FirewallLogic.BOSS_RADIUS,
+			Swing = 0,
+			ShieldUntil = 0,
+			NextShield = FirewallLogic.BOSS_SHIELD_EVERY,
+			Enraged = false,
+		}
+	end
 	return {
-		Params = FirewallLogic.Params(difficulty),
+		Params = params,
 		Rng = Core.Rng(seed),
 		Time = 0,
 		ShieldX = Core.FIELD_W / 2,
@@ -178,6 +253,7 @@ function FirewallLogic.new(difficulty: number, seed: number): State
 		LastSpawnX = Core.FIELD_W / 2,
 		Kills = 0,
 		Leaks = 0,
+		Boss = boss,
 		Done = false,
 		Success = false,
 	}
@@ -202,6 +278,20 @@ function FirewallLogic.TimeLeft(sim: State): number
 	return math.max(0, sim.Params.Duration - sim.Time)
 end
 
+-- Score affiché : virus détruits, ou PV retirés à LAGZ pendant le combat final.
+function FirewallLogic.Score(sim: State): number
+	local boss = sim.Boss
+	if boss then
+		return boss.MaxHp - boss.Hp
+	end
+	return sim.Kills
+end
+
+function FirewallLogic.BossShielded(sim: State): boolean
+	local boss = sim.Boss
+	return boss ~= nil and sim.Time < boss.ShieldUntil
+end
+
 local function minX(): number
 	return FirewallLogic.SHIELD_HALF_W
 end
@@ -221,8 +311,14 @@ local function spawnVirus(sim: State): Event
 	local p = sim.Params
 	local margin = FirewallLogic.EDGE + p.Radius + p.Wobble
 	local x = sim.Rng:Range(margin, Core.FIELD_W - margin)
-	-- Évite deux virus d'affilée au même endroit : on écarte le nouveau du précédent.
-	if math.abs(x - sim.LastSpawnX) < 110 then
+	local y = -p.Radius
+	local boss = sim.Boss
+	if boss then
+		-- LAGZ crache le virus : il sort de sa bouche.
+		x = math.clamp(boss.X + sim.Rng:Range(-40, 40), margin, Core.FIELD_W - margin)
+		y = boss.Y + boss.R * 0.6
+	elseif math.abs(x - sim.LastSpawnX) < 110 then
+		-- Évite deux virus d'affilée au même endroit : on écarte le nouveau du précédent.
 		x = if sim.LastSpawnX < Core.FIELD_W / 2 then x + 220 else x - 220
 		x = math.clamp(x, margin, Core.FIELD_W - margin)
 	end
@@ -231,7 +327,7 @@ local function spawnVirus(sim: State): Event
 	local virus: Virus = {
 		Id = sim.NextId,
 		X = x,
-		Y = -p.Radius,
+		Y = y,
 		BaseX = x,
 		Phase = sim.Rng:Range(0, math.pi * 2),
 		Hp = if tough then 2 else 1,
@@ -282,10 +378,22 @@ function FirewallLogic.Step(sim: State, dt: number): { Event }
 		table.insert(events, { Kind = "Fire", Id = bullet.Id, X = bullet.X, Y = bullet.Y })
 	end
 
-	-- 3. Apparitions
+	-- 3. LAGZ (combat final) puis apparitions
+	local boss = sim.Boss
+	if boss then
+		local speed = (p.BossSpeed or 0) * (if boss.Enraged then 1.4 else 1)
+		boss.Swing += speed * dt
+		boss.X = Core.FIELD_W / 2 + math.sin(boss.Swing) * (p.BossRange or 0)
+		if sim.Time >= boss.NextShield then
+			boss.ShieldUntil = sim.Time + FirewallLogic.BOSS_SHIELD_TIME
+			boss.NextShield = sim.Time + FirewallLogic.BOSS_SHIELD_EVERY * sim.Rng:Range(0.8, 1.2)
+			table.insert(events, { Kind = "BossShield", Id = 0, X = boss.X, Y = boss.Y })
+		end
+	end
 	if sim.Time >= sim.NextSpawn then
 		table.insert(events, spawnVirus(sim))
-		sim.NextSpawn = sim.Time + p.SpawnEvery * sim.Rng:Range(0.8, 1.2)
+		local rage = if boss and boss.Enraged then 0.8 else 1
+		sim.NextSpawn = sim.Time + p.SpawnEvery * rage * sim.Rng:Range(0.8, 1.2)
 	end
 
 	-- 4. Déplacements
@@ -335,8 +443,40 @@ function FirewallLogic.Step(sim: State, dt: number): { Event }
 		end
 	end
 
-	-- 6. Fin de partie
-	if sim.Kills >= p.Target then
+	-- 6. Tirs qui atteignent LAGZ
+	if boss then
+		local shielded = sim.Time < boss.ShieldUntil
+		for j = #sim.Bullets, 1, -1 do
+			local bullet = sim.Bullets[j]
+			local dx, dy = bullet.X - boss.X, bullet.Y - boss.Y
+			local reach = boss.R + FirewallLogic.BULLET_RADIUS
+			if dx * dx + dy * dy <= reach * reach and boss.Hp > 0 then
+				table.remove(sim.Bullets, j)
+				table.insert(events, { Kind = "BulletGone", Id = bullet.Id, X = bullet.X, Y = bullet.Y })
+				if shielded then
+					table.insert(events, { Kind = "BossBlock", Id = 0, X = bullet.X, Y = bullet.Y })
+				else
+					boss.Hp -= 1
+					table.insert(events, { Kind = "BossHit", Id = 0, X = bullet.X, Y = bullet.Y })
+					if not boss.Enraged and boss.Hp > 0 and boss.Hp <= boss.MaxHp * FirewallLogic.BOSS_RAGE then
+						boss.Enraged = true
+						table.insert(events, { Kind = "BossRage", Id = 0, X = boss.X, Y = boss.Y })
+					end
+				end
+			end
+		end
+	end
+
+	-- 7. Fin de partie
+	if boss then
+		if boss.Hp <= 0 then
+			finish(sim, events, true)
+		elseif sim.Leaks >= p.Lives then
+			finish(sim, events, false, "Leaks")
+		elseif sim.Time >= p.Duration then
+			finish(sim, events, false, "Time")
+		end
+	elseif sim.Kills >= p.Target then
 		finish(sim, events, true)
 	elseif sim.Leaks >= p.Lives then
 		finish(sim, events, false, "Leaks")

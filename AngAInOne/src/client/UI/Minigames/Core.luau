@@ -7,6 +7,8 @@
 	  zone au même rapport largeur/hauteur (UIAspectRatioConstraint) : 1 unité = même
 	  distance à l'horizontale et à la verticale, les cercles restent des cercles.
 	- Difficulté : entier 1..7 (index du monde). Level() borne et arrondit.
+	  8 (BOSS_LEVEL) = combat final contre LAGZ : IsBoss() le repère ; les jeux sans
+	  variante dédiée jouent alors avec les réglages du niveau 7.
 	- Rng : générateur pseudo-aléatoire déterministe (Park-Miller) : même graine = même
 	  partie, ce qui rend les tests reproductibles.
 ]]
@@ -17,6 +19,7 @@ Core.FIELD_W = 900
 Core.FIELD_H = 500
 Core.MIN_LEVEL = 1
 Core.MAX_LEVEL = 7
+Core.BOSS_LEVEL = 8 -- phase 3 du boss LAGZ (monde 7)
 
 -- Pas de simulation maximal : après un gel d'image (onglet en arrière-plan, chargement),
 -- la partie ne "saute" jamais plus de 1/20 s d'un coup.
@@ -28,6 +31,11 @@ function Core.Level(difficulty: number?): number
 		return Core.MIN_LEVEL
 	end
 	return math.clamp(math.floor(difficulty + 0.5), Core.MIN_LEVEL, Core.MAX_LEVEL)
+end
+
+-- Difficulté 8 = combat final contre LAGZ (valeur exacte, après arrondi).
+function Core.IsBoss(difficulty: number?): boolean
+	return type(difficulty) == "number" and difficulty == difficulty and math.floor(difficulty + 0.5) == Core.BOSS_LEVEL
 end
 
 -- Ligne de la table de réglages correspondant à la difficulté.
