@@ -73,8 +73,8 @@ local function spawnVirus(session: Session.Session)
 		Tags = { "Virus" },
 	})
 	virus:SetAttribute("OwnerUserId", session.UserId)
-	virus.Parent = folder
-	alive[session] = (alive[session] or 0) + 1
+	-- Le prompt est créé AVANT de parenter le virus : il se réplique avec lui (le client
+	-- désactive d'emblée ceux des autres joueurs).
 	local prompt = Build.Prompt(virus, "Zapper", "Virus", "Zap", GameConfig.Virus.ZapDistance)
 	prompt.KeyboardKeyCode = Enum.KeyCode.F
 	prompt.Triggered:Connect(function(player: Player)
@@ -82,6 +82,8 @@ local function spawnVirus(session: Session.Session)
 			zap(session, virus)
 		end
 	end)
+	virus.Parent = folder
+	alive[session] = (alive[session] or 0) + 1
 	task.delay(GameConfig.Virus.LifeSeconds, function()
 		if virus.Parent then
 			virus:Destroy()

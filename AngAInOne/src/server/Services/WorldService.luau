@@ -28,6 +28,7 @@ local WorldService = {}
 local lastTravel: { [Player]: number } = {}
 local collectDebounce: { [Player]: number } = {}
 local lastWarned: { [Player]: number } = {}
+local teleporting: { [Player]: boolean } = {}
 
 local function rootOf(session: Session.Session): BasePart?
 	local character = session.Player.Character
@@ -82,16 +83,41 @@ function WorldService.RandomPointNear(session: Session.Session, rng: Random): CF
 	if zone < 0 then
 		return nil
 	end
-	for _ = 1, 8 do
-		local angle = rng:NextNumber(0, math.pi * 2)
-		local distance = rng:NextNumber(18, 40)
-		local point =
-			Vector3.new(root.Position.X + math.cos(angle) * distance, 3.5, root.Position.Z + math.sin(angle) * distance)
-		if WorldLayout.ZoneAt(point) == zone then
-			return CFrame.new(point)
+	-- On cherche un sol libre au niveau des pieds du joueur (il peut être sur le PSU, une rampe…).
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	local ignore: { Instance } = {}
+	for _, other in Players:GetPlayers() do
+		if other.Character then
+			table.insert(ignore, other.Character)
 		end
 	end
-	return CFrame.new(root.Position.X, 3.5, root.Position.Z)
+	local world = Workspace:FindFirstChild("World")
+	local viruses = world and world:FindFirstChild("Viruses")
+	if viruses then
+		table.insert(ignore, viruses)
+	end
+	params.FilterDescendantsInstances = ignore
+	local overlap = OverlapParams.new()
+	overlap.FilterType = Enum.RaycastFilterType.Exclude
+	overlap.FilterDescendantsInstances = ignore
+	local feetY = root.Position.Y - 3
+	for _ = 1, 10 do
+		local angle = rng:NextNumber(0, math.pi * 2)
+		local distance = rng:NextNumber(14, 34)
+		local x = root.Position.X + math.cos(angle) * distance
+		local z = root.Position.Z + math.sin(angle) * distance
+		if WorldLayout.ZoneAt(Vector3.new(x, 0, z)) == zone then
+			local hit = Workspace:Raycast(Vector3.new(x, root.Position.Y + 6, z), Vector3.new(0, -40, 0), params)
+			if hit and math.abs(hit.Position.Y - feetY) <= 6 then
+				local spot = hit.Position + Vector3.new(0, 2.5, 0)
+				if #Workspace:GetPartBoundsInRadius(spot, 1.6, overlap) == 0 then
+					return CFrame.new(spot)
+				end
+			end
+		end
+	end
+	return nil -- pas de place libre cette fois : on réessaiera au prochain cycle
 end
 
 -- Recopie les données publiques du joueur dans ses attributs (lus par les autres clients).
@@ -150,30 +176,50 @@ local function wireTouches(world: Instance)
 	end
 end
 
--- Renvoie derrière le portail les joueurs présents dans une zone verrouillée.
+-- Téléportation sans bloquer la boucle (RequestStreamAroundAsync peut attendre) ; une seule à la fois par joueur.
+local function teleportAsync(session: Session.Session, target: CFrame)
+	local player = session.Player
+	if teleporting[player] then
+		return
+	end
+	teleporting[player] = true
+	task.spawn(function()
+		pcall(WorldService.Teleport, session, target)
+		teleporting[player] = nil
+	end)
+end
+
+-- Renvoie derrière le portail un joueur présent dans une zone verrouillée (ou tombé hors du PC).
+local function enforceSession(session: Session.Session, now: number)
+	local root = rootOf(session)
+	if root then
+		local zone = WorldLayout.ZoneAt(root.Position)
+		if zone > session.Data.Zone then
+			local layout = WorldLayout.Zones[zone]
+			local outward = (layout.Gate - layout.Spawn) * Vector3.new(1, 0, 1)
+			local back = layout.Gate + outward.Unit * 14 + Vector3.new(0, 4, 0)
+			teleportAsync(session, CFrame.lookAt(back, back + outward))
+			if (lastWarned[session.Player] or 0) < now then
+				lastWarned[session.Player] = now + 4
+				EconomyService.Notify(
+					session,
+					"Error",
+					`{Zones[zone].Name} est verrouillée : débloque-la au terminal.`
+				)
+			end
+		elseif root.Position.Y < -40 or root.Position.Y > WorldLayout.CASE_HEIGHT + 20 then
+			teleportAsync(session, WorldService.SpawnCFrame(0))
+		end
+	end
+end
+
 local function enforceGates()
 	local now = os.clock()
 	for _, session in Session.All() do
-		local root = rootOf(session)
-		if root then
-			local zone = WorldLayout.ZoneAt(root.Position)
-			if zone > session.Data.Zone then
-				local layout = WorldLayout.Zones[zone]
-				local outward = (layout.Gate - layout.Spawn) * Vector3.new(1, 0, 1)
-				local back = layout.Gate + outward.Unit * 14 + Vector3.new(0, 4, 0)
-				WorldService.Teleport(session, CFrame.lookAt(back, back + outward))
-				if (lastWarned[session.Player] or 0) < now then
-					lastWarned[session.Player] = now + 4
-					EconomyService.Notify(
-						session,
-						"Error",
-						`{Zones[zone].Name} est verrouillée : débloque-la au terminal.`
-					)
-				end
-			elseif root.Position.Y < -40 or root.Position.Y > WorldLayout.CASE_HEIGHT + 20 then
-				WorldService.TeleportToZone(session, 0)
-			end
-		end
+		-- Une erreur sur un joueur ne doit jamais arrêter l'anti-intrusion des autres.
+		xpcall(enforceSession, function(err: any)
+			warn("[WorldService] contrôle des portails :", err)
+		end, session, now)
 	end
 end
 
@@ -204,6 +250,7 @@ function WorldService.Start()
 		lastTravel[session.Player] = nil
 		collectDebounce[session.Player] = nil
 		lastWarned[session.Player] = nil
+		teleporting[session.Player] = nil
 	end)
 
 	GameEvents.StateChanged:Connect(function(player: Player)

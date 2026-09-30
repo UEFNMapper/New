@@ -306,6 +306,10 @@ local function setupModuleLabel(model: Instance)
 	if not (anchor and anchor:IsA("BasePart")) or not def then
 		return
 	end
+	local previous = anchor:FindFirstChild("ModuleLabel")
+	if previous then
+		previous:Destroy() -- ré-entrée après un streaming out : on reconstruit l'étiquette
+	end
 	local billboard: BillboardGui = New("BillboardGui", {
 		Name = "ModuleLabel",
 		Size = UDim2.fromOffset(200, 54),
@@ -369,8 +373,13 @@ local function setupModuleLabel(model: Instance)
 	end
 	moduleModels[model] = refresh
 	refresh()
-	model.Destroying:Connect(function()
-		moduleModels[model] = nil
+	-- Oublié quand il quitte le monde (destruction OU streaming out).
+	local connection: RBXScriptConnection
+	connection = model.AncestryChanged:Connect(function()
+		if not model:IsDescendantOf(Workspace) then
+			moduleModels[model] = nil
+			connection:Disconnect()
+		end
 	end)
 end
 
@@ -671,6 +680,12 @@ function WorldFx.Start()
 			if prompt then
 				prompt.Enabled = false
 			end
+			-- Le prompt peut se répliquer après le virus : on le désactive à son arrivée.
+			p.ChildAdded:Connect(function(child: Instance)
+				if child:IsA("ProximityPrompt") then
+					child.Enabled = false
+				end
+			end)
 			return
 		end
 		viruses[p] = { Base = p.CFrame, Phase = math.random() * 10 }
