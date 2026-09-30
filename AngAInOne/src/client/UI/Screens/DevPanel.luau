@@ -22,8 +22,8 @@ function DevPanel.Mount(layer: Frame)
 	end
 	local panel: Frame = New("Frame", {
 		Name = "DevPanel",
-		Position = UDim2.fromOffset(310, 12),
-		Size = UDim2.fromOffset(200, 420),
+		Position = UDim2.fromOffset(270, 12),
+		Size = UDim2.fromOffset(200, 400),
 		BackgroundTransparency = 0.1,
 		BorderSizePixel = 0,
 		Visible = false,
@@ -33,51 +33,45 @@ function DevPanel.Mount(layer: Frame)
 		Create.List(Enum.FillDirection.Vertical, 6) :: Instance,
 		Create.Padding(8),
 	})
-	local function bits(multiplier: number): number
-		return math.max(Store.Rate(), 1) * multiplier
+	local function stage(): number
+		local data = Store.Data()
+		return if data then data.Stage else 0
 	end
 	local actions: { { Label: string, Run: () -> () } } = {
 		{
-			Label = "+10 min de Bits",
+			Label = "+1 000 Bits",
 			Run = function()
-				Net.Fire("DevCommand", "Bits", bits(600))
+				Net.Fire("DevCommand", "Bits", 1000)
 			end,
 		},
 		{
-			Label = "+1 h de Bits",
+			Label = "Étape suivante",
 			Run = function()
-				Net.Fire("DevCommand", "Bits", bits(3600))
+				Net.Fire("DevCommand", "Stage", stage() + 1)
 			end,
 		},
 		{
-			Label = "+1e15 Bits",
+			Label = "Monde suivant",
 			Run = function()
-				Net.Fire("DevCommand", "Bits", 1e15)
+				Net.Fire("DevCommand", "Stage", (math.floor(stage() / 5) + 1) * 5)
 			end,
 		},
 		{
-			Label = "+500 Chips",
+			Label = "Réussir le terminal",
 			Run = function()
-				Net.Fire("DevCommand", "Chips", 500)
+				Net.Fire("DevCommand", "Clear", 0)
 			end,
 		},
 		{
-			Label = "Zone suivante",
+			Label = "Aller au sommet",
 			Run = function()
-				local data = Store.Data()
-				Net.Fire("DevCommand", "Zone", if data then data.Zone + 1 else 2)
+				Net.Fire("DevCommand", "Stage", 35)
 			end,
 		},
 		{
-			Label = "Finir le tutoriel",
+			Label = "Bouclier 30 s",
 			Run = function()
-				Net.Fire("DevCommand", "Tutorial", 8)
-			end,
-		},
-		{
-			Label = "Activer les virus",
-			Run = function()
-				Net.Fire("DevCommand", "Virus", 0)
+				Net.Fire("DevCommand", "Shield", 30)
 			end,
 		},
 		{
@@ -102,7 +96,7 @@ function DevPanel.Mount(layer: Frame)
 		Text = "DEV",
 		Variant = "Ghost",
 		Size = UDim2.fromOffset(64, 36),
-		Position = UDim2.fromOffset(310, 12),
+		Position = UDim2.fromOffset(270, 130),
 		Small = true,
 		OnClick = function()
 			panel.Visible = not panel.Visible
@@ -110,7 +104,7 @@ function DevPanel.Mount(layer: Frame)
 		Parent = layer,
 	}).Button.ZIndex =
 		50
-	panel.Position = UDim2.fromOffset(310, 54)
+	panel.Position = UDim2.fromOffset(270, 172)
 	UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
 		if not processed and input.KeyCode == Enum.KeyCode.F8 then
 			panel.Visible = not panel.Visible

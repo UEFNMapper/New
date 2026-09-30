@@ -8,16 +8,10 @@
 	Pour faire évoluer le schéma :
 	1. incrémente CURRENT_VERSION ;
 	2. ajoute une fonction dans MIGRATIONS[ancienneVersion] qui transforme les données ;
-	3. ajoute un test dans tests/dataschema.spec.luau.
+	3. ajoute un test dans tests/shared.spec.luau.
 ]]
 
-export type OwnedNanobot = {
-	Uid: string,
-	Id: string,
-	Golden: boolean,
-}
-
-export type QuestState = {
+export type MissionState = {
 	Id: string,
 	Target: number,
 	Progress: number,
@@ -27,68 +21,50 @@ export type QuestState = {
 export type PlayerData = {
 	Version: number,
 	Bits: number,
-	Chips: number,
-	Pending: number,
-	PoweredOn: boolean,
-	Zone: number,
-	Levels: { [string]: number },
-	PsuLevel: number,
-	CoolingLevel: number,
-	SingularityPhase: number,
-	Firmware: number,
-	Generation: number,
-	RunBitsEarned: number,
-	TotalBitsEarned: number,
-	WeeklyBits: number,
-	WeeklyIndex: number,
-	Singularities: number,
-	RebootBoostPending: boolean,
-	Nanobots: {
-		Owned: { OwnedNanobot },
-		Equipped: { string },
-		NextUid: number,
+	TotalBits: number,
+	-- Ascension en cours (sauvegardée : on reprend où on en était)
+	Stage: number, -- checkpoint actuel (0 = lobby, 1..Tower.TOTAL_STAGES)
+	Cleared: number, -- dernier monde dont le terminal antivirus est réussi (0..7)
+	RunElapsed: number, -- secondes d'ascension (chrono, hors temps de déconnexion)
+	RunStarted: boolean, -- le chrono tourne (départ franchi)
+	RunAssisted: boolean, -- passe « avantage » ou saut d'étape utilisé : hors classement des temps
+	RunCoins: { [string]: boolean }, -- orbes déjà ramassées pendant cette ascension
+	-- Records
+	BestStage: number,
+	Wins: number,
+	BestTime: number, -- secondes (0 = jamais terminé sans assistance)
+	Deaths: number,
+	MinigamesWon: number,
+	Cosmetics: {
+		Owned: { string },
+		Trail: string,
+		DeathFx: string,
+	},
+	Toggles: {
+		LowGravity: boolean,
+		SpeedChip: boolean,
 	},
 	Daily: {
 		Streak: number,
 		LastClaimDay: number,
 	},
-	Quests: {
+	Missions: {
 		Day: number,
-		Daily: { QuestState },
-		Week: number,
-		Weekly: { QuestState },
+		List: { MissionState },
 	},
-	Download: {
-		Kind: string, -- "" = aucun
-		StartedAt: number,
-	},
-	Fragments: { [string]: boolean },
+	ArcadeRewardAt: number, -- os.time de la dernière récompense d'arcade
 	Stats: {
 		Playtime: number,
-		VirusesZapped: number,
-		Overclocks: number,
-		CapsulesOpened: number,
-		Upgrades: number,
 		LastOnline: number,
-		Reboots: number,
+		CoinsCollected: number,
 	},
-	Tutorial: number,
+	IntroSeen: boolean,
 	Settings: {
 		Music: number,
 		Sfx: number,
 		ReducedMotion: boolean,
-		RgbHue: number, -- -1 = RGB animé ; sinon teinte 0..1 (RGB Studio)
 	},
 	Receipts: { string },
-	Likes: {
-		Received: number,
-		Day: number,
-		GivenTo: { string },
-	},
-	Boosts: {
-		BitsX2Until: number,
-	},
-	StarterPackBought: boolean,
 	CreatedAt: number,
 }
 
@@ -101,44 +77,39 @@ function DataSchema.Template(): PlayerData
 	return {
 		Version = DataSchema.CURRENT_VERSION,
 		Bits = 0,
-		Chips = 0,
-		Pending = 0,
-		PoweredOn = false,
-		Zone = 1,
-		Levels = {},
-		PsuLevel = 0,
-		CoolingLevel = 0,
-		SingularityPhase = 0,
-		Firmware = 0,
-		Generation = 1,
-		RunBitsEarned = 0,
-		TotalBitsEarned = 0,
-		WeeklyBits = 0,
-		WeeklyIndex = 0,
-		Singularities = 0,
-		RebootBoostPending = false,
-		Nanobots = { Owned = {}, Equipped = {}, NextUid = 1 },
+		TotalBits = 0,
+		Stage = 0,
+		Cleared = 0,
+		RunElapsed = 0,
+		RunStarted = false,
+		RunAssisted = false,
+		RunCoins = {},
+		BestStage = 0,
+		Wins = 0,
+		BestTime = 0,
+		Deaths = 0,
+		MinigamesWon = 0,
+		Cosmetics = { Owned = { "TrailNone", "DeathGlitch" }, Trail = "TrailNone", DeathFx = "DeathGlitch" },
+		Toggles = { LowGravity = false, SpeedChip = false },
 		Daily = { Streak = 0, LastClaimDay = -1 },
-		Quests = { Day = -1, Daily = {}, Week = -1, Weekly = {} },
-		Download = { Kind = "", StartedAt = 0 },
-		Fragments = {},
-		Stats = {
-			Playtime = 0,
-			VirusesZapped = 0,
-			Overclocks = 0,
-			CapsulesOpened = 0,
-			Upgrades = 0,
-			LastOnline = 0,
-			Reboots = 0,
-		},
-		Tutorial = 0,
-		Settings = { Music = 0.35, Sfx = 0.7, ReducedMotion = false, RgbHue = -1 },
+		Missions = { Day = -1, List = {} },
+		ArcadeRewardAt = 0,
+		Stats = { Playtime = 0, LastOnline = 0, CoinsCollected = 0 },
+		IntroSeen = false,
+		Settings = { Music = 0.35, Sfx = 0.7, ReducedMotion = false },
 		Receipts = {},
-		Likes = { Received = 0, Day = -1, GivenTo = {} },
-		Boosts = { BitsX2Until = 0 },
-		StarterPackBought = false,
 		CreatedAt = 0,
 	}
+end
+
+-- Remet à zéro l'ascension en cours (après une victoire).
+function DataSchema.ResetRun(data: PlayerData)
+	data.Stage = 0
+	data.Cleared = 0
+	data.RunElapsed = 0
+	data.RunStarted = false
+	data.RunAssisted = false
+	data.RunCoins = {}
 end
 
 -- Migrations : MIGRATIONS[v] transforme des données en version v vers v + 1.

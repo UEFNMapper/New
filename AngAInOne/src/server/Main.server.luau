@@ -15,19 +15,13 @@ Remotes.Setup()
 local Services = script.Parent.Services
 local ORDER = {
 	"StateService",
-	"EconomyService",
-	"WorldService",
+	"ProgressService",
+	"ShopService",
 	"MonetizationService",
-	"UpgradeService",
-	"OverclockService",
-	"VirusService",
-	"NanobotService",
-	"QuestService",
-	"DownloadService",
-	"RebootService",
+	"MinigameService",
+	"MissionService",
 	"LeaderboardService",
 	"SocialService",
-	"OnboardingService",
 	"DevService",
 	"DataService",
 }

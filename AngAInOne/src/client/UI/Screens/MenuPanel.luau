@@ -1,7 +1,7 @@
 --!strict
 --[[
-	MenuPanel : paramètres (volumes, animations réduites, couleur RGB), classements,
-	joueurs du serveur (likes), statistiques et crédits.
+	MenuPanel : réglages (volumes, animations réduites), classements (victoires, meilleur
+	temps, étape max), joueurs du serveur (leur étape), statistiques et crédits.
 ]]
 
 local GuiService = game:GetService("GuiService")
@@ -10,9 +10,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
-local GameConfig = require(Shared.Config.GameConfig)
-local Zones = require(Shared.Config.Zones)
+local Tower = require(Shared.Config.Tower)
 local NumberFormat = require(Shared.Util.NumberFormat)
+local Time = require(Shared.Util.Time)
 
 local Create = require(script.Parent.Parent.Create)
 local Style = require(script.Parent.Parent.Style)
@@ -29,13 +29,13 @@ local New = Create.New
 local MenuPanel = {}
 
 -- Appliqué immédiatement côté client (le contrôleur audio s'y branche).
-MenuPanel.OnSettings = nil :: ((music: number, sfx: number, reduced: boolean, hue: number) -> ())?
+MenuPanel.OnSettings = nil :: ((music: number, sfx: number, reduced: boolean) -> ())?
 
 local panel: Panel.Panel
 local tab = "Settings"
 local tabKeys: { [string]: Keycap.Keycap } = {}
 local body: Frame
-local settings = { Music = 0.35, Sfx = 0.7, ReducedMotion = false, RgbHue = -1 }
+local settings = { Music = 0.35, Sfx = 0.7, ReducedMotion = false }
 local saveToken = 0
 -- Connexions globales des curseurs : nettoyées à chaque reconstruction (pas de fuite).
 local connections: { RBXScriptConnection } = {}
@@ -43,19 +43,19 @@ local connections: { RBXScriptConnection } = {}
 local TABS = {
 	{ Id = "Settings", Text = "Réglages" },
 	{ Id = "Boards", Text = "Classements" },
-	{ Id = "Towers", Text = "Joueurs" },
+	{ Id = "Players", Text = "Joueurs" },
 	{ Id = "Stats", Text = "Stats" },
 }
 
 local function scheduleSave()
 	if MenuPanel.OnSettings then
-		MenuPanel.OnSettings(settings.Music, settings.Sfx, settings.ReducedMotion, settings.RgbHue)
+		MenuPanel.OnSettings(settings.Music, settings.Sfx, settings.ReducedMotion)
 	end
 	saveToken += 1
 	local token = saveToken
 	task.delay(1, function()
 		if token == saveToken then
-			Net.Fire("SaveSettings", settings.Music, settings.Sfx, settings.ReducedMotion, settings.RgbHue)
+			Net.Fire("SaveSettings", settings.Music, settings.Sfx, settings.ReducedMotion)
 		end
 	end)
 end
@@ -217,41 +217,6 @@ local function buildSettings()
 		Motion.SetReduced(v)
 		scheduleSave()
 	end)
-	local state = Store.State
-	if state and state.Passes.RgbStudio then
-		slider(scroll, 4, "RGB Studio : teinte des néons", math.max(settings.RgbHue, 0), function(v: number)
-			settings.RgbHue = v
-			scheduleSave()
-		end)
-		toggle(scroll, 5, "RGB animé (arc-en-ciel)", settings.RgbHue < 0, function(v: boolean)
-			settings.RgbHue = if v then -1 else 0.75
-			scheduleSave()
-		end)
-	else
-		local card = Widgets.Card(UDim2.new(1, -4, 0, 64), scroll, 4)
-		New("TextLabel", {
-			Position = UDim2.fromOffset(16, 0),
-			Size = UDim2.new(1, -200, 1, 0),
-			BackgroundTransparency = 1,
-			Text = "Couleur des néons de ton PC (pass RGB Studio)",
-			TextWrapped = true,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			Tag = "TextMuted",
-			Parent = card,
-		})
-		Keycap.new({
-			Text = "VOIR",
-			Variant = "Secondary",
-			Size = UDim2.fromOffset(150, 44),
-			AnchorPoint = Vector2.new(1, 0.5),
-			Position = UDim2.new(1, -12, 0.5, 0),
-			Small = true,
-			OnClick = function()
-				App.Open("Shop", "Passes")
-			end,
-			Parent = card,
-		})
-	end
 	local credits = Widgets.Card(UDim2.new(1, -4, 0, 70), scroll, 10)
 	New("TextLabel", {
 		Position = UDim2.fromOffset(16, 8),
@@ -265,10 +230,16 @@ local function buildSettings()
 	})
 end
 
-local function boardColumn(parent: Instance, title: string, entries: { any }, position: UDim2)
+local function boardColumn(
+	parent: Instance,
+	title: string,
+	entries: { any },
+	position: UDim2,
+	format: (number) -> string
+)
 	local column: Frame = New("Frame", {
 		Position = position,
-		Size = UDim2.new(0.5, -6, 1, 0),
+		Size = UDim2.new(1 / 3, -8, 1, 0),
 		BackgroundTransparency = 0.3,
 		BorderSizePixel = 0,
 		Tag = { "GlassSunken", "RoundM" },
@@ -326,7 +297,7 @@ local function boardColumn(parent: Instance, title: string, entries: { any }, po
 			Position = UDim2.new(1, -8, 0, 0),
 			Size = UDim2.fromOffset(90, 30),
 			BackgroundTransparency = 1,
-			Text = NumberFormat.Compact(entry.Value),
+			Text = format(entry.Value),
 			TextXAlignment = Enum.TextXAlignment.Right,
 			Tag = "TextCaption",
 			Parent = row,
@@ -346,56 +317,46 @@ local function buildBoards()
 		})
 		return
 	end
-	boardColumn(body, "LÉGENDES", boards.Legends, UDim2.fromScale(0, 0))
-	boardColumn(body, "CETTE SEMAINE", boards.Weekly, UDim2.new(0.5, 6, 0, 0))
+	boardColumn(body, "VICTOIRES", boards.Wins or {}, UDim2.fromScale(0, 0), NumberFormat.Compact)
+	boardColumn(body, "MEILLEUR TEMPS", boards.BestTime or {}, UDim2.new(1 / 3, 4, 0, 0), Time.Clock)
+	boardColumn(body, "ÉTAPE MAX", boards.Stage or {}, UDim2.new(2 / 3, 8, 0, 0), function(value: number): string
+		return `{value}/{Tower.TOTAL_STAGES}`
+	end)
 end
 
-local function buildTowers()
+local function buildPlayers()
 	local scroll = Widgets.Scroll(body, 10)
 	local me = Players.LocalPlayer.UserId
 	local count = 0
-	do
-		for _, other in Players:GetPlayers() do
-			local owner = other.UserId
-			if owner ~= me and other:GetAttribute("Zone") ~= nil then
-				count += 1
-				local card = Widgets.Card(UDim2.new(1, -4, 0, 72), scroll, count)
-				local zone = other:GetAttribute("Zone")
-				local zoneName = if type(zone) == "number" and Zones[zone] then Zones[zone].Name else "?"
-				New("TextLabel", {
-					Position = UDim2.fromOffset(16, 10),
-					Size = UDim2.new(1, -220, 0, 24),
-					BackgroundTransparency = 1,
-					Text = `PC de {other.DisplayName}`,
-					TextXAlignment = Enum.TextXAlignment.Left,
-					Tag = "TextHeading",
-					Parent = card,
-				})
-				New("TextLabel", {
-					Position = UDim2.fromOffset(16, 38),
-					Size = UDim2.new(1, -220, 0, 20),
-					BackgroundTransparency = 1,
-					Text = `GEN {other:GetAttribute("Generation") or 1} · {zoneName} · ♥ {other:GetAttribute(
-						"Likes"
-					) or 0}`,
-					TextXAlignment = Enum.TextXAlignment.Left,
-					Tag = "TextMuted",
-					Parent = card,
-				})
-				Keycap.new({
-					Text = "LIKER",
-					Icon = "Heart",
-					Variant = "Primary",
-					Size = UDim2.fromOffset(150, 46),
-					AnchorPoint = Vector2.new(1, 0.5),
-					Position = UDim2.new(1, -12, 0.5, 0),
-					Small = true,
-					OnClick = function()
-						Net.Fire("LikeTower", owner)
-					end,
-					Parent = card,
-				})
-			end
+	for _, other in Players:GetPlayers() do
+		if other.UserId ~= me then
+			count += 1
+			local card = Widgets.Card(UDim2.new(1, -4, 0, 64), scroll, count)
+			local stage = other:GetAttribute("Stage")
+			local wins = other:GetAttribute("Wins")
+			local stageNumber = if type(stage) == "number" then stage else 0
+			local world = Tower.Worlds[math.max(Tower.WorldOf(stageNumber), 1)]
+			New("TextLabel", {
+				Position = UDim2.fromOffset(16, 8),
+				Size = UDim2.new(1, -32, 0, 24),
+				BackgroundTransparency = 1,
+				Text = other.DisplayName,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				Tag = "TextHeading",
+				Parent = card,
+			})
+			New("TextLabel", {
+				Position = UDim2.fromOffset(16, 34),
+				Size = UDim2.new(1, -32, 0, 20),
+				BackgroundTransparency = 1,
+				Text = `Étape {stageNumber}/{Tower.TOTAL_STAGES} · {world.Name} · 🏆 {if type(wins)
+						== "number"
+					then wins
+					else 0}`,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				Tag = "TextMuted",
+				Parent = card,
+			})
 		end
 	end
 	if count == 0 then
@@ -416,27 +377,15 @@ local function buildStats()
 		return
 	end
 	local data = state.Data
-	local found = 0
-	for _, value in data.Fragments do
-		if value then
-			found += 1
-		end
-	end
 	local lines = {
 		{ "Temps de jeu", NumberFormat.Duration(data.Stats.Playtime) },
-		{ "Génération", tostring(data.Generation) },
-		{
-			"Firmware",
-			`{data.Firmware} (x{string.format("%.2f", 1 + data.Firmware * GameConfig.Reboot.FirmwarePerPoint)})`,
-		},
-		{ "Bits produits (total)", NumberFormat.Compact(data.TotalBitsEarned) },
-		{ "Virus zappés", tostring(data.Stats.VirusesZapped) },
-		{ "Overclocks réussis", tostring(data.Stats.Overclocks) },
-		{ "Capsules ouvertes", tostring(data.Stats.CapsulesOpened) },
-		{ "Reboots", tostring(data.Stats.Reboots) },
-		{ "Fragments de données", `{found}/{#Zones * 3}` },
-		{ "Singularités", tostring(data.Singularities) },
-		{ "Likes reçus", tostring(data.Likes.Received) },
+		{ "Victoires", tostring(data.Wins) },
+		{ "Meilleur temps", if data.BestTime > 0 then Time.Clock(data.BestTime) else "—" },
+		{ "Étape la plus haute", `{data.BestStage}/{Tower.TOTAL_STAGES}` },
+		{ "Terminaux antivirus réussis", tostring(data.MinigamesWon) },
+		{ "Orbes de Bits ramassées", tostring(data.Stats.CoinsCollected) },
+		{ "Chutes et pièges", tostring(data.Deaths) },
+		{ "Bits gagnés (total)", NumberFormat.Compact(data.TotalBits) },
 	}
 	local scroll = Widgets.Scroll(body, 6)
 	for index, line in lines do
@@ -487,8 +436,8 @@ local function rebuild()
 		buildSettings()
 	elseif tab == "Boards" then
 		buildBoards()
-	elseif tab == "Towers" then
-		buildTowers()
+	elseif tab == "Players" then
+		buildPlayers()
 	else
 		buildStats()
 	end
@@ -499,10 +448,9 @@ function MenuPanel.LoadSettings(saved: any)
 	settings.Music = saved.Music
 	settings.Sfx = saved.Sfx
 	settings.ReducedMotion = saved.ReducedMotion
-	settings.RgbHue = saved.RgbHue
 	Motion.SetReduced(saved.ReducedMotion)
 	if MenuPanel.OnSettings then
-		MenuPanel.OnSettings(settings.Music, settings.Sfx, settings.ReducedMotion, settings.RgbHue)
+		MenuPanel.OnSettings(settings.Music, settings.Sfx, settings.ReducedMotion)
 	end
 end
 

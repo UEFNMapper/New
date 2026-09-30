@@ -11,8 +11,6 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Signal = require(Shared.Packages.Signal)
 local Trove = require(Shared.Packages.Trove)
 local DataSchema = require(Shared.Data.DataSchema)
-local Production = require(Shared.Economy.Production)
-local Bonuses = require(Shared.Economy.Bonuses)
 
 -- Sous-ensemble de Trove utilisé par les services (le type complet de Trove est trop
 -- générique pour l'analyseur et casse la comparaison de types entre modules).
@@ -31,22 +29,18 @@ export type Session = {
 	IsPremium: boolean,
 	InGroup: boolean,
 	FriendsInServer: number,
-	PaidRandomAllowed: boolean,
-	Snapshot: Production.Snapshot,
-	Bonus: Bonuses.Breakdown,
-	OverclockUntil: number,
-	OverclockMult: number,
-	OverclockCooldownUntil: number,
-	OverclockAttemptStart: number, -- 0 = pas de tentative en cours
 	JoinedAt: number,
 	PlaytimeCarry: number,
-	FunnelDone: { [number]: boolean },
 	Trove: Cleaner,
 	Ready: boolean, -- le client a signalé qu'il est prêt à recevoir l'état
-	EffectsKey: string, -- effets temporaires actifs au dernier calcul (détecte les expirations)
 	PassesLoaded: boolean, -- les Game Passes ont été vérifiés (MonetizationService)
-	OfflineHandled: boolean, -- les gains hors ligne de cette connexion ont été versés
-	LastTick: number, -- heure serveur (synchronisée) du dernier ajout de production
+	-- Ascension (non sauvegardé)
+	ClockSince: number, -- os.clock() du début du segment de chrono en cours (0 = arrêté)
+	LastCheckpointAt: number, -- os.clock() du dernier checkpoint validé (anti-triche)
+	LastTeleportAt: number,
+	ShieldUntil: number, -- os.time() de fin du bouclier
+	Minigame: { World: number, Kind: string, StartedAt: number }?, -- partie en cours (0 = arcade)
+	Alive: boolean,
 }
 
 local Session = {}
@@ -55,18 +49,6 @@ local sessions: { [Player]: Session } = {}
 
 Session.Added = Signal.new() :: Signal.Signal<Session>
 Session.Removing = Signal.new() :: Signal.Signal<Session>
-
-local EMPTY_SNAPSHOT: Production.Snapshot = {
-	RawRate = 0,
-	Rate = 0,
-	PowerDemand = 0,
-	PowerCapacity = 1,
-	PowerEfficiency = 1,
-	HeatDemand = 0,
-	HeatCapacity = 1,
-	ThermalEfficiency = 1,
-	Multiplier = 1,
-}
 
 function Session.Create(player: Player, profile: any): Session
 	local session: Session = {
@@ -78,22 +60,17 @@ function Session.Create(player: Player, profile: any): Session
 		IsPremium = player.MembershipType == Enum.MembershipType.Premium,
 		InGroup = false,
 		FriendsInServer = 0,
-		PaidRandomAllowed = false,
-		Snapshot = EMPTY_SNAPSHOT,
-		Bonus = { Total = 1, WattsReduction = 0, HeatReduction = 0, SpeedBonus = 0, Lines = {} },
-		OverclockUntil = 0,
-		OverclockMult = 1,
-		OverclockCooldownUntil = 0,
-		OverclockAttemptStart = 0,
 		JoinedAt = os.time(),
 		PlaytimeCarry = 0,
-		FunnelDone = {},
 		Trove = Trove.new() :: any,
 		Ready = false,
-		EffectsKey = "",
 		PassesLoaded = false,
-		OfflineHandled = false,
-		LastTick = 0,
+		ClockSince = 0,
+		LastCheckpointAt = 0,
+		LastTeleportAt = 0,
+		ShieldUntil = 0,
+		Minigame = nil,
+		Alive = false,
 	}
 	sessions[player] = session
 	Session.Added:Fire(session)

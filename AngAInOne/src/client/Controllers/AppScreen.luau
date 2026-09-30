@@ -1,12 +1,12 @@
 --!strict
 --[[
 	AppScreen : l'écran géant du hub reproduit le "Tableau de bord" du logiciel partenaire
-	AngAInOne (gris Fluent + accent violet), alimenté par le PC DU JOUEUR LOCAL :
-	- Barre latérale : une section de l'app par zone ; verrouillée tant que la zone l'est
-	- Santé du PC : Alimentation, Températures, Robots, Firmware
+	AngAInOne (gris Fluent + accent violet), alimenté par la partie DU JOUEUR LOCAL :
+	- Barre latérale : une section de l'app par monde de la tour ; ✓ quand le virus du
+	  monde est éliminé, 🔒 tant qu'on ne l'a pas atteint
+	- Santé du PC : Progression, Virus, Victoires, Record
 	- État en direct : 3 graphes (60 derniers relevés, 1 par seconde)
-	    CPU = production (Bits/s, relative au max récent) · GPU = remplissage du collecteur
-	    RAM = charge électrique (Watts demandés / capacité)
+	    CPU = progression dans la tour · GPU = Bits (relatifs au max récent) · RAM = mondes nettoyés
 	Tout est côté client ; mis à jour 1 fois par seconde et seulement quand l'écran est proche.
 ]]
 
@@ -16,10 +16,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
-local Zones = require(Shared.Config.Zones)
+local Tower = require(Shared.Config.Tower)
 local Branding = require(Shared.Config.Branding)
-local GameConfig = require(Shared.Config.GameConfig)
 local NumberFormat = require(Shared.Util.NumberFormat)
+local Time = require(Shared.Util.Time)
 
 local Store = require(script.Parent.Store)
 local Style = require(script.Parent.Parent.UI.Style)
@@ -136,8 +136,8 @@ local function build(screen: BasePart): View
 	})
 	local sidebar = {}
 	local items: { { Name: string, Zone: number } } = { { Name = APP.Sidebar[1], Zone = 0 } }
-	for index, zone in Zones do
-		table.insert(items, { Name = zone.AppSection, Zone = index })
+	for index, world in Tower.Worlds do
+		table.insert(items, { Name = world.AppSection, Zone = index })
 	end
 	for order, item in items do
 		local row: Frame = New("Frame", {
@@ -228,7 +228,7 @@ local function build(screen: BasePart): View
 		Parent = main,
 	})
 	local cards: { [string]: Card } = {}
-	for index, name in { "Alimentation", "Températures", "Robots", "Firmware" } do
+	for index, name in { "Progression", "Virus", "Victoires", "Record" } do
 		local frame = card(main, UDim2.fromScale((index - 1) * 0.25, 0.285), UDim2.fromScale(0.235, 0.13))
 		text({
 			Position = UDim2.fromScale(0.08, 0.14),
@@ -336,54 +336,49 @@ local function update(view: View)
 		return
 	end
 	local data = state.Data
-	local production = state.Production
+	local current = Tower.WorldOf(data.Stage)
 	for _, entry in view.Sidebar do
-		local unlocked = entry.Zone <= data.Zone
-		entry.Label.TextColor3 = if unlocked then TEXT else DIM
-		entry.Label.TextTransparency = if unlocked then 0 else 0.45
-		entry.Label.Text = if unlocked or entry.Zone == 0
-			then (if entry.Zone == 0 then APP.Sidebar[1] else Zones[entry.Zone].AppSection)
-			else `🔒 {Zones[entry.Zone].AppSection}`
+		if entry.Zone == 0 then
+			entry.Label.Text = APP.Sidebar[1]
+			entry.Label.TextColor3 = TEXT
+			entry.Label.TextTransparency = 0
+		else
+			local section = Tower.Worlds[entry.Zone].AppSection
+			local cleaned = entry.Zone <= data.Cleared
+			local reached = entry.Zone <= math.max(current, 1)
+			entry.Label.TextColor3 = if cleaned then GOOD elseif reached then TEXT else DIM
+			entry.Label.TextTransparency = if reached or cleaned then 0 else 0.45
+			entry.Label.Text = if cleaned then `✓ {section}` elseif reached then section else `🔒 {section}`
+		end
 	end
-	view.User.Text = `{Players.LocalPlayer.DisplayName}  ·  Gen {data.Generation}`
+	view.User.Text = `{Players.LocalPlayer.DisplayName}  ·  🏆 {data.Wins}`
 
-	-- Santé du PC
-	local powerPct = if production.PowerCapacity > 0 then production.PowerDemand / production.PowerCapacity * 100 else 0
+	-- Santé du PC (= ta partie)
+	setCard(view, "Progression", `Étape {data.Stage}/{Tower.TOTAL_STAGES}`, if data.Stage > 0 then GOOD else WARN)
 	setCard(
 		view,
-		"Alimentation",
-		if production.PowerEfficiency < 1 then "Watts insuffisants !" else `{math.floor(powerPct)} % de la capacité`,
-		if production.PowerEfficiency < 1 then BAD else GOOD
+		"Virus",
+		`{data.Cleared}/{Tower.WORLD_COUNT} mondes nettoyés`,
+		if data.Cleared >= Tower.WORLD_COUNT then GOOD elseif data.Cleared > 0 then WARN else BAD
 	)
-	local heatRatio = if production.HeatCapacity > 0 then production.HeatDemand / production.HeatCapacity else 0
-	local cpuTemp = math.floor(34 + math.min(heatRatio, 1.4) * 50)
 	setCard(
 		view,
-		"Températures",
-		`CPU {cpuTemp} °C · GPU {cpuTemp + 2} °C`,
-		if production.ThermalEfficiency < 1 then BAD elseif heatRatio > 0.8 then WARN else GOOD
+		"Victoires",
+		`{data.Wins} ascension{if data.Wins > 1 then "s" else ""}`,
+		if data.Wins > 0 then GOOD else WARN
 	)
-	local equipped = #data.Nanobots.Equipped
 	setCard(
 		view,
-		"Robots",
-		`{equipped} équipé{if equipped > 1 then "s" else ""}`,
-		if equipped > 0 then GOOD else WARN
+		"Record",
+		if data.BestTime > 0 then Time.Clock(data.BestTime) else "Aucun",
+		if data.BestTime > 0 then GOOD else WARN
 	)
-	setCard(view, "Firmware", `{data.Firmware} point{if data.Firmware > 1 then "s" else ""}`, GOOD)
 
 	-- État en direct
-	local rate = Store.Rate()
-	maxRate = math.max(maxRate * 0.995, rate, 1)
-	push(view.Graphs.CPU, rate / maxRate * 100, `{NumberFormat.Compact(rate)} Bits/s`)
-	local cap = rate * GameConfig.CollectorCapSeconds
-	local pending = Store.Pending()
-	push(view.Graphs.GPU, if cap > 0 then pending / cap * 100 else 0, `Collecteur : {NumberFormat.Compact(pending)}`)
-	push(
-		view.Graphs.RAM,
-		powerPct,
-		`{NumberFormat.Compact(production.PowerDemand)} W / {NumberFormat.Compact(production.PowerCapacity)} W`
-	)
+	push(view.Graphs.CPU, data.Stage / Tower.TOTAL_STAGES * 100, `Étape {data.Stage}`)
+	maxRate = math.max(maxRate * 0.995, data.Bits, 1)
+	push(view.Graphs.GPU, data.Bits / maxRate * 100, `{NumberFormat.Compact(data.Bits)} Bits`)
+	push(view.Graphs.RAM, data.Cleared / Tower.WORLD_COUNT * 100, `{data.Cleared}/{Tower.WORLD_COUNT} terminaux`)
 end
 
 function AppScreen.Start()

@@ -1,47 +1,74 @@
 --!strict
 --[[
-	Interactions : les prompts du monde (E / X manette / tap) ouvrent le bon écran.
-	Le prompt porte un attribut "Action" posé par le serveur (MapBuilder).
-	Les actions qui modifient l'état (overclock) passent par une remote validée.
+	Interactions : les prompts du monde (E / X manette / tap).
+	- "Minigame" (terminal antivirus en fin de monde) : lance le mini-jeu 2D du monde
+	- "Arcade" (lobby) : choisir un mini-jeu pour gagner quelques Bits
+	- "Shop" / "Daily" (lobby) : ouvrent la boutique / les missions
+	Le serveur valide tout (bon checkpoint, distance, durée).
 ]]
 
 local ProximityPromptService = game:GetService("ProximityPromptService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Tower = require(Shared.Config.Tower)
 
 local Net = require(script.Parent.Net)
+local Store = require(script.Parent.Store)
 local App = require(script.Parent.Parent.UI.App)
+local Toasts = require(script.Parent.Parent.UI.Screens.Toasts)
+local MinigamePanel = require(script.Parent.Parent.UI.Screens.MinigamePanel)
 
 local Interactions = {}
 
+-- Lance le terminal antivirus du monde `world`.
+function Interactions.PlayTerminal(world: number)
+	local data = Store.Data()
+	local def = Tower.Worlds[world]
+	if not data or not def or MinigamePanel.IsPlaying() then
+		return
+	end
+	if data.Cleared >= world then
+		Toasts.Show("Success", "Ce terminal est déjà nettoyé. Le portail est ouvert !")
+		return
+	end
+	if data.Stage ~= Tower.TerminalStage(world) or data.Cleared ~= world - 1 then
+		Toasts.Show("Info", "Atteins d'abord le checkpoint de cette salle !")
+		return
+	end
+	Net.Fire("MinigameStart", world)
+	MinigamePanel.Play(def.Minigame, world, function(success: boolean, score: number, _duration: number)
+		Net.Fire("MinigameEnd", world, success, score)
+	end)
+end
+
+-- Partie d'arcade (lobby) : petite récompense, avec un délai entre deux gains.
+function Interactions.PlayArcade(kind: string)
+	if MinigamePanel.IsPlaying() then
+		return
+	end
+	App.Close()
+	Net.Fire("ArcadeStart", kind)
+	MinigamePanel.Play(kind, 2, function(success: boolean, score: number, _duration: number)
+		Net.Fire("ArcadeEnd", kind, success, score)
+	end)
+end
+
 local HANDLERS: { [string]: (prompt: ProximityPrompt) -> () } = {
-	Upgrade = function(prompt)
-		App.Open("Components", prompt:GetAttribute("ModuleId"))
+	Minigame = function(prompt)
+		local world = prompt:GetAttribute("World")
+		if type(world) == "number" then
+			Interactions.PlayTerminal(world)
+		end
 	end,
-	Elevator = function(_prompt)
-		App.Open("Elevator")
+	Arcade = function(_prompt)
+		App.Open("Arcade")
 	end,
-	Unlock = function(_prompt)
-		App.Open("Components")
+	Shop = function(_prompt)
+		App.Open("Shop")
 	end,
-	Power = function(_prompt)
-		App.Open("Components", 1)
-	end,
-	Cooling = function(_prompt)
-		App.Open("Components", 4)
-	end,
-	Capsules = function(_prompt)
-		App.Open("Nanobots", "Capsules")
-	end,
-	Downloads = function(_prompt)
-		App.Open("Quests")
-	end,
-	Overclock = function(_prompt)
-		Net.Fire("OverclockStart")
-	end,
-	Reboot = function(_prompt)
-		App.Open("Bios", "Reboot")
-	end,
-	Singularity = function(_prompt)
-		App.Open("Bios", "Singularity")
+	Daily = function(_prompt)
+		App.Open("Missions")
 	end,
 }
 

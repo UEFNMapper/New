@@ -58,7 +58,7 @@ step("Audio", function()
 	Audio.Start()
 end)
 
--- La liste des joueurs de Roblox cacherait la minimap (haut droite) : les joueurs sont dans Menu > Joueurs.
+-- Menus simples : la liste des joueurs de Roblox est remplacée par Menu > Joueurs.
 step("CoreGui", function()
 	game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
 end)
@@ -71,7 +71,6 @@ local HUD = load(Screens.HUD)
 local Toasts = load(Screens.Toasts)
 local Moments = load(Screens.Moments)
 local MenuPanel = load(Screens.MenuPanel)
-local ElevatorPanel = load(Screens.ElevatorPanel)
 
 local gui: ScreenGui? = nil
 step("App", function()
@@ -97,9 +96,7 @@ end)
 step("Moments", function()
 	Moments.Mount(App.Layers.Moments)
 end)
-for _, name in
-	{ "ComponentsPanel", "NanobotsPanel", "QuestsPanel", "ShopPanel", "MenuPanel", "ElevatorPanel", "BiosPanel" }
-do
+for _, name in { "ShopPanel", "MissionsPanel", "MenuPanel", "ArcadePanel" } do
 	step(name, function()
 		local screen = load(Screens:FindFirstChild(name) :: Instance)
 		if screen then
@@ -107,8 +104,8 @@ do
 		end
 	end)
 end
-step("OverclockOverlay", function()
-	load(Screens.OverclockOverlay).Mount(App.Layers.Overlays)
+step("MinigamePanel", function()
+	load(Screens.MinigamePanel).Mount(App.Layers.Overlays)
 end)
 step("DevPanel", function()
 	load(Screens.DevPanel).Mount(App.Layers.Overlays) -- Studio uniquement
@@ -118,68 +115,38 @@ step("Style.Verify", function()
 		task.spawn(Style.Verify, gui)
 	end
 end)
-
--- Actions de la carte Objectif (le CTA unique du HUD)
-step("Objectif", function()
-	HUD.OnObjective = function(action: string, arg: any)
-		if action == "PowerOn" then
-			Net.Fire("PowerOn")
-		elseif action == "Unlock" then
-			Net.Fire("UnlockZone", arg)
-		elseif action == "OpenModule" or action == "OpenZone" then
-			App.Open("Components", arg)
-		elseif action == "OpenNanobots" then
-			App.Open("Nanobots", arg)
-		elseif action == "OpenBios" then
-			App.Open("Bios", arg)
-		end
-	end
-end)
-
--- Transitions de déplacement (téléporteur, bannière "Y aller")
-step("Voyages", function()
-	local function beforeTravel(_floor: number)
-		Audio.Play("Whoosh")
-	end
-	ElevatorPanel.BeforeTravel = beforeTravel
-	Moments.OnTravel = function(floor: number)
-		beforeTravel(floor)
-		Net.Fire("Travel", floor)
-	end
-	MenuPanel.OnSettings = function(music: number, sfx: number, _reduced: boolean, _hue: number)
+step("Réglages audio", function()
+	MenuPanel.OnSettings = function(music: number, sfx: number, _reduced: boolean)
 		Audio.SetVolumes(music, sfx)
 	end
 end)
 
 -- 3. Monde ------------------------------------------------------------------------
-local Feedback = load(Controllers.Feedback)
-local WorldFx = load(Controllers.WorldFx)
 step("Feedback", function()
-	Feedback.OnWorldFx = WorldFx.OnFx
-	Feedback.Start()
+	load(Controllers.Feedback).Start()
 end)
 step("WorldFx", function()
-	WorldFx.Start()
-end)
-step("WorldSigns", function()
-	load(Controllers.WorldSigns).Start()
+	load(Controllers.WorldFx).Start()
 end)
 step("AppScreen", function()
 	load(Controllers.AppScreen).Start()
 end)
-step("ZoneTracker", function()
-	load(Controllers.ZoneTracker).Start()
+step("TrapController", function()
+	local TrapController = load(Controllers.TrapController)
+	if TrapController then
+		TrapController.Start()
+	end
 end)
 step("Interactions", function()
-	load(Controllers.Interactions).Start()
-end)
-step("Guide", function()
-	load(Controllers.Guide).Start()
+	local Interactions = load(Controllers.Interactions)
+	Interactions.Start()
+	load(Screens.ArcadePanel).OnPlay = Interactions.PlayArcade
 end)
 
--- Premier état : réglages sauvegardés + écran d'allumage si besoin
+-- Premier état : réglages sauvegardés + histoire d'Anga à la première visite
 step("État initial", function()
 	local settingsLoaded = false
+	local introShown = false
 	Store.Changed:Connect(function(state: any)
 		if not settingsLoaded then
 			settingsLoaded = true
@@ -187,8 +154,13 @@ step("État initial", function()
 				MenuPanel.LoadSettings(state.Data.Settings)
 			end)
 		end
-		step("Écran d'allumage", function()
-			Moments.ShowPowerOn(not state.Data.PoweredOn)
-		end)
+		if not introShown and not state.Data.IntroSeen then
+			introShown = true
+			step("Intro", function()
+				Moments.Intro(function()
+					Net.Fire("IntroSeen")
+				end)
+			end)
+		end
 	end)
 end)

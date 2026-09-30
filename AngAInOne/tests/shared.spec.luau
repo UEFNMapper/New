@@ -1,13 +1,13 @@
--- Tests des modules partagés : format, schéma de données, limiteur, configs.
+-- Tests des modules partagés : format, temps, schéma de données, limiteur, configs du deathrun.
 local NumberFormat = Shim.load("src/shared/Util/NumberFormat.luau")
+local Time = Shim.load("src/shared/Util/Time.luau")
 local DataSchema = Shim.load("src/shared/Data/DataSchema.luau")
 local RateLimiter = Shim.load("src/server/Security/RateLimiter.luau")
-local Nanobots = Shim.load("src/shared/Config/Nanobots.luau")
-local Modules = Shim.load("src/shared/Config/Modules.luau")
-local Zones = Shim.load("src/shared/Config/Zones.luau")
+local Tower = Shim.load("src/shared/Config/Tower.luau")
+local GameConfig = Shim.load("src/shared/Config/GameConfig.luau")
+local Cosmetics = Shim.load("src/shared/Config/Cosmetics.luau")
+local Missions = Shim.load("src/shared/Config/Missions.luau")
 local Products = Shim.load("src/shared/Config/Products.luau")
-local Quests = Shim.load("src/shared/Config/Quests.luau")
-local Bonuses = Shim.load("src/shared/Economy/Bonuses.luau")
 
 return {
 	["NumberFormat.Compact"] = function()
@@ -30,20 +30,43 @@ return {
 		Expect.equal(NumberFormat.Duration(90000), "1 j 1 h")
 		Expect.equal(NumberFormat.Grouped(1234567), "1 234 567")
 		Expect.equal(NumberFormat.Grouped(123), "123")
-		Expect.equal(NumberFormat.Flops(2500000), "2,5 MFLOPS")
 	end,
-	["DataSchema : template, migration, reçus"] = function()
+	["Time : jours UTC et chrono"] = function()
+		Expect.equal(Time.DayIndex(0), 0)
+		Expect.equal(Time.DayIndex(86400 * 3 + 5), 3)
+		Expect.equal(Time.WeekIndex(0), 0, "jeudi 1er janvier 1970 : semaine 0")
+		Expect.equal(Time.WeekIndex(86400 * 4), 1, "le lundi suivant change de semaine")
+		Expect.equal(Time.Clock(0), "0:00.0")
+		Expect.equal(Time.Clock(65.37), "1:05.3")
+		Expect.equal(Time.Clock(3725), "1:02:05")
+	end,
+	["DataSchema : template, migration, fin d'ascension, reçus"] = function()
 		local fresh = DataSchema.Template()
 		Expect.equal(fresh.Version, DataSchema.CURRENT_VERSION)
-		-- Données partielles (ancien joueur) : les champs manquants sont complétés.
-		local old: any = { Bits = 42, Levels = { Z1M1 = 7 }, Settings = { Music = 0.1 } }
+		Expect.equal(fresh.Stage, 0)
+		Expect.truthy(
+			table.find(fresh.Cosmetics.Owned, Cosmetics.DefaultTrail) ~= nil,
+			"traînée par défaut possédée"
+		)
+		Expect.truthy(table.find(fresh.Cosmetics.Owned, Cosmetics.DefaultDeathFx) ~= nil, "effet par défaut possédé")
+		-- Données partielles : les champs manquants sont complétés, l'existant est gardé.
+		local old: any = { Bits = 42, Stage = 12, Settings = { Music = 0.1 } }
 		Expect.truthy(DataSchema.Migrate(old))
 		Expect.equal(old.Bits, 42)
-		Expect.equal(old.Levels.Z1M1, 7)
+		Expect.equal(old.Stage, 12)
 		Expect.equal(old.Settings.Music, 0.1, "valeur existante conservée")
 		Expect.equal(old.Settings.Sfx, 0.7, "valeur manquante complétée")
-		Expect.equal(old.Stats.Playtime, 0)
-		Expect.equal(old.Download.Kind, "")
+		Expect.equal(old.Stats.CoinsCollected, 0)
+		Expect.equal(old.Toggles.LowGravity, false)
+		-- Fin d'ascension : la course repart de zéro, les records restent.
+		old.Wins = 3
+		old.RunCoins = { S1C1 = true }
+		old.Cleared = 7
+		DataSchema.ResetRun(old)
+		Expect.equal(old.Stage, 0)
+		Expect.equal(old.Cleared, 0)
+		Expect.equal(next(old.RunCoins), nil)
+		Expect.equal(old.Wins, 3, "victoires conservées")
 		-- Données d'une version future : ne pas toucher.
 		local future: any = { Version = DataSchema.CURRENT_VERSION + 1 }
 		Expect.equal(DataSchema.Migrate(future), false)
@@ -71,45 +94,58 @@ return {
 		limiter:Forget("u1:")
 		Expect.truthy(limiter:Allow("u1:x"), "seau recréé après Forget")
 	end,
-	["configs cohérentes"] = function()
-		Expect.equal(#Zones, 7)
-		Expect.equal(#Modules.List, 21)
-		for i = 2, #Zones do
-			Expect.truthy(Zones[i].UnlockCost > Zones[i - 1].UnlockCost, "coûts de zone croissants")
-		end
-		for _, capsule in Nanobots.Capsules do
-			local total = 0
-			for _, entry in Nanobots.OddsPercent(capsule.Id) do
-				total += entry.percent
-				Expect.truthy(#Nanobots.Pool(capsule.Id, entry.rarity) > 0, `pool {capsule.Id}/{entry.rarity}`)
+	["Tower : mondes, étapes, helpers"] = function()
+		Expect.equal(Tower.WORLD_COUNT, 7)
+		Expect.equal(Tower.TOTAL_STAGES, Tower.WORLD_COUNT * Tower.STAGES_PER_WORLD)
+		Expect.equal(Tower.WorldOf(0), 0, "lobby")
+		Expect.equal(Tower.WorldOf(1), 1)
+		Expect.equal(Tower.WorldOf(Tower.STAGES_PER_WORLD), 1, "salle du terminal du monde 1")
+		Expect.equal(Tower.WorldOf(Tower.STAGES_PER_WORLD + 1), 2)
+		Expect.equal(Tower.WorldOf(Tower.TOTAL_STAGES), Tower.WORLD_COUNT)
+		for world = 1, Tower.WORLD_COUNT do
+			Expect.equal(Tower.WorldOf(Tower.FirstStage(world)), world)
+			Expect.equal(Tower.WorldOf(Tower.TerminalStage(world)), world)
+			local def = Tower.Worlds[world]
+			Expect.equal(def.Index, world)
+			Expect.truthy(table.find(Tower.MinigameKinds, def.Minigame) ~= nil, `mini-jeu du monde {world}`)
+			for _, trap in def.Traps do
+				Expect.truthy(table.find(Tower.TrapKinds, trap) ~= nil, `piège {trap} du monde {world}`)
 			end
-			Expect.near(total, 100, 1e-6, `probas {capsule.Id}`)
+			Expect.truthy(#def.Intro > 10, "réplique d'Anga")
+		end
+		for kind in GameConfig.Minigame.MinSeconds do
+			Expect.truthy(table.find(Tower.MinigameKinds, kind) ~= nil, `durée min de {kind}`)
+		end
+	end,
+	["configs cohérentes"] = function()
+		local ids = {}
+		for _, def in Cosmetics.List do
+			Expect.equal(ids[def.Id], nil, `cosmétique unique {def.Id}`)
+			ids[def.Id] = true
+			Expect.truthy(def.Kind == "Trail" or def.Kind == "DeathFx")
+			for _, hex in def.Colors do
+				Expect.truthy(string.match(hex, "^%x%x%x%x%x%x$") ~= nil, `couleur {hex}`)
+			end
+		end
+		for _, reward in GameConfig.DailyRewards do
+			if reward.Cosmetic then
+				Expect.truthy(Cosmetics.ById[reward.Cosmetic] ~= nil, "cosmétique du calendrier")
+			end
+		end
+		Expect.equal(#GameConfig.DailyRewards, 7)
+		Expect.truthy(#Missions.Templates >= Missions.PerDay)
+		for _, template in Missions.Templates do
+			Expect.truthy(string.find(template.Text, "{n}", 1, true) ~= nil, `objectif dans {template.Id}`)
 		end
 		local seen = {}
-		for _, p in Products.Products do
-			Expect.equal(seen[p.Key], nil, "clé produit unique")
-			seen[p.Key] = true
+		for _, product in Products.Products do
+			Expect.equal(seen[product.Key], nil, "clé produit unique")
+			seen[product.Key] = true
 		end
-		for _, q in Quests.Daily do
-			Expect.truthy(Quests.ById[q.Id] ~= nil)
+		for _, pass in Products.Passes do
+			Expect.equal(seen[pass.Key], nil, "clé pass unique")
+			seen[pass.Key] = true
 		end
-		Expect.equal(#Quests.DailyRewards, 7)
-	end,
-	["Bonuses : cumul des multiplicateurs"] = function()
-		local b = Bonuses.Compute({
-			Firmware = 10,
-			FragmentsFound = 5,
-			EquippedNanobots = { { Id = "Bronze_1", Golden = false }, { Id = "Cryo_1", Golden = true } },
-			HasDoubleBits = true,
-			IsPremium = true,
-			InGroup = false,
-			FriendsInServer = 5,
-			ServerBoostActive = false,
-			PersonalBoostActive = false,
-			OverclockMult = 1,
-		})
-		-- firmware 1+10*0.1=2 ; additifs 0.05+0.05+0.30+0.10=0.5 ; pass x2 => 2*1.5*2 = 6
-		Expect.near(b.Total, 6, 1e-9)
-		Expect.near(b.HeatReduction, 0.045, 1e-9, "Cryo_1 doré : 0.03 * 1.5")
+		Expect.truthy(Products.PassByKey.LowGravity.Toggle and Products.PassByKey.SpeedChip.Toggle)
 	end,
 }

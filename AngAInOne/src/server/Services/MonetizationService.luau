@@ -13,19 +13,18 @@
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
-local PolicyService = game:GetService("PolicyService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameConfig = require(Shared.Config.GameConfig)
 local Products = require(Shared.Config.Products)
 local DataSchema = require(Shared.Data.DataSchema)
-local Remotes = require(Shared.Net.Remotes)
 local Session = require(script.Parent.Parent.Core.Session)
-local ServerState = require(script.Parent.Parent.Core.ServerState)
+local Wallet = require(script.Parent.Parent.Core.Wallet)
 local GameEvents = require(script.Parent.Parent.Core.GameEvents)
 local Telemetry = require(script.Parent.Parent.Core.Telemetry)
-local EconomyService = require(script.Parent.EconomyService)
+local ProgressService = require(script.Parent.ProgressService)
+local ShopService = require(script.Parent.ShopService)
 
 export type ProductHandler = (session: Session.Session, product: Products.ProductDef) -> boolean
 
@@ -53,14 +52,6 @@ local function checkPasses(session: Session.Session)
 			end
 		end
 	end
-end
-
-local function checkPolicy(session: Session.Session)
-	local ok, info = pcall(function(): { [string]: any }
-		return PolicyService:GetPolicyInfoForPlayerAsync(session.Player)
-	end)
-	-- En cas d'erreur, on applique la règle la plus stricte (objets aléatoires payants masqués).
-	session.PaidRandomAllowed = ok and type(info) == "table" and info.ArePaidRandomItemsRestricted == false
 end
 
 local function checkGroup(session: Session.Session)
@@ -126,36 +117,27 @@ local function processReceipt(info: { [string]: any }): Enum.ProductPurchaseDeci
 	Telemetry.Custom(player, `Purchase_{product.Key}`, info.CurrencySpent)
 	GameEvents.StateChanged:Fire(player)
 	if waitForSave(session, purchaseId) then
-		EconomyService.Notify(session, "Success", `Merci ! {product.Name} reçu.`)
+		Wallet.Notify(session, "Success", `Merci ! {product.Name} reçu.`)
 		return Enum.ProductPurchaseDecision.PurchaseGranted
 	end
 	return Enum.ProductPurchaseDecision.NotProcessedYet
 end
 
 function MonetizationService.Start()
-	local serverInfo = Remotes.Get("ServerInfo")
-
-	-- Produits gérés directement ici
 	MonetizationService.RegisterProduct("Bits", function(session, product)
-		EconomyService.AddBits(session, EconomyService.ProductionValue(session, product.Amount), "Product")
+		Wallet.Add(session, product.Amount, "Product", false)
 		return true
 	end)
-	MonetizationService.RegisterProduct("Chips", function(session, product)
-		EconomyService.AddChips(session, product.Amount, "Product")
-		return true
-	end)
-	MonetizationService.RegisterProduct("ServerBoost", function(session, product)
-		local now = os.time()
-		ServerState.ServerBoostUntil = math.max(ServerState.ServerBoostUntil, now) + product.Amount
-		ServerState.ServerBoostBy = session.Player.DisplayName
-		serverInfo:FireAllClients({
-			ServerBoostUntil = ServerState.ServerBoostUntil,
-			ServerBoostBy = ServerState.ServerBoostBy,
-		})
-		for _, other in Session.All() do
-			EconomyService.Refresh(other)
-			EconomyService.Notify(other, "Boost", `{session.Player.DisplayName} offre x2 Bits à tout le serveur !`)
+	MonetizationService.RegisterProduct("Skip", function(session, _product)
+		if not ProgressService.Skip(session) then
+			-- Rien à passer (déjà au sommet) : on dédommage plutôt que de bloquer le reçu.
+			Wallet.Add(session, 150, "SkipRefund", false)
+			Wallet.Notify(session, "Info", "Tu es déjà au sommet : 150 Bits offerts à la place !")
 		end
+		return true
+	end)
+	MonetizationService.RegisterProduct("Shield", function(session, _product)
+		ShopService.GrantShield(session, GameConfig.ShieldSeconds)
 		return true
 	end)
 
@@ -170,7 +152,8 @@ function MonetizationService.Start()
 			local pass = Products.PassById[passId]
 			if session and pass then
 				session.Passes[pass.Key] = true
-				EconomyService.Notify(session, "Success", `Pass {pass.Name} activé !`)
+				Wallet.Notify(session, "Success", `Pass {pass.Name} activé !`)
+				GameEvents.PassesLoaded:Fire(player)
 				GameEvents.StateChanged:Fire(player)
 			end
 		end
@@ -191,19 +174,11 @@ function MonetizationService.Start()
 			if Session.Get(session.Player) == session then
 				GameEvents.PassesLoaded:Fire(session.Player)
 			end
-			checkPolicy(session)
 			checkGroup(session)
 			if Session.Get(session.Player) == session then
 				GameEvents.StateChanged:Fire(session.Player)
 			end
 		end)
-	end)
-
-	GameEvents.ClientReady:Connect(function(player: Player)
-		serverInfo:FireClient(player, {
-			ServerBoostUntil = ServerState.ServerBoostUntil,
-			ServerBoostBy = ServerState.ServerBoostBy,
-		})
 	end)
 end
 

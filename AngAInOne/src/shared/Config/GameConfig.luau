@@ -1,148 +1,66 @@
 --!strict
 --[[
-	GameConfig : toutes les constantes d'équilibrage et de gameplay au même endroit.
-	Les valeurs économiques sont vérifiées par tests/pacing.spec.luau.
+	GameConfig : constantes de gameplay et d'équilibrage du deathrun.
+	La structure de la tour (mondes, étapes, pièges, mini-jeux) est dans Config/Tower.
 ]]
 
 local GameConfig = {}
 
-GameConfig.DataStoreName = "AngAInOne_PlayerData_v1"
+-- Nouveau jeu = nouvelle sauvegarde (les données du tycoon ne sont pas reprises).
+GameConfig.DataStoreName = "AngAInOne_Deathrun_v1"
+GameConfig.GroupId = 0 -- groupe Roblox pour le bonus de groupe (0 = désactivé)
 
--- Économie de base
-GameConfig.LevelGrowth = 1.12
-GameConfig.Milestones = table.freeze({ 10, 25, 50, 100, 150, 200 })
-GameConfig.MaxModuleLevel = 250
-GameConfig.TickSeconds = 1
-GameConfig.CollectorCapSeconds = 900 -- le collecteur stocke au maximum 15 min de production
-GameConfig.StartingBits = 0
-
--- Énergie (bloc d'alimentation, amélioré dans La Centrale)
-GameConfig.Power = table.freeze({
-	BaseCapacity = 60,
-	CapacityGrowth = 1.2,
-	BaseCost = 15,
-	CostGrowth = 1.45,
-	MaxLevel = 120,
+-- Parcours
+GameConfig.Run = table.freeze({
+	RespawnSeconds = 1.5, -- délai de réapparition après une mort
+	MinStageSeconds = 2.5, -- anti-triche : temps minimum entre deux checkpoints
+	RespawnHeight = 4, -- hauteur au-dessus du checkpoint à la réapparition
+	FallKillBelow = -80, -- sous cette hauteur (lobby compris), on réapparaît
+	TeleportCooldown = 1.5, -- boutons « checkpoint » / « lobby »
+	CheckpointBits = 2, -- récompense par nouveau checkpoint
+	CoinBits = 1, -- récompense par orbe ramassée
+	VictoryBits = 250, -- première victoire
+	RepeatVictoryBits = 120, -- victoires suivantes
+	CoinPickupDistance = 14, -- distance max (studs) entre le joueur et l'orbe
 })
 
--- Refroidissement : ventirad d'origine + radiateurs améliorés dans la Cryo Tower
-GameConfig.Cooling = table.freeze({
-	BaseCapacity = 2500,
-	CapacityGrowth = 1.2,
-	BaseCost = 2e8,
-	CostGrowth = 1.45,
-	UnlockZone = 4,
-	MaxLevel = 120,
-	HeatStartsAtZone = 3, -- la chaleur n'est comptée qu'à partir du SSD (tutoriel progressif)
+-- Mini-jeux
+GameConfig.Minigame = table.freeze({
+	MinSeconds = table.freeze({ Scan = 8, Firewall = 10, Memory = 8, Dodge = 8 }),
+	MaxSeconds = 180, -- au-delà, la partie est considérée abandonnée
+	TerminalDistance = 24, -- distance max au terminal pour lancer le mini-jeu
+	WorldBits = 20, -- + 5 par monde
+	WorldBitsPerWorld = 5,
+	ArcadeBits = 10,
+	ArcadeCooldown = 90, -- secondes entre deux récompenses d'arcade
 })
 
--- Prestige
-GameConfig.Reboot = table.freeze({
-	RequiredZone = 6, -- GPU débloqué
-	FirmwareDivisor = 1e11,
-	FirmwarePerPoint = 0.1,
-	MinFirmwareGain = 1,
-})
--- La Singularité se construit en 5 phases dans l'AI Core (un objectif régulier en fin de run).
-GameConfig.SingularityPhases = table.freeze({ 1e16, 5e16, 1.5e17, 3e17, 5e17 })
-GameConfig.SingularityCost = 1e18 -- ≈ somme des phases, utilisé par la simulation de pacing
+-- Achats et passes
+GameConfig.ShieldSeconds = 30
+GameConfig.LowGravityJumpHeight = 10.5 -- hauteur de saut avec les bottes (défaut Roblox : 7.2)
+GameConfig.SpeedChipWalkSpeed = 19.5 -- vitesse avec la puce (défaut Roblox : 16)
+GameConfig.VipBitsMultiplier = 2
+GameConfig.FriendBonusPerFriend = 0.1
+GameConfig.FriendBonusMax = 0.3
+GameConfig.GroupBonus = 0.05
 
--- Hors ligne
-GameConfig.Offline = table.freeze({
-	BaseCapSeconds = 2 * 3600,
-	BaseRatio = 0.5,
-	PassCapSeconds = 8 * 3600,
-	PassRatio = 1.0,
-	MinSecondsToReport = 60,
-})
-
--- Overclock (débloqué avec le CPU)
-GameConfig.Overclock = table.freeze({
-	RequiredZone = 5,
-	Duration = 180,
-	Cooldown = 300,
-	ProPassDurationMult = 1.5,
-	ProPassCooldownMult = 0.5,
-	PerfectMult = 2,
-	GoodMult = 1.5,
-	HeatMult = 1.3,
-	NeedlePeriod = 1.6, -- secondes pour un aller-retour complet de l'aiguille
-	GoodHalfWidth = 0.14, -- demi-largeur de la zone "bien" (en fraction de jauge)
-	PerfectHalfWidth = 0.05,
-	MaxAttemptSeconds = 12,
-})
-
--- Virus / Glitches
-GameConfig.Virus = table.freeze({
-	MinInterval = 90,
-	MaxInterval = 150,
-	MaxAlive = 3,
-	LifeSeconds = 120,
-	RewardProductionSeconds = 25,
-	ChipChance = 0.12,
-	ChipReward = 5,
-	ZapDistance = 14,
-})
-
--- Nanobots
-GameConfig.Nanobots = table.freeze({
-	BaseSlots = 3,
-	PassExtraSlots = 2,
-	MaxInventory = 150,
-	FuseCount = 5,
-	GoldenMult = 1.5,
-})
-
--- Social et bonus
-GameConfig.FriendBoostPer = 0.10
-GameConfig.FriendBoostMax = 0.30
-GameConfig.PremiumBoost = 0.10
-GameConfig.VipChipBonus = 0.10
-GameConfig.FragmentBonus = 0.01 -- +1 % par fragment trouvé
-GameConfig.ServerBoostSeconds = 15 * 60
-GameConfig.BitsBoostPotionSeconds = 30 * 60
-GameConfig.GroupId = 0 -- ID du groupe Roblox pour le bonus de groupe (0 = désactivé)
-GameConfig.GroupBoost = 0.05
-
--- Téléchargements (rendez-vous)
-export type DownloadKind = { Id: string, Name: string, Seconds: number, ProductionSeconds: number, Chips: number }
-GameConfig.Downloads = table.freeze({
-	table.freeze({ Id = "Patch", Name = "Patch rapide", Seconds = 30 * 60, ProductionSeconds = 20 * 60, Chips = 10 }),
-	table.freeze({
-		Id = "Driver",
-		Name = "Pilote graphique",
-		Seconds = 4 * 3600,
-		ProductionSeconds = 100 * 60,
-		Chips = 40,
-	}),
-	table.freeze({
-		Id = "OS",
-		Name = "Mise à jour système",
-		Seconds = 8 * 3600,
-		ProductionSeconds = 180 * 60,
-		Chips = 80,
-	}),
-} :: { DownloadKind })
-GameConfig.DownloadRequiredZone = 3
-
--- Anti-abus (limites par joueur et par remote)
+-- Cadence des remotes (RemoteGuard) : requêtes/s et rafale max par joueur
 GameConfig.RateLimits = table.freeze({
 	Default = table.freeze({ Rate = 4, Burst = 8 }),
-	Upgrade = table.freeze({ Rate = 12, Burst = 20 }),
+	Death = table.freeze({ Rate = 2, Burst = 4 }),
 	Settings = table.freeze({ Rate = 1, Burst = 3 }),
 })
-GameConfig.InteractDistance = 40 -- distance max (studs) pour interagir avec un module
 
--- Onboarding (étapes loggées dans le funnel AnalyticsService)
-GameConfig.TutorialSteps = table.freeze({
-	"Spawn",
-	"PowerOn",
-	"FirstCollect",
-	"FirstUpgrade",
-	"SecondUpgrade",
-	"UnlockRam",
-	"FirstCapsule",
-	"Done",
-})
+-- Récompenses quotidiennes (calendrier de 7 jours, en boucle)
+export type DailyReward = { Day: number, Bits: number, Cosmetic: string?, Label: string }
+GameConfig.DailyRewards = table.freeze({
+	{ Day = 1, Bits = 25, Label = "25 Bits" },
+	{ Day = 2, Bits = 40, Label = "40 Bits" },
+	{ Day = 3, Bits = 60, Label = "60 Bits" },
+	{ Day = 4, Bits = 80, Label = "80 Bits" },
+	{ Day = 5, Bits = 100, Label = "100 Bits" },
+	{ Day = 6, Bits = 150, Label = "150 Bits" },
+	{ Day = 7, Bits = 200, Cosmetic = "TrailCalendar", Label = "Traînée Calendrier + 200 Bits" },
+} :: { DailyReward })
 
 return table.freeze(GameConfig)

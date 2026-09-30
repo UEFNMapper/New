@@ -60,7 +60,7 @@ local function onPlayerAdded(player: Player)
 
 	profile.OnSessionEnd:Connect(function()
 		local session = Session.Get(player)
-		if session and session.OfflineHandled then
+		if session then
 			session.Data.Stats.LastOnline = os.time()
 		end
 		Session.Remove(player)
@@ -87,9 +87,7 @@ local function onPlayerRemoving(player: Player)
 	if not session then
 		return
 	end
-	if session.OfflineHandled then
-		session.Data.Stats.LastOnline = os.time()
-	end
+	session.Data.Stats.LastOnline = os.time()
 	local profile = session.Profile
 	Session.Remove(player)
 	profile:EndSession()

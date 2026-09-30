@@ -1,25 +1,26 @@
 --!strict
 --[[
-	HUD : l'interface permanente, volontairement minimale et lisible par un enfant.
-	┌ Bits / Chips / à ramasser            Puissance · effets actifs      [⚙] 📍 Zone ┐
-	│ (alertes ⚡/🌡 seulement si besoin)                                   MINIMAP     │
-	│ Bulle d'Anga (tutoriel)                                           Carte TON BUT │
-	└                 [Améliorer][Robots][Missions][Carte][Boutique]                   ┘
+	HUD du deathrun : très peu d'éléments, lisibles par un enfant.
+	┌ [Bits]                 MONDE 2 · Memory Lanes · Étape 7/35          [⚙]   ┐
+	│ [passes activables]    ▓▓▓▓▓░░░░░░░ tour     ⏱ 4:07.3          [bouclier] │
+	│                        « ton but en une phrase »          [↺ Checkpoint]   │
+	│                                                           [⏭ Passer]      │
+	│                        [   JOUER / CONTINUER   ] (au lobby) [⌂ Lobby]      │
+	└                    [Boutique]  [Missions]  [Menu]                          ┘
 ]]
 
+local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Theme = require(Shared.Config.Theme)
-local Zones = require(Shared.Config.Zones)
-local GameConfig = require(Shared.Config.GameConfig)
-local Modules = require(Shared.Config.Modules)
-local Formulas = require(Shared.Economy.Formulas)
+local Tower = require(Shared.Config.Tower)
+local Products = require(Shared.Config.Products)
 local NumberFormat = require(Shared.Util.NumberFormat)
+local Time = require(Shared.Util.Time)
 
 local Create = require(script.Parent.Parent.Create)
 local Style = require(script.Parent.Parent.Style)
@@ -27,196 +28,31 @@ local Motion = require(script.Parent.Parent.Motion)
 local Material = require(script.Parent.Parent.Material)
 local Keycap = require(script.Parent.Parent.Components.Keycap)
 local Widgets = require(script.Parent.Parent.Components.Widgets)
-local Icon = require(script.Parent.Parent.Components.Icon)
-local MapView = require(script.Parent.Parent.Components.MapView)
-local Dialogue = require(script.Parent.Dialogue)
 local App = require(script.Parent.Parent.App)
 local Store = require(script.Parent.Parent.Parent.Controllers.Store)
-local WorldFx = require(script.Parent.Parent.Parent.Controllers.WorldFx)
-local Guide = require(script.Parent.Parent.Parent.Controllers.Guide)
+local Net = require(script.Parent.Parent.Parent.Controllers.Net)
 
 local New = Create.New
 
 local HUD = {}
 
-HUD.BitsPill = nil :: any -- cible des particules de collecte
-HUD.OnObjective = nil :: ((action: string, arg: any) -> ())?
+HUD.BitsPill = nil :: any -- cible des particules de Bits
 
 local bitsValue: TextLabel
-local bitsRate: TextLabel
-local chipsValue: TextLabel
-local collectorCard: Frame
-local collectorBar: Widgets.Bar
-local collectorText: TextLabel
-local benchValue: TextLabel
-local genLabel: TextLabel
-local effectsRow: Frame
-local objectiveTitle: TextLabel
-local objectiveText: TextLabel
-local objectiveBar: Widgets.Bar
-local objectiveKey: Keycap.Keycap
-local objectiveCard: Frame
-local powerBar: Widgets.Bar
-local heatBar: Widgets.Bar
-local powerText: TextLabel
-local heatText: TextLabel
-local heatRow: Frame
-local gauges: Frame
-local powerRow: Frame
-local genPill: Frame
-local zoneChip: Frame
-local zoneLabel: TextLabel
-local zoneDot: Frame
-local minimap: MapView.MapView
+local worldLabel: TextLabel
+local stageLabel: TextLabel
+local towerBar: Widgets.Bar
+local timerLabel: TextLabel
+local goalLabel: TextLabel
+local progressCard: Frame
+local playKey: Keycap.Keycap
+local actions: Frame
+local skipKey: Keycap.Keycap
+local shieldPill: Frame
+local shieldLabel: TextLabel
+local toggleKeys: { [string]: Keycap.Keycap } = {}
 local badges: { [string]: Frame } = {}
-local objectiveAction: string = ""
-local objectiveArg: any = nil
-local lastBits = 0
-local lastChips = -1
-local warnedHeat = false
-local warnedPower = false
-
-local function formatBits(n: number): string
-	return NumberFormat.Compact(n)
-end
-
-------------------------------------------------------------------------------------
--- Objectif : le prochain but du joueur, calculé à partir de l'état
-------------------------------------------------------------------------------------
-
-type Objective = {
-	Title: string,
-	Text: string,
-	Ratio: number?,
-	Button: string?,
-	Action: string,
-	Arg: any,
-	Ready: boolean,
-}
-
-local TUTORIAL_TEXT = {
-	[2] = "Suis les flèches au sol et marche sur le rond doré pour ramasser tes Bits !",
-	[3] = "Bravo ! Appuie sur le bouton vert AMÉLIORER pour rendre ta machine plus forte.",
-	[4] = "Encore une fois ! Plus ta machine est forte, plus tu gagnes de Bits.",
-	[5] = "Gagne 25K Bits, puis ouvre le portail violet pour découvrir une nouvelle zone !",
-	[6] = "Nouvelle zone ! Va au terminal et ouvre ta première capsule de robot.",
-}
-
-local function computeObjective(state: any): Objective
-	local data = state.Data
-	local production = state.Production
-	local bits = Store.Bits()
-	if not data.PoweredOn then
-		-- Le CTA d'allumage est l'écran central (Moments) : pas de second bouton ici.
-		return {
-			Title = "TON BUT",
-			Text = "Allume ton PC !",
-			Action = "PowerOn",
-			Arg = nil,
-			Ready = true,
-		}
-	end
-	if data.Tutorial == 2 then
-		local pending = Store.Pending()
-		return {
-			Title = "TON BUT",
-			Text = "Marche sur le rond doré ⭐",
-			Ratio = math.min(pending / 10, 1),
-			Action = "",
-			Arg = nil,
-			Ready = false,
-		}
-	end
-	if data.Tutorial == 3 or data.Tutorial == 4 then
-		local def = Modules.Get("Z1M1")
-		local level = data.Levels.Z1M1 or 0
-		local cost = if def then Formulas.UpgradeCost(def.BaseCost, level, GameConfig.LevelGrowth) else 0
-		return {
-			Title = "TON BUT",
-			Text = "Améliore ta première machine",
-			Ratio = math.min(bits / math.max(cost, 1), 1),
-			Button = "AMÉLIORER",
-			Action = "OpenModule",
-			Arg = "Z1M1",
-			Ready = bits >= cost,
-		}
-	end
-	-- Alertes matérielles prioritaires
-	if production.ThermalEfficiency < 0.9 then
-		if data.Zone >= GameConfig.Cooling.UnlockZone then
-			return {
-				Title = "ATTENTION",
-				Text = "🌡 Ton PC a trop chaud ! Ajoute du froid.",
-				Button = "REFROIDIR",
-				Action = "OpenZone",
-				Arg = GameConfig.Cooling.UnlockZone,
-				Ready = true,
-			}
-		end
-		return {
-			Title = "ATTENTION",
-			Text = "🌡 Ton PC a trop chaud ! Ouvre la zone Cryo.",
-			Button = "VOIR",
-			Action = "OpenZone",
-			Arg = data.Zone,
-			Ready = true,
-		}
-	end
-	if production.PowerEfficiency < 0.9 then
-		return {
-			Title = "ATTENTION",
-			Text = "⚡ Pas assez d'énergie ! Améliore l'alimentation.",
-			Button = "ALIMENTER",
-			Action = "OpenZone",
-			Arg = 1,
-			Ready = true,
-		}
-	end
-	if data.Tutorial == 6 then
-		return {
-			Title = "TON BUT",
-			Text = "Ouvre une capsule de robot",
-			Button = "CAPSULES",
-			Action = "OpenNanobots",
-			Arg = "Capsules",
-			Ready = true,
-		}
-	end
-	local nextZone = Zones[data.Zone + 1]
-	if nextZone then
-		local ratio = bits / nextZone.UnlockCost
-		return {
-			Title = "TON BUT",
-			Text = `Ouvre {nextZone.Name} : {NumberFormat.Compact(nextZone.UnlockCost)} Bits`,
-			Ratio = math.min(ratio, 1),
-			Button = if ratio >= 1 then "OUVRIR !" else nil,
-			Action = "Unlock",
-			Arg = data.Zone + 1,
-			Ready = ratio >= 1,
-		}
-	end
-	local phases = GameConfig.SingularityPhases
-	if data.SingularityPhase < #phases then
-		local cost = phases[data.SingularityPhase + 1]
-		return {
-			Title = "TON BUT",
-			Text = `Construis la Singularité ({data.SingularityPhase + 1}/{#phases})`,
-			Ratio = math.min(bits / cost, 1),
-			Button = "CONSTRUIRE",
-			Action = "OpenBios",
-			Arg = "Singularity",
-			Ready = bits >= cost,
-		}
-	end
-	return {
-		Title = "TON BUT",
-		Text = `Redémarre ton PC pour devenir encore plus fort (+{state.FirmwarePreview} ⭐)`,
-		Button = "REBOOT",
-		Action = "OpenBios",
-		Arg = "Reboot",
-		Ready = true,
-	}
-end
+local lastBits = -1
 
 ------------------------------------------------------------------------------------
 -- Construction
@@ -226,222 +62,213 @@ local function buildTopLeft(layer: Frame)
 	local column: Frame = New("Frame", {
 		Name = "Wallet",
 		Position = UDim2.fromOffset(16, 12),
-		Size = UDim2.fromOffset(280, 320),
+		Size = UDim2.fromOffset(240, 200),
 		BackgroundTransparency = 1,
 		Parent = layer,
-	}, {
-		Create.List(Enum.FillDirection.Vertical, 8),
-	})
-	local bits = Widgets.Pill("Bits", "TextBits", 270, column, true)
+	}, { Create.List(Enum.FillDirection.Vertical, 8) })
+	local bits = Widgets.Pill("Bits", "TextBits", 200, column, false)
 	bits.Root.LayoutOrder = 1
 	Material.RgbEdge(bits.Root, 1.2, 0.45, 25)
 	bitsValue = bits.Value
-	bitsRate = bits.Sub :: TextLabel
 	HUD.BitsPill = bits.Root
-
-	local chips = Widgets.Pill("Chips", "TextChips", 170, column, false)
-	chips.Root.LayoutOrder = 2
-	chipsValue = chips.Value
-
-	collectorCard = New("Frame", {
-		Name = "Collector",
-		Size = UDim2.fromOffset(230, 46),
-		BackgroundTransparency = Theme.Alpha.Glass,
-		BorderSizePixel = 0,
-		LayoutOrder = 3,
-		Tag = { "Glass", "RoundM" },
-		Parent = column,
-	})
-	collectorText = New("TextLabel", {
-		Position = UDim2.fromOffset(12, 4),
-		Size = UDim2.new(1, -24, 0, 18),
-		BackgroundTransparency = 1,
-		Text = "Collecteur",
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Tag = "TextCaption",
-		Parent = collectorCard,
-	})
-	collectorBar = Widgets.Bar(UDim2.new(1, -24, 0, 10), Style.Color("CurrencyBits"), collectorCard)
-	collectorBar.Root.Position = UDim2.fromOffset(12, 26)
+	-- Passes activables (visibles seulement si le joueur les possède)
+	for order, key in { "LowGravity", "SpeedChip" } do
+		local pass = Products.PassByKey[key]
+		local toggle = Keycap.new({
+			Text = pass.Name,
+			Variant = "Secondary",
+			Size = UDim2.fromOffset(200, 44),
+			LayoutOrder = 1 + order,
+			Small = true,
+			OnClick = function()
+				local data = Store.Data()
+				if data then
+					Net.Fire("ToggleAssist", key, not (data.Toggles :: any)[key])
+				end
+			end,
+			Parent = column,
+		})
+		toggle.Button.Visible = false
+		toggleKeys[key] = toggle
+	end
 end
 
-local function buildTopCenter(layer: Frame)
-	local center: Frame = New("Frame", {
-		Name = "Benchmark",
+local function label(parent: Instance, props: { [string]: any }, maxSize: number): TextLabel
+	props.BackgroundTransparency = 1
+	props.TextScaled = true
+	props.Parent = parent
+	return New("TextLabel", props, { New("UITextSizeConstraint", { MaxTextSize = maxSize }) :: Instance })
+end
+
+local function buildProgress(layer: Frame)
+	progressCard = New("Frame", {
+		Name = "Progress",
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 12),
-		Size = UDim2.fromOffset(300, 56),
-		BackgroundTransparency = Theme.Alpha.Glass,
-		BorderSizePixel = 0,
-		Tag = { "Glass", "RoundPill" },
-		Parent = layer,
-	})
-	Material.RgbEdge(center, 1.2, 0.35, 30)
-	New("TextLabel", {
-		Position = UDim2.fromOffset(24, 6),
-		Size = UDim2.new(1, -110, 0, 14),
-		BackgroundTransparency = 1,
-		Text = "PUISSANCE DU PC",
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Tag = "TextCaption",
-		Parent = center,
-	})
-	benchValue = New("TextLabel", {
-		Position = UDim2.fromOffset(24, 20),
-		Size = UDim2.new(1, -110, 0, 28),
-		BackgroundTransparency = 1,
-		Text = "0 FLOPS",
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Tag = "TextNumber",
-		Parent = center,
-	})
-	genPill = New("Frame", {
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -10, 0.5, 0),
-		Size = UDim2.fromOffset(76, 36),
-		BorderSizePixel = 0,
-		Tag = { "FillViolet", "RoundPill" },
-		Visible = false, -- seulement après le premier Reboot
-		Parent = center,
-	})
-	genLabel = New("TextLabel", {
-		Size = UDim2.fromScale(1, 1),
-		BackgroundTransparency = 1,
-		Text = "GEN 1",
-		Tag = "TextKey",
-		Parent = genPill,
-	})
-	effectsRow = New("Frame", {
-		Name = "Effects",
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 74),
-		Size = UDim2.fromOffset(600, 30),
-		BackgroundTransparency = 1,
-		Parent = layer,
-	}, {
-		Create.List(Enum.FillDirection.Horizontal, 8, { HorizontalAlignment = Enum.HorizontalAlignment.Center }),
-	})
-end
-
-local function buildObjective(layer: Frame)
-	objectiveCard = New("Frame", {
-		Name = "Objective",
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -16, 0.5, 20),
-		Size = UDim2.fromOffset(300, 150),
+		Size = UDim2.fromOffset(460, 96),
 		BackgroundTransparency = Theme.Alpha.Glass,
 		BorderSizePixel = 0,
 		Tag = { "Glass", "RoundL" },
 		Parent = layer,
-	}, {
-		New("UIShadow", {
-			BlurRadius = UDim.new(0, 18),
-			Transparency = 0.5,
-			Offset = UDim2.fromOffset(0, 6),
-			Color = Style.Color("BgDeep"),
-		}),
 	})
-	Material.Glass(objectiveCard, true)
-	Material.RgbEdge(objectiveCard, 1.5, 0.25)
-	objectiveTitle = New("TextLabel", {
-		Position = UDim2.fromOffset(16, 12),
-		Size = UDim2.new(1, -32, 0, 16),
-		BackgroundTransparency = 1,
-		Text = "OBJECTIF",
+	Material.RgbEdge(progressCard, 1.2, 0.35, 30)
+	worldLabel = label(progressCard, {
+		Position = UDim2.fromOffset(18, 8),
+		Size = UDim2.new(1, -170, 0, 26),
+		Text = "LOBBY",
 		TextXAlignment = Enum.TextXAlignment.Left,
-		Tag = "TextCaption",
-		Parent = objectiveCard,
-	})
-	objectiveText = New("TextLabel", {
-		Position = UDim2.fromOffset(16, 30),
-		Size = UDim2.new(1, -32, 0, 44),
-		BackgroundTransparency = 1,
+		TextColor3 = Style.Color("TextPrimary"),
+		Tag = "FontHeavy",
+	}, 22)
+	stageLabel = label(progressCard, {
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -18, 0, 8),
+		Size = UDim2.fromOffset(140, 26),
 		Text = "",
-		TextWrapped = true,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		TextYAlignment = Enum.TextYAlignment.Top,
-		Tag = "TextHeading",
-		Parent = objectiveCard,
-	})
-	objectiveBar = Widgets.Bar(UDim2.new(1, -32, 0, 8), Style.Color("AccentViolet"), objectiveCard)
-	objectiveBar.Root.Position = UDim2.fromOffset(16, 80)
-	objectiveKey = Keycap.new({
-		Text = "",
-		Variant = "Primary",
-		Size = UDim2.new(1, -32, 0, 46),
-		Position = UDim2.fromOffset(16, 96),
-		OnClick = function()
-			if HUD.OnObjective then
-				HUD.OnObjective(objectiveAction, objectiveArg)
-			end
-		end,
-		Parent = objectiveCard,
-	})
-end
-
-local function gauge(parent: Frame, iconKind: string, color: string, order: number): (Frame, Widgets.Bar, TextLabel)
-	local row: Frame = New("Frame", {
-		Name = `Gauge_{iconKind}`,
-		Size = UDim2.fromOffset(226, 26),
-		BackgroundTransparency = 1,
-		LayoutOrder = order,
-		Parent = parent,
-	})
-	local icon = Icon.new(iconKind, 20, color)
-	icon.AnchorPoint = Vector2.new(0, 0.5)
-	icon.Position = UDim2.new(0, 0, 0.5, 0)
-	icon.Parent = row
-	local bar = Widgets.Bar(UDim2.new(1, -96, 0, 8), Style.Color(color), row)
-	bar.Root.AnchorPoint = Vector2.new(0, 0.5)
-	bar.Root.Position = UDim2.new(0, 28, 0.5, 0)
-	local text: TextLabel = New("TextLabel", {
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, 0, 0.5, 0),
-		Size = UDim2.fromOffset(60, 20),
-		BackgroundTransparency = 1,
-		Text = "0 %",
 		TextXAlignment = Enum.TextXAlignment.Right,
-		Tag = "TextCaption",
-		Parent = row,
-	})
-	return row, bar, text
+		TextColor3 = Style.Color("CurrencyBits"),
+		Tag = "FontHeavy",
+	}, 22)
+	towerBar = Widgets.Bar(UDim2.new(1, -36, 0, 12), Style.Color("AccentViolet"), progressCard)
+	towerBar.Root.Position = UDim2.fromOffset(18, 40)
+	-- Repères des mondes sur la barre de la tour
+	for world = 1, Tower.WORLD_COUNT - 1 do
+		New("Frame", {
+			Position = UDim2.new(world / Tower.WORLD_COUNT, -1, 0, -2),
+			Size = UDim2.new(0, 2, 1, 4),
+			BackgroundColor3 = Style.Color("BgDeep"),
+			BorderSizePixel = 0,
+			ZIndex = 3,
+			Parent = towerBar.Root,
+		})
+	end
+	goalLabel = label(progressCard, {
+		Position = UDim2.fromOffset(18, 60),
+		Size = UDim2.new(1, -170, 0, 26),
+		Text = "",
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Style.Color("TextPrimary"),
+		Tag = "FontBold",
+	}, 18)
+	timerLabel = label(progressCard, {
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -18, 0, 60),
+		Size = UDim2.fromOffset(140, 26),
+		Text = "",
+		TextXAlignment = Enum.TextXAlignment.Right,
+		TextColor3 = Style.Color("TextPrimary"),
+		Tag = "FontHeavy",
+	}, 20)
 end
 
-local function buildBottomLeft(layer: Frame)
-	-- Jauges dans la colonne du portefeuille (haut gauche) : jamais sous le dock, même sur petit écran.
-	local wallet = layer:FindFirstChild("Wallet")
-	gauges = New("Frame", {
-		Name = "Gauges",
-		Size = UDim2.fromOffset(250, 74),
+local function buildRight(layer: Frame)
+	Keycap.new({
+		Icon = "Menu",
+		IconOnly = true,
+		Variant = "Secondary",
+		Size = UDim2.fromOffset(48, 48),
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -16, 0, 12),
+		OnClick = function()
+			App.Toggle("Menu")
+		end,
+		Parent = layer,
+	})
+	shieldPill = New("Frame", {
+		Name = "Shield",
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -16, 0, 70),
+		Size = UDim2.fromOffset(190, 40),
 		BackgroundTransparency = Theme.Alpha.Glass,
 		BorderSizePixel = 0,
-		LayoutOrder = 4,
-		Tag = { "Glass", "RoundM" },
-		Parent = wallet or layer,
-	}, {
-		Create.List(Enum.FillDirection.Vertical, 4, { VerticalAlignment = Enum.VerticalAlignment.Center }) :: Instance,
-		Create.Padding(8, 12),
+		Visible = false,
+		Tag = { "Glass", "RoundPill" },
+		Parent = layer,
+	}, { New("UIStroke", { Color = Style.Color("AccentCyan"), Thickness = 2 }) :: Instance })
+	shieldLabel = label(shieldPill, {
+		Size = UDim2.new(1, -24, 1, -12),
+		Position = UDim2.fromOffset(12, 6),
+		Text = "",
+		TextColor3 = Style.Color("AccentCyan"),
+		Tag = "FontHeavy",
+	}, 18)
+
+	-- Actions pendant l'ascension
+	actions = New("Frame", {
+		Name = "Actions",
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -16, 0.5, 10),
+		Size = UDim2.fromOffset(190, 3 * 60 + 2 * 10),
+		BackgroundTransparency = 1,
+		Parent = layer,
+	}, { Create.List(Enum.FillDirection.Vertical, 10) })
+	Keycap.new({
+		Text = "Checkpoint",
+		Variant = "Secondary",
+		Size = UDim2.fromOffset(190, 60),
+		LayoutOrder = 1,
+		Small = true,
+		OnClick = function()
+			Net.Fire("ToCheckpoint")
+		end,
+		Parent = actions,
 	})
-	powerRow, powerBar, powerText = gauge(gauges, "Bolt", "CurrencyBits", 1)
-	heatRow, heatBar, heatText = gauge(gauges, "Heat", "AccentCyan", 2)
+	skipKey = Keycap.new({
+		Text = "Passer l'étape",
+		Variant = "Gold",
+		Size = UDim2.fromOffset(190, 60),
+		LayoutOrder = 2,
+		Small = true,
+		OnClick = function()
+			local product = Products.ProductByKey.Skip
+			if product and product.Id ~= 0 then
+				MarketplaceService:PromptProductPurchase(Players.LocalPlayer, product.Id)
+			end
+		end,
+		Parent = actions,
+	})
+	skipKey.Button.Visible = false
+	Keycap.new({
+		Text = "Lobby",
+		Variant = "Ghost",
+		Size = UDim2.fromOffset(190, 60),
+		LayoutOrder = 3,
+		Small = true,
+		OnClick = function()
+			Net.Fire("ToLobby")
+		end,
+		Parent = actions,
+	})
 end
 
--- 5 gros boutons, des mots simples. Le Menu (réglages, classements…) est la roue en haut à droite.
+local function buildPlay(layer: Frame)
+	playKey = Keycap.new({
+		Text = "JOUER",
+		Variant = "Primary",
+		Size = UDim2.fromOffset(380, 84),
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, -128),
+		OnClick = function()
+			Net.Fire("Resume")
+		end,
+		Parent = layer,
+	})
+	playKey.Button.Visible = false
+end
+
 local DOCK = {
-	{ Name = "Components", Text = "Améliorer", Icon = "Cpu", Key = Enum.KeyCode.C },
-	{ Name = "Nanobots", Text = "Robots", Icon = "Bot", Key = Enum.KeyCode.N },
-	{ Name = "Quests", Text = "Missions", Icon = "Quest", Key = Enum.KeyCode.Q },
-	{ Name = "Elevator", Text = "Carte", Icon = "Elevator", Key = Enum.KeyCode.T },
 	{ Name = "Shop", Text = "Boutique", Icon = "Shop", Key = Enum.KeyCode.B },
+	{ Name = "Missions", Text = "Missions", Icon = "Quest", Key = Enum.KeyCode.Q },
+	{ Name = "Menu", Text = "Menu", Icon = "Menu", Key = Enum.KeyCode.M },
 }
-local MENU_KEY = Enum.KeyCode.M
 
 local function buildDock(layer: Frame)
+	local width = #DOCK * 110 + (#DOCK - 1) * 8 + 24
 	local dock: Frame = New("Frame", {
 		Name = "Dock",
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -14),
-		Size = UDim2.fromOffset(5 * 104 + 4 * 8 + 24, 96),
+		Size = UDim2.fromOffset(width, 96),
 		BackgroundTransparency = Theme.Alpha.Glass,
 		BorderSizePixel = 0,
 		Tag = { "Glass", "RoundL" },
@@ -451,12 +278,6 @@ local function buildDock(layer: Frame)
 			HorizontalAlignment = Enum.HorizontalAlignment.Center,
 			VerticalAlignment = Enum.VerticalAlignment.Center,
 		}) :: Instance,
-		New("UIShadow", {
-			BlurRadius = UDim.new(0, 18),
-			Transparency = 0.45,
-			Offset = UDim2.fromOffset(0, 6),
-			Color = Style.Color("BgDeep"),
-		}),
 	})
 	Material.RgbEdge(dock, 1.2, 0.4, 20)
 	for index, item in DOCK do
@@ -464,7 +285,7 @@ local function buildDock(layer: Frame)
 			Text = item.Text,
 			Icon = item.Icon,
 			Variant = "Secondary",
-			Size = UDim2.fromOffset(104, 76),
+			Size = UDim2.fromOffset(110, 76),
 			LayoutOrder = index,
 			Small = true,
 			OnClick = function()
@@ -472,7 +293,7 @@ local function buildDock(layer: Frame)
 			end,
 			Parent = dock,
 		})
-		-- Icône au-dessus du texte dans les keycaps du dock
+		-- Icône au-dessus du texte : toute la largeur est disponible pour le mot.
 		local content = key.Button:FindFirstChild("Content", true)
 		local layout = content and content:FindFirstChildOfClass("UIListLayout")
 		if layout then
@@ -480,17 +301,15 @@ local function buildDock(layer: Frame)
 			layout.Padding = UDim.new(0, 4)
 		end
 		key.Label.Size = UDim2.new(0, 0, 0, 16)
-		-- Icône AU-DESSUS du texte : toute la largeur du bouton est disponible pour le mot.
 		local limit = key.Label:FindFirstChildOfClass("UISizeConstraint")
 		if limit then
-			limit.MaxSize = Vector2.new(84, math.huge)
+			limit.MaxSize = Vector2.new(90, math.huge)
 		end
 		if index == 1 then
 			App.DockFocus = key.Button
 		end
 		badges[item.Name] = Widgets.Badge(key.Button)
 	end
-
 	UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
 		if processed then
 			return
@@ -500,315 +319,98 @@ local function buildDock(layer: Frame)
 				App.Toggle(item.Name)
 			end
 		end
-		if input.KeyCode == MENU_KEY then
-			App.Toggle("Menu")
-		end
 	end)
-end
-
--- Haut droite : roue du menu + « Tu es ici » + minimap (toucher = grande carte).
-local function buildTopRight(layer: Frame)
-	local column: Frame = New("Frame", {
-		Name = "Where",
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -16, 0, 12),
-		Size = UDim2.fromOffset(210, 200),
-		BackgroundTransparency = 1,
-		Parent = layer,
-	})
-	Keycap.new({
-		Icon = "Menu",
-		IconOnly = true,
-		Variant = "Secondary",
-		Size = UDim2.fromOffset(44, 44),
-		Position = UDim2.fromOffset(0, 0),
-		OnClick = function()
-			App.Toggle("Menu")
-		end,
-		Parent = column,
-	})
-	zoneChip = New("Frame", {
-		Name = "Zone",
-		Position = UDim2.fromOffset(52, 0),
-		Size = UDim2.new(1, -52, 0, 44),
-		BackgroundTransparency = Theme.Alpha.Glass,
-		BorderSizePixel = 0,
-		Tag = { "Glass", "RoundPill" },
-		Parent = column,
-	})
-	zoneDot = New("Frame", {
-		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 14, 0.5, 0),
-		Size = UDim2.fromOffset(14, 14),
-		BackgroundColor3 = Style.Color("AccentViolet"),
-		BorderSizePixel = 0,
-		Tag = "RoundPill",
-		Parent = zoneChip,
-	})
-	zoneLabel = New("TextLabel", {
-		Position = UDim2.fromOffset(36, 0),
-		Size = UDim2.new(1, -46, 1, 0),
-		BackgroundTransparency = 1,
-		Text = "Hub",
-		TextScaled = true,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		TextColor3 = Style.Color("TextPrimary"),
-		Tag = "FontHeavy",
-		Parent = zoneChip,
-	}, { New("UITextSizeConstraint", { MaxTextSize = 18 }) :: Instance })
-	minimap = MapView.new({
-		Parent = column,
-		Size = UDim2.new(1, 0, 0, 130),
-		Position = UDim2.new(1, 0, 0, 52),
-		AnchorPoint = Vector2.new(1, 0),
-		Compact = true,
-	})
-	-- Toute la minimap est un bouton vers la grande carte
-	New("TextButton", {
-		Name = "OpenMap",
-		Size = UDim2.fromScale(1, 1),
-		BackgroundTransparency = 1,
-		Text = "",
-		ZIndex = 10,
-		Parent = minimap.Root,
-	}).Activated:Connect(function()
-		App.Open("Elevator")
-	end)
-end
-
-local shownZone = -1
-local function refreshWhere()
-	local state = Store.State
-	if not state then
-		return
-	end
-	local here = WorldFx.CurrentZone
-	if here ~= shownZone then
-		shownZone = here
-		zoneLabel.Text = if here == 0 then "Hub" else Zones[here].Name
-		zoneDot.BackgroundColor3 = if here == 0
-			then Style.Color("AccentViolet")
-			else Color3.fromHex(Zones[here].Primary)
-		Motion.Pop(zoneChip, 0.06)
-	end
-	minimap:Refresh(state.Data.Zone, here)
-	local character = Players.LocalPlayer.Character
-	local root = character and character:FindFirstChild("HumanoidRootPart")
-	local camera = Workspace.CurrentCamera
-	minimap:SetPlayer(
-		if root and root:IsA("BasePart") then root.Position else nil,
-		if camera then camera.CFrame.LookVector else nil
-	)
-	minimap:SetTarget(Guide.Target)
 end
 
 ------------------------------------------------------------------------------------
 -- Rafraîchissement
 ------------------------------------------------------------------------------------
 
-local effectPills: { [string]: { Frame: Frame, Label: TextLabel } } = {}
-
--- Crée ou met à jour la pilule `key` (nil = la retirer). Aucune recréation à chaque seconde.
-local function effectPill(key: string, text: string?, colorName: string, order: number)
-	local existing = effectPills[key]
-	if not text then
-		if existing then
-			existing.Frame:Destroy()
-			effectPills[key] = nil
-		end
-		return
-	end
-	if existing then
-		existing.Label.Text = text
-		return
-	end
-	local pill: Frame = New("Frame", {
-		Size = UDim2.fromOffset(0, 28),
-		AutomaticSize = Enum.AutomaticSize.X,
-		BackgroundTransparency = Theme.Alpha.Glass,
-		BorderSizePixel = 0,
-		LayoutOrder = order,
-		Tag = { "Glass", "RoundPill" },
-		Parent = effectsRow,
-	}, {
-		New("UIStroke", { Color = Style.Color(colorName), Transparency = 0.3, Thickness = 1.2 }) :: Instance,
-		Create.Padding(4, 12),
-	})
-	local label: TextLabel = New("TextLabel", {
-		Size = UDim2.fromScale(0, 1),
-		AutomaticSize = Enum.AutomaticSize.X,
-		BackgroundTransparency = 1,
-		Text = text,
-		Tag = "TextCaption",
-		Parent = pill,
-	})
-	effectPills[key] = { Frame = pill, Label = label }
-	Motion.Pop(pill, 0.1)
-end
-
-local function refreshEffects()
-	local state = Store.State
-	if not state then
-		return
-	end
-	local now = Store.UnixNow()
-	effectPill(
-		"Overclock",
-		if state.Overclock.Until > now
-			then `OVERCLOCK x{state.Overclock.Mult} · {NumberFormat.Duration(state.Overclock.Until - now)}`
-			else nil,
-		"BrandAnga",
-		1
-	)
-	effectPill(
-		"Server",
-		if state.ServerBoostUntil > now
-			then `SERVER BOOST x2 · {NumberFormat.Duration(state.ServerBoostUntil - now)}`
-			else nil,
-		"CurrencyBits",
-		2
-	)
-	effectPill(
-		"Personal",
-		if state.Data.Boosts.BitsX2Until > now
-			then `BITS x2 · {NumberFormat.Duration(state.Data.Boosts.BitsX2Until - now)}`
-			else nil,
-		"AccentCyan",
-		3
-	)
-	effectPill(
-		"Friends",
-		if state.FriendsInServer > 0 then `AMIS +{math.min(state.FriendsInServer * 10, 30)} %` else nil,
-		"Success",
-		4
-	)
-end
-
-local function refreshBadges(state: any)
+-- Le but du moment, en une phrase simple.
+local function goalText(state: any): string
 	local data = state.Data
-	local today = Formulas.DayIndex(Store.UnixNow())
-	local questReady = data.Daily.LastClaimDay ~= today
-	for _, list in { data.Quests.Daily, data.Quests.Weekly } do
-		for _, quest in list do
-			if not quest.Claimed and quest.Progress >= quest.Target then
-				questReady = true
-			end
-		end
+	if state.AtLobby then
+		return if data.Stage > 0 then "Appuie sur CONTINUER !" else "Appuie sur JOUER pour grimper !"
 	end
-	if data.Download.Kind ~= "" then
-		for _, kind in GameConfig.Downloads do
-			if kind.Id == data.Download.Kind and Store.UnixNow() >= data.Download.StartedAt + kind.Seconds then
-				questReady = true
-			end
-		end
+	if not data.RunStarted then
+		return "Passe la ligne de départ !"
 	end
-	badges.Quests.Visible = questReady
+	local world = Tower.WorldOf(data.Stage)
+	if data.Stage > 0 and data.Stage == Tower.TerminalStage(world) and data.Cleared < world then
+		return "Élimine les virus au terminal 💻"
+	end
+	if data.Stage == Tower.TOTAL_STAGES and data.Cleared >= Tower.WORLD_COUNT then
+		return "Touche le cœur de la puce pour gagner !"
+	end
+	return "Atteins le prochain checkpoint !"
 end
 
 local function refreshFull(state: any)
 	local data = state.Data
-	local production = state.Production
-	genLabel.Text = `GEN {data.Generation}`
-	genPill.Visible = data.Generation > 1
-	benchValue.Text = NumberFormat.Flops(state.Benchmark)
-	if data.Chips ~= lastChips then
-		if lastChips >= 0 and data.Chips > lastChips then
-			Motion.Pop(chipsValue.Parent :: GuiObject, 0.08)
+	local world = Tower.WorldOf(data.Stage)
+	local def = Tower.Worlds[math.max(world, 1)]
+	if state.AtLobby then
+		worldLabel.Text = "LOBBY · Salle de démarrage"
+	elseif data.Stage == 0 then
+		worldLabel.Text = `DÉPART · {def.Name}`
+	else
+		worldLabel.Text = `MONDE {world} · {def.Name}`
+	end
+	stageLabel.Text = `Étape {data.Stage}/{Tower.TOTAL_STAGES}`
+	towerBar:Set(data.Stage / Tower.TOTAL_STAGES)
+	towerBar:SetColor(if state.AtLobby then Style.Color("AccentViolet") else Color3.fromHex(def.Primary))
+	goalLabel.Text = goalText(state)
+	playKey.Button.Visible = state.AtLobby
+	playKey:SetText(if data.Stage > 0 then `CONTINUER · Étape {data.Stage}` else "JOUER")
+	actions.Visible = not state.AtLobby
+	skipKey.Button.Visible = Products.ProductByKey.Skip.Id ~= 0 and data.Stage < Tower.TOTAL_STAGES
+	for key, toggle in toggleKeys do
+		local owned = state.Passes[key] == true
+		toggle.Button.Visible = owned
+		if owned then
+			local on = (data.Toggles :: any)[key] == true
+			toggle:SetVariant(if on then "Success" else "Secondary")
+			toggle:SetText(`{Products.PassByKey[key].Name} : {if on then "ON" else "OFF"}`)
 		end
-		Motion.CountTo(chipsValue, math.max(lastChips, 0), data.Chips, NumberFormat.Compact, 0.5)
-		lastChips = data.Chips
 	end
-	-- Jauges
-	local powerRatio = production.PowerDemand / math.max(production.PowerCapacity, 1)
-	powerBar:Set(powerRatio)
-	powerBar:SetColor(
-		Style.Color(if powerRatio > 1 then "Danger" elseif powerRatio > 0.85 then "Warning" else "CurrencyBits")
-	)
-	powerText.Text = if powerRatio > 1 then "TROP !" else "Presque"
-	-- Les jauges n'apparaissent QUE s'il y a un problème à régler (moins d'infos à l'écran).
-	local heatRatioPreview = production.HeatDemand / math.max(production.HeatCapacity, 1)
-	powerRow.Visible = powerRatio > 0.85
-	heatRow.Visible = data.Zone >= GameConfig.Cooling.HeatStartsAtZone and heatRatioPreview > 0.85
-	local rowsShown = (if powerRow.Visible then 1 else 0) + (if heatRow.Visible then 1 else 0)
-	gauges.Visible = rowsShown > 0
-	gauges.Size = UDim2.fromOffset(250, if rowsShown == 2 then 74 else 44)
-	local heatRatio = production.HeatDemand / math.max(production.HeatCapacity, 1)
-	heatBar:Set(heatRatio)
-	heatBar:SetColor(
-		Style.Color(if heatRatio > 1 then "Danger" elseif heatRatio > 0.85 then "Warning" else "AccentCyan")
-	)
-	heatText.Text = if heatRatio > 1 then "TROP !" else "Chaud"
-	Material.SetThermalStress(if heatRow.Visible then math.clamp((heatRatio - 0.8) * 2.5, 0, 1) else 0)
-	if heatRatio > 1 and heatRow.Visible and not warnedHeat then
-		warnedHeat = true
-		Dialogue.Say(
-			"Aïe, ça chauffe ! Quand la jauge dépasse 100 %, ton PC ralentit. Il faut plus de refroidissement !",
-			6
-		)
+	-- Pastille : récompense quotidienne ou mission prête
+	local today = math.floor(Store.UnixNow() / 86400)
+	local missionReady = data.Daily.LastClaimDay ~= today
+	for _, mission in data.Missions.List do
+		if not mission.Claimed and mission.Progress >= mission.Target then
+			missionReady = true
+		end
 	end
-	if powerRatio > 1 and not warnedPower then
-		warnedPower = true
-		Dialogue.Say("Oups, pas assez de Watts ! Améliore le bloc d'alimentation au terminal doré de La Centrale.", 6)
-	end
-	-- Collecteur
-	collectorCard.Visible = data.PoweredOn and not state.Passes.AutoCollect
-	-- Tutoriel
-	-- Anga guide le tutoriel dans sa boîte de dialogue (avant l'allumage, c'est l'écran central qui parle).
-	local tip = TUTORIAL_TEXT[data.Tutorial]
-	Dialogue.SetPersistent(if data.PoweredOn and data.Tutorial < 8 then tip else nil)
-	refreshBadges(state)
-	refreshEffects()
+	badges.Missions.Visible = missionReady
 end
 
-local lastObjectiveKey = ""
 local function refreshFast()
 	local state = Store.State
 	if not state then
 		return
 	end
 	local bits = Store.Bits()
-	if math.abs(bits - lastBits) >= 1 or bits < lastBits then
-		bitsValue.Text = formatBits(bits)
+	if bits ~= lastBits then
+		if lastBits >= 0 and bits > lastBits then
+			Motion.Pop(bitsValue.Parent :: GuiObject, 0.06)
+		end
+		bitsValue.Text = NumberFormat.Compact(bits)
 		lastBits = bits
 	end
-	bitsRate.Text = `+{NumberFormat.Compact(Store.Rate())}/s`
-	local pending = Store.Pending()
-	local cap = Store.Rate() * GameConfig.CollectorCapSeconds
-	collectorBar:Set(if cap > 0 then pending / cap else 0, false)
-	collectorText.Text = if cap > 0 and pending >= cap * 0.999
-		then "PLEIN ! Va sur le rond doré"
-		else `À ramasser : {NumberFormat.Compact(pending)}`
-
-	local objective = computeObjective(state)
-	objectiveAction = objective.Action
-	objectiveArg = objective.Arg
-	objectiveTitle.Text = objective.Title
-	objectiveText.Text = objective.Text
-	objectiveBar.Root.Visible = objective.Ratio ~= nil
-	if objective.Ratio then
-		objectiveBar:Set(objective.Ratio, false)
-	end
-	local key = `{objective.Title}|{objective.Button or ""}|{objective.Ready}`
-	if key ~= lastObjectiveKey then
-		lastObjectiveKey = key
-		objectiveKey.Button.Visible = objective.Button ~= nil
-		objectiveKey:SetText(objective.Button or "")
-		objectiveKey:SetEnabled(objective.Ready)
-		objectiveCard.Size = UDim2.fromOffset(300, if objective.Button then 150 else 100)
-		if objective.Ready and objective.Button then
-			Motion.Pop(objectiveCard, 0.06)
-		end
+	timerLabel.Text = if state.Data.RunStarted then `⏱ {Time.Clock(Store.RunTime())}` else ""
+	local shieldLeft = state.ShieldUntil - Store.UnixNow()
+	shieldPill.Visible = shieldLeft > 0
+	if shieldLeft > 0 then
+		shieldLabel.Text = `🛡 Bouclier {math.ceil(shieldLeft)} s`
 	end
 end
 
 function HUD.Mount(layer: Frame)
 	buildTopLeft(layer)
-	buildTopCenter(layer)
-	buildObjective(layer)
-	buildBottomLeft(layer)
+	buildProgress(layer)
+	buildRight(layer)
+	buildPlay(layer)
 	buildDock(layer)
-	buildTopRight(layer)
-
 	Store.Changed:Connect(refreshFull)
 	local accumulator = 0
 	RunService.Heartbeat:Connect(function(dt: number)
@@ -816,15 +418,6 @@ function HUD.Mount(layer: Frame)
 		if accumulator >= 0.1 then
 			accumulator = 0
 			refreshFast()
-			refreshWhere()
-		end
-	end)
-	task.spawn(function()
-		while true do
-			task.wait(1)
-			if Store.State then
-				refreshEffects()
-			end
 		end
 	end)
 end

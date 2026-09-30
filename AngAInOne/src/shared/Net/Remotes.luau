@@ -13,39 +13,33 @@ local FOLDER_NAME = "AngAInOneRemotes"
 -- Client -> serveur (RemoteEvent). Les arguments attendus sont documentés ici.
 local CLIENT_TO_SERVER = {
 	"ClientReady", -- ()
-	"PowerOn", -- ()
-	"Upgrade", -- (moduleId: string, amount: number) amount = 1, 10 ou -1 (max)
-	"UpgradeCapacity", -- (kind: "Power" | "Cooling", amount: number)
-	"UnlockZone", -- (zone: number)
-	"Travel", -- (floor: number) 0 = hub
-	"OverclockStart", -- ()
-	"OverclockStop", -- ()
-	"OpenCapsule", -- (capsuleId: string)
-	"EquipNanobot", -- (uid: string, equip: boolean)
-	"FuseNanobots", -- (nanobotId: string)
+	"ReportDeath", -- (cause: string) le client a touché un piège (pièges animés côté client)
+	"ToCheckpoint", -- () revenir au dernier checkpoint
+	"ToLobby", -- () retourner au lobby (la progression est gardée)
+	"Resume", -- () depuis le lobby : reprendre au dernier checkpoint
+	"MinigameStart", -- (world: number) terminal antivirus du monde
+	"MinigameEnd", -- (world: number, success: boolean, score: number)
+	"ArcadeStart", -- (kind: string) borne d'arcade du lobby
+	"ArcadeEnd", -- (kind: string, success: boolean, score: number)
+	"BuyCosmetic", -- (id: string)
+	"EquipCosmetic", -- (id: string)
+	"ToggleAssist", -- (key: string, on: boolean) "LowGravity" | "SpeedChip"
 	"ClaimDaily", -- ()
-	"ClaimQuest", -- (questId: string)
-	"StartDownload", -- (kind: string)
-	"ClaimDownload", -- ()
-	"Reboot", -- ()
-	"BuySingularityPhase", -- ()
-	"SaveSettings", -- (music: number, sfx: number, reducedMotion: boolean, rgbHue: number)
-	"LikeTower", -- (ownerUserId: number)
+	"ClaimMission", -- (id: string)
+	"IntroSeen", -- ()
+	"SaveSettings", -- (music: number, sfx: number, reducedMotion: boolean)
 	"DevCommand", -- (command: string, value: number) STUDIO UNIQUEMENT, ignoré en ligne
 }
 
--- Serveur -> client (RemoteEvent), sauf "Tick" qui est non fiable (fréquent, perte tolérée).
+-- Serveur -> client (RemoteEvent).
 local SERVER_TO_CLIENT = {
 	"State", -- (snapshot) état complet du joueur
 	"Notify", -- (kind: string, text: string)
 	"Fx", -- (kind: string, data: any) effets visuels/sonores ponctuels
 	"Leaderboard", -- (boards)
-	"Offline", -- (bits: number, seconds: number)
-	"ServerInfo", -- (info) boost serveur, annonces
-	"Overclock", -- (phase: string, data: any)
 }
 
-local UNRELIABLE = { "Tick" } -- (bits, pending, rate, serverTime)
+local UNRELIABLE: { string } = {}
 
 local Remotes = {}
 
