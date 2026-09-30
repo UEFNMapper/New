@@ -66,6 +66,9 @@ local ORIGIN: { [string]: Vector3 } = {
 
 local failed: { [string]: boolean } = {}
 
+-- Modèles recopiés dans ReplicatedStorage.ClientModels pour le client (voir Preload).
+local CLIENT_MODELS = { "Anga", "AioDrone" }
+
 local MATERIALS: { [string]: Enum.Material } = {
 	SmoothPlastic = Enum.Material.SmoothPlastic,
 	Plastic = Enum.Material.Plastic,
@@ -159,6 +162,23 @@ function ModelLibrary.Preload()
 	local deadline = os.clock() + 20
 	while pending > 0 and os.clock() < deadline do
 		task.wait(0.05)
+	end
+	-- Modèles animés CÔTÉ CLIENT (compagnon mini-Anga : Companion.luau) : une copie du gabarit
+	-- dans ReplicatedStorage.ClientModels. Absent = le client construit son secours en primitives.
+	local folder = ReplicatedStorage:FindFirstChild("ClientModels")
+	for _, key in CLIENT_MODELS do
+		local template = templates[key]
+		if template then
+			if not folder then
+				local created = Instance.new("Folder")
+				created.Name = "ClientModels"
+				created.Parent = ReplicatedStorage
+				folder = created
+			end
+			if folder and not folder:FindFirstChild(key) then
+				template:Clone().Parent = folder
+			end
+		end
 	end
 end
 

@@ -170,6 +170,17 @@ for _, name in { "WorldState", "Story", "StreamMonitor" } do
 		end
 	end)
 end
+-- Compagnon : mini-Anga sur son drone AngAInOne (guide, réactions, bulle de dialogue au-dessus).
+step("Companion", function()
+	local Companion = load(Controllers.Companion)
+	local MinigamePanel = load(Screens.MinigamePanel)
+	if Companion then
+		if MinigamePanel and MinigamePanel.IsPlaying then
+			Companion.IsBusy = MinigamePanel.IsPlaying
+		end
+		Companion.Start()
+	end
+end)
 step("Interactions", function()
 	local Interactions = load(Controllers.Interactions)
 	Interactions.Start()

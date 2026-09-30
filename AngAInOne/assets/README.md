@@ -111,3 +111,5 @@ Personnages : face avant vers −Y dans Blender. Chambre d'Anga : façade vers +
 | `Pickaxe` | Personnages | pioche géante du pendule (pivot en haut du manche, 31,65 studs au-dessus de la base) | ✅ |
 | `GiantCursor` | Personnages | curseur-flèche géant | ✅ |
 | `Hand` | Personnages | curseur-main géant | ✅ |
+| `Anga` | Personnages | la mascotte (6 studs, t-shirt rouge logo « A ») : compagnon mini-Anga côté client (`ReplicatedStorage.ClientModels`) et Anga géant du lobby | ✅ |
+| `AioDrone` | Personnages | aéroglisseur de l'app sous mini-Anga : anneau néon `8B7CFF`, logo « A », 4 rotors `__Spin` (pièce `Deck` = pont où il se tient) | ✅ |
