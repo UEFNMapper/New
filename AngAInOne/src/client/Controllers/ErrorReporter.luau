@@ -14,6 +14,25 @@ local ErrorReporter = {}
 local label: TextLabel? = nil
 local lines: { string } = {}
 
+-- Messages du MOTEUR Roblox qui ne viennent pas du jeu (animations / sons de l'avatar du joueur,
+-- assets privés non téléchargeables en Studio…) : ils restent dans la Sortie, pas à l'écran.
+local ENGINE_NOISE = {
+	"Failed to load animation",
+	"Failed to load sound",
+	"assetdelivery.roblox.com",
+	"Asset is not approved",
+	"is not authorized to access",
+}
+
+local function isEngineNoise(message: string): boolean
+	for _, pattern in ENGINE_NOISE do
+		if string.find(message, pattern, 1, true) then
+			return true
+		end
+	end
+	return false
+end
+
 local function show(text: string)
 	if not RunService:IsStudio() then
 		return
@@ -28,9 +47,10 @@ local function show(text: string)
 		gui.DisplayOrder = 1000
 		gui.ResetOnSpawn = false
 		local box = Instance.new("TextLabel")
-		box.AnchorPoint = Vector2.new(0.5, 1)
-		box.Position = UDim2.new(0.5, 0, 1, -130)
-		box.Size = UDim2.new(0.8, 0, 0, 160)
+		-- En haut à droite, compact : ne recouvre ni les boutons du jeu ni les cartes d'intro.
+		box.AnchorPoint = Vector2.new(1, 0)
+		box.Position = UDim2.new(1, -12, 0, 96)
+		box.Size = UDim2.new(0.4, 0, 0, 120)
 		box.BackgroundColor3 = Color3.fromRGB(60, 10, 16)
 		box.BackgroundTransparency = 0.1
 		box.TextColor3 = Color3.fromRGB(255, 200, 200)
@@ -40,6 +60,21 @@ local function show(text: string)
 		box.TextSize = 14
 		box.Font = Enum.Font.Code
 		box.Parent = gui
+		-- ✕ pour fermer l'encadré (il se rouvre à la prochaine erreur)
+		local close = Instance.new("TextButton")
+		close.AnchorPoint = Vector2.new(1, 0)
+		close.Position = UDim2.new(1, -4, 0, 4)
+		close.Size = UDim2.fromOffset(28, 28)
+		close.BackgroundColor3 = Color3.fromRGB(120, 20, 30)
+		close.TextColor3 = Color3.new(1, 1, 1)
+		close.Text = "✕"
+		close.TextSize = 16
+		close.Font = Enum.Font.GothamBold
+		close.Parent = box
+		close.Activated:Connect(function()
+			box.Visible = false
+			table.clear(lines)
+		end)
 		local padding = Instance.new("UIPadding")
 		padding.PaddingLeft = UDim.new(0, 10)
 		padding.PaddingTop = UDim.new(0, 8)
@@ -49,6 +84,7 @@ local function show(text: string)
 	end
 	local box = label
 	if box then
+		box.Visible = true
 		box.Text = "[AngAInOne · erreurs client (Studio)] Copie ce texte et envoie-le :\n" .. table.concat(lines, "\n")
 	end
 end
@@ -61,7 +97,7 @@ end
 
 function ErrorReporter.Start()
 	LogService.MessageOut:Connect(function(message: string, messageType: Enum.MessageType)
-		if messageType == Enum.MessageType.MessageError then
+		if messageType == Enum.MessageType.MessageError and not isEngineNoise(message) then
 			show(message)
 		end
 	end)
