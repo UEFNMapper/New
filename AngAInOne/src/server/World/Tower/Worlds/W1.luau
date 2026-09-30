@@ -490,20 +490,26 @@ return function(ctx: Common.WorldContext)
 	-- Décor : pièces du thème (modèles 3D, avec décor de secours en primitives)
 	------------------------------------------------------------------------------------
 
-	-- Condensateur de décor (sans collision). Modèle `CapacitorBig` (≈ 3,5 × 5 studs à l'échelle 1).
+	-- Condensateur de décor (sans collision). Modèles `Capacitor` / `CapacitorBig`.
 	local function decorCap(x: number, z: number, d: number, h: number, big: boolean?)
 		local key = if big then "CapacitorBig" else "Capacitor"
-		local nominal = if big then 3.5 else 1
-		ModelLibrary.Place(key, CFrame.new(V(x, FLOOR_Y, z)), decor, { Scale = d / nominal }, function(): Instance?
-			local model = Build.Model(key, decor)
-			Props.Capacitor(model, V(x, FLOOR_Y, z), d / 2, h, CAP_BODY, ORANGE)
-			return model
-		end)
+		ModelLibrary.Place(
+			key,
+			CFrame.new(V(x, FLOOR_Y, z)),
+			decor,
+			{ Fit = Vector3.new(d, h, d) },
+			function(): Instance?
+				local model = Build.Model(key, decor)
+				Props.Capacitor(model, V(x, FLOOR_Y, z), d / 2, h, CAP_BODY, ORANGE)
+				return model
+			end
+		)
 	end
 
-	-- Rangée de selfs de décor (modèle `ChokeRow`, ≈ 6 studs de long à l'échelle 1).
+	-- Rangée de selfs de décor (modèle `ChokeRow`, alignée sur X).
 	local function decorChokes(cf: CFrame, count: number, size: number)
-		ModelLibrary.Place("ChokeRow", cf, decor, { Scale = count * size * 1.3 / 6 }, function(): Instance?
+		local fit = Vector3.new(count * size * 1.3, size * 1.2, size * 2)
+		ModelLibrary.Place("ChokeRow", cf, decor, { Fit = fit }, function(): Instance?
 			local model = Build.Model("ChokeRow", decor)
 			for i = 1, count do
 				local p = cf * CFrame.new((i - (count + 1) / 2) * size * 1.3, size / 2, 0)
@@ -894,18 +900,24 @@ return function(ctx: Common.WorldContext)
 	-- Décor : la centrale
 	------------------------------------------------------------------------------------
 
-	-- Le bloc d'alimentation géant (≈ 15 × 8,6 × 14 studs à l'échelle 1 → ×6,7) et son ventilateur
-	ModelLibrary.Place("Psu", CFrame.new(V(0, FLOOR_Y, 0)), decor, { Scale = 6.7 }, psuFallback)
-	ModelLibrary.Place("Fan140", CFrame.new(V(0, 33, 0)), decor, { Scale = 88 / 14 }, function(): Instance?
-		return Props.Fan(
-			decor,
-			CFrame.new(V(0, 34, 0)) * VERTICAL,
-			88,
-			ORANGE,
-			7,
-			{ Speed = 1.4, Lite = true, Brand = "ANGA", Frame = C.MetalDark }
-		)
-	end)
+	-- Le bloc d'alimentation géant (sous la grille praticable de l'étape 4) et son ventilateur
+	ModelLibrary.Place("Psu", CFrame.new(V(0, FLOOR_Y, 0)), decor, { Fit = Vector3.new(100, 46, 100) }, psuFallback)
+	ModelLibrary.Place(
+		"Fan140",
+		CFrame.new(V(0, 33, 0)),
+		decor,
+		{ Fit = Vector3.new(88, 12, 88) },
+		function(): Instance?
+			return Props.Fan(
+				decor,
+				CFrame.new(V(0, 34, 0)) * VERTICAL,
+				88,
+				ORANGE,
+				7,
+				{ Speed = 1.4, Lite = true, Brand = "ANGA", Frame = C.MetalDark }
+			)
+		end
+	)
 	ctx.Lamp(V(0, 30, 0), ORANGE, 2, 60) -- le ventilateur brille sous la grille
 
 	-- Câbles de décor : du panneau modulaire du bloc jusqu'au câble de l'étape 1
@@ -925,9 +937,15 @@ return function(ctx: Common.WorldContext)
 			{ V(-44, 48, 44), V(-58, 76, 50), V(-70, 98, 60) },
 		} :: { { Vector3 } }
 	do
-		ModelLibrary.Place("CableSleeved8", CFrame.new(path[1]), decor, { Scale = 4 }, function(): Instance?
-			return Props.ArcCable(decor, path[1], path[2], path[3], 1.8, if i == 2 then ORANGE else BRAID, 5)
-		end)
+		ModelLibrary.Place(
+			"CableSleeved8",
+			CFrame.new(path[1]),
+			decor,
+			{ Fit = Vector3.new(30, 50, 30) },
+			function(): Instance?
+				return Props.ArcCable(decor, path[1], path[2], path[3], 1.8, if i == 2 then ORANGE else BRAID, 5)
+			end
+		)
 	end
 	-- Transformateurs du bloc (noyau feuilleté, ruban jaune, bobinage cuivre)
 	for _, t in { { -50, -88, 0 }, { 10, -96, 0.5 }, { 110, -10, 1.2 } } :: { { number } } do
@@ -944,9 +962,15 @@ return function(ctx: Common.WorldContext)
 		Box(decor, "TransformerWire", Vector3.new(10.4, 1.4, 11), cf * CFrame.new(0, 4, 0), C.Copper, METAL)
 	end
 	-- Rouleau de câble 24 broches posé au sol (modèle `CableBraided24`)
-	ModelLibrary.Place("CableBraided24", CFrame.new(V(-40, FLOOR_Y, -100)), decor, { Scale = 5 }, function(): Instance?
-		return Props.ArcCable(decor, V(-60, 4, -118), V(-40, 22, -96), V(-10, 4, -116), 2.6, BRAID, 7)
-	end)
+	ModelLibrary.Place(
+		"CableBraided24",
+		CFrame.new(V(-40, FLOOR_Y, -100)),
+		decor,
+		{ Fit = Vector3.new(50, 22, 30) },
+		function(): Instance?
+			return Props.ArcCable(decor, V(-60, 4, -118), V(-40, 22, -96), V(-10, 4, -116), 2.6, BRAID, 7)
+		end
+	)
 
 	-- Forêt de condensateurs de décor (silos) autour du parcours
 	for _, c in
@@ -972,12 +996,18 @@ return function(ctx: Common.WorldContext)
 	decorChokes(CFrame.new(V(60, FLOOR_Y, -110)), 4, 7)
 	decorChokes(CFrame.new(V(-100, FLOOR_Y, -40)) * CFrame.Angles(0, math.pi / 2, 0), 3, 6)
 	decorChokes(CFrame.new(V(70, FLOOR_Y, 70)) * CFrame.Angles(0, 0.4, 0), 3, 8)
-	ModelLibrary.Place("Choke", CFrame.new(V(96, FLOOR_Y, 28)), decor, { Scale = 6 }, function(): Instance?
-		local model = Build.Model("Choke", decor)
-		Box(model, "ChokeCore", Vector3.new(9, 9, 9), CFrame.new(V(96, FLOOR_Y + 4.5, 28)), C.Black)
-		Rod(model, "Winding", CFrame.new(V(96, FLOOR_Y + 4.5, 28)) * VERTICAL, 5, 10, C.Copper, METAL)
-		return model
-	end)
+	ModelLibrary.Place(
+		"Choke",
+		CFrame.new(V(96, FLOOR_Y, 28)),
+		decor,
+		{ Fit = Vector3.new(9, 9, 9) },
+		function(): Instance?
+			local model = Build.Model("Choke", decor)
+			Box(model, "ChokeCore", Vector3.new(9, 9, 9), CFrame.new(V(96, FLOOR_Y + 4.5, 28)), C.Black)
+			Rod(model, "Winding", CFrame.new(V(96, FLOOR_Y + 4.5, 28)) * VERTICAL, 5, 10, C.Copper, METAL)
+			return model
+		end
+	)
 
 	-- Pistes de la carte (sous le vide) : lignes orange qui mènent au bloc
 	for _, t in { { -130, -60, 0 }, { 60, 130, 0 }, { -20, 20, 1 } } :: { { number } } do

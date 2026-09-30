@@ -345,15 +345,15 @@ return function(ctx: Common.WorldContext)
 	local stickCount = 0
 
 	-- Barrette géante debout : `x, z` = centre de sa base ; `alongX` = sa largeur suit X.
-	-- Modèle `RamStick` (≈ 13,3 × 3,1 × 0,7 studs couché à l'échelle 1) : on le redresse.
+	-- Modèle `RamStick` (long axe X, contacts en bas) : tourné pour que son long axe soit vertical.
 	local function ramStick(x: number, z: number, alongX: boolean, label: string?)
 		stickCount += 1
 		local index = stickCount
-		local scale = STICK_H / 13.3
+		local fit = Vector3.new(STICK_H, STICK_W, 4) -- axes du modèle : longueur, hauteur, épaisseur
 		local base = CFrame.new(V(x, SLOT_TOP + STICK_H / 2, z))
 			* (if alongX then CFrame.identity else CFrame.Angles(0, math.pi / 2, 0))
 		local pivot = base * CFrame.new(STICK_W / 2, 0, 0) * CFrame.Angles(0, 0, math.pi / 2)
-		ModelLibrary.Place("RamStick", pivot, decor, { Scale = scale }, function(): Instance?
+		ModelLibrary.Place("RamStick", pivot, decor, { Fit = fit }, function(): Instance?
 			local model = Build.Model("RamStick", decor)
 			local function at(u: number, y: number): CFrame
 				return base * CFrame.new(u, y - STICK_H / 2, 0)
@@ -392,12 +392,12 @@ return function(ctx: Common.WorldContext)
 			end
 			return model
 		end)
-		-- Slot DIMM au pied (modèle `DimmSlot`, ≈ 14 × 1 × 0,8 studs à l'échelle 1) + loquets
+		-- Slot DIMM au pied (modèle `DimmSlot`, long axe X) + loquets
 		ModelLibrary.Place(
 			"DimmSlot",
 			CFrame.new(V(x, 0, z)) * (if alongX then CFrame.identity else CFrame.Angles(0, math.pi / 2, 0)),
 			decor,
-			{ Scale = (STICK_W + 6) / 14 },
+			{ Fit = Vector3.new(STICK_W + 6, SLOT_TOP + 1, 6) },
 			function(): Instance?
 				local model = Build.Model("DimmSlot", decor)
 				local slotCf = CFrame.new(V(x, SLOT_TOP / 2 + 0.5, z))
@@ -417,13 +417,13 @@ return function(ctx: Common.WorldContext)
 		)
 	end
 
-	-- Dissipateur du chipset (modèle `ChipsetHeatsink`, ≈ 4 × 1 × 4 studs à l'échelle 1).
+	-- Dissipateur du chipset (modèle `ChipsetHeatsink`).
 	local function chipsetHeatsink(x: number, z: number, top: number, size: number)
 		ModelLibrary.Place(
 			"ChipsetHeatsink",
 			CFrame.new(V(x, top - size / 4, z)),
 			decor,
-			{ Scale = size / 4 },
+			{ Fit = Vector3.new(size, size / 4, size) },
 			function(): Instance?
 				local model = Build.Model("ChipsetHeatsink", decor)
 				local h = size / 4

@@ -20,6 +20,13 @@ local ModelAssets = require(Shared.Config.ModelAssets)
 local ModelLibrary = {}
 
 local templates: { [string]: Model } = {}
+
+-- Modèles exportés couchés : rotation appliquée une fois au chargement pour les redresser
+-- (axes Roblox : Blender X -> X, Blender Z -> Y, Blender Y -> -Z). Voir assets/README.md.
+local ORIENT: { [string]: CFrame } = {
+	CpuCooler = CFrame.Angles(0, 0, math.rad(90)), -- haut du ventirad vers +X -> +Y
+	GpuCard = CFrame.Angles(math.rad(90), 0, 0), -- carte à plat -> debout, ventilateurs vers +Z
+}
 local failed: { [string]: boolean } = {}
 
 local MATERIALS: { [string]: Enum.Material } = {
@@ -60,10 +67,15 @@ function ModelLibrary.ApplyConvention(part: BasePart): boolean
 	return flag == "__Spin"
 end
 
-local function prepare(asset: Instance): Model?
+local function prepare(asset: Instance, key: string): Model?
 	local model = asset:FindFirstChildWhichIsA("Model") or (if asset:IsA("Model") then asset else nil)
 	if not model then
 		return nil
+	end
+	local fix = ORIENT[key]
+	if fix then
+		model:PivotTo(model:GetPivot() * fix)
+		model.WorldPivot = CFrame.new(model:GetPivot().Position) -- boîte englobante alignée sur le monde
 	end
 	for _, descendant in model:GetDescendants() do
 		if descendant:IsA("BasePart") then
@@ -95,7 +107,7 @@ function ModelLibrary.Preload()
 				local ok, asset = pcall(function(): Instance
 					return InsertService:LoadAsset(id)
 				end)
-				local model = if ok and asset then prepare(asset) else nil
+				local model = if ok and asset then prepare(asset, key) else nil
 				if model then
 					model.Name = key
 					templates[key] = model
@@ -120,6 +132,9 @@ end
 
 export type PlaceOptions = {
 	Scale: number?, -- 1 = taille modélisée (1 unité Blender = 1 stud)
+	-- Taille cible (axes du modèle, avant la rotation de `cframe`) : échelle UNIFORME maximale pour
+	-- tenir dans cette boîte. Préférable à Scale : ne dépend pas de la taille exacte du modèle.
+	Fit: Vector3?,
 	Collide: boolean?, -- pièces solides (par défaut : décor sans collision)
 	Name: string?,
 	-- Pièces `__Spin` : true (défaut) = tournent côté client ; false = figées (modèle que l'on
@@ -149,6 +164,20 @@ function ModelLibrary.Place(
 	model.Name = opts.Name or key
 	if opts.Scale and opts.Scale ~= 1 then
 		model:ScaleTo(opts.Scale)
+	end
+	if opts.Fit then
+		local _, current = model:GetBoundingBox()
+		local fit = opts.Fit
+		local ratio = math.huge
+		for _, axis in { "X", "Y", "Z" } do
+			local have = (current :: any)[axis] :: number
+			if have > 0.01 then
+				ratio = math.min(ratio, (fit :: any)[axis] / have)
+			end
+		end
+		if ratio < math.huge then
+			model:ScaleTo(model:GetScale() * ratio)
+		end
 	end
 	-- Origine = centre de la base de la boîte englobante
 	local boxCf, size = model:GetBoundingBox()

@@ -42,6 +42,11 @@ python3 tools/upload_models.py
 `.glb`, décocher « Ancrer » inutile (le jeu ancre tout), importer, puis clic droit sur le modèle →
 *Enregistrer sur Roblox*. Copier l'ID de l'asset dans `ModelAssets.luau` (clé = nom du fichier).
 
+**Placer un modèle en jeu** : `ModelLibrary.Place(clé, cframe, parent, { Fit = Vector3.new(l, h, p) }, secours)`
+— `Fit` = boîte cible dans les axes du modèle (échelle uniforme), plus sûr que `Scale`. Les modèles
+exportés couchés sont redressés au chargement (table `ORIENT` de `ModelLibrary`). Option
+`Spin = false | "Hide"` : pièces tournantes figées ou retirées (objet animé, pales mortelles devant).
+
 Tant qu'un modèle n'a pas d'ID, le jeu construit son **décor de secours** en blocs : rien ne casse.
 
 ## Catalogue
@@ -51,6 +56,30 @@ Personnages : face avant vers −Y dans Blender. Planches : `previews/_sheet_*.p
 | Clé | Famille | Utilisé dans | État |
 |---|---|---|---|
 | `Fan120` | Matériel PC | ventilateurs (façade, W4, W6) | ✅ |
+| `Fan140` | Matériel PC | ventilateurs 140 (façade, monde refroidissement) | ✅ |
+| `GpuCard` | Matériel PC | carte graphique triple ventilo (monde GPU ; redressée au chargement) | ✅ |
+| `RamStick` | Matériel PC | barrette DDR5 RGB (monde RAM) | ✅ |
+| `CpuCooler` | Matériel PC | ventirad double tour (monde CPU ; modélisé couché, redressé au chargement) | ✅ |
+| `AioRadiator` | Matériel PC | radiateur 360 + 3 ventilos (monde refroidissement) | ✅ |
+| `PumpReservoir` | Matériel PC | pompe + réservoir lumineux (monde refroidissement) | ✅ |
+| `Psu` | Matériel PC | alimentation ATX modulaire (monde alimentation) | ✅ |
+| `Capacitor` | Matériel PC | condensateur électrolytique (carte mère) | ✅ |
+| `CapacitorBig` | Matériel PC | gros condensateur orange (alimentation, carte mère) | ✅ |
+| `Choke` | Matériel PC | self de puissance (VRM) | ✅ |
+| `ChokeRow` | Matériel PC | rangée de 6 selfs (VRM autour du socket) | ✅ |
+| `M2Ssd` | Matériel PC | SSD M.2 2280 + dissipateur masquable (monde SSD) | ✅ |
+| `SataSsd` | Matériel PC | SSD 2,5" alu brossé (monde SSD) | ✅ |
+| `VrmHeatsink` | Matériel PC | dissipateur VRM en L (carte mère) | ✅ |
+| `ChipsetHeatsink` | Matériel PC | dissipateur chipset logo RGB (carte mère) | ✅ |
+| `CpuChip` | Matériel PC | processeur avec IHS gravé (monde CPU) | ✅ |
+| `CpuSocket` | Matériel PC | socket LGA + levier (monde CPU) | ✅ |
+| `NpuChip` | Matériel PC | puce IA à circuits lumineux (monde IA) | ✅ |
+| `CableBraided24` | Matériel PC | nappe ATX 24 broches gainée (alimentation → carte mère) | ✅ |
+| `CableSleeved8` | Matériel PC | câble PCIe 8 broches gainé (GPU, parois) | ✅ |
+| `PcieSlot` | Matériel PC | slot PCIe x16 blindé (carte mère) | ✅ |
+| `DimmSlot` | Matériel PC | slot DDR5 à loquets (carte mère) | ✅ |
+| `IoShield` | Matériel PC | panneau I/O arrière (arrière carte mère) | ✅ |
+| `CaseFrame` | Matériel PC | pilier d'angle alu + passe-câbles (parois de la tour) | ✅ |
 | `Lagz` | Personnages | boss LAGZ (arène W7), couronne-chargement qui tourne | ✅ |
 | `LagzHead` | Personnages | LAGZ qui sort des écrans (incidents, lobby) | ✅ |
 | `LagzPortalCore` | Personnages | cœur du virus au centre de l'arène du boss | ✅ |

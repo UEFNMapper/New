@@ -240,7 +240,7 @@ return function(ctx: Common.WorldContext)
 	-- Fenêtre de pub (décor infecté) : modèle PopUp, ou cadre blanc + bandeau + ✕.
 	local function popup(position: Vector3, yaw: number)
 		local cf = CFrame.new(position) * CFrame.Angles(0, yaw, 0)
-		local placed = ModelLibrary.Place("PopUp", cf, decor, { Scale = 1.5 }, function()
+		local placed = ModelLibrary.Place("PopUp", cf, decor, { Fit = Vector3.new(9, 8, 3) }, function()
 			local model = Build.Model("PopUp")
 			local frame = Box(model, "Frame", Vector3.new(9, 7, 0.4), cf * CFrame.new(0, 3.5, 0), C.White)
 			Props.Sign(frame, "GAGNE UN PC !", "Clique ici (vraiment)", GLITCH, C.Black)
@@ -259,7 +259,7 @@ return function(ctx: Common.WorldContext)
 
 	local base = ctx.Base
 	local chipCf = CFrame.new(0, base + 1.6, 0)
-	ModelLibrary.Place("NpuChip", chipCf, decor, { Scale = 1 }, function()
+	ModelLibrary.Place("NpuChip", chipCf, decor, { Fit = Vector3.new(72, 8, 72) }, function()
 		local model = Build.Model("NpuChip")
 		Box(model, "Package", Vector3.new(72, 3, 72), chipCf * CFrame.new(0, 1.5, 0), C.PcbDark, SMOOTH)
 		for k = 0, 3 do
