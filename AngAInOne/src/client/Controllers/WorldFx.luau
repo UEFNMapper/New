@@ -6,7 +6,7 @@
 	- Portails de monde : solides pour moi tant que le terminal n'est pas réussi
 	- Checkpoints : éteints / atteint (vert) / prochain (qui pulse)
 	- Traînées RGB animées, et étiquette « Étape X » au-dessus des autres joueurs
-	Tags : TitleHologram, LeaderboardScreen, Coin, WorldGate, Checkpoint.
+	Tags : TitleHologram, LeaderboardScreen, Coin, UsbKey, WorldGate, Checkpoint.
 ]]
 
 local CollectionService = game:GetService("CollectionService")
@@ -33,6 +33,7 @@ local WorldFx = {}
 local player = Players.LocalPlayer
 
 local coins: { [BasePart]: { Base: CFrame, Phase: number } } = {}
+local usbKeys: { [BasePart]: { Base: CFrame, Phase: number } } = {} -- clés USB dorées (une fois pour toujours)
 local gates: { [BasePart]: boolean } = {}
 local checkpoints: { [BasePart]: number } = {}
 local boardScreens: { [BasePart]: SurfaceGui } = {}
@@ -180,6 +181,21 @@ local function applyCoin(p: BasePart)
 	end
 end
 
+-- Clé USB déjà trouvée : cachée pour ce joueur (elle reste dans la tour pour les autres).
+local function applyKey(p: BasePart)
+	local id = p:GetAttribute("KeyId")
+	local d = data()
+	local found = d ~= nil and type(id) == "string" and d.UsbKeys[id] == true
+	for _, node in p:GetDescendants() do
+		if node:IsA("BasePart") then
+			node.LocalTransparencyModifier = if found then 1 else 0
+		elseif node:IsA("PointLight") or node:IsA("ParticleEmitter") or node:IsA("BillboardGui") then
+			(node :: any).Enabled = not found
+		end
+	end
+	p.LocalTransparencyModifier = if found then 1 else 0
+end
+
 local function applyGate(barrier: BasePart)
 	local world = barrier:GetAttribute("World")
 	local d = data()
@@ -241,6 +257,9 @@ end
 local function refreshAll()
 	for p in coins do
 		applyCoin(p)
+	end
+	for p in usbKeys do
+		applyKey(p)
 	end
 	for barrier in gates do
 		applyGate(barrier)
@@ -343,6 +362,15 @@ function WorldFx.Start()
 	end, function(instance)
 		coins[instance :: any] = nil
 	end)
+	track("UsbKey", function(instance)
+		local p = part(instance)
+		if p then
+			usbKeys[p] = { Base = p.CFrame, Phase = math.random() * 10 }
+			applyKey(p)
+		end
+	end, function(instance)
+		usbKeys[instance :: any] = nil
+	end)
 	track("WorldGate", function(instance)
 		local p = part(instance)
 		if p then
@@ -385,6 +413,12 @@ function WorldFx.Start()
 			if (p.Position - eye).Magnitude < 200 then
 				local bob = if reduced then 0 else math.sin(t * 2.5 + info.Phase) * 0.4
 				p.CFrame = info.Base * CFrame.new(0, bob, 0) * CFrame.Angles(0, t * 2 + info.Phase, 0)
+			end
+		end
+		for p, info in usbKeys do
+			if (p.Position - eye).Magnitude < 200 then
+				local bob = if reduced then 0 else math.sin(t * 2 + info.Phase) * 0.5
+				p.CFrame = info.Base * CFrame.new(0, bob, 0) * CFrame.Angles(0, t * 1.4 + info.Phase, 0)
 			end
 		end
 		colorClock += dt

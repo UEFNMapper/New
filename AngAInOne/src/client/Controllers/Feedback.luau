@@ -137,6 +137,28 @@ local function onFx(kind: string, payload: any)
 		if typeof(payload.Position) == "Vector3" then
 			burst(payload.Position, { "F6E05E", "FBD38D" }, 10, 8)
 		end
+	elseif kind == "UsbKey" then
+		Audio.Play("Unlock")
+		Audio.Play("Collect", 0.8)
+		local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+		if root and root:IsA("BasePart") then
+			burst(root.Position, { "F6E05E", "D4A64A", "FFFFFF" }, 30, 14)
+		end
+		local found, total = payload.Found or 0, payload.Total or 0
+		Toasts.Show(
+			"Milestone",
+			`🔑 Clé USB dorée {found}/{total} · +{NumberFormat.Compact(payload.Bits or 0)} Bits`
+		)
+		if found >= total and total > 0 then
+			task.delay(1.2, function()
+				Toasts.Show("Success", "Toutes les clés USB ! Traînée USB débloquée dans la Boutique 🎉")
+				Dialogue.Say("Toutes les clés USB ! Tu es un vrai Anti-Lag Légendaire !", 5)
+			end)
+		elseif found == 1 then
+			task.delay(1, function()
+				Dialogue.Say("Une clé USB dorée ! Il y en a 3 cachées dans chaque monde.", 5)
+			end)
+		end
 	elseif kind == "Death" then
 		local isMe = payload.UserId == player.UserId
 		local def = Cosmetics.ById[payload.Fx] or Cosmetics.ById[Cosmetics.DefaultDeathFx]

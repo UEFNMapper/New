@@ -49,6 +49,7 @@ local towerBar: Widgets.Bar
 local timerLabel: TextLabel
 local goalLabel: TextLabel
 local progressCard: Frame
+local keyLabel: TextLabel
 local playKey: Keycap.Keycap
 local actions: Frame
 local skipKey: Keycap.Keycap
@@ -215,6 +216,17 @@ local function buildProgress(layer: Frame)
 		TextColor3 = Style.Color("TextPrimary"),
 		Tag = "FontBold",
 	}, 18)
+	-- Clés USB dorées : petite pastille sous la carte (monde courant + total)
+	keyLabel = label(progressCard, {
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 1, 6),
+		Size = UDim2.fromOffset(220, 26),
+		BackgroundTransparency = Theme.Alpha.Glass,
+		Text = "",
+		TextColor3 = Style.Color("CurrencyBits"),
+		Tag = { "FontBold", "Glass", "RoundL" },
+	}, 16)
+	keyLabel.BackgroundTransparency = Theme.Alpha.Glass -- `label` met un fond transparent
 	timerLabel = label(progressCard, {
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.new(1, -18, 0, 60),
@@ -425,6 +437,18 @@ local function refreshFull(state: any)
 	towerBar:Set(data.Stage / Tower.TOTAL_STAGES)
 	towerBar:SetColor(if state.AtLobby then Style.Color("AccentViolet") else Color3.fromHex(def.Primary))
 	goalLabel.Text = goalText(state)
+	local keysTotal, keysHere = 0, 0
+	local inWorld = world > 0 and not state.AtLobby
+	for id in data.UsbKeys do
+		keysTotal += 1
+		if inWorld and string.match(id, "^W(%d+)K") == tostring(world) then
+			keysHere += 1
+		end
+	end
+	keyLabel.Text = if inWorld
+		then `🔑 {keysHere}/{Tower.USB_KEYS_PER_WORLD} ici · {keysTotal}/{Tower.WORLD_COUNT * Tower.USB_KEYS_PER_WORLD}`
+		else `🔑 Clés USB : {keysTotal}/{Tower.WORLD_COUNT * Tower.USB_KEYS_PER_WORLD}`
+	keyLabel.Visible = keysTotal > 0 or inWorld
 	playKey.Button.Visible = state.AtLobby
 	playKey:SetText(if data.Stage > 0 then `CONTINUER · Étape {data.Stage}` else "JOUER")
 	actions.Visible = not state.AtLobby
