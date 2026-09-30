@@ -101,6 +101,8 @@ local function buildZoneSign(layout: WorldLayout.ZoneLayout)
 		Tag = "FontBold",
 		Parent = card,
 	})
+	-- Hors du ScreenGui : on applique les règles de style (coins, polices) explicitement.
+	Style.ApplyTo(gui)
 	table.insert(signs, { Zone = layout.Zone, Gui = gui, Status = status, Card = card })
 end
 
@@ -129,6 +131,7 @@ local function buildHubLabels()
 				Tag = { "FontHeavy", "RoundPill" },
 				Parent = gui,
 			}, { Create.Padding(6, 12) :: Instance })
+			Style.ApplyTo(gui)
 		end
 	end
 end

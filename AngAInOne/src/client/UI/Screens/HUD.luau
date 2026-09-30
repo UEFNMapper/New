@@ -327,7 +327,7 @@ local function buildObjective(layer: Frame)
 	objectiveCard = New("Frame", {
 		Name = "Objective",
 		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -16, 0.46, 0),
+		Position = UDim2.new(1, -16, 0.5, 20),
 		Size = UDim2.fromOffset(300, 150),
 		BackgroundTransparency = Theme.Alpha.Glass,
 		BorderSizePixel = 0,
@@ -480,6 +480,11 @@ local function buildDock(layer: Frame)
 			layout.Padding = UDim.new(0, 4)
 		end
 		key.Label.Size = UDim2.new(0, 0, 0, 16)
+		-- Icône AU-DESSUS du texte : toute la largeur du bouton est disponible pour le mot.
+		local limit = key.Label:FindFirstChildOfClass("UISizeConstraint")
+		if limit then
+			limit.MaxSize = Vector2.new(84, math.huge)
+		end
 		if index == 1 then
 			App.DockFocus = key.Button
 		end
@@ -553,8 +558,9 @@ local function buildTopRight(layer: Frame)
 	}, { New("UITextSizeConstraint", { MaxTextSize = 18 }) :: Instance })
 	minimap = MapView.new({
 		Parent = column,
-		Size = UDim2.new(1, 0, 0, 146),
-		Position = UDim2.fromOffset(0, 52),
+		Size = UDim2.new(1, 0, 0, 130),
+		Position = UDim2.new(1, 0, 0, 52),
+		AnchorPoint = Vector2.new(1, 0),
 		Compact = true,
 	})
 	-- Toute la minimap est un bouton vers la grande carte
