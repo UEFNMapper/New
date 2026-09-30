@@ -28,6 +28,10 @@ export type World = {
 	Traps: { string }, -- pièges vedettes (TrapKinds)
 	Minigame: string, -- mini-jeu du terminal de fin de monde (MinigameKinds)
 	Intro: string, -- ce que dit Anga en entrant dans le monde
+	Symptom: string, -- le symptôme du PC que ce monde répare (scénario « Opération Anti-Lag »)
+	Minion: string, -- le sbire de LAGZ qui garde le terminal
+	Incident: string, -- incident vedette de LAGZ dans ce monde (Incidents.Kinds ; "Any" = tous)
+	Cleaned: string, -- ce que dit Anga quand le monde est nettoyé
 }
 
 -- Types de pièges animés côté client (voir TrapController) : tag "Trap" + attribut Kind.
@@ -43,6 +47,23 @@ Tower.TrapKinds = {
 	"Conveyor", -- tapis de données (Direction, Speed) : pousse
 	"Bounce", -- trampoline condensateur (Power)
 	"Heat", -- bouche de chaleur temporisée (Period, Duty, Phase) : mortelle quand active
+	-- v2 « Opération Anti-Lag » (voir docs/SCENARIO.md). Offsets et Waypoints en coordonnées monde
+	-- relatives à la position de repos ; Waypoints = "x,y,z;x,y,z" (le 1er point vaut 0,0,0).
+	"Surge", -- impulsion électrique qui court le long d'un câble (Waypoints, Speed, Period) : mortelle
+	"Powered", -- plateforme solide seulement quand le courant passe (Period, Duty, Phase) ; absente en BLACKOUT
+	"TabRain", -- pluie d'onglets : fenêtres qui tombent (mortelles) puis restent un instant comme
+	-- plateformes (Size Vector3 = zone, Period, Stay)
+	"Flood", -- fuite mémoire : plan mortel qui MONTE puis redescend (Rise, Period, Phase)
+	"Corrupt", -- dalle corrompue : solide/traversable en alternance (Period, Duty, Phase) ; inversée en CORRUPTION
+	"Defrag", -- bloc SÛR qui coulisse de case en case (Waypoints, Step = secondes par case)
+	"DustBall", -- boule de poussière qui roule en boucle (Waypoints, Speed) : mortelle
+	"Pendulum", -- pioche / marteau qui se balance (Axis, Amplitude en degrés, Period, Phase, Pivot Vector3) : mortel
+	"LagMover", -- plateforme SÛRE qui avance par à-coups, en retard (Offset, Period, Phase, Steps)
+	"Spinner", -- roue de chargement : anneau de plateformes SÛRES qui tourne (Speed rad/s)
+	"DeadPixels", -- dalles qui s'éteignent en vague (Direction, Period, Duty) : traversables éteintes
+	"LoadBridge", -- pont qui se remplit comme une barre de progression (Period, Segments, Phase)
+	"Cursor", -- curseur géant : vise le joueur, prévient, puis clique (Period, Radius, Area Vector3) : mortel
+	"FirewallWall", -- mur percé qui avance (Offset, Period, Phase) : mortel sauf les trous
 }
 
 -- Mini-jeux 2D des terminaux antivirus (voir UI/Minigames).
@@ -66,6 +87,10 @@ Tower.Worlds = {
 		Traps = { "Zapper", "Bounce", "SpinBar" },
 		Minigame = "Scan",
 		Intro = "Le virus a coupé le courant ! Évite les décharges électriques et saute sur les condensateurs.",
+		Symptom = "Le PC s'éteint tout seul (coupures de courant)",
+		Minion = "Sparky",
+		Incident = "Blackout",
+		Cleaned = "Le courant est revenu ! Le PC ne s'éteint plus tout seul.",
 	},
 	{
 		Index = 2,
@@ -79,6 +104,10 @@ Tower.Worlds = {
 		Traps = { "Crusher", "Conveyor", "Mover" },
 		Minigame = "Memory",
 		Intro = "Les barrettes de RAM s'écrasent en rythme. Attends le bon moment pour passer !",
+		Symptom = "Mémoire saturée : 200 onglets ouverts",
+		Minion = "Pop-Up",
+		Incident = "Popups",
+		Cleaned = "La mémoire est libérée ! Plus d'onglets fantômes.",
 	},
 	{
 		Index = 3,
@@ -92,6 +121,10 @@ Tower.Worlds = {
 		Traps = { "Vanish", "Crusher", "Conveyor" },
 		Minigame = "Dodge",
 		Intro = "Le virus efface les données : les plateformes disparaissent. Ne traîne pas !",
+		Symptom = "Fichiers corrompus",
+		Minion = "Corrupto",
+		Incident = "Corruption",
+		Cleaned = "Les fichiers sont réparés ! Le disque est tout propre.",
 	},
 	{
 		Index = 4,
@@ -105,6 +138,10 @@ Tower.Worlds = {
 		Traps = { "Wind", "SpinBar", "Vanish" },
 		Minigame = "Firewall",
 		Intro = "Les ventilateurs soufflent fort ici. Accroche-toi et avance entre les rafales !",
+		Symptom = "Surchauffe : ventilateurs bouchés",
+		Minion = "Dusty",
+		Incident = "Overheat",
+		Cleaned = "Les ventilateurs respirent enfin ! Le PC refroidit.",
 	},
 	{
 		Index = 5,
@@ -118,6 +155,10 @@ Tower.Worlds = {
 		Traps = { "Laser", "Heat", "Mover" },
 		Minigame = "Scan",
 		Intro = "Le processeur surchauffe ! Lasers et bouches de chaleur partout. Observe avant de courir.",
+		Symptom = "Processeur à 100 % : un crypto-mineur !",
+		Minion = "Minor",
+		Incident = "Lag",
+		Cleaned = "Le mineur est parti ! Le processeur souffle.",
 	},
 	{
 		Index = 6,
@@ -131,6 +172,10 @@ Tower.Worlds = {
 		Traps = { "SpinBar", "Laser", "Zapper" },
 		Minigame = "Memory",
 		Intro = "Les ventilateurs de la carte graphique tournent à fond. Passe entre les pales !",
+		Symptom = "Écran figé et artefacts",
+		Minion = "Freezy",
+		Incident = "Freeze",
+		Cleaned = "Fini les freezes ! L'image est fluide.",
 	},
 	{
 		Index = 7,
@@ -144,10 +189,15 @@ Tower.Worlds = {
 		Traps = { "Virus", "Laser", "Mover" },
 		Minigame = "Firewall",
 		Intro = "Le cœur du virus est tout en haut. Évite ses gardes et détruis-le !",
+		Symptom = "Le repaire de LAGZ",
+		Minion = "LAGZ",
+		Incident = "Any",
+		Cleaned = "LAGZ est vaincu ! Le PC tourne à 144 FPS !",
 	},
 } :: { World }
 
 Tower.WORLD_COUNT = #Tower.Worlds
+Tower.USB_KEYS_PER_WORLD = 3 -- clés USB dorées cachées par monde (tag UsbKey, KeyId "W{n}K{i}")
 Tower.TOTAL_STAGES = Tower.WORLD_COUNT * Tower.STAGES_PER_WORLD
 
 -- Monde d'un checkpoint (0 = lobby).

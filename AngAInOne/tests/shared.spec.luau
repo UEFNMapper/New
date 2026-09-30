@@ -8,6 +8,7 @@ local GameConfig = Shim.load("src/shared/Config/GameConfig.luau")
 local Cosmetics = Shim.load("src/shared/Config/Cosmetics.luau")
 local Missions = Shim.load("src/shared/Config/Missions.luau")
 local Products = Shim.load("src/shared/Config/Products.luau")
+local Incidents = Shim.load("src/shared/Config/Incidents.luau")
 
 return {
 	["NumberFormat.Compact"] = function()
@@ -117,6 +118,30 @@ return {
 			Expect.truthy(table.find(Tower.MinigameKinds, kind) ~= nil, `durée min de {kind}`)
 		end
 	end,
+	["TrapClock : FREEZE fige puis reprend sans saut, LAG avance par à-coups"] = function()
+		Shim.Globals = {
+			game = {
+				GetService = function(_self: any, _name: string): any
+					return {}
+				end,
+			},
+		}
+		local TrapClock = Shim.load("src/shared/Util/TrapClock.luau")
+		Shim.Globals = {}
+		local Incidents = Shim.load("src/shared/Config/Incidents.luau")
+		local C = TrapClock.Compute
+		Expect.equal(C(100, "", 0, 0, 5), 95, "sans incident : heure - décalage")
+		-- FREEZE de 110 à 116
+		Expect.equal(C(109, "Freeze", 110, 116, 0), 109, "avant le freeze")
+		Expect.equal(C(113, "Freeze", 110, 116, 0), 110, "pendant : figé")
+		Expect.equal(C(118, "Freeze", 110, 116, 0), 112, "après, avant la mise à jour du décalage")
+		Expect.equal(C(118, "", 0, 0, 6), 112, "après la mise à jour : identique (pas de saut)")
+		-- LAG de 200 à 207
+		local a, b = C(200.1, "Lag", 200, 207, 0), C(200.3, "Lag", 200, 207, 0)
+		Expect.equal(a, b, "même pas de temps")
+		Expect.near(C(200.5, "Lag", 200, 207, 0), 200 + Incidents.LagStep, 1e-9)
+		Expect.equal(C(207.2, "Lag", 200, 207, 0), 207.2, "après le lag : heure normale")
+	end,
 	["configs cohérentes"] = function()
 		local ids = {}
 		for _, def in Cosmetics.List do
@@ -147,5 +172,12 @@ return {
 			seen[pass.Key] = true
 		end
 		Expect.truthy(Products.PassByKey.LowGravity.Toggle and Products.PassByKey.SpeedChip.Toggle)
+		for _, world in Tower.Worlds do
+			Expect.truthy(
+				world.Incident == "Any" or Incidents.ByKind[world.Incident] ~= nil,
+				`incident du monde {world.Index}`
+			)
+			Expect.truthy(#world.Symptom > 0 and #world.Minion > 0 and #world.Cleaned > 0, "scénario du monde")
+		end
 	end,
 }

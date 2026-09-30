@@ -58,6 +58,7 @@ export type PlayerData = {
 		LastOnline: number,
 		CoinsCollected: number,
 	},
+	UsbKeys: { [string]: boolean }, -- clés USB dorées trouvées (KeyId "W{n}K{i}"), pour toujours
 	IntroSeen: boolean,
 	Settings: {
 		Music: number,
@@ -95,6 +96,7 @@ function DataSchema.Template(): PlayerData
 		Missions = { Day = -1, List = {} },
 		ArcadeRewardAt = 0,
 		Stats = { Playtime = 0, LastOnline = 0, CoinsCollected = 0 },
+		UsbKeys = {},
 		IntroSeen = false,
 		Settings = { Music = 0.35, Sfx = 0.7, ReducedMotion = false },
 		Receipts = {},
