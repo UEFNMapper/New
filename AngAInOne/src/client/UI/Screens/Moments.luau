@@ -1,12 +1,14 @@
 --!strict
 --[[
 	Moments : les instants forts du deathrun, courts et passables.
-	- Intro (première visite) : l'histoire racontée par Anga + « C'EST PARTI ! »
+	- Intro (première visite) : « Opération Anti-Lag » racontée par Anga en 3 cartes
 	- Bannière de monde (en entrant dans un nouveau composant)
 	- Terminal réussi (« VIRUS ÉLIMINÉS, le portail est ouvert »)
-	- Mort (petit flash glitch) et victoire au sommet (temps, record, Bits)
+	- Mort (petit flash glitch) et victoire : « LE LIVE COMMENCE ! » (le stream d'Anga démarre,
+	  le chat défile, Anga remercie le joueur par son pseudo)
 ]]
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
@@ -22,6 +24,7 @@ local Motion = require(script.Parent.Parent.Motion)
 local Material = require(script.Parent.Parent.Material)
 local Keycap = require(script.Parent.Parent.Components.Keycap)
 local Widgets = require(script.Parent.Parent.Components.Widgets)
+local Lagz = require(script.Parent.Parent.Components.Lagz)
 
 local New = Create.New
 
@@ -56,9 +59,9 @@ end
 ------------------------------------------------------------------------------------
 
 local STORY = {
-	"Oh non ! Un VIRUS a infecté mon PC. Il a piégé toutes les pièces : l'alimentation, la RAM, la carte graphique…",
-	"Tu es tout petit, à l'intérieur de la tour. Grimpe jusqu'en haut en évitant les pièges : ventilateurs, décharges, virus !",
-	"À chaque terminal antivirus, élimine les virus dans un mini-jeu pour ouvrir la porte suivante. Prêt ? On y va !",
+	"Catastrophe ! Mon grand live sur AngaTV commence dans une heure… et mon PC RAME : 3 FPS et 999 de ping !",
+	"Le coupable : LAGZ, un virus qui dévore la puissance des PC. Freezes, pubs, coupures de courant… c'est lui !",
+	"Je te miniaturise et je t'envoie DANS la tour. Nettoie chaque composant et chaque terminal antivirus jusqu'en haut !",
 }
 
 function Moments.Intro(onDone: () -> ())
@@ -77,16 +80,21 @@ function Moments.Intro(onDone: () -> ())
 	local avatar = Widgets.Avatar(90, card)
 	avatar.AnchorPoint = Vector2.new(0.5, 0)
 	avatar.Position = UDim2.new(0.5, 0, 0, -45)
-	New("TextLabel", {
+	-- LAGZ se montre sur la carte qui le présente.
+	local villain = Lagz.Face(76, card)
+	villain.AnchorPoint = Vector2.new(1, 0)
+	villain.Position = UDim2.new(1, -18, 0, -30)
+	villain.Visible = false
+	local heading: TextLabel = New("TextLabel", {
 		Position = UDim2.fromOffset(24, 52),
 		Size = UDim2.new(1, -48, 0, 36),
 		BackgroundTransparency = 1,
-		Text = Branding.GameName,
+		Text = "OPÉRATION ANTI-LAG",
 		Tag = "FontDisplay",
-		TextSize = 32,
+		TextScaled = true,
 		TextColor3 = Style.Color("TextPrimary"),
 		Parent = card,
-	})
+	}, { New("UITextSizeConstraint", { MaxTextSize = 30 }) :: Instance })
 	local text: TextLabel = New("TextLabel", {
 		Position = UDim2.fromOffset(28, 96),
 		Size = UDim2.new(1, -56, 0, 96),
@@ -101,7 +109,12 @@ function Moments.Intro(onDone: () -> ())
 	local function show()
 		text.Text = `{Branding.MascotName} : « {STORY[page]} »`
 		Motion.Pop(text, 0.05)
-		button:SetText(if page < #STORY then "SUITE" else "C'EST PARTI !")
+		villain.Visible = page == 2
+		if page == 2 then
+			Motion.Pop(villain, 0.2)
+		end
+		heading.Text = if page == 2 then "LAGZ, LE VIRUS" else "OPÉRATION ANTI-LAG"
+		button:SetText(if page < #STORY then "SUITE" else "MODE INTERVENTION : GO !")
 	end
 	button = Keycap.new({
 		Text = "SUITE",
@@ -242,13 +255,33 @@ function Moments.DeathFlash()
 	end)
 end
 
+local LIVE_CHAT = {
+	{ Name = "PixelPanda", Text = "GG !!!" },
+	{ Name = "Nova_08", Text = "merci l'antivirus ! 🙏" },
+	{ Name = "TitoGamer", Text = "144 FPS 🔥🔥" },
+	{ Name = "LunaBits", Text = "{name} le héros !" },
+	{ Name = "RoboChips", Text = "LET'S GOOO" },
+	{ Name = "Kiwi_12", Text = "bye bye LAGZ 👋" },
+	{ Name = "ZigZag", Text = "GG {name} !" },
+	{ Name = "MiniMax", Text = "le live est trop fluide" },
+	{ Name = "Choco", Text = "merci {name} !!" },
+	{ Name = "Sunny", Text = "LAGZ a perdu mdr" },
+}
+local CHAT_COLORS = { "F6AD55", "4FD1C5", "8B7CFF", "68D391", "ED64A6", "63B3ED" }
+
+local function escapeRich(value: string): string
+	return (string.gsub(string.gsub(string.gsub(value, "&", "&amp;"), "<", "&lt;"), ">", "&gt;"))
+end
+
+-- Fin : « LE LIVE COMMENCE ! » — le stream d'Anga démarre et le chat fête le joueur.
 function Moments.Victory(payload: any)
+	local displayName = Players.LocalPlayer.DisplayName
 	local screen = fullscreen("Victory", "Backdrop", 1)
 	Motion.Tween(screen, { BackgroundTransparency = 0.25 }, 0.6)
 	local card: Frame = New("Frame", {
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromOffset(560, 340),
+		Position = UDim2.fromScale(0.5, 0.52),
+		Size = UDim2.fromOffset(760, 440),
 		BackgroundTransparency = Theme.Alpha.GlassStrong,
 		BorderSizePixel = 0,
 		Tag = { "Glass", "RoundL" },
@@ -259,14 +292,63 @@ function Moments.Victory(payload: any)
 	local avatar = Widgets.Avatar(96, card)
 	avatar.AnchorPoint = Vector2.new(0.5, 0)
 	avatar.Position = UDim2.new(0.5, 0, 0, -48)
+
+	-- Pastille « EN DIRECT » (point qui clignote) et performances du PC
+	local live: Frame = New("Frame", {
+		Position = UDim2.fromOffset(20, 16),
+		Size = UDim2.fromOffset(170, 34),
+		BorderSizePixel = 0,
+		Tag = { "FillBrand", "RoundPill" },
+		Parent = card,
+	})
+	local dot: Frame = New("Frame", {
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 14, 0.5, 0),
+		Size = UDim2.fromOffset(12, 12),
+		BorderSizePixel = 0,
+		Tag = { "FillWhite", "RoundPill" },
+		Parent = live,
+	})
 	New("TextLabel", {
-		Position = UDim2.fromOffset(20, 56),
-		Size = UDim2.new(1, -40, 0, 44),
+		Position = UDim2.fromOffset(34, 0),
+		Size = UDim2.new(1, -44, 1, 0),
 		BackgroundTransparency = 1,
-		Text = "TU AS SAUVÉ LE PC !",
+		Text = "EN DIRECT",
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Tag = "TextKey",
+		Parent = live,
+	})
+	New("TextLabel", {
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -20, 0, 16),
+		Size = UDim2.fromOffset(220, 34),
+		BackgroundTransparency = 1,
+		Text = `{Branding.ChannelName} · 144 FPS · 8 ms`,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		Tag = "DynHeading",
+		TextColor3 = Style.Color("Success"),
+		Parent = card,
+	})
+
+	-- Colonne de gauche : le moment
+	New("TextLabel", {
+		Position = UDim2.fromOffset(24, 64),
+		Size = UDim2.fromOffset(452, 44),
+		BackgroundTransparency = 1,
+		Text = "LE LIVE COMMENCE !",
+		TextScaled = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
 		Tag = "FontDisplay",
-		TextSize = 34,
 		TextColor3 = Style.Color("CurrencyBits"),
+		Parent = card,
+	}, { New("UITextSizeConstraint", { MaxTextSize = 34 }) :: Instance })
+	New("TextLabel", {
+		Position = UDim2.fromOffset(24, 112),
+		Size = UDim2.fromOffset(452, 26),
+		BackgroundTransparency = 1,
+		Text = "LAGZ est vaincu : le PC tourne à 144 FPS !",
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Tag = "TextHeading",
 		Parent = card,
 	})
 	local timeText = `Temps : {Time.Clock(payload.Time or 0)}`
@@ -276,35 +358,110 @@ function Moments.Victory(payload: any)
 		timeText ..= "  ·  (course assistée)"
 	end
 	New("TextLabel", {
-		Position = UDim2.fromOffset(20, 108),
-		Size = UDim2.new(1, -40, 0, 30),
+		Position = UDim2.fromOffset(24, 144),
+		Size = UDim2.fromOffset(452, 26),
 		BackgroundTransparency = 1,
 		Text = timeText,
+		TextXAlignment = Enum.TextXAlignment.Left,
 		Tag = "TextHeading",
 		Parent = card,
 	})
 	New("TextLabel", {
-		Position = UDim2.fromOffset(28, 146),
-		Size = UDim2.new(1, -56, 0, 80),
+		Position = UDim2.fromOffset(24, 180),
+		Size = UDim2.fromOffset(452, 96),
 		BackgroundTransparency = 1,
-		Text = `{Branding.MascotName} : « Le virus est détruit, mon PC revit ! Merci ! Tu veux retenter l'ascension pour battre ton record ? »`,
+		Text = `{Branding.MascotName} : « Merci {displayName} ! Grâce à toi, mon PC revit et le live peut commencer. Tu es le héros du jour ! »`,
 		TextWrapped = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Top,
 		Tag = "TextBody",
 		Parent = card,
 	})
 	New("TextLabel", {
-		Position = UDim2.fromOffset(20, 236),
-		Size = UDim2.new(1, -40, 0, 26),
+		Position = UDim2.fromOffset(24, 286),
+		Size = UDim2.fromOffset(452, 26),
 		BackgroundTransparency = 1,
 		Text = `+{NumberFormat.Compact(payload.Bits or 0)} Bits  ·  Victoires : {payload.Wins or 1}`,
+		TextXAlignment = Enum.TextXAlignment.Left,
 		Tag = "DynHeading",
 		TextColor3 = Style.Color("CurrencyBits"),
 		Parent = card,
 	})
+
+	-- Colonne de droite : le chat du live qui défile
+	local chat: Frame = New("Frame", {
+		Position = UDim2.fromOffset(496, 64),
+		Size = UDim2.fromOffset(240, 280),
+		BackgroundTransparency = 0.2,
+		BorderSizePixel = 0,
+		ClipsDescendants = true,
+		Tag = { "GlassSunken", "RoundM" },
+		Parent = card,
+	})
+	New("TextLabel", {
+		Position = UDim2.fromOffset(12, 6),
+		Size = UDim2.new(1, -24, 0, 20),
+		BackgroundTransparency = 1,
+		Text = "CHAT EN DIRECT",
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Tag = "TextCaption",
+		Parent = chat,
+	})
+	local feed: Frame = New("Frame", {
+		Position = UDim2.fromOffset(12, 30),
+		Size = UDim2.new(1, -24, 1, -38),
+		BackgroundTransparency = 1,
+		ClipsDescendants = true,
+		Parent = chat,
+	}, {
+		Create.List(Enum.FillDirection.Vertical, 4, { VerticalAlignment = Enum.VerticalAlignment.Bottom }) :: Instance,
+	})
+	local order = 0
+	local function post()
+		order += 1
+		local message = LIVE_CHAT[(order - 1) % #LIVE_CHAT + 1]
+		local color = CHAT_COLORS[order % #CHAT_COLORS + 1]
+		local body = string.gsub(message.Text, "{name}", escapeRich(displayName))
+		local line: TextLabel = New("TextLabel", {
+			Size = UDim2.new(1, 0, 0, 26),
+			BackgroundTransparency = 1,
+			RichText = true,
+			Text = `<font color="#{color}"><b>{message.Name}</b></font> {body}`,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+			LayoutOrder = order,
+			Tag = "TextBody",
+			Parent = feed,
+		})
+		Motion.Pop(line, 0.08)
+		-- On garde les 8 derniers messages.
+		local lines: { TextLabel } = {}
+		for _, child in feed:GetChildren() do
+			if child:IsA("TextLabel") then
+				table.insert(lines, child)
+			end
+		end
+		table.sort(lines, function(a: TextLabel, b: TextLabel): boolean
+			return a.LayoutOrder < b.LayoutOrder
+		end)
+		for index = 1, #lines - 8 do
+			lines[index]:Destroy()
+		end
+	end
+	task.spawn(function()
+		local blink = false
+		while screen.Parent do
+			post()
+			blink = not blink
+			dot.BackgroundTransparency = if blink or Motion.IsReduced() then 0 else 0.6
+			task.wait(0.7)
+		end
+	end)
+
 	Keycap.new({
 		Text = "SUPER !",
 		Variant = "Primary",
-		Size = UDim2.new(1, -120, 0, 56),
+		Size = UDim2.fromOffset(360, 56),
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -18),
 		OnClick = function()
@@ -314,7 +471,7 @@ function Moments.Victory(payload: any)
 		Parent = card,
 	})
 	Motion.Pop(card, 0.2)
-	task.delay(12, function()
+	task.delay(14, function()
 		if screen.Parent then
 			fadeOut(screen, 0.5)
 			card.Visible = false

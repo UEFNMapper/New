@@ -137,6 +137,24 @@ step("TrapController", function()
 		TrapController.Start()
 	end
 end)
+-- Scénario « Opération Anti-Lag » : incidents de LAGZ, décor infecté / propre, répliques,
+-- écran du live dans le lobby.
+step("IncidentController", function()
+	local IncidentController = load(Controllers.IncidentController)
+	local MinigamePanel = load(Screens.MinigamePanel)
+	if MinigamePanel and MinigamePanel.IsPlaying then
+		IncidentController.IsBusy = MinigamePanel.IsPlaying
+	end
+	IncidentController.Start(App.Layers.Overlays)
+end)
+for _, name in { "WorldState", "Story", "StreamMonitor" } do
+	step(name, function()
+		local controller = load(Controllers:FindFirstChild(name) :: Instance)
+		if controller then
+			controller.Start()
+		end
+	end)
+end
 step("Interactions", function()
 	local Interactions = load(Controllers.Interactions)
 	Interactions.Start()

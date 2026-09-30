@@ -153,12 +153,17 @@ local function onFx(kind: string, payload: any)
 		Audio.Duck(3)
 		Moments.WorldCleared(payload.World, payload.Bits)
 		Feedback.Shake(0.3, 0.4)
+		-- Anga : le symptôme réparé (Tower.Cleaned), puis la suite. LAGZ râle ensuite (Story).
+		local def = Tower.Worlds[payload.World]
 		task.delay(2, function()
+			if def then
+				Dialogue.Say(def.Cleaned, 4)
+			end
 			Dialogue.Say(
 				if payload.World < Tower.WORLD_COUNT
-					then "Bravo ! Le portail est ouvert. Monte vite au monde suivant !"
-					else "Le cœur du virus est détruit ! Touche la puce tout en haut pour sauver mon PC !",
-				5
+					then "Le portail est ouvert. Monte vite au monde suivant !"
+					else "Touche la puce tout en haut : le live va pouvoir commencer !",
+				4
 			)
 		end)
 	elseif kind == "Victory" then

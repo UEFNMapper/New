@@ -3,7 +3,8 @@
 	HUD du deathrun : très peu d'éléments, lisibles par un enfant.
 	┌ [Bits]                 MONDE 2 · Memory Lanes · Étape 7/35          [⚙]   ┐
 	│ [passes activables]    ▓▓▓▓▓░░░░░░░ tour     ⏱ 4:07.3          [bouclier] │
-	│                        « ton but en une phrase »          [↺ Checkpoint]   │
+	│ [PC d'Anga : FPS /     « ton but en une phrase »          [↺ Checkpoint]   │
+	│  ping / °C]                                                                 │
 	│                                                           [⏭ Passer]      │
 	│                        [   JOUER / CONTINUER   ] (au lobby) [⌂ Lobby]      │
 	└                    [Boutique]  [Missions]  [Menu]                          ┘
@@ -21,6 +22,7 @@ local Tower = require(Shared.Config.Tower)
 local Products = require(Shared.Config.Products)
 local NumberFormat = require(Shared.Util.NumberFormat)
 local Time = require(Shared.Util.Time)
+local PcHealth = require(Shared.Util.PcHealth)
 
 local Create = require(script.Parent.Parent.Create)
 local Style = require(script.Parent.Parent.Style)
@@ -28,9 +30,11 @@ local Motion = require(script.Parent.Parent.Motion)
 local Material = require(script.Parent.Parent.Material)
 local Keycap = require(script.Parent.Parent.Components.Keycap)
 local Widgets = require(script.Parent.Parent.Components.Widgets)
+local Icon = require(script.Parent.Parent.Components.Icon)
 local App = require(script.Parent.Parent.App)
 local Store = require(script.Parent.Parent.Parent.Controllers.Store)
 local Net = require(script.Parent.Parent.Parent.Controllers.Net)
+local IncidentController = require(script.Parent.Parent.Parent.Controllers.IncidentController)
 
 local New = Create.New
 
@@ -53,6 +57,10 @@ local shieldLabel: TextLabel
 local toggleKeys: { [string]: Keycap.Keycap } = {}
 local badges: { [string]: Frame } = {}
 local lastBits = -1
+local perfCard: Frame
+local refreshPerf: (data: any) -> ()
+local perfValues: { [string]: TextLabel } = {}
+local lastCleared = -1
 
 ------------------------------------------------------------------------------------
 -- Construction
@@ -62,7 +70,7 @@ local function buildTopLeft(layer: Frame)
 	local column: Frame = New("Frame", {
 		Name = "Wallet",
 		Position = UDim2.fromOffset(16, 12),
-		Size = UDim2.fromOffset(240, 200),
+		Size = UDim2.fromOffset(240, 320),
 		BackgroundTransparency = 1,
 		Parent = layer,
 	}, { Create.List(Enum.FillDirection.Vertical, 8) })
@@ -90,6 +98,63 @@ local function buildTopLeft(layer: Frame)
 		})
 		toggle.Button.Visible = false
 		toggleKeys[key] = toggle
+	end
+	-- « Performance du PC » d'Anga (docs/SCENARIO.md §3) : sous le portefeuille (et les passes),
+	-- à gauche, loin de la carte de progression, des actions et du joystick.
+	perfCard = New("Frame", {
+		Name = "PcPerformance",
+		Size = UDim2.fromOffset(200, 112),
+		BackgroundTransparency = Theme.Alpha.Glass,
+		BorderSizePixel = 0,
+		LayoutOrder = 10,
+		Tag = { "Glass", "RoundM" },
+		Parent = column,
+	}, {
+		New("UIStroke", { Color = Style.Color("Stroke"), Transparency = Theme.Alpha.StrokeSoft, Thickness = 1 }),
+	})
+	New("TextLabel", {
+		Position = UDim2.fromOffset(12, 6),
+		Size = UDim2.new(1, -24, 0, 16),
+		BackgroundTransparency = 1,
+		Text = "PC D'ANGA",
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Tag = "TextCaption",
+		Parent = perfCard,
+	})
+	for index, row in
+		{
+			{ Key = "Fps", Label = "FPS", Icon = "Bolt" },
+			{ Key = "Ping", Label = "Ping", Icon = "Elevator" },
+			{ Key = "Temp", Label = "Temp.", Icon = "Heat" },
+		}
+	do
+		local y = 26 + (index - 1) * 28
+		local icon = Icon.new(row.Icon, 20, "TextMuted")
+		icon.Position = UDim2.fromOffset(12, y + 2)
+		icon.Parent = perfCard
+		New("TextLabel", {
+			Position = UDim2.fromOffset(40, y),
+			Size = UDim2.fromOffset(60, 24),
+			BackgroundTransparency = 1,
+			Text = row.Label,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextSize = 16,
+			TextColor3 = Style.Color("TextMuted"),
+			Tag = "FontBold",
+			Parent = perfCard,
+		})
+		perfValues[row.Key] = New("TextLabel", {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, -12, 0, y),
+			Size = UDim2.fromOffset(92, 24),
+			BackgroundTransparency = 1,
+			Text = "",
+			TextXAlignment = Enum.TextXAlignment.Right,
+			TextSize = 20,
+			TextColor3 = Style.Color("TextPrimary"),
+			Tag = "FontHeavy",
+			Parent = perfCard,
+		})
 	end
 end
 
@@ -384,6 +449,64 @@ local function refreshFull(state: any)
 	badges.Missions.Visible = missionReady
 end
 
+local GRADE_COLOR: { [string]: string } = { Good = "Success", Warn = "Warning", Bad = "Danger" }
+
+local function setPerf(key: string, value: string, grade: string)
+	local target = perfValues[key]
+	target.Text = value
+	target.TextColor3 = Style.Color(GRADE_COLOR[grade] or "TextMuted")
+end
+
+-- Valeurs du tableau du scénario, qui « vivent » un peu, avec les pics des incidents.
+refreshPerf = function(data: any)
+	local cleared = if type(data.Cleared) == "number" then data.Cleared else 0
+	if cleared ~= lastCleared then
+		if lastCleared >= 0 and cleared > lastCleared then
+			Motion.Pop(perfCard, 0.1)
+		end
+		lastCleared = cleared
+	end
+	local base = PcHealth.Stats(cleared)
+	local t = os.clock()
+	local fps = base.Fps * (1 + math.noise(t * 0.7, 1.3) * 0.2)
+	local ping = base.Ping * (1 + math.noise(t * 0.9, 7.1) * 0.25)
+	local temp = base.Temp + math.noise(t * 0.3, 3.7) * 2
+	local kind, phase = IncidentController.Current()
+	if phase == "Active" then
+		if kind == "Freeze" then
+			fps = 0
+		elseif kind == "Lag" then
+			ping = math.max(ping, 800) + (math.noise(t * 4, 2.2) + 0.5) * 1600
+			fps *= 0.5
+		elseif kind == "Popups" then
+			fps *= 0.5
+			ping += 200
+		elseif kind == "Overheat" then
+			temp = math.min(temp + 18, 115)
+			fps *= 0.7
+		end
+		if kind == "Blackout" then
+			-- Plus de courant : plus de mesures.
+			setPerf("Fps", "--", "Bad")
+			setPerf("Ping", "--", "Bad")
+			setPerf("Temp", "--", "Bad")
+			return
+		elseif kind == "Corruption" then
+			setPerf("Fps", "ERR?!", "Bad")
+		else
+			fps = math.max(math.floor(fps + 0.5), 0)
+			setPerf("Fps", tostring(fps), PcHealth.Grade("Fps", fps))
+		end
+	else
+		fps = math.max(math.floor(fps + 0.5), 1)
+		setPerf("Fps", tostring(fps), PcHealth.Grade("Fps", fps))
+	end
+	ping = math.max(math.floor(ping + 0.5), 1)
+	temp = math.floor(temp + 0.5)
+	setPerf("Ping", `{NumberFormat.Grouped(ping)} ms`, PcHealth.Grade("Ping", ping))
+	setPerf("Temp", `{temp} °C`, PcHealth.Grade("Temp", temp))
+end
+
 local function refreshFast()
 	local state = Store.State
 	if not state then
@@ -398,6 +521,7 @@ local function refreshFast()
 		lastBits = bits
 	end
 	timerLabel.Text = if state.Data.RunStarted then `⏱ {Time.Clock(Store.RunTime())}` else ""
+	refreshPerf(state.Data)
 	local shieldLeft = state.ShieldUntil - Store.UnixNow()
 	shieldPill.Visible = shieldLeft > 0
 	if shieldLeft > 0 then
