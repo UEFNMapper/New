@@ -960,6 +960,176 @@ local function buildMiniaturiser(lobby: Model)
 	)
 end
 
+------------------------------------------------------------------------------------
+-- Anga géant : la mascotte à l'échelle de SA chambre (≈ 1 700 studs, les joueurs en font 5),
+-- debout sur le tapis à côté du bureau (côté -X, devant la fenêtre, entre la chaise et le mur du
+-- fond), il regarde sa tour PC. Décor pur (ni collision, ni requêtes, ni ombre). Tag GiantAnga :
+-- le client le fait respirer et tourner doucement la tête (attribut NeckPivot sur le décor de
+-- secours, voir Controllers/AppPanels). Le modèle 3D « Anga » (face avant -Z) tient dans GIANT_FIT.
+------------------------------------------------------------------------------------
+
+local GIANT_AT = Vector3.new(-1060, FLOOR_Y + 2.5, -30) -- pieds (sur le tapis rond de la chambre)
+local GIANT_SCALE = 0.8 -- décor de secours : modélisé pour ~2 100 studs, posé à ~1 700
+local GIANT_FIT = Vector3.new(760, 1700, 720) -- boîte du modèle 3D (largeur, hauteur, profondeur)
+
+-- Décor de secours en primitives : chibi blond, barbe, t-shirt rouge au grand « A » blanc,
+-- pantalon noir. Repère local : origine entre les pieds, face avant = -Z (LookVector de `cf`).
+local function giantAngaFallback(cf: CFrame): Model
+	local model = Build.Model("GiantAnga")
+	local SKIN = Color3.fromRGB(246, 204, 170)
+	local BLUSH = Color3.fromRGB(244, 150, 150)
+	local BLOND = Color3.fromRGB(226, 184, 82)
+	local BLOND_DARK = Color3.fromRGB(196, 150, 60)
+	local RED = Color3.fromRGB(232, 52, 52)
+	local LOGO = Color3.fromRGB(255, 226, 226)
+	local PANTS = Color3.fromRGB(30, 30, 38)
+	local SHOES = Color3.fromRGB(58, 52, 50)
+	local INK = Color3.fromRGB(22, 20, 24)
+	local function box(parent: Instance, name: string, size: Vector3, offset: CFrame, color: Color3)
+		return Box(parent, name, size, cf * offset, color)
+	end
+	local function ball(parent: Instance, name: string, d: number, at: Vector3, color: Color3)
+		return Build.Decor({
+			Name = name,
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.one * d,
+			CFrame = cf * CFrame.new(at),
+			Color = color,
+			Material = SMOOTH,
+			CastShadow = false,
+			Parent = parent,
+		})
+	end
+	-- Jambes (pantalon noir) et chaussures
+	for _, side in { -1, 1 } do
+		box(model, "Shoe", Vector3.new(170, 80, 260), CFrame.new(side * 120, 40, -30), SHOES)
+		box(model, "Leg", Vector3.new(200, 440, 220), CFrame.new(side * 118, 300, 0), PANTS)
+	end
+	box(model, "Hips", Vector3.new(500, 130, 260), CFrame.new(0, 560, 0), PANTS)
+	-- T-shirt rouge et son grand « A » blanc sur la poitrine
+	box(model, "Shirt", Vector3.new(600, 520, 340), CFrame.new(0, 860, 0), RED)
+	box(model, "ShirtHem", Vector3.new(620, 40, 350), CFrame.new(0, 610, 0), RED:Lerp(INK, 0.15))
+	for _, side in { -1, 1 } do
+		box(
+			model,
+			"LogoLeg",
+			Vector3.new(56, 300, 8),
+			CFrame.new(side * 62, 850, -172) * CFrame.Angles(0, 0, side * math.rad(20)),
+			LOGO
+		)
+	end
+	box(model, "LogoBar", Vector3.new(130, 44, 8), CFrame.new(0, 820, -172), LOGO)
+	-- Manches courtes, bras, mains
+	for _, side in { -1, 1 } do
+		box(
+			model,
+			"Sleeve",
+			Vector3.new(190, 220, 240),
+			CFrame.new(side * 365, 1000, 0) * CFrame.Angles(0, 0, side * math.rad(12)),
+			RED
+		)
+		box(
+			model,
+			"Arm",
+			Vector3.new(130, 380, 140),
+			CFrame.new(side * 395, 760, -10) * CFrame.Angles(0, 0, side * math.rad(6)),
+			SKIN
+		)
+		ball(model, "Hand", 150, Vector3.new(side * 405, 570, -20), SKIN)
+	end
+	-- Tête (groupe « Head » : le client la fait tourner autour du cou, attribut NeckPivot)
+	local head = Build.Model("Head", model)
+	Rod(head, "Neck", cf * CFrame.new(0, 1150, 0) * VERTICAL, 120, 220, SKIN, SMOOTH)
+	-- Regard légèrement baissé vers la tour
+	local tilt = CFrame.new(0, 1180, 0) * CFrame.Angles(math.rad(-6), 0, 0) * CFrame.new(0, -1180, 0)
+	local function hbox(name: string, size: Vector3, offset: CFrame, color: Color3)
+		return box(head, name, size, tilt * offset, color)
+	end
+	local function hball(name: string, d: number, at: Vector3, color: Color3)
+		return Build.Decor({
+			Name = name,
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.one * d,
+			CFrame = cf * tilt * CFrame.new(at),
+			Color = color,
+			Material = SMOOTH,
+			CastShadow = false,
+			Parent = head,
+		})
+	end
+	local C0 = Vector3.new(0, 1520, 0) -- centre du crâne
+	hball("Skull", 740, C0, SKIN)
+	for _, side in { -1, 1 } do
+		hball("Ear", 140, C0 + Vector3.new(side * 368, -40, 20), SKIN)
+		hball("Eye", 84, C0 + Vector3.new(side * 128, 30, -332), INK)
+		hball("EyeShine", 26, C0 + Vector3.new(side * 118, 48, -372), Color3.new(1, 1, 1))
+		hbox(
+			"Brow",
+			Vector3.new(120, 26, 24),
+			CFrame.new(C0 + Vector3.new(side * 130, 120, -330)) * CFrame.Angles(0, 0, side * math.rad(-10)),
+			BLOND_DARK
+		)
+		hball("Blush", 90, C0 + Vector3.new(side * 215, -60, -282), BLUSH)
+		hbox("Sideburn", Vector3.new(90, 300, 220), CFrame.new(C0 + Vector3.new(side * 330, -110, -60)), BLOND)
+	end
+	hball("Nose", 130, C0 + Vector3.new(0, -30, -372), SKIN:Lerp(BLUSH, 0.25))
+	-- Grand sourire ouvert, moustache et barbe blondes
+	hbox("Mouth", Vector3.new(230, 110, 40), CFrame.new(C0 + Vector3.new(0, -170, -318)), Color3.fromRGB(150, 36, 44))
+	hbox("Tongue", Vector3.new(130, 40, 30), CFrame.new(C0 + Vector3.new(0, -205, -326)), Color3.fromRGB(236, 110, 120))
+	hbox("Moustache", Vector3.new(280, 50, 50), CFrame.new(C0 + Vector3.new(0, -100, -348)), BLOND)
+	hbox("Beard", Vector3.new(500, 150, 220), CFrame.new(C0 + Vector3.new(0, -300, -150)), BLOND)
+	hbox("Chin", Vector3.new(240, 70, 70), CFrame.new(C0 + Vector3.new(0, -318, -262)), BLOND_DARK)
+	-- Houppe blonde : calotte + mèches dressées vers l'avant
+	hball("Hair", 730, C0 + Vector3.new(0, 70, 30), BLOND)
+	for i, spike in
+		{
+			{ -150, 380, -150, 18, 260 },
+			{ 0, 420, -200, 26, 320 },
+			{ 150, 370, -130, 14, 250 },
+			{ 60, 330, 60, 8, 240 },
+		}
+	do
+		hbox(
+			if i == 2 then "Quiff" else "HairSpike",
+			Vector3.new(210, spike[5], 200),
+			CFrame.new(C0 + Vector3.new(spike[1], spike[2], spike[3])) * CFrame.Angles(math.rad(spike[4]), 0, 0),
+			if i % 2 == 0 then BLOND else BLOND_DARK
+		)
+	end
+	-- Mise à l'échelle uniforme autour des pieds
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") then
+			local offset = cf:ToObjectSpace(d.CFrame)
+			d.Size *= GIANT_SCALE
+			d.CFrame = cf * CFrame.new(offset.Position * GIANT_SCALE) * offset.Rotation
+		end
+	end
+	model:SetAttribute("NeckPivot", (cf * CFrame.new(0, 1150 * GIANT_SCALE, 0)).Position)
+	model.WorldPivot = cf
+	return model
+end
+
+local function buildGiantAnga(lobby: Model)
+	local cf = facing(GIANT_AT, -GIANT_AT) -- tourné vers la tour (centre en X = Z = 0)
+	local placed = ModelLibrary.Place("Anga", cf, lobby, { Fit = GIANT_FIT, Name = "GiantAnga" }, function()
+		return giantAngaFallback(cf)
+	end)
+	if not placed then
+		return
+	end
+	placed.Name = "GiantAnga"
+	placed:AddTag("GiantAnga")
+	for _, d in placed:GetDescendants() do
+		if d:IsA("BasePart") then
+			-- Décor pur : on le traverse, la caméra aussi, et il n'assombrit pas le bureau
+			d.CanCollide = false
+			d.CanQuery = false
+			d.CanTouch = false
+			d.CastShadow = false
+		end
+	end
+end
+
 function Lobby.Build(tower: Folder)
 	local lobby = Build.Model("Lobby", tower)
 	lobby.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
@@ -967,6 +1137,7 @@ function Lobby.Build(tower: Folder)
 	local spawnCf = buildBase(lobby)
 	buildSetup(lobby, spawnCf)
 	buildMiniaturiser(lobby)
+	buildGiantAnga(lobby)
 
 	-- Maison de départ (coin 0) : de la porte de façade au toit = entrée du monde 1 (Common.EntryOf(1))
 	local start = Build.Folder("Start", lobby)

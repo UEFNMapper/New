@@ -44,6 +44,7 @@ local Legacy = require(TowerParts.Legacy)
 local Lobby = require(TowerParts.Lobby)
 local Shell = require(TowerParts.Shell)
 local Cameos = require(TowerParts.Cameos)
+local AppPanels = require(TowerParts.AppPanels)
 local ModelLibrary = require(script.Parent.ModelLibrary)
 
 type WorldBuilder = (ctx: Common.WorldContext) -> ()
@@ -83,6 +84,7 @@ function TowerBuilder.Build(): Folder
 		finish()
 	end
 	Cameos.Build(tower) -- LAGZ dans un écran sur les parois de chaque monde (client LagzCameo)
+	AppPanels.Build(tower) -- fenêtres de l'app AngAInOne sur les parois des mondes
 	tower:SetAttribute("PointLights", Common.LightCount())
 	tower.Parent = Workspace
 	return tower

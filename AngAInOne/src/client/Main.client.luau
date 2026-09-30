@@ -144,6 +144,14 @@ step("TrapController", function()
 		TrapController.Start()
 	end
 end)
+-- L'app AngAInOne partout : morts = « Plantages » (carte en haut à droite), fenêtres de l'app
+-- sur les parois de chaque monde, ponts « Téléchargement du pilote », Anga géant du lobby.
+step("CrashLog", function()
+	load(Controllers.CrashLog).Start(App.Layers.Toasts)
+end)
+step("AppPanels", function()
+	load(Controllers.AppPanels).Start()
+end)
 -- Combat final contre LAGZ (monde 7) : arène, pièges de chaque phase, prises, bandeau.
 step("BossController", function()
 	load(Controllers.BossController).Start(App.Layers.Hud)

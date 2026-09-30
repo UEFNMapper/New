@@ -53,9 +53,12 @@ local Minigames = script.Parent.Parent.Minigames
 local Core = require(Minigames.Core)
 local Common = require(Minigames.Common)
 local Minions = require(Minigames.Minions)
+local AppPages = require(Shared.Util.AppPanelLogic)
+local Fluent = require(script.Parent.Parent.Parent.Controllers.AppPanels.Fluent)
 
 local New = Create.New
 local C = Common.Colors
+local FC = Fluent.C -- couleurs de l'app AngAInOne (carte d'intro)
 
 local MinigamePanel = {}
 
@@ -689,91 +692,117 @@ local function speech(card: Frame, text: string, y: number, color: Color3): Text
 	}) :: TextLabel
 end
 
+-- Carte d'intro au style de l'app AngAInOne : la page du monde (barre latérale, titre, sous-titre)
+-- en train de lancer son action (« Analyser », « Télécharger et extraire »…). Les commandes ne
+-- changent pas : JOUER (Entrée / A) lance le compte à rebours, Quitter (B) ferme ; le bouton violet
+-- de l'app lance aussi la partie.
+local INTRO_W, INTRO_H = 760, 568
+local SIDE_W = 170
+local MAIN_X = SIDE_W + 20
+local MAIN_W = INTRO_W - MAIN_X - 20
+
 local function showIntro(s: Session)
 	s.Phase = "Intro"
 	local info = s.Info
-	local card = newCard(s, 600, 520)
-	label({
-		Name = "Kicker",
-		Position = UDim2.fromOffset(20, 18),
-		Size = UDim2.new(1, -170, 0, 18),
-		Text = if s.Boss then "COMBAT FINAL" else "TERMINAL ANTIVIRUS",
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Tag = "TextCaption",
-		Parent = card,
-	})
-	local titleLabel = label({
-		Name = "Title",
-		Position = UDim2.fromOffset(20, 38),
-		Size = UDim2.new(1, -170, 0, 40),
-		Text = info.Title,
-		TextScaled = true,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		TextColor3 = Style.Color(info.Accent),
-		Tag = "FontDisplay",
-		Parent = card,
-	})
-	New("UITextSizeConstraint", { MaxTextSize = 32, Parent = titleLabel })
+	local page = AppPages.Intro(if s.Boss then Tower.WORLD_COUNT else AppPages.IntroWorld(s.Kind, s.Difficulty))
+	local card = newCard(s, INTRO_W, INTRO_H)
+	-- Fenêtre de l'app par-dessus le verre de la carte (le liseré RGB du terminal reste autour)
+	local win = Fluent.Box(card, 0, 0, INTRO_W, INTRO_H, FC.Bg, Theme.Radius.L)
+	win.Name = "AppWindow"
+	Fluent.Text(win, "AngAInOne", 16, 0, 90, 30, 14, { Color = FC.Dim })
+	Fluent.Tag(
+		win,
+		`{if s.Boss then "COMBAT FINAL" else "TERMINAL ANTIVIRUS"} · {info.Title}`,
+		110,
+		5,
+		22,
+		12,
+		FC.Text,
+		FC.Accent
+	)
+	Fluent.Sidebar(win, 0, 30, SIDE_W, INTRO_H - 30, page.World, nil, 14)
+	Fluent.Box(win, SIDE_W, 30, 1, INTRO_H - 30, FC.CardHover)
+	-- En-tête de la page (le sbire déborde du coin, à droite)
+	Fluent.Text(win, page.Page, MAIN_X, 38, MAIN_W - 150, 40, 30, { Weight = "Bold", Name = "Title" })
+	Fluent.Text(win, page.Subtitle, MAIN_X, 78, MAIN_W - 150, 34, 14, { Color = FC.Dim, Wrap = true })
 	local line = speech(
-		card,
+		win,
 		if s.Boss then "LAGZ te défie : détruis-le !" else Minions.Taunt(s.Minion),
-		84,
+		122,
 		C.VirusHot:Lerp(C.White, 0.35)
 	)
-	New("UICorner", { CornerRadius = UDim.new(0, 12), Parent = line })
+	line.Position = UDim2.fromOffset(MAIN_X, 122)
+	line.Size = UDim2.fromOffset(MAIN_W, 28)
+	New("UICorner", { CornerRadius = UDim.new(0, 10), Parent = line })
 	New("UIPadding", { PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12), Parent = line })
-	New("UITextSizeConstraint", { MaxTextSize = 20, MinTextSize = 12, Parent = line })
-	minionBadge(s, card, "Evil", UDim2.new(1, -72, 0, 58))
+	New("UITextSizeConstraint", { MaxTextSize = 18, MinTextSize = 11, Parent = line })
+	minionBadge(s, card, "Evil", UDim2.new(1, -72, 0, 62))
+	-- L'action de l'app : tâche, détail, bouton violet, barre d'avancement à 0 %
+	local action = Fluent.Card(win, MAIN_X, 158, MAIN_W, 88)
+	Fluent.Glyph(action, 14, 14, 26, "!", FC.Bad)
+	Fluent.Text(action, page.Task, 52, 8, MAIN_W - 280, 26, 16, { Weight = "Medium" })
+	Fluent.Text(action, page.Detail, 52, 48, MAIN_W - 66, 20, 13, { Color = FC.Dim })
+	local actionButton = Fluent.Button(action, page.Action, MAIN_W - 214, 8, 200, 36, "Accent", 15)
+	local actionHit: TextButton = New("TextButton", {
+		Name = "Hit",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		Text = "",
+		Selectable = false,
+		Parent = actionButton,
+	})
+	actionHit.Activated:Connect(guarded(s, function()
+		startCountdown(s)
+	end))
+	Fluent.Bar(action, 52, 74, MAIN_W - 66, 6, FC.AccentSoft)
 	local art: Frame = New("Frame", {
 		Name = "Illustration",
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 132),
-		Size = UDim2.fromOffset(540, 150),
-		BackgroundTransparency = 0.3,
+		Position = UDim2.fromOffset(MAIN_X, 256),
+		Size = UDim2.fromOffset(MAIN_W, 120),
+		BackgroundColor3 = FC.Sunken,
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
-		Tag = { "GlassSunken", "RoundM" },
-		Parent = card,
-	})
+		Parent = win,
+	}, { Create.Corner(8) })
 	xpcall(s.Game.Illustrate, function(err: any)
 		warn("[MinigamePanel] illustration :", err)
 	end, art)
 	label({
 		Name = "Rule",
-		Position = UDim2.fromOffset(20, 294),
-		Size = UDim2.new(1, -40, 0, 30),
+		Position = UDim2.fromOffset(MAIN_X, 384),
+		Size = UDim2.fromOffset(MAIN_W, 28),
 		Text = info.Rule,
-		TextSize = 24,
+		TextSize = 22,
 		TextColor3 = C.White,
 		Tag = "FontBold",
-		Parent = card,
+		Parent = win,
 	})
 	-- Objectif
 	local chip: Frame = New("Frame", {
 		Name = "Target",
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 334),
-		Size = UDim2.fromOffset(0, 50),
+		Position = UDim2.fromOffset(MAIN_X + MAIN_W / 2, 418),
+		Size = UDim2.fromOffset(0, 42),
 		AutomaticSize = Enum.AutomaticSize.X,
-		BackgroundTransparency = 0.2,
+		BackgroundColor3 = FC.Card,
 		BorderSizePixel = 0,
-		Tag = { "GlassRaised", "RoundPill" },
-		Parent = card,
+		Parent = win,
 	}, {
+		Create.Corner(21) :: Instance,
 		Create.List(Enum.FillDirection.Horizontal, 10, { VerticalAlignment = Enum.VerticalAlignment.Center }),
-		New("UIPadding", { PaddingLeft = UDim.new(0, 16), PaddingRight = UDim.new(0, 22) }),
+		New("UIPadding", { PaddingLeft = UDim.new(0, 14), PaddingRight = UDim.new(0, 20) }),
 		New("UIStroke", { Color = C.Gold, Thickness = 2, Transparency = 0.4 }),
 	})
-	local star = Icon.new("Star", 28, "CurrencyBits")
+	local star = Icon.new("Star", 26, "CurrencyBits")
 	star.LayoutOrder = 1
 	star.Parent = chip
 	label({
 		Name = "Text",
-		Size = UDim2.fromOffset(0, 40),
+		Size = UDim2.fromOffset(0, 36),
 		AutomaticSize = Enum.AutomaticSize.X,
 		TextWrapped = false,
 		Text = info.Target,
-		TextSize = 26,
+		TextSize = 24,
 		TextColor3 = C.Gold,
 		Tag = "FontHeavy",
 		LayoutOrder = 2,
@@ -781,17 +810,28 @@ local function showIntro(s: Session)
 	})
 	label({
 		Name = "Controls",
-		Position = UDim2.fromOffset(20, 394),
-		Size = UDim2.new(1, -40, 0, 20),
+		Position = UDim2.fromOffset(MAIN_X, 464),
+		Size = UDim2.fromOffset(MAIN_W, 18),
 		Text = info.Controls,
 		Tag = "TextMuted",
-		Parent = card,
+		Parent = win,
 	})
-	local row = buttonRow(card, 428)
+	local row: Frame = New("Frame", {
+		Name = "Buttons",
+		Position = UDim2.fromOffset(MAIN_X, 488),
+		Size = UDim2.fromOffset(MAIN_W, 68),
+		BackgroundTransparency = 1,
+		Parent = win,
+	}, {
+		Create.List(Enum.FillDirection.Horizontal, 16, {
+			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+			VerticalAlignment = Enum.VerticalAlignment.Center,
+		}),
+	})
 	local play = bigKeycap({
 		Text = "JOUER",
 		Variant = "Primary",
-		Size = UDim2.fromOffset(260, 68),
+		Size = UDim2.fromOffset(240, 64),
 		LayoutOrder = 1,
 		Parent = row,
 		OnClick = guarded(s, function()
