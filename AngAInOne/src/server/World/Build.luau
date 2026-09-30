@@ -1,6 +1,6 @@
 --!strict
 --[[
-	Build : petits utilitaires de construction procédurale (pièces, néons, lumières, prompts).
+	Build : petits utilitaires de construction procédurale (pièces, rampes, néons, lumières, prompts).
 	Toutes les pièces sont ancrées ; collisions/requêtes désactivées sur le décor pur.
 ]]
 
@@ -64,6 +64,17 @@ function Build.Cylinder(props: Props): Part
 	local part = Build.Part(props)
 	part.Shape = Enum.PartType.Cylinder
 	return part
+end
+
+-- Rampe solide (WedgePart) : face arrière (+Z local) pleine, la pente monte de l'avant (-Z)
+-- vers l'arrière. Sert aux escaliers de la tour (collision lisse sous des marches décoratives).
+function Build.Wedge(props: Props): WedgePart
+	local wedge = Instance.new("WedgePart")
+	for key, value in DEFAULTS do
+		(wedge :: any)[key] = value
+	end
+	apply(wedge, props)
+	return wedge
 end
 
 function Build.Model(name: string, parent: Instance?): Model

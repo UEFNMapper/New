@@ -1,7 +1,8 @@
 --[[
-	Exporte la map construite (MapBuilder) en JSON pour un rendu vu de dessus.
+	Exporte la tour construite (TowerBuilder) en JSON pour un rendu sans Studio.
 	Usage : lune run tests/tools/ExportMap.luau <sortie.json>   (depuis AngAInOne)
-	Réutilise l'environnement de tests/map.spec.luau (construction réelle avec les instances Lune).
+	Réutilise l'environnement de tests/tower.spec.luau (construction réelle avec les instances Lune).
+	Puis : python3 tests/tools/render_iso.py <sortie.json> tower.png [options]  (voir render_iso.py)
 ]]
 local fs = require("@lune/fs")
 local luau = require("@lune/luau")
@@ -11,16 +12,14 @@ local serde = require("@lune/serde")
 local Shim = require("../lib/RobloxShim")
 local Expect = require("../lib/Expect")
 
-local captured: any = nil
-local source = fs.readFile("tests/map.spec.luau")
--- On récupère le World construit par le spec via un hook sur Shim.
-local spec = luau.load(source, {
-	debugName = "map.spec.luau",
+local source = fs.readFile("tests/tower.spec.luau")
+-- Le spec construit la tour et la dépose dans Shim.LastTower.
+luau.load(source, {
+	debugName = "tower.spec.luau",
 	environment = { Shim = Shim, Expect = Expect, Vector3 = roblox.Vector3, print = function() end },
 })()
-local _ = spec
-captured = Shim.LastWorld
-assert(captured, "World introuvable")
+local captured = Shim.LastTower
+assert(captured, "Tower introuvable")
 
 local parts = {}
 for _, part in captured:GetDescendants() do
@@ -37,6 +36,7 @@ for _, part in captured:GetDescendants() do
 			m = part.Material.Name,
 			sh = if part:IsA("Part") then part.Shape.Name elseif part:IsA("WedgePart") then "Wedge" else part.ClassName,
 			col = part.CanCollide,
+			tg = part:GetTags(),
 		})
 	end
 end

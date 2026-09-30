@@ -1,11 +1,13 @@
-# Rendu isométrique de la map exportée (aperçu sans Studio).
-# Usage : lune run tests/tools/ExportMap.luau map.json && python3 tests/tools/render_iso.py map.json map_iso.png 1.1  (nécessite Pillow)
+# Rendu isométrique de la tour exportée (aperçu sans Studio).
+# Usage : lune run tests/tools/ExportMap.luau tower.json && python3 tests/tools/render_iso.py tower.json tower.png  (nécessite Pillow)
+# Sans --center : cadre toute la tour (bornes calculées sur les pièces affichées), image de --size pixels de haut.
 # Options (gros plan sur un composant) :
 #   --center x,y,z --radius r   cadre la vue sur une sphère (image de --size pixels)
 #   --az 45 --el 35             azimut / élévation de la caméra (degrés ; 45/35 = vue d'origine)
 #   --maxy y                    masque les pièces dont le centre est au-dessus de y (plafonds, caches)
 #   --hide Nom,Nom              masque des pièces par nom
-#   --ghost Nom,Nom             rend des pièces presque transparentes (défaut : cache du PSU)
+#   --miny y                    masque les pièces dont le centre est sous y
+#   --ghost Nom,Nom             rend des pièces presque transparentes
 # Les cylindres (axe X local), boules et coins (WedgePart) sont dessinés avec leur vraie forme.
 import json, sys, math, argparse
 from PIL import Image, ImageDraw, ImageFilter, ImageChops
@@ -19,14 +21,17 @@ ap.add_argument("--size", type=int, default=1400)
 ap.add_argument("--az", type=float, default=45)
 ap.add_argument("--el", type=float, default=35.26)
 ap.add_argument("--maxy", type=float, default=1e9)
+ap.add_argument("--miny", type=float, default=-1e9)
 ap.add_argument("--hide", default="")
-ap.add_argument("--ghost", default="PsuShroud,ShroudLip,ShroudRib")  # pièces rendues très transparentes (plafonds)
+ap.add_argument("--ghost", default="")  # pièces rendues très transparentes (plafonds)
 args = ap.parse_args()
 
 parts = json.load(open(args.src))
-FLOOR = {"Motherboard": -2e6, "TraceX": -1e6, "TraceZ": -1e6}  # le sol d'abord (tri du peintre)
+FLOOR = {"Desk": -2e6, "MousePad": -1e6}  # le sol d'abord (tri du peintre)
 GHOST = set(filter(None, args.ghost.split(",")))
-SKIP = {"SideGlass", "Rear", "Bottom", "Beam"} | set(filter(None, args.hide.split(",")))
+SKIP = {"SideGlass", "DeskEdge"} | set(filter(None, args.hide.split(",")))
+def shown(p):
+    return p["n"] not in SKIP and p["t"] < 0.97 and args.miny <= p["p"][1] <= args.maxy
 
 az, el = math.radians(args.az), math.radians(args.el)
 V = (math.cos(el) * math.cos(az), math.sin(el), math.cos(el) * math.sin(az))  # vers la caméra
@@ -43,12 +48,16 @@ if center:
     S = args.size / (2 * rad); pad = 0
 else:
     xs, ys = [], []
-    for x in (-545, 545):
-        for z in (-425, 425):
-            for y in (0, 200):
-                a, b = proj((x, y, z)); xs.append(a); ys.append(b)
+    for p in parts:
+        if not shown(p): continue
+        h = [v / 2 for v in p["s"]]; r = p["r"]
+        for sx in (-1, 1):
+            for sy in (-1, 1):
+                for sz in (-1, 1):
+                    q = tuple(p["p"][k] + r[3*k]*h[0]*sx + r[3*k+1]*h[1]*sy + r[3*k+2]*h[2]*sz for k in range(3))
+                    a, b = proj(q); xs.append(a); ys.append(b)
     minx, maxx, miny, maxy = min(xs), max(xs), min(ys), max(ys)
-    S = args.scale * 1.2; pad = 20
+    pad = 20; S = (args.size - 2 * pad) / max(maxy - miny, 1) * args.scale / 1.1
 W, H = int((maxx - minx) * S) + 2 * pad, int((maxy - miny) * S) + 2 * pad
 img = Image.new("RGB", (W, H), (22, 24, 32))
 glow = Image.new("RGB", (W, H), (0, 0, 0))
@@ -119,7 +128,7 @@ def split(q):
 
 faces = []
 for p in parts:
-    if p["n"] in SKIP or p["t"] >= 0.97 or p["p"][1] > args.maxy: continue
+    if not shown(p): continue
     r = p["r"]; s = p["s"]; cx, cy, cz = p["p"]
     ax = (r[0], r[3], r[6]); ay = (r[1], r[4], r[7]); az_ = (r[2], r[5], r[8])
     h = (s[0]/2, s[1]/2, s[2]/2)

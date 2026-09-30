@@ -1,6 +1,7 @@
-# Rendu vu de dessus de la map exportée (vérifier la disposition).
-# Usage : lune run tests/tools/ExportMap.luau map.json && python3 tests/tools/render_top.py map.json map_top.png  (nécessite Pillow)
+# Rendu vu de dessus de la tour exportée (vérifier la disposition d'un étage).
+# Usage : lune run tests/tools/ExportMap.luau tower.json && python3 tests/tools/render_top.py tower.json top.png [maxy] [--miny y]
 # Options : [maxy]                  masque les pièces entièrement au-dessus de cette hauteur
+#           --miny y                 masque les pièces entièrement sous cette hauteur (un seul monde)
 #           --center x,z --radius r  gros plan (image de --size pixels)
 import json, sys, math, argparse
 from PIL import Image, ImageDraw
@@ -11,6 +12,7 @@ ap.add_argument("maxy", nargs="?", type=float, default=1e9)
 ap.add_argument("--center", default=None)
 ap.add_argument("--radius", type=float, default=80)
 ap.add_argument("--size", type=int, default=1200)
+ap.add_argument("--miny", type=float, default=-1e9)
 args = ap.parse_args()
 
 parts = json.load(open(args.src))
@@ -19,8 +21,9 @@ if args.center:
     MINX, MAXX, MINZ, MAXZ = cx - args.radius, cx + args.radius, cz - args.radius, cz + args.radius
     S = args.size / (2 * args.radius)
 else:
-    MINX, MAXX, MINZ, MAXZ = -545, 545, -425, 425
-    S = 1.6
+    xs = [p["p"][0] for p in parts]; zs = [p["p"][2] for p in parts]
+    MINX, MAXX, MINZ, MAXZ = min(xs) - 20, max(xs) + 20, min(zs) - 20, max(zs) + 20
+    S = args.size / max(MAXX - MINX, MAXZ - MINZ)
 W, H = int((MAXX-MINX)*S), int((MAXZ-MINZ)*S)
 img = Image.new("RGB", (W, H), (10, 10, 14))
 d = ImageDraw.Draw(img, "RGBA")
@@ -35,6 +38,7 @@ for p in parts:
     if p["t"] >= 0.97: continue
     if p["n"] in ("SideGlass",): continue
     if top(p) - 0.0 > maxy and p["p"][1] > maxy: continue
+    if top(p) < args.miny: continue
     r = p["r"]; s = p["s"]; x, y, z = p["p"]
     # axes monde des axes locaux X et Z (colonnes de la matrice)
     ax = (r[0], r[6]); az = (r[2], r[8]); ay = (r[1], r[7])
