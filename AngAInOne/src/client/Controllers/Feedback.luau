@@ -3,6 +3,13 @@
 	Feedback : le « game feel ». Transforme chaque événement serveur (Fx, Notify) en
 	retour visuel + sonore (toasts, bannières, particules, voix d'Anga), et règle
 	l'ambiance du monde où l'on se trouve (musique, teinte de l'éclairage).
+
+	Monde nettoyé : bannière -> carte de médaille -> en-tête du monde suivant passent UN PAR UN
+	(file des moments, Moments.Queue). Arrivée dans le monde suivant : la carte de médaille se
+	ferme vite. Monde 7 : pas de carte (la victoire arrive quelques secondes après) ; la médaille
+	est gardée et montrée dans le rapport de victoire.
+	Les répliques de fin de monde EXPIRENT (Dialogue.Say, 4e paramètre) : elles ne retardent
+	jamais l'intro du monde suivant.
 ]]
 
 local Lighting = game:GetService("Lighting")
@@ -29,8 +36,14 @@ local Feedback = {}
 
 local player = Players.LocalPlayer
 local currentWorld = -1
-local MEDAL_DELAY = 4.4 -- la bannière « VIRUS ÉLIMINÉS » reste 4 s (Moments.WorldCleared)
 local APP_NAME = Branding.PartnerApp.Name
+-- Carte de médaille encore affichée quand on entre dans le monde suivant : visible au plus
+-- MEDAL_MIN_SHOWN s au total, puis l'en-tête du nouveau monde prend la place.
+local MEDAL_MIN_SHOWN = 2
+-- Répliques de fin de monde : jetées si elles n'ont pas commencé après ce délai (s).
+local CLEARED_LINE_EXPIRES = 8
+-- Médaille du monde 7, montrée dans le rapport de victoire.
+local finalMedal: any = nil
 
 -- Léger tremblement de caméra (respecte "Réduire les animations").
 local shakeToken = 0
@@ -120,6 +133,7 @@ local function onFx(kind: string, payload: any)
 		Audio.Play("Upgrade", 1 + (payload.Stage % 5) * 0.04)
 		if payload.NewWorld and payload.World > 0 then
 			Audio.Play("Unlock")
+			Moments.Expedite("Medal", MEDAL_MIN_SHOWN)
 			Moments.WorldBanner(payload.World)
 			local def = Tower.Worlds[payload.World]
 			if def then
@@ -133,6 +147,7 @@ local function onFx(kind: string, payload: any)
 			Toasts.Show("Success", `{APP_NAME} · Point de restauration créé · Étape {payload.Stage}`)
 		end
 	elseif kind == "RunStart" then
+		finalMedal = nil
 		Audio.Play("PowerOn")
 		Moments.WorldBanner(1)
 		task.delay(1.5, function()
@@ -185,30 +200,41 @@ local function onFx(kind: string, payload: any)
 		local def = Tower.Worlds[payload.World]
 		task.delay(2, function()
 			if def then
-				Dialogue.Say(def.Cleaned, 4)
+				Dialogue.Say(def.Cleaned, 4, "Anga", CLEARED_LINE_EXPIRES)
 			end
 			Dialogue.Say(
 				if payload.World < Tower.WORLD_COUNT
 					then "Le portail est ouvert. Monte vite au monde suivant !"
 					else "Touche la puce tout en haut : le live va pouvoir commencer !",
-				4
+				4,
+				"Anga",
+				CLEARED_LINE_EXPIRES
 			)
 		end)
-		-- Médaille du monde : carte « Rapport du monde » une fois la bannière passée.
+		-- Médaille du monde : carte « Rapport du monde » après la bannière (file des moments).
+		-- Monde 7 : la victoire suit de près ; la médaille ira dans le rapport de victoire.
 		if type(payload.Medal) == "string" then
-			task.delay(MEDAL_DELAY, function()
-				if payload.NewBest or payload.Medal == "Gold" then
-					Audio.Play("Unlock", 1.15)
-				else
-					Audio.Play("Toast")
-				end
-				MedalCard.Show(payload)
-			end)
+			if payload.World >= Tower.WORLD_COUNT then
+				finalMedal = payload
+			else
+				Moments.Queue("Medal", MedalCard.HOLD, function(done: () -> ()): (() -> ())?
+					if payload.NewBest or payload.Medal == "Gold" then
+						Audio.Play("Unlock", 1.15)
+					else
+						Audio.Play("Toast")
+					end
+					MedalCard.Show(payload, done)
+					return MedalCard.Dismiss
+				end)
+			end
 		end
 	elseif kind == "Victory" then
 		Audio.Play("Achievement")
 		Audio.Duck(6)
-		Moments.Victory(payload)
+		-- Moments.Victory vide la file des moments (carte de médaille comprise).
+		local medal = finalMedal
+		finalMedal = nil
+		Moments.Victory(payload, medal)
 	elseif kind == "Reward" then
 		Audio.Play("Toast")
 		Toasts.Show("Reward", `+{NumberFormat.Compact(payload.Bits or 0)} Bits`)

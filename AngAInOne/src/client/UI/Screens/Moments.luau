@@ -10,7 +10,16 @@
 	- Mort (petit flash glitch)
 	- Victoire : « LE LIVE COMMENCE ! » (le stream d'Anga démarre, le chat défile), puis le
 	  « Rapport AngAInOne » : la page Diagnostic de l'app (score 48 -> 100, cartes, menaces
-	  supprimées, temps, record, clés USB, chutes) à capturer et partager (Util/OptimisationReport)
+	  supprimées, temps, record, clés USB, chutes, médaille du monde 7) (Util/OptimisationReport).
+	  Public de moins de 13 ans : aucun appel à partager hors de Roblox, juste un rappel
+	  « Capture d'écran 📸 ». Le rapport se ferme d'un toucher à l'extérieur, au ✕, ou seul
+	  après 25 s (le serveur ramène le joueur au lobby et son écran « EN DIRECT » doit se voir).
+
+	File des moments (UI/MomentQueue) : bannière « VIRUS ÉLIMINÉS » -> carte de médaille ->
+	en-tête du monde suivant passent UN PAR UN (Moments.Queue / Finish / Expedite / ClearQueue).
+
+	Téléphone : textes ≥ 18 px de conception, cibles tactiles ≥ 88 px ; sous une échelle de 0,75
+	(petits écrans), mise en page COMPACTE (moins d'éléments, pas de liste de pages).
 ]]
 
 local Players = game:GetService("Players")
@@ -25,6 +34,8 @@ local PcHealth = require(Shared.Util.PcHealth)
 local Technician = require(Shared.Util.Technician)
 local AppPages = require(Shared.Util.AppPages)
 local OptimisationReport = require(Shared.Util.OptimisationReport)
+local Medals = require(Shared.Config.Medals)
+local TimeUtil = require(Shared.Util.Time)
 
 local Create = require(script.Parent.Parent.Create)
 local Style = require(script.Parent.Parent.Style)
@@ -34,12 +45,26 @@ local Keycap = require(script.Parent.Parent.Components.Keycap)
 local Widgets = require(script.Parent.Parent.Components.Widgets)
 local Lagz = require(script.Parent.Parent.Components.Lagz)
 local Toasts = require(script.Parent.Toasts)
+local MedalCard = require(script.Parent.MedalCard)
+local MomentQueue = require(script.Parent.Parent.MomentQueue)
 
 local New = Create.New
 
 local Moments = {}
 
 local layer: Frame
+
+-- Plus petites tailles lisibles sur le plus petit téléphone (échelle ≈ 0,5).
+local MIN_TEXT = 18
+local TOUCH = 88
+local COMPACT_SCALE = 0.75
+
+-- Échelle réelle de l'interface (UIScale de App.Root) : < 0,75 = petit écran -> mise en page compacte.
+local function isCompact(): boolean
+	local root = layer and layer.Parent
+	local scale = root and root:FindFirstChildOfClass("UIScale")
+	return scale ~= nil and scale.Scale < COMPACT_SCALE
+end
 
 local function fullscreen(name: string, tag: string, transparency: number): Frame
 	return New("Frame", {
@@ -137,12 +162,12 @@ local function appButton(
 		BackgroundColor3 = if primary then A.Accent else A.Button,
 		BorderSizePixel = 0,
 		Text = label,
-		TextSize = 15,
-		FontFace = F.Medium,
+		TextSize = 20,
+		FontFace = F.Bold,
 		TextColor3 = A.Text,
 		Parent = parent,
 	}, {
-		Create.Corner(6) :: Instance,
+		Create.Corner(8) :: Instance,
 		New("UIStroke", {
 			Color = if primary then A.Accent:Lerp(WHITE, 0.2) else A.Stroke,
 			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
@@ -180,15 +205,15 @@ end
 local function pill(parent: Instance, value: string, color: Color3, textColor: Color3?): Frame
 	local frame: Frame = New("Frame", {
 		AutomaticSize = Enum.AutomaticSize.X,
-		Size = UDim2.fromOffset(0, 22),
+		Size = UDim2.fromOffset(0, 30),
 		BackgroundColor3 = color,
 		BorderSizePixel = 0,
 		Parent = parent,
 	}, {
 		New("UICorner", { CornerRadius = UDim.new(1, 0) }) :: Instance,
-		Create.Padding(0, 10) :: Instance,
+		Create.Padding(0, 12) :: Instance,
 	})
-	text(frame, value, 12, F.Bold, textColor or A.Text, {
+	text(frame, value, MIN_TEXT, F.Bold, textColor or A.Text, {
 		AutomaticSize = Enum.AutomaticSize.X,
 		Size = UDim2.fromScale(0, 1),
 	})
@@ -209,7 +234,7 @@ end
 -- Titre de page + (?) + sous-titre gris, comme en haut de chaque page de l'app.
 local function pageHeader(parent: Instance, title: string, subtitle: string, titleSize: number): Frame
 	local header: Frame = New("Frame", {
-		Size = UDim2.new(1, 0, 0, titleSize + 30),
+		Size = UDim2.new(1, 0, 0, titleSize + 36),
 		BackgroundTransparency = 1,
 		Parent = parent,
 	})
@@ -226,7 +251,7 @@ local function pageHeader(parent: Instance, title: string, subtitle: string, tit
 		LayoutOrder = 1,
 	})
 	local help: Frame = New("Frame", {
-		Size = UDim2.fromOffset(18, 18),
+		Size = UDim2.fromOffset(26, 26),
 		BackgroundTransparency = 1,
 		LayoutOrder = 2,
 		Parent = row,
@@ -234,11 +259,11 @@ local function pageHeader(parent: Instance, title: string, subtitle: string, tit
 		New("UICorner", { CornerRadius = UDim.new(1, 0) }) :: Instance,
 		New("UIStroke", { Color = A.Dim, Thickness = 1.5 }) :: Instance,
 	})
-	text(help, "?", 12, F.Bold, A.Dim, {
+	text(help, "?", MIN_TEXT, F.Bold, A.Dim, {
 		Size = UDim2.fromScale(1, 1),
 		TextXAlignment = Enum.TextXAlignment.Center,
 	})
-	text(header, subtitle, 14, F.Regular, A.Dim, {
+	text(header, subtitle, MIN_TEXT, F.Regular, A.Dim, {
 		Position = UDim2.fromOffset(0, titleSize + 8),
 		TextTruncate = Enum.TextTruncate.AtEnd,
 	})
@@ -246,6 +271,10 @@ local function pageHeader(parent: Instance, title: string, subtitle: string, tit
 end
 
 -- Fenêtre de l'app : barre de titre, barre latérale (avatar, badge, recherche, pages), contenu.
+-- Textes ≥ 18 px ; le ✕ a une zone tactile de 88 × 88 px (coin haut droit de la fenêtre).
+-- `pages` vide = pas de recherche ni de liste de pages (mise en page compacte, rapport).
+local TITLE_H = 40
+
 local function appWindow(
 	parent: Instance,
 	size: Vector2,
@@ -270,92 +299,109 @@ local function appWindow(
 	-- Barre de titre
 	local logo: Frame = New("Frame", {
 		Position = UDim2.fromOffset(12, 8),
-		Size = UDim2.fromOffset(16, 16),
+		Size = UDim2.fromOffset(24, 24),
 		BackgroundColor3 = A.Accent,
 		BorderSizePixel = 0,
 		Parent = root,
-	}, { Create.Corner(4) :: Instance })
-	text(logo, "A", 11, F.Heavy, A.Text, {
+	}, { Create.Corner(5) :: Instance })
+	text(logo, "A", MIN_TEXT, F.Heavy, A.Text, {
 		Size = UDim2.fromScale(1, 1),
 		TextXAlignment = Enum.TextXAlignment.Center,
 	})
-	text(root, `{APP.Name}  ·  {APP.Version}`, 12, F.Regular, A.Dim, {
-		Position = UDim2.fromOffset(36, 7),
-		Size = UDim2.fromOffset(300, 18),
+	text(root, `{APP.Name}  ·  {APP.Version}`, MIN_TEXT, F.Regular, A.Dim, {
+		Position = UDim2.fromOffset(46, 8),
+		Size = UDim2.fromOffset(360, 24),
 	})
 	New("Frame", {
 		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -118, 0, 16),
-		Size = UDim2.fromOffset(10, 1),
+		Position = UDim2.new(1, -150, 0, 20),
+		Size = UDim2.fromOffset(12, 1),
 		BackgroundColor3 = A.Dim,
 		BorderSizePixel = 0,
 		Parent = root,
 	})
 	New("Frame", {
 		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -72, 0, 11),
-		Size = UDim2.fromOffset(10, 10),
+		Position = UDim2.new(1, -104, 0, 14),
+		Size = UDim2.fromOffset(12, 12),
 		BackgroundTransparency = 1,
 		Parent = root,
 	}, { New("UIStroke", { Color = A.Dim, Thickness = 1 }) :: Instance })
+	-- ✕ : zone tactile 88 × 88 (transparente), case rouge visible de 64 × 38 dans le coin
 	local close: TextButton = New("TextButton", {
+		Name = "Close",
 		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -1, 0, 1),
-		Size = UDim2.fromOffset(48, 30),
-		BackgroundColor3 = Color3.fromRGB(196, 43, 28),
+		Position = UDim2.new(1, 0, 0, 0),
+		Size = UDim2.fromOffset(TOUCH, TOUCH),
 		BackgroundTransparency = 1,
 		AutoButtonColor = false,
-		Text = "✕",
-		TextSize = 14,
-		FontFace = F.Medium,
-		TextColor3 = A.Text,
+		Text = "",
+		ZIndex = 5,
 		Parent = root,
+	})
+	local closeCap: Frame = New("Frame", {
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -1, 0, 1),
+		Size = UDim2.fromOffset(64, TITLE_H - 2),
+		BackgroundColor3 = Color3.fromRGB(196, 43, 28),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ZIndex = 5,
+		Parent = close,
 	}, { Create.Corner(7) :: Instance })
+	text(closeCap, "✕", 22, F.Medium, A.Text, {
+		Size = UDim2.fromScale(1, 1),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		ZIndex = 6,
+	})
 	close.MouseEnter:Connect(function()
-		close.BackgroundTransparency = 0
+		closeCap.BackgroundTransparency = 0
 	end)
 	close.MouseLeave:Connect(function()
-		close.BackgroundTransparency = 1
+		closeCap.BackgroundTransparency = 1
 	end)
 
 	-- Barre latérale
 	local side: Frame = New("Frame", {
-		Position = UDim2.fromOffset(0, 32),
-		Size = UDim2.new(0, sideWidth, 1, -32),
+		Position = UDim2.fromOffset(0, TITLE_H),
+		Size = UDim2.new(0, sideWidth, 1, -TITLE_H),
 		BackgroundTransparency = 1,
 		Parent = root,
 	})
-	headshot(side, 40, UDim2.fromOffset(14, 6))
-	text(side, player.DisplayName, 15, F.Bold, A.Text, {
-		Position = UDim2.fromOffset(64, 5),
-		Size = UDim2.new(1, -72, 0, 20),
+	headshot(side, 48, UDim2.fromOffset(14, 6))
+	text(side, player.DisplayName, 20, F.Bold, A.Text, {
+		Position = UDim2.fromOffset(72, 4),
+		Size = UDim2.new(1, -80, 0, 26),
 		TextTruncate = Enum.TextTruncate.AtEnd,
 	})
-	text(side, Technician.Short(player.UserId), 12, F.Regular, A.Dim, {
-		Position = UDim2.fromOffset(64, 26),
-		Size = UDim2.new(1, -72, 0, 16),
-	})
-	local search = card(side, UDim2.fromOffset(10, 56), UDim2.new(1, -20, 0, 32), A.Card)
-	New("UIStroke", { Color = A.Stroke, Parent = search })
-	text(search, "Rechercher une page ou un paramètre", 13, F.Regular, A.Dim, {
-		Position = UDim2.fromOffset(10, 0),
-		Size = UDim2.new(1, -36, 1, 0),
+	text(side, Technician.Short(player.UserId), MIN_TEXT, F.Regular, A.Dim, {
+		Position = UDim2.fromOffset(72, 30),
+		Size = UDim2.new(1, -80, 0, 24),
 		TextTruncate = Enum.TextTruncate.AtEnd,
 	})
-	New("Frame", {
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -12, 0.5, -1),
-		Size = UDim2.fromOffset(10, 10),
-		BackgroundTransparency = 1,
-		Parent = search,
-	}, {
-		New("UICorner", { CornerRadius = UDim.new(1, 0) }) :: Instance,
-		New("UIStroke", { Color = A.Dim, Thickness = 1.5 }) :: Instance,
-	})
+	if #pages > 0 then
+		local search = card(side, UDim2.fromOffset(10, 64), UDim2.new(1, -20, 0, 38), A.Card)
+		New("UIStroke", { Color = A.Stroke, Parent = search })
+		text(search, "Rechercher", MIN_TEXT, F.Regular, A.Dim, {
+			Position = UDim2.fromOffset(12, 0),
+			Size = UDim2.new(1, -40, 1, 0),
+			TextTruncate = Enum.TextTruncate.AtEnd,
+		})
+		New("Frame", {
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -14, 0.5, -1),
+			Size = UDim2.fromOffset(12, 12),
+			BackgroundTransparency = 1,
+			Parent = search,
+		}, {
+			New("UICorner", { CornerRadius = UDim.new(1, 0) }) :: Instance,
+			New("UIStroke", { Color = A.Dim, Thickness = 1.5 }) :: Instance,
+		})
+	end
 	for i, name in pages do
 		local row: Frame = New("Frame", {
-			Position = UDim2.fromOffset(6, 98 + (i - 1) * 32),
-			Size = UDim2.new(1, -12, 0, 30),
+			Position = UDim2.fromOffset(6, 112 + (i - 1) * 38),
+			Size = UDim2.new(1, -12, 0, 36),
 			BackgroundColor3 = A.CardHi,
 			BackgroundTransparency = if name == selected then 0 else 1,
 			BorderSizePixel = 0,
@@ -365,7 +411,7 @@ local function appWindow(
 			New("Frame", {
 				AnchorPoint = Vector2.new(0, 0.5),
 				Position = UDim2.new(0, 0, 0.5, 0),
-				Size = UDim2.fromOffset(3, 16),
+				Size = UDim2.fromOffset(3, 18),
 				BackgroundColor3 = A.Accent,
 				BorderSizePixel = 0,
 				Parent = row,
@@ -381,15 +427,15 @@ local function appWindow(
 			Create.Corner(3) :: Instance,
 			New("UIStroke", { Color = if name == selected then A.Text else A.Dim, Thickness = 1.5 }) :: Instance,
 		})
-		text(row, name, 14, if name == selected then F.Medium else F.Regular, A.Text, {
-			Position = UDim2.fromOffset(38, 0),
-			Size = UDim2.new(1, -44, 1, 0),
+		text(row, name, MIN_TEXT, if name == selected then F.Medium else F.Regular, A.Text, {
+			Position = UDim2.fromOffset(36, 0),
+			Size = UDim2.new(1, -42, 1, 0),
 			TextTruncate = Enum.TextTruncate.AtEnd,
 		})
 	end
 	local main: Frame = New("Frame", {
-		Position = UDim2.fromOffset(sideWidth, 32),
-		Size = UDim2.new(1, -sideWidth, 1, -32),
+		Position = UDim2.fromOffset(sideWidth, TITLE_H),
+		Size = UDim2.new(1, -sideWidth, 1, -TITLE_H),
 		BackgroundTransparency = 1,
 		Parent = root,
 	}, { Create.Padding(0, 26) :: Instance })
@@ -411,32 +457,48 @@ local MINIONS = { "Sparky", "Pop-Up", "Corrupto", "Dusty", "Minor", "Freezy" }
 -- Grosse tuile « valeur + légende » (FPS, ping, °C).
 local function statTile(parent: Instance, position: UDim2, value: string, caption: string, color: Color3)
 	local tile = card(parent, position, UDim2.fromOffset(168, 118), A.CardHi)
-	dot(tile, UDim2.fromOffset(14, 16), 10, color)
-	text(tile, caption, 14, F.Medium, A.Dim, { Position = UDim2.fromOffset(32, 9), Size = UDim2.new(1, -40, 0, 22) })
+	dot(tile, UDim2.fromOffset(14, 17), 10, color)
+	text(
+		tile,
+		caption,
+		MIN_TEXT,
+		F.Medium,
+		A.Dim,
+		{ Position = UDim2.fromOffset(32, 8), Size = UDim2.new(1, -40, 0, 26) }
+	)
 	local big = text(tile, value, 44, F.Heavy, color, {
-		Position = UDim2.fromOffset(14, 40),
+		Position = UDim2.fromOffset(14, 44),
 		Size = UDim2.new(1, -20, 0, 56),
 	})
 	Motion.Pop(big, 0.2)
 end
 
+-- Bouton « SUITE → » en bas à droite de l'étape (cible tactile 240 × 88).
+local function nextButton(body: Frame, onNext: () -> ())
+	local button =
+		appButton(body, "SUITE  →", true, UDim2.new(1, -240, 1, -TOUCH), UDim2.fromOffset(240, TOUCH), onNext)
+	button.TextSize = 24
+end
+
+-- Contenu d'une étape ouverte (zone de 688 × 264 px de conception).
 local function introStep(body: Frame, step: number, onNext: () -> (), onAccept: (TextButton) -> ())
 	local player = Players.LocalPlayer
 	if step == 1 then
 		local before = PcHealth.Stats(0)
-		statTile(body, UDim2.fromOffset(0, 8), tostring(before.Fps), "FPS", A.Bad)
-		statTile(body, UDim2.fromOffset(180, 8), `{before.Ping} ms`, "Ping", A.Bad)
-		statTile(body, UDim2.fromOffset(360, 8), `{before.Temp} °C`, "Température", A.Bad)
+		statTile(body, UDim2.fromOffset(0, 0), tostring(before.Fps), "FPS", A.Bad)
+		statTile(body, UDim2.fromOffset(180, 0), `{before.Ping} ms`, "Ping", A.Bad)
+		statTile(body, UDim2.fromOffset(360, 0), `{before.Temp} °C`, "Température", A.Bad)
 		local avatar = Widgets.Avatar(64, body)
-		avatar.Position = UDim2.fromOffset(0, 146)
-		text(body, `{Branding.MascotName} : « Mon PC RAME ! Mon live commence dans 1 heure ! »`, 18, F.Bold, A.Text, {
-			Position = UDim2.fromOffset(78, 150),
-			Size = UDim2.new(1, -300, 0, 56),
+		avatar.Position = UDim2.fromOffset(0, 136)
+		text(body, `{Branding.MascotName} : « Mon PC RAME ! Mon live commence dans 1 heure ! »`, 20, F.Bold, A.Text, {
+			Position = UDim2.fromOffset(78, 132),
+			Size = UDim2.new(1, -340, 0, 72),
 			TextWrapped = true,
+			TextYAlignment = Enum.TextYAlignment.Top,
 		})
-		appButton(body, "SUITE  →", true, UDim2.new(1, -200, 1, -52), UDim2.fromOffset(200, 48), onNext)
+		nextButton(body, onNext)
 	elseif step == 2 then
-		local face = Lagz.Face(150, body)
+		local face = Lagz.Face(120, body)
 		face.Position = UDim2.fromOffset(0, 0)
 		Motion.Pop(face, 0.3)
 		text(
@@ -445,24 +507,24 @@ local function introStep(body: Frame, step: number, onNext: () -> (), onAccept: 
 			34,
 			F.Heavy,
 			Lagz.Color,
-			{ Position = UDim2.fromOffset(170, 6), Size = UDim2.new(1, -170, 0, 40) }
+			{ Position = UDim2.fromOffset(140, 0), Size = UDim2.new(1, -140, 0, 40) }
 		)
-		text(body, "Un virus qui MANGE la puissance du PC.", 18, F.Bold, A.Text, {
-			Position = UDim2.fromOffset(170, 50),
-			Size = UDim2.new(1, -170, 0, 24),
+		text(body, "Un virus qui MANGE la puissance du PC.", 20, F.Bold, A.Text, {
+			Position = UDim2.fromOffset(140, 42),
+			Size = UDim2.new(1, -140, 0, 26),
 		})
-		text(body, "Ses 6 sbires se cachent dans la tour :", 14, F.Regular, A.Dim, {
-			Position = UDim2.fromOffset(170, 86),
-			Size = UDim2.new(1, -170, 0, 20),
+		text(body, "Ses 6 sbires se cachent dans la tour :", MIN_TEXT, F.Regular, A.Dim, {
+			Position = UDim2.fromOffset(140, 72),
+			Size = UDim2.new(1, -140, 0, 24),
 		})
 		local chips: Frame = New("Frame", {
-			Position = UDim2.fromOffset(170, 112),
-			Size = UDim2.new(1, -170, 0, 60),
+			Position = UDim2.fromOffset(140, 102),
+			Size = UDim2.new(1, -140, 0, 72),
 			BackgroundTransparency = 1,
 			Parent = body,
 		}, {
 			New("UIGridLayout", {
-				CellSize = UDim2.fromOffset(110, 26),
+				CellSize = UDim2.fromOffset(128, 32),
 				CellPadding = UDim2.fromOffset(8, 8),
 				SortOrder = Enum.SortOrder.LayoutOrder,
 			}) :: Instance,
@@ -471,11 +533,11 @@ local function introStep(body: Frame, step: number, onNext: () -> (), onAccept: 
 			local def = Tower.Worlds[i]
 			local chip = card(chips, UDim2.new(), UDim2.new(), A.CardHi)
 			chip.LayoutOrder = i
-			dot(chip, UDim2.fromOffset(10, 8), 10, if def then Color3.fromHex(def.Primary) else A.Violet)
+			dot(chip, UDim2.fromOffset(10, 11), 10, if def then Color3.fromHex(def.Primary) else A.Violet)
 			text(
 				chip,
 				name,
-				13,
+				MIN_TEXT,
 				F.Medium,
 				A.Text,
 				{ Position = UDim2.fromOffset(26, 0), Size = UDim2.new(1, -30, 1, 0) }
@@ -490,32 +552,33 @@ local function introStep(body: Frame, step: number, onNext: () -> (), onAccept: 
 				task.wait(if math.random() < 0.2 then 0.05 else 0.4)
 			end
 		end)
-		appButton(body, "SUITE  →", true, UDim2.new(1, -200, 1, -52), UDim2.fromOffset(200, 48), onNext)
+		nextButton(body, onNext)
 	else
 		-- Badge du technicien (à gauche) + ordre de mission (à droite)
-		local badge = card(body, UDim2.fromOffset(0, 0), UDim2.fromOffset(250, 176), A.Accent)
+		local badge = card(body, UDim2.fromOffset(0, 0), UDim2.fromOffset(260, 192), A.Accent)
 		New("UIGradient", {
 			Rotation = 35,
 			Color = ColorSequence.new(A.Accent, A.Violet),
 			Parent = badge,
 		})
-		text(badge, "BADGE OFFICIEL", 11, F.Heavy, WHITE, {
-			Position = UDim2.fromOffset(16, 12),
-			TextTransparency = 0.25,
+		text(badge, "BADGE OFFICIEL", MIN_TEXT, F.Heavy, WHITE, {
+			Position = UDim2.fromOffset(16, 8),
+			TextTransparency = 0.2,
 		})
-		headshot(badge, 56, UDim2.fromOffset(16, 38))
-		text(badge, player.DisplayName, 18, F.Heavy, WHITE, {
-			Position = UDim2.fromOffset(82, 42),
-			Size = UDim2.new(1, -92, 0, 24),
+		headshot(badge, 56, UDim2.fromOffset(16, 40))
+		text(badge, player.DisplayName, 20, F.Heavy, WHITE, {
+			Position = UDim2.fromOffset(82, 54),
+			Size = UDim2.new(1, -92, 0, 28),
 			TextTruncate = Enum.TextTruncate.AtEnd,
 		})
-		text(badge, "Technicien·ne AngAInOne", 13, F.Medium, WHITE, {
-			Position = UDim2.fromOffset(82, 68),
-			Size = UDim2.new(1, -92, 0, 18),
-		})
 		text(badge, `n° {Technician.Code(player.UserId)}`, 40, F.Heavy, WHITE, {
-			Position = UDim2.fromOffset(16, 110),
+			Position = UDim2.fromOffset(16, 102),
 			Size = UDim2.new(1, -32, 0, 48),
+		})
+		text(badge, "Technicien·ne AngAInOne", MIN_TEXT, F.Medium, WHITE, {
+			Position = UDim2.fromOffset(16, 156),
+			Size = UDim2.new(1, -24, 0, 26),
+			TextTruncate = Enum.TextTruncate.AtEnd,
 		})
 		Motion.Pop(badge, 0.12)
 		local orders = {
@@ -524,9 +587,9 @@ local function introStep(body: Frame, step: number, onNext: () -> (), onAccept: 
 			"Supprime LAGZ, tout en haut !",
 		}
 		for i, line in orders do
-			local y = 6 + (i - 1) * 50
-			local number = dot(body, UDim2.fromOffset(272, y), 36, A.CardHi)
-			text(number, tostring(i), 18, F.Heavy, A.Text, {
+			local y = (i - 1) * 50
+			local number = dot(body, UDim2.fromOffset(282, y), 38, A.CardHi)
+			text(number, tostring(i), 20, F.Heavy, A.Text, {
 				Size = UDim2.fromScale(1, 1),
 				TextXAlignment = Enum.TextXAlignment.Center,
 			})
@@ -536,7 +599,7 @@ local function introStep(body: Frame, step: number, onNext: () -> (), onAccept: 
 				20,
 				F.Bold,
 				A.Text,
-				{ Position = UDim2.fromOffset(322, y + 4), Size = UDim2.new(1, -322, 0, 28) }
+				{ Position = UDim2.fromOffset(332, y + 4), Size = UDim2.new(1, -332, 0, 30) }
 			)
 		end
 		local accept: TextButton
@@ -544,34 +607,40 @@ local function introStep(body: Frame, step: number, onNext: () -> (), onAccept: 
 			body,
 			"ACCEPTER LA MISSION",
 			true,
-			UDim2.new(1, -330, 1, -58),
-			UDim2.fromOffset(330, 58),
+			UDim2.new(1, -340, 1, -TOUCH),
+			UDim2.fromOffset(340, TOUCH),
 			function()
 				onAccept(accept)
 			end
 		)
-		accept.TextSize = 20
+		accept.TextSize = 24
 		accept.FontFace = F.Heavy
 		Motion.Pop(accept, 0.1)
 	end
 end
 
+-- Hauteurs des étapes (fenêtre de 600 px : la zone des étapes fait 472 px)
+local STEP_OPEN_H = 340
+local STEP_CLOSED_H = 56
+
 function Moments.Intro(onDone: () -> ())
 	local dim = fullscreen("Intro", "Backdrop", 0.3)
+	local compact = isCompact()
 	local pages = AppPages.Sidebar(Tower.Worlds)
 	table.insert(pages, 2, "Mode Intervention")
-	local window = appWindow(dim, Vector2.new(1000, 560), 220, pages, "Mode Intervention")
+	-- Petit écran : pas de recherche ni de liste de pages (moins de choses à lire)
+	local window = appWindow(dim, Vector2.new(1000, 600), 220, if compact then {} else pages, "Mode Intervention")
 	window.Close.Visible = false -- la mission se lance avec le gros bouton
 	local main = window.Main
 	pageHeader(main, "Mode Intervention", "Une réparation en direct… depuis l'intérieur du PC.", 28).Position =
-		UDim2.fromOffset(0, 12)
+		UDim2.fromOffset(0, 8)
 	local status = pill(main, "PC d'Anga : critique", A.Bad:Lerp(Color3.new(0, 0, 0), 0.55), A.Bad)
 	status.AnchorPoint = Vector2.new(1, 0)
-	status.Position = UDim2.new(1, 0, 0, 20)
+	status.Position = UDim2.new(1, 0, 0, 12)
 
 	local steps: Frame = New("Frame", {
-		Position = UDim2.fromOffset(0, 84),
-		Size = UDim2.new(1, 0, 1, -100),
+		Position = UDim2.fromOffset(0, 80),
+		Size = UDim2.new(1, 0, 1, -88),
 		BackgroundTransparency = 1,
 		Parent = main,
 	}, { Create.List(Enum.FillDirection.Vertical, 8) :: Instance })
@@ -602,33 +671,34 @@ function Moments.Intro(onDone: () -> ())
 		end
 		for i, step in STEPS do
 			local open = i == current
-			local box = card(steps, UDim2.new(), UDim2.new(1, 0, 0, if open then 318 else 50), A.Card)
+			local box =
+				card(steps, UDim2.new(), UDim2.new(1, 0, 0, if open then STEP_OPEN_H else STEP_CLOSED_H), A.Card)
 			box.LayoutOrder = i
 			local number = dot(
 				box,
-				UDim2.fromOffset(14, 12),
-				26,
+				UDim2.fromOffset(14, 13),
+				30,
 				if i < current then A.Good elseif open then A.Accent else A.CardHi
 			)
-			text(number, if i < current then "✓" else tostring(i), 14, F.Heavy, A.Text, {
+			text(number, if i < current then "✓" else tostring(i), MIN_TEXT, F.Heavy, A.Text, {
 				Size = UDim2.fromScale(1, 1),
 				TextXAlignment = Enum.TextXAlignment.Center,
 			})
 			text(
 				box,
 				`Étape {i} — {step.Title}`,
-				15,
+				20,
 				F.Medium,
 				A.Text,
-				{ Position = UDim2.fromOffset(52, 6), Size = UDim2.new(1, -200, 0, 20) }
+				{ Position = UDim2.fromOffset(56, 3), Size = UDim2.new(1, -210, 0, 26) }
 			)
 			text(
 				box,
 				step.Sub,
-				12,
+				MIN_TEXT,
 				F.Regular,
 				A.Dim,
-				{ Position = UDim2.fromOffset(52, 26), Size = UDim2.new(1, -200, 0, 16) }
+				{ Position = UDim2.fromOffset(56, 28), Size = UDim2.new(1, -210, 0, 24) }
 			)
 			local badge = pill(
 				box,
@@ -637,11 +707,11 @@ function Moments.Intro(onDone: () -> ())
 				if i < current then A.Good else A.Dim
 			)
 			badge.AnchorPoint = Vector2.new(1, 0)
-			badge.Position = UDim2.new(1, -14, 0, 14)
+			badge.Position = UDim2.new(1, -14, 0, 13)
 			if open then
 				local body: Frame = New("Frame", {
-					Position = UDim2.fromOffset(20, 58),
-					Size = UDim2.new(1, -40, 1, -72),
+					Position = UDim2.fromOffset(20, 64),
+					Size = UDim2.new(1, -40, 1, -76),
 					BackgroundTransparency = 1,
 					Parent = box,
 				})
@@ -657,10 +727,93 @@ function Moments.Intro(onDone: () -> ())
 end
 
 ------------------------------------------------------------------------------------
+-- File des moments : bannière -> médaille -> en-tête du monde, un seul à la fois
+------------------------------------------------------------------------------------
+
+-- Affichage d'un moment : reçoit `done` (à appeler s'il se ferme plus tôt, ex. d'un toucher)
+-- et peut renvoyer une fonction qui le cache (fin de son temps, ou file vidée).
+export type Show = (done: () -> ()) -> (() -> ())?
+
+local queue = MomentQueue.new()
+local pumpToken = 0
+local currentHide: (() -> ())? = nil
+
+local pump: () -> ()
+pump = function()
+	local now = os.clock()
+	local started, finished = MomentQueue.Step(queue, now)
+	-- D'abord cacher le moment terminé, ensuite seulement montrer le suivant.
+	if finished then
+		local hide = currentHide
+		currentHide = nil
+		if hide then
+			xpcall(hide, function(err: any)
+				warn("[Moments] fin d'un moment :", err)
+			end)
+		end
+	end
+	if started then
+		local item = started
+		local show = item.Data :: Show
+		local ok, result = xpcall(show, function(err: any)
+			warn(`[Moments] moment « {item.Kind} » :`, err)
+		end, function()
+			-- Différé : `done` peut être appelé pendant l'affichage lui-même (pas de ré-entrée).
+			if MomentQueue.FinishItem(queue, item, os.clock()) then
+				task.defer(pump)
+			end
+		end)
+		if ok and type(result) == "function" then
+			currentHide = result
+		end
+	end
+	if queue.Current then
+		pumpToken += 1
+		local token = pumpToken
+		task.delay(math.max(queue.EndsAt - now, 0) + 0.02, function()
+			if token == pumpToken then
+				pump()
+			end
+		end)
+	end
+end
+
+-- Ajoute un moment à la file (`unique` : remplace un moment du même type encore en attente).
+function Moments.Queue(kind: string, hold: number, show: Show, unique: boolean?)
+	MomentQueue.Push(queue, { Kind = kind, Hold = hold, Unique = unique, Data = show })
+	pump()
+end
+
+-- Le moment en cours de ce type se termine maintenant.
+function Moments.Finish(kind: string)
+	if MomentQueue.Finish(queue, kind, os.clock()) then
+		pump()
+	end
+end
+
+-- Raccourcit un type de moment (en cours : `minShown` s affiché au total au plus).
+function Moments.Expedite(kind: string, minShown: number)
+	MomentQueue.Expedite(queue, kind, os.clock(), minShown)
+	pump()
+end
+
+-- Vide la file et cache le moment en cours (écran de victoire).
+function Moments.ClearQueue()
+	MomentQueue.Clear(queue, os.clock())
+	pump()
+end
+
+------------------------------------------------------------------------------------
 -- Bannières
 ------------------------------------------------------------------------------------
 
-local function banner(accent: Color3, caption: string, title: string, subtitle: string, seconds: number)
+local BANNER_SECONDS = 4
+local BANNER_FADE = 0.4
+local HEADER_SECONDS = 4.5
+local HEADER_FADE = 0.35
+
+-- Bandeau plein écran ; renvoie une fonction qui le cache tout de suite.
+local function banner(accent: Color3, caption: string, title: string, subtitle: string, seconds: number): () -> ()
 	local band: Frame = New("Frame", {
 		Name = "Banner",
 		AnchorPoint = Vector2.new(0.5, 0.5),
@@ -694,11 +847,11 @@ local function banner(accent: Color3, caption: string, title: string, subtitle: 
 		Parent = band,
 	})
 	New("TextLabel", {
-		Position = UDim2.fromOffset(0, 16),
-		Size = UDim2.new(1, 0, 0, 20),
+		Position = UDim2.fromOffset(0, 12),
+		Size = UDim2.new(1, 0, 0, 24),
 		BackgroundTransparency = 1,
 		Text = caption,
-		Tag = "TextCaption",
+		Tag = "TextHeading", -- 18 px : lisible sur téléphone
 		Parent = band,
 	})
 	local titleLabel: TextLabel = New("TextLabel", {
@@ -711,26 +864,33 @@ local function banner(accent: Color3, caption: string, title: string, subtitle: 
 	})
 	New("TextLabel", {
 		Position = UDim2.fromOffset(0, 98),
-		Size = UDim2.new(1, 0, 0, 24),
+		Size = UDim2.new(1, 0, 0, 26),
 		BackgroundTransparency = 1,
 		Text = subtitle,
-		Tag = "TextBody",
+		Tag = "TextHeading",
 		Parent = band,
 	})
 	Motion.Pop(titleLabel, 0.25)
 	Motion.Tween(sweep, { Size = UDim2.new(1, 0, 0, 3) }, 0.9, Enum.EasingStyle.Quart)
-	task.delay(seconds, function()
-		if band.Parent then
-			fadeOut(band, 0.4)
+	local hidden = false
+	local function hide()
+		if hidden then
+			return
 		end
-	end)
+		hidden = true
+		if band.Parent then
+			fadeOut(band, BANNER_FADE)
+		end
+	end
+	task.delay(seconds, hide)
+	return hide
 end
 
--- En entrant dans un monde : l'en-tête de la page de l'app qui lui correspond.
-function Moments.WorldBanner(world: number)
+-- En-tête de la page de l'app d'un monde ; renvoie une fonction qui le cache tout de suite.
+local function worldHeader(world: number): (() -> ())?
 	local def = Tower.Worlds[world]
 	if not def then
-		return
+		return nil
 	end
 	local page = AppPages.Of(world, def)
 	local accent = Color3.fromHex(def.Primary)
@@ -738,7 +898,7 @@ function Moments.WorldBanner(world: number)
 		Name = "AppPageBanner",
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0.2, 0),
-		Size = UDim2.fromOffset(660, 118),
+		Size = UDim2.fromOffset(720, 132),
 		BackgroundColor3 = A.Surface,
 		BackgroundTransparency = 0.04,
 		BorderSizePixel = 0,
@@ -760,32 +920,51 @@ function Moments.WorldBanner(world: number)
 		BackgroundTransparency = 1,
 		Parent = header,
 	})
-	text(content, `{APP.Name}  ›  Monde {world}/{Tower.WORLD_COUNT} · {def.Component}`, 12, F.Medium, A.Dim, {
-		Size = UDim2.new(1, -180, 0, 18),
+	text(content, `{APP.Name}  ›  Monde {world}/{Tower.WORLD_COUNT} · {def.Component}`, MIN_TEXT, F.Medium, A.Dim, {
+		Size = UDim2.new(1, -250, 0, 24),
+		TextTruncate = Enum.TextTruncate.AtEnd,
 	})
-	pageHeader(content, page.Title, page.Subtitle, 30).Position = UDim2.fromOffset(0, 22)
+	pageHeader(content, page.Title, page.Subtitle, 30).Position = UDim2.fromOffset(0, 28)
 	local alert = pill(content, `⚠ {def.Minion} détecté`, A.Bad:Lerp(Color3.new(0, 0, 0), 0.55), A.Bad)
 	alert.AnchorPoint = Vector2.new(1, 0)
 	alert.Position = UDim2.new(1, 0, 0, 0)
 	Motion.Pop(header, 0.08)
-	task.delay(4.5, function()
-		if header.Parent then
-			Motion.Tween(header, { Position = UDim2.new(0.5, 0, 0.2, -20), BackgroundTransparency = 1 }, 0.35)
-			fadeOut(header, 0.35)
+	local hidden = false
+	local function hide()
+		if hidden then
+			return
 		end
-	end)
+		hidden = true
+		if header.Parent then
+			Motion.Tween(header, { Position = UDim2.new(0.5, 0, 0.2, -20), BackgroundTransparency = 1 }, HEADER_FADE)
+			fadeOut(header, HEADER_FADE)
+		end
+	end
+	task.delay(HEADER_SECONDS, hide)
+	return hide
 end
 
+-- En entrant dans un monde : l'en-tête de la page de l'app qui lui correspond (dans la file :
+-- après la bannière et la carte de médaille du monde précédent ; le plus récent seulement).
+function Moments.WorldBanner(world: number)
+	Moments.Queue("World", HEADER_SECONDS + HEADER_FADE, function(_done: () -> ()): (() -> ())?
+		return worldHeader(world)
+	end, true)
+end
+
+-- Monde nettoyé : bandeau « VIRUS ÉLIMINÉS ! » (dans la file, avant la carte de médaille).
 function Moments.WorldCleared(world: number, bits: number)
 	local def = Tower.Worlds[world]
 	local caption = if world < Tower.WORLD_COUNT then "LE PORTAIL EST OUVERT !" else "LE CŒUR DU VIRUS EST DÉTRUIT !"
-	banner(
-		Style.Color("Success"),
-		caption,
-		"VIRUS ÉLIMINÉS !",
-		`{if def then def.Name else ""} est propre · +{NumberFormat.Compact(bits)} Bits`,
-		4
-	)
+	Moments.Queue("Cleared", BANNER_SECONDS + BANNER_FADE, function(_done: () -> ()): (() -> ())?
+		return banner(
+			Style.Color("Success"),
+			caption,
+			"VIRUS ÉLIMINÉS !",
+			`{if def then def.Name else ""} est propre · +{NumberFormat.Compact(bits)} Bits`,
+			BANNER_SECONDS
+		)
+	end)
 end
 
 ------------------------------------------------------------------------------------
@@ -815,80 +994,130 @@ end
 -- Rapport AngAInOne : la page « Diagnostic » de l'app, après la victoire
 ------------------------------------------------------------------------------------
 
+local REPORT_AUTO_CLOSE = 25 -- s : le serveur ramène au lobby à t + 7 s, l'écran « EN DIRECT » doit se voir
+local REPORT_TAP_GUARD = 0.5 -- s : le toucher qui ouvre le rapport ne le referme pas
+local CARD_W, CARD_GAP = 164, 12
+
+local MEDAL_SHORT: { [string]: string } = { Gold = "Or", Silver = "Argent", Bronze = "Bronze" }
+
+-- Carte du diagnostic : titre + note sur 100 (en gros). Renvoie le chiffre du score (carte 1).
 local function reportCard(parent: Instance, index: number, data: OptimisationReport.Card): TextLabel?
-	local width = 168
-	local box = card(parent, UDim2.fromOffset((index - 1) * (width + 10), 0), UDim2.fromOffset(width, 94), A.Card)
-	text(box, data.Title, 14, F.Bold, A.Text, { Position = UDim2.fromOffset(14, 10), Size = UDim2.new(1, -20, 0, 18) })
-	if index == 1 then
-		-- Score : gros chiffre animé de 48 à 100
-		local score = text(box, tostring(OptimisationReport.START_SCORE), 38, F.Heavy, A.Text, {
-			Position = UDim2.fromOffset(14, 32),
-			Size = UDim2.fromOffset(78, 46),
-		})
-		text(
-			box,
-			"/100",
-			13,
-			F.Regular,
-			A.Dim,
-			{ Position = UDim2.fromOffset(92, 54), Size = UDim2.fromOffset(60, 18) }
-		)
-		return score
+	local box =
+		card(parent, UDim2.fromOffset((index - 1) * (CARD_W + CARD_GAP), 0), UDim2.fromOffset(CARD_W, 96), A.Card)
+	text(box, data.Title, MIN_TEXT, F.Bold, A.Text, {
+		Position = UDim2.fromOffset(12, 8),
+		Size = UDim2.new(1, -20, 0, 24),
+		TextTruncate = Enum.TextTruncate.AtEnd,
+	})
+	local x = 12
+	if index > 1 then
+		dot(box, UDim2.fromOffset(12, 56), 10, if data.Good then A.Good else A.Bad)
+		x = 30
 	end
-	dot(box, UDim2.fromOffset(14, 38), 8, if data.Good then A.Good else A.Bad)
+	local score = text(
+		box,
+		tostring(if index == 1 then OptimisationReport.START_SCORE else data.Score),
+		34,
+		F.Heavy,
+		A.Text,
+		{ Position = UDim2.fromOffset(x, 38), Size = UDim2.fromOffset(66, 44) }
+	)
 	text(
 		box,
-		`{data.Score} / 100`,
-		14,
-		F.Medium,
-		A.Text,
-		{ Position = UDim2.fromOffset(28, 32), Size = UDim2.new(1, -34, 0, 20) }
+		"/100",
+		MIN_TEXT,
+		F.Regular,
+		A.Dim,
+		{ Position = UDim2.fromOffset(x + 66, 54), Size = UDim2.fromOffset(60, 24) }
 	)
-	text(box, data.Detail, 12, F.Regular, A.Dim, {
-		Position = UDim2.fromOffset(14, 54),
-		Size = UDim2.new(1, -22, 0, 34),
-		TextWrapped = true,
-		TextYAlignment = Enum.TextYAlignment.Top,
-	})
-	return nil
+	return if index == 1 then score else nil
 end
 
+-- Une menace supprimée : titre, action faite, et 3 lignes (constat, pourquoi, quoi faire).
 local function reportEntry(parent: Instance, entry: OptimisationReport.Entry)
-	local box = card(parent, UDim2.new(), UDim2.new(1, -10, 0, 104), A.Card)
+	local box = card(parent, UDim2.new(), UDim2.new(1, -10, 0, 132), A.Card)
 	box.LayoutOrder = entry.World
 	local def = Tower.Worlds[entry.World]
-	local badge = dot(box, UDim2.fromOffset(14, 14), 28, A.Good:Lerp(Color3.new(0, 0, 0), 0.6))
+	local badge = dot(box, UDim2.fromOffset(14, 12), 32, A.Good:Lerp(Color3.new(0, 0, 0), 0.6))
 	text(
 		badge,
 		"✓",
-		15,
+		MIN_TEXT,
 		F.Heavy,
 		A.Good,
 		{ Size = UDim2.fromScale(1, 1), TextXAlignment = Enum.TextXAlignment.Center }
 	)
-	text(box, entry.Title, 15, F.Medium, A.Text, {
-		Position = UDim2.fromOffset(56, 10),
-		Size = UDim2.new(1, -220, 0, 20),
+	text(box, entry.Title, 20, F.Medium, A.Text, {
+		Position = UDim2.fromOffset(58, 10),
+		Size = UDim2.new(1, -250, 0, 26),
 		TextTruncate = Enum.TextTruncate.AtEnd,
 	})
 	if def then
-		dot(box, UDim2.fromOffset(56, 36), 6, Color3.fromHex(def.Primary))
+		dot(box, UDim2.fromOffset(26, 56), 8, Color3.fromHex(def.Primary))
 	end
 	for i, row in { { "Constat", entry.Constat }, { "Pourquoi", entry.Pourquoi }, { "Quoi faire", entry.QuoiFaire } } do
-		local y = 30 + (i - 1) * 22
-		text(box, row[1], 12, F.Bold, A.Dim, { Position = UDim2.fromOffset(66, y), Size = UDim2.fromOffset(80, 18) })
-		text(box, row[2], 13, if i == 3 then F.Medium else F.Regular, if i == 3 then A.Text else A.Dim, {
-			Position = UDim2.fromOffset(150, y),
-			Size = UDim2.new(1, -170, 0, 18),
+		local y = 42 + (i - 1) * 28
+		text(
+			box,
+			row[1],
+			MIN_TEXT,
+			F.Bold,
+			A.Dim,
+			{ Position = UDim2.fromOffset(58, y), Size = UDim2.fromOffset(120, 26) }
+		)
+		text(box, row[2], MIN_TEXT, if i == 3 then F.Medium else F.Regular, if i == 3 then A.Text else A.Dim, {
+			Position = UDim2.fromOffset(184, y),
+			Size = UDim2.new(1, -200, 0, 26),
 			TextTruncate = Enum.TextTruncate.AtEnd,
 		})
 	end
 	local done = pill(box, entry.Action, A.Accent)
 	done.AnchorPoint = Vector2.new(1, 0)
-	done.Position = UDim2.new(1, -14, 0, 12)
+	done.Position = UDim2.new(1, -14, 0, 10)
 end
 
-local function showReport(payload: any)
+-- Colonne « Ta mission » : la médaille du monde 7 (sa carte n'est pas montrée pendant la
+-- victoire, pour ne pas se superposer à l'écran final).
+local function medalBox(side: Instance, medal: any, y: number)
+	if type(medal) ~= "table" or type(medal.Medal) ~= "string" then
+		return
+	end
+	local box = card(side, UDim2.fromOffset(10, y), UDim2.new(1, -20, 0, 156), A.Card)
+	box.Name = "WorldMedal"
+	New("UIStroke", { Color = A.Violet, Transparency = 0.4, Parent = box })
+	text(box, `Médaille du monde {Tower.WORLD_COUNT}`, MIN_TEXT, F.Bold, A.Text, {
+		Position = UDim2.fromOffset(14, 8),
+		Size = UDim2.new(1, -24, 0, 24),
+		TextTruncate = Enum.TextTruncate.AtEnd,
+	})
+	local icon = MedalCard.Icon(medal.Medal, 72)
+	icon.Position = UDim2.fromOffset(12, 38)
+	icon.Parent = box
+	Motion.Pop(icon, 0.25)
+	local colors = (Medals.Colors :: any)[medal.Medal] or Medals.Colors.Bronze
+	text(box, MEDAL_SHORT[medal.Medal] or medal.Medal, 24, F.Heavy, Color3.fromHex(colors[1]), {
+		Position = UDim2.fromOffset(96, 38),
+		Size = UDim2.new(1, -106, 0, 30),
+	})
+	local time = if type(medal.Time) == "number" then medal.Time else 0
+	local deaths = if type(medal.Deaths) == "number" then medal.Deaths else 0
+	text(box, `⏱ {if time > 0 then TimeUtil.Clock(time) else "—"}`, MIN_TEXT, F.Bold, A.Text, {
+		Position = UDim2.fromOffset(96, 70),
+		Size = UDim2.new(1, -106, 0, 24),
+	})
+	text(box, `💥 {deaths} {if deaths == 1 then "chute" else "chutes"}`, MIN_TEXT, F.Regular, A.Dim, {
+		Position = UDim2.fromOffset(96, 96),
+		Size = UDim2.new(1, -106, 0, 24),
+	})
+	if medal.NewBest == true then
+		text(box, "✦ Nouveau record !", MIN_TEXT, F.Heavy, A.Violet, {
+			Position = UDim2.fromOffset(14, 124),
+			Size = UDim2.new(1, -24, 0, 24),
+		})
+	end
+end
+
+local function showReport(payload: any, medal: any?)
 	local report = OptimisationReport.Build({
 		Time = if type(payload.Time) == "number" then payload.Time else 0,
 		Record = payload.Record == true,
@@ -898,11 +1127,24 @@ local function showReport(payload: any)
 		Deaths = if type(payload.Deaths) == "number" then payload.Deaths else nil,
 	})
 	local dateText = OptimisationReport.DateText(os.date("*t") :: any)
+	local compact = isCompact()
 
-	local screen = fullscreen("Report", "Backdrop", 1)
+	-- Fond : un bouton plein écran, un toucher À L'EXTÉRIEUR de la fenêtre ferme le rapport.
+	local screen: TextButton = New("TextButton", {
+		Name = "Report",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		AutoButtonColor = false,
+		Text = "",
+		Selectable = false,
+		Tag = "Backdrop",
+		Parent = layer,
+	})
 	Motion.Tween(screen, { BackgroundTransparency = 0.35 }, 0.4)
-	local pages = AppPages.Sidebar(Tower.Worlds)
-	local window = appWindow(screen, Vector2.new(1180, 600), 236, pages, "Diagnostic")
+	-- Rapport : pas de liste de pages, la barre latérale sert à « Ta mission » et à la médaille.
+	local window = appWindow(screen, Vector2.new(1180, 600), 260, {}, "Diagnostic")
+	local openedAt = os.clock()
 	local closed = false
 	local function close()
 		if closed then
@@ -916,17 +1158,22 @@ local function showReport(payload: any)
 		click()
 		close()
 	end)
+	screen.Activated:Connect(function()
+		if os.clock() - openedAt >= REPORT_TAP_GUARD then
+			close()
+		end
+	end)
 
-	-- Barre latérale, en bas : « Ta mission » (temps, record, clés USB, chutes, badge)
+	-- Barre latérale : « Ta mission » (temps, record, clés USB, chutes, badge), puis la médaille
 	local side = window.Side
-	local mission = card(side, UDim2.new(0, 10, 1, -176), UDim2.new(1, -20, 0, 166), A.Card)
+	local mission = card(side, UDim2.fromOffset(10, 72), UDim2.new(1, -20, 0, 202), A.Card)
 	text(
 		mission,
 		"Ta mission",
-		14,
+		20,
 		F.Bold,
 		A.Text,
-		{ Position = UDim2.fromOffset(12, 8), Size = UDim2.new(1, -24, 0, 18) }
+		{ Position = UDim2.fromOffset(14, 8), Size = UDim2.new(1, -28, 0, 26) }
 	)
 	local rows: { { string } } = { { "Temps", report.TimeText } }
 	if report.RecordText then
@@ -937,142 +1184,133 @@ local function showReport(payload: any)
 		table.insert(rows, { "Chutes", report.DeathsText :: string })
 	end
 	for i, row in rows do
-		local y = 30 + (i - 1) * 21
+		local y = 40 + (i - 1) * 28
 		if row[1] == "" then
-			text(mission, row[2], 13, F.Heavy, Style.Color("CurrencyBits"), {
-				Position = UDim2.fromOffset(12, y),
-				Size = UDim2.new(1, -24, 0, 18),
+			text(mission, row[2], MIN_TEXT, F.Heavy, Style.Color("CurrencyBits"), {
+				Position = UDim2.fromOffset(14, y),
+				Size = UDim2.new(1, -28, 0, 26),
+				TextTruncate = Enum.TextTruncate.AtEnd,
 			})
 		else
 			text(
 				mission,
 				row[1],
-				13,
+				MIN_TEXT,
 				F.Regular,
 				A.Dim,
-				{ Position = UDim2.fromOffset(12, y), Size = UDim2.new(1, -24, 0, 18) }
+				{ Position = UDim2.fromOffset(14, y), Size = UDim2.new(1, -28, 0, 26) }
 			)
-			text(mission, row[2], 14, F.Bold, A.Text, {
-				Position = UDim2.fromOffset(12, y),
-				Size = UDim2.new(1, -24, 0, 18),
+			text(mission, row[2], MIN_TEXT, F.Bold, A.Text, {
+				Position = UDim2.fromOffset(14, y),
+				Size = UDim2.new(1, -28, 0, 26),
 				TextXAlignment = Enum.TextXAlignment.Right,
 			})
 		end
 	end
 	local technicianBadge = pill(mission, "✓ Badge Technicien·ne", A.Accent)
-	technicianBadge.Position = UDim2.new(0, 12, 1, -32)
+	technicianBadge.Position = UDim2.new(0, 14, 1, -40)
+	medalBox(side, medal, 286)
 
-	-- Contenu : en-tête, partage, verdict, chiffres, cartes, menaces supprimées
+	-- Contenu : en-tête, rappel « capture d'écran », verdict, chiffres, cartes, menaces supprimées
 	local main = window.Main
-	pageHeader(main, "Diagnostic", "Ce qui va, ce qui cloche, et quoi faire — en un lien à partager.", 28).Position =
-		UDim2.fromOffset(0, 10)
-	appButton(main, "Copier en Markdown", true, UDim2.new(1, -318, 0, 14), UDim2.fromOffset(170, 32), function()
-		Toasts.Show("Info", "Rapport prêt ! Fais une capture d'écran pour le partager 📸")
-	end)
-	appButton(main, "Mettre en ligne", true, UDim2.new(1, -138, 0, 14), UDim2.fromOffset(138, 32), function()
-		Toasts.Show("Success", "Montre ton rapport à tes amis : capture d'écran ! 📸")
-	end)
-	text(main, "📸 Partager : fais une capture de ton rapport !", 12, F.Medium, A.Violet, {
-		Position = UDim2.new(0, 0, 0, 50),
-		Size = UDim2.new(1, 0, 0, 16),
-		TextXAlignment = Enum.TextXAlignment.Right,
-	})
-	local verdictIcon = dot(main, UDim2.fromOffset(0, 80), 18, A.Surface)
+	pageHeader(main, "Diagnostic", "Ce qui va, ce qui cloche, et quoi faire.", 28).Position = UDim2.fromOffset(0, 8)
+	-- Moins de 13 ans : pas de bouton de partage hors de Roblox, juste un rappel.
+	local capture = pill(main, "Capture d'écran 📸", A.CardHi, A.Violet)
+	capture.AnchorPoint = Vector2.new(1, 0)
+	capture.Position = UDim2.new(1, -72, 0, 14)
+	local verdictIcon = dot(main, UDim2.fromOffset(0, 83), 18, A.Surface)
 	New("UIStroke", { Color = A.Good, Thickness = 2, Parent = verdictIcon })
-	text(main, "Verdict", 14, F.Bold, A.Text, { Position = UDim2.fromOffset(28, 74), Size = UDim2.new(1, -28, 0, 18) })
-	text(main, OptimisationReport.Verdict(dateText), 12, F.Regular, A.Dim, {
-		Position = UDim2.fromOffset(28, 92),
-		Size = UDim2.new(1, -28, 0, 16),
+	text(main, OptimisationReport.Verdict(dateText), MIN_TEXT, F.Regular, A.Dim, {
+		Position = UDim2.fromOffset(28, 78),
+		Size = UDim2.new(1, -28, 0, 26),
+		TextTruncate = Enum.TextTruncate.AtEnd,
 	})
 	text(
 		main,
 		report.Headline,
-		22,
+		26,
 		F.Bold,
 		A.Text,
-		{ Position = UDim2.fromOffset(0, 116), Size = UDim2.new(1, 0, 0, 28) }
+		{ Position = UDim2.fromOffset(0, 108), Size = UDim2.new(1, 0, 0, 34), TextTruncate = Enum.TextTruncate.AtEnd }
 	)
-	text(
-		main,
-		`Optimisation terminée · {report.Threats} menaces supprimées · {report.Summary}`,
-		13,
-		F.Regular,
-		A.Dim,
-		{
-			Position = UDim2.fromOffset(0, 146),
-			Size = UDim2.new(1, 0, 0, 18),
-			TextTruncate = Enum.TextTruncate.AtEnd,
-		}
-	)
+	text(main, `{report.Threats} menaces supprimées · {report.Summary}`, MIN_TEXT, F.Regular, A.Dim, {
+		Position = UDim2.fromOffset(0, 144),
+		Size = UDim2.new(1, 0, 0, 26),
+		TextTruncate = Enum.TextTruncate.AtEnd,
+	})
 	-- Avant -> après, en GROS
 	for i, delta in report.Deltas do
-		local box = card(main, UDim2.fromOffset((i - 1) * 298, 172), UDim2.fromOffset(288, 54), A.Card)
+		local box = card(main, UDim2.fromOffset((i - 1) * 293, 178), UDim2.fromOffset(282, 70), A.Card)
 		text(
 			box,
 			delta.Label,
-			13,
+			MIN_TEXT,
 			F.Medium,
 			A.Dim,
-			{ Position = UDim2.fromOffset(14, 0), Size = UDim2.new(0, 100, 1, 0) }
+			{ Position = UDim2.fromOffset(14, 4), Size = UDim2.new(1, -28, 0, 24) }
 		)
-		local value = text(box, "", 28, F.Heavy, A.Text, {
-			Position = UDim2.fromOffset(110, 0),
-			Size = UDim2.new(1, -124, 1, 0),
+		local value = text(box, "", 30, F.Heavy, A.Text, {
+			Position = UDim2.fromOffset(14, 28),
+			Size = UDim2.new(1, -28, 0, 36),
 			TextXAlignment = Enum.TextXAlignment.Right,
 			RichText = true,
 		})
 		local bad = A.Bad:ToHex()
 		local good = A.Good:ToHex()
 		Motion.CountTo(value, delta.From, delta.To, function(n: number): string
-			return `<font color="#{bad}" size="18">{delta.From}</font> → <font color="#{good}">{math.floor(n + 0.5)}{delta.Unit}</font>`
+			return `<font color="#{bad}" size="20">{delta.From}</font> → <font color="#{good}">{math.floor(n + 0.5)}{delta.Unit}</font>`
 		end, 1.6)
 	end
-	-- Les 5 cartes du diagnostic
-	local cardsRow: Frame = New("Frame", {
-		Position = UDim2.fromOffset(0, 236),
-		Size = UDim2.new(1, 0, 0, 94),
-		BackgroundTransparency = 1,
-		Parent = main,
-	})
-	local scoreLabel: TextLabel? = nil
-	for i, data in report.Cards do
-		local label = reportCard(cardsRow, i, data)
-		if label then
-			scoreLabel = label
-		end
-	end
-	if scoreLabel then
-		local label = scoreLabel
-		task.spawn(function()
-			local start = os.clock()
-			local duration = if Motion.IsReduced() then 0 else 1.8
-			while label.Parent do
-				local alpha = if duration > 0 then (os.clock() - start) / duration else 1
-				label.Text = tostring(OptimisationReport.ScoreAt(alpha, report.Score))
-				if alpha >= 1 then
-					break
-				end
-				task.wait()
+	-- Les 5 cartes du diagnostic (pas sur petit écran : la liste des menaces a plus de place)
+	local listTop = 262
+	if not compact then
+		local cardsRow: Frame = New("Frame", {
+			Position = UDim2.fromOffset(0, 258),
+			Size = UDim2.new(1, 0, 0, 96),
+			BackgroundTransparency = 1,
+			Parent = main,
+		})
+		local scoreLabel: TextLabel? = nil
+		for i, data in report.Cards do
+			local label = reportCard(cardsRow, i, data)
+			if label then
+				scoreLabel = label
 			end
-			label.TextColor3 = A.Good
-			Motion.Pop(label, 0.25)
-		end)
+		end
+		if scoreLabel then
+			local label = scoreLabel
+			task.spawn(function()
+				local start = os.clock()
+				local duration = if Motion.IsReduced() then 0 else 1.8
+				while label.Parent do
+					local alpha = if duration > 0 then (os.clock() - start) / duration else 1
+					label.Text = tostring(OptimisationReport.ScoreAt(alpha, report.Score))
+					if alpha >= 1 then
+						break
+					end
+					task.wait()
+				end
+				label.TextColor3 = A.Good
+				Motion.Pop(label, 0.25)
+			end)
+		end
+		listTop = 366
 	end
 	-- « Ce qu'il faut regarder » : une entrée par menace supprimée
 	text(
 		main,
 		"Ce qu'il faut regarder",
-		14,
+		20,
 		F.Bold,
 		A.Text,
-		{ Position = UDim2.fromOffset(0, 338), Size = UDim2.new(1, 0, 0, 18) }
+		{ Position = UDim2.fromOffset(0, listTop), Size = UDim2.new(1, 0, 0, 26) }
 	)
 	local list: ScrollingFrame = New("ScrollingFrame", {
-		Position = UDim2.fromOffset(0, 362),
-		Size = UDim2.new(1, 0, 1, -374),
+		Position = UDim2.fromOffset(0, listTop + 32),
+		Size = UDim2.new(1, 0, 1, -(listTop + 40)),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
-		ScrollBarThickness = 4,
+		ScrollBarThickness = 6,
 		ScrollBarImageColor3 = A.Dim,
 		CanvasSize = UDim2.new(),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
@@ -1083,7 +1321,7 @@ local function showReport(payload: any)
 		reportEntry(list, entry)
 	end
 	Motion.Pop(window.Root, 0.05)
-	task.delay(120, close)
+	task.delay(REPORT_AUTO_CLOSE, close)
 end
 
 local LIVE_CHAT = {
@@ -1105,8 +1343,12 @@ local function escapeRich(value: string): string
 end
 
 -- Fin : « LE LIVE COMMENCE ! » — le stream d'Anga démarre et le chat fête le joueur, puis le
--- Rapport AngAInOne (bouton, ou tout seul après quelques secondes).
-function Moments.Victory(payload: any)
+-- Rapport AngAInOne (bouton, ou tout seul après quelques secondes). `medal` : payload
+-- WorldCleared du monde 7 (sa médaille est montrée dans le rapport, pas en carte).
+function Moments.Victory(payload: any, medal: any?)
+	-- L'écran final passe devant tout : plus de bannière ni de carte en attente.
+	Moments.ClearQueue()
+	MedalCard.Dismiss()
 	local displayName = Players.LocalPlayer.DisplayName
 	local data = if type(payload) == "table" then payload else {}
 	local screen = fullscreen("Victory", "Backdrop", 1)
@@ -1193,7 +1435,7 @@ function Moments.Victory(payload: any)
 		TextWrapped = true,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Top,
-		Tag = "TextBody",
+		Tag = "TextHeading",
 		Parent = liveCard,
 	})
 	New("TextLabel", {
@@ -1210,7 +1452,7 @@ function Moments.Victory(payload: any)
 	-- Colonne de droite : le chat du live qui défile
 	local chat: Frame = New("Frame", {
 		Position = UDim2.fromOffset(496, 64),
-		Size = UDim2.fromOffset(240, 280),
+		Size = UDim2.fromOffset(240, 256),
 		BackgroundTransparency = 0.2,
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
@@ -1223,7 +1465,7 @@ function Moments.Victory(payload: any)
 		BackgroundTransparency = 1,
 		Text = "CHAT EN DIRECT",
 		TextXAlignment = Enum.TextXAlignment.Left,
-		Tag = "TextCaption",
+		Tag = "TextHeading",
 		Parent = chat,
 	})
 	local feed: Frame = New("Frame", {
@@ -1249,7 +1491,7 @@ function Moments.Victory(payload: any)
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 			LayoutOrder = order,
-			Tag = "TextBody",
+			Tag = "TextHeading",
 			Parent = feed,
 		})
 		Motion.Pop(line, 0.08)
@@ -1285,12 +1527,12 @@ function Moments.Victory(payload: any)
 		opened = true
 		liveCard.Visible = false
 		fadeOut(screen, 0.4)
-		showReport(data)
+		showReport(data, medal)
 	end
 	Keycap.new({
 		Text = "VOIR MON RAPPORT",
 		Variant = "Primary",
-		Size = UDim2.fromOffset(360, 56),
+		Size = UDim2.fromOffset(380, TOUCH),
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -18),
 		OnClick = openReport,

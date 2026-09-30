@@ -5,6 +5,8 @@
 	- Anga souffle quand un incident est passé, encourage après plusieurs chutes d'affilée
 	  et donne une astuce sur les pièges du monde
 	Les répliques d'intro de monde et de monde nettoyé sont jouées par Feedback.
+	Répliques de transition (monde nettoyé, arrivée dans un monde) : elles EXPIRENT si la file
+	est trop longue (Dialogue.Say, 4e paramètre), pour ne jamais retarder le monde suivant.
 	Ton : drôle, jamais effrayant ; une réplique = une phrase courte.
 ]]
 
@@ -94,6 +96,10 @@ Story.LagzCleaned = {
 	"Hmpf. Même pas mal. Enfin… un peu.",
 }
 
+-- Délais d'expiration (s) des répliques de transition de monde.
+local CLEANED_EXPIRES = 6
+local WORLD_EXPIRES = 10
+
 local deathsInRow = 0
 local currentWorld = 0
 local incidentCount = 0
@@ -102,9 +108,9 @@ local function pick(list: { string }): string
 	return list[math.random(1, #list)]
 end
 
-local function lagz(text: string, delay: number)
+local function lagz(text: string, delay: number, expires: number?)
 	task.delay(delay, function()
-		Dialogue.Say(text, 3.5, "LAGZ")
+		Dialogue.Say(text, 3.5, "LAGZ", expires)
 	end)
 end
 
@@ -139,7 +145,7 @@ local function onFx(kind: string, payload: any)
 		end
 		-- Nouveau monde : Anga le présente (Feedback), puis LAGZ se moque (file d'attente).
 		if payload.NewWorld and Story.LagzWorld[payload.World] then
-			lagz(Story.LagzWorld[payload.World], 2)
+			lagz(Story.LagzWorld[payload.World], 2, WORLD_EXPIRES)
 		end
 	elseif kind == "RunStart" then
 		deathsInRow = 0
@@ -153,7 +159,7 @@ local function onFx(kind: string, payload: any)
 		deathsInRow = 0
 		local line = Story.LagzCleaned[payload.World]
 		if line then
-			lagz(line, 7.5)
+			lagz(line, 7.5, CLEANED_EXPIRES)
 		end
 	elseif kind == "Incident" then
 		local lines = Story.LagzIncident[payload.Kind]

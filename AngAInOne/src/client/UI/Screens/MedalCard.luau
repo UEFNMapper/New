@@ -1,12 +1,15 @@
 --!strict
 --[[
 	MedalCard : carte « Rapport du monde » au style de l'app AngAInOne (gris Fluent + violet),
-	affichée après le moment « monde nettoyé » (Feedback, effet WorldCleared).
+	affichée après le moment « monde nettoyé » (Feedback, effet WorldCleared), dans la file des
+	moments (Moments.Queue) : jamais en même temps que la bannière ou l'en-tête du monde suivant.
+	Au monde 7, pas de carte : la médaille est montrée dans le rapport de victoire.
 	- Médaille bronze / argent / or dessinée en Frames et dégradés (aucune image)
-	- Temps du monde, morts, clés USB du monde
-	- Prochaine médaille à viser (seuil de temps et de morts), ou le record si c'est déjà l'or
+	- Temps du monde, chutes, clés USB du monde
+	- Prochaine médaille à viser, en court (« Argent : < 3:00, ≤ 6 chutes »), ou le record
 	- Pastille « Nouveau record ! »
-	Se ferme toute seule (ou d'un clic / d'un toucher).
+	Textes ≥ 18 px de conception (lisibles sur le plus petit téléphone).
+	Se ferme toute seule (ou d'un clic / d'un toucher, ou MedalCard.Dismiss).
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -28,7 +31,11 @@ local APP = Branding.PartnerApp
 local MedalCard = {}
 
 local SHOW_SECONDS = 6.5
-local WIDTH, HEIGHT = 440, 158
+local FADE_SECONDS = 0.3
+-- Durée totale à l'écran (entrée + fondu compris) : la file des moments attend autant.
+MedalCard.HOLD = SHOW_SECONDS + FADE_SECONDS + 0.1
+local WIDTH, HEIGHT = 460, 190
+local TITLE_H = 34
 
 local TITLES: { [string]: string } = {
 	Gold = "MÉDAILLE D'OR",
@@ -38,6 +45,7 @@ local TITLES: { [string]: string } = {
 
 local layer: Frame? = nil
 local current: Frame? = nil
+local onClosed: (() -> ())? = nil
 
 local function hex(value: string): Color3
 	return Color3.fromHex(value)
@@ -127,24 +135,24 @@ function MedalCard.Icon(medal: string, size: number): Frame
 	return holder
 end
 
--- Texte de l'objectif suivant (ou du record si l'or est déjà gagné).
-local function goalText(world: number, payload: any): string
+-- Texte COURT de l'objectif suivant (ou du record si l'or est déjà gagné).
+function MedalCard.GoalText(world: number, payload: any): string
 	local medal = payload.Medal or "Bronze"
 	local time = if type(payload.Time) == "number" then payload.Time else 0
 	if payload.Assisted then
-		return "Aide utilisée dans ce monde : médaille gardée, pas de record."
+		return "Aide utilisée : pas de record."
 	end
 	local goal = MedalLogic.NextGoal(world, medal)
 	if not goal then
 		local best = if type(payload.Best) == "number" then payload.Best else 0
-		return if best > 0 then `Médaille maximale ! Record du monde : {Time.Clock(best)}` else "Médaille maximale !"
+		return if best > 0 then `Or ! Record : {Time.Clock(best)}` else "Médaille maximale !"
 	end
-	local target = if goal.Medal == "Gold" then "Pour l'or" else "Pour l'argent"
-	local text = `{target} : moins de {Time.Clock(goal.Time)} et {goal.Deaths} morts max`
+	local target = if goal.Medal == "Gold" then "Or" else "Argent"
+	local text = `{target} : < {Time.Clock(goal.Time)}, ≤ {goal.Deaths} chutes`
 	if time > goal.Time then
-		text ..= ` (encore {math.ceil(time - goal.Time)} s à gagner)`
+		text ..= ` · encore {math.ceil(time - goal.Time)} s`
 	elseif (payload.Deaths or 0) > goal.Deaths then
-		text ..= " (tu y es presque : moins de chutes !)"
+		text ..= " · moins de chutes !"
 	end
 	return text
 end
@@ -153,11 +161,16 @@ end
 local function dismiss(card: Frame)
 	if current == card then
 		current = nil
+		local callback = onClosed
+		onClosed = nil
+		if callback then
+			task.spawn(callback)
+		end
 	end
 	if not card.Parent then
 		return
 	end
-	local duration = 0.3
+	local duration = FADE_SECONDS
 	for _, d in card:GetDescendants() do
 		if d:IsA("TextLabel") then
 			Motion.Tween(d, { TextTransparency = 1 }, duration)
@@ -173,16 +186,34 @@ local function dismiss(card: Frame)
 		end)
 end
 
+-- Ferme la carte affichée (fondu), s'il y en a une.
+function MedalCard.Dismiss()
+	local card = current
+	if card then
+		dismiss(card)
+	end
+end
+
 -- Affiche la carte d'un monde nettoyé (payload de l'effet serveur « WorldCleared »).
-function MedalCard.Show(payload: any)
+-- `closed` : appelé une fois quand la carte se ferme (toucher, délai ou Dismiss).
+function MedalCard.Show(payload: any, closed: (() -> ())?)
 	local target = layer
 	local world = if type(payload) == "table" then payload.World else nil
 	if not target or type(world) ~= "number" or type(payload.Medal) ~= "string" then
+		if closed then
+			task.spawn(closed)
+		end
 		return
 	end
 	if current then
-		current:Destroy()
+		local previous = current
 		current = nil
+		previous:Destroy()
+	end
+	local previousClosed = onClosed
+	onClosed = closed
+	if previousClosed then
+		task.spawn(previousClosed)
 	end
 	local def = Tower.Worlds[world]
 	local medal: string = payload.Medal
@@ -206,7 +237,7 @@ function MedalCard.Show(payload: any)
 
 	-- Barre de titre.
 	local titleBar: Frame = New("Frame", {
-		Size = UDim2.new(1, 0, 0, 28),
+		Size = UDim2.new(1, 0, 0, TITLE_H),
 		BackgroundColor3 = hex(APP.Card),
 		BorderSizePixel = 0,
 		Parent = card,
@@ -219,7 +250,7 @@ function MedalCard.Show(payload: any)
 		Parent = titleBar,
 	})
 	New("Frame", {
-		Position = UDim2.fromOffset(12, 9),
+		Position = UDim2.fromOffset(12, 12),
 		Size = UDim2.fromOffset(10, 10),
 		BackgroundColor3 = VIOLET,
 		BorderSizePixel = 0,
@@ -228,60 +259,65 @@ function MedalCard.Show(payload: any)
 	label(titleBar, {
 		Position = UDim2.fromOffset(30, 0),
 		Size = UDim2.new(1, -40, 1, 0),
-		Text = `{APP.Name} · Rapport du monde {world}`,
+		Text = `Rapport du monde {world}`,
 		TextColor3 = hex(APP.TextDim),
-		TextSize = 13,
+		TextSize = 18,
 		FontFace = Style.Fonts.Bold,
 	})
 
-	local icon = MedalCard.Icon(medal, 92)
-	icon.Position = UDim2.fromOffset(16, 42)
+	local icon = MedalCard.Icon(medal, 100)
+	icon.Position = UDim2.fromOffset(16, TITLE_H + 14)
 	icon.Parent = card
 
-	local left = 124
+	local left = 132
 	local body = UDim2.new(1, -(left + 14), 0, 0)
-	-- Le titre laisse la place à la pastille « Nouveau record ! ».
-	local titleWidth = if newBest then body - UDim2.fromOffset(136, 0) else body
 	label(card, {
-		Position = UDim2.fromOffset(left, 38),
-		Size = titleWidth + UDim2.fromOffset(0, 26),
+		Position = UDim2.fromOffset(left, TITLE_H + 10),
+		Size = body + UDim2.fromOffset(0, 26),
 		Text = TITLES[medal] or string.upper(medal),
 		TextColor3 = hex(colors[1]),
 		TextSize = 20,
 		FontFace = Style.Fonts.Heavy,
 	})
 	label(card, {
-		Position = UDim2.fromOffset(left, 64),
-		Size = body + UDim2.fromOffset(0, 18),
+		Position = UDim2.fromOffset(left, TITLE_H + 38),
+		Size = body + UDim2.fromOffset(0, 22),
 		Text = `Monde {world} · {if def then def.Name else ""}`,
 		TextColor3 = hex(APP.TextDim),
-		TextSize = 14,
+		TextSize = 18,
 	})
 	local time = if type(payload.Time) == "number" then payload.Time else 0
 	local keys = if type(payload.Keys) == "number" then payload.Keys else 0
 	local deaths = if type(payload.Deaths) == "number" then payload.Deaths else 0
 	label(card, {
-		Position = UDim2.fromOffset(left, 86),
+		Position = UDim2.fromOffset(left, TITLE_H + 64),
 		Size = body + UDim2.fromOffset(0, 24),
-		Text = `⏱ {if time > 0 then Time.Clock(time) else "—"}    💥 {deaths}    🔑 {keys}/{Tower.USB_KEYS_PER_WORLD}`,
+		Text = `⏱ {if time > 0 then Time.Clock(time) else "—"}   💥 {deaths} {if deaths == 1
+			then "chute"
+			else "chutes"}   🔑 {keys}/{Tower.USB_KEYS_PER_WORLD}`,
 		TextSize = 18,
 		FontFace = Style.Fonts.Bold,
 	})
-	label(card, {
-		Position = UDim2.fromOffset(left, 114),
-		Size = body + UDim2.fromOffset(0, 34),
-		Text = goalText(world, payload),
+	-- Objectif : texte court, rétréci au besoin mais jamais sous 18 px (2 lignes au plus)
+	local goalLabel = label(card, {
+		Position = UDim2.fromOffset(left, TITLE_H + 94),
+		Size = body + UDim2.fromOffset(0, 50),
+		Text = MedalCard.GoalText(world, payload),
 		TextColor3 = hex(APP.TextDim),
-		TextSize = 13,
+		TextSize = 18,
+		TextScaled = true,
 		TextWrapped = true,
 		TextYAlignment = Enum.TextYAlignment.Top,
 	})
+	New("UITextSizeConstraint", { MinTextSize = 18, MaxTextSize = 20, Parent = goalLabel })
 
 	if newBest then
+		-- Pastille « Nouveau record ! » posée à cheval sur le bord haut (comme un autocollant)
 		local badge: Frame = New("Frame", {
 			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, -12, 0, 39),
-			Size = UDim2.fromOffset(128, 24),
+			Position = UDim2.new(1, -16, 0, -14),
+			Size = UDim2.fromOffset(172, 30),
+			ZIndex = 5,
 			BackgroundColor3 = VIOLET,
 			BorderSizePixel = 0,
 			Parent = card,
@@ -290,7 +326,7 @@ function MedalCard.Show(payload: any)
 			Size = UDim2.fromScale(1, 1),
 			Text = "Nouveau record !",
 			TextXAlignment = Enum.TextXAlignment.Center,
-			TextSize = 14,
+			TextSize = 18,
 			FontFace = Style.Fonts.Heavy,
 		})
 		task.delay(0.4, function()

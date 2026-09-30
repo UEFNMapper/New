@@ -6,6 +6,10 @@
 	- "Arcade" (lobby) : choisir un mini-jeu pour gagner quelques Bits
 	- "Shop" / "Daily" (lobby) : ouvrent la boutique / les missions
 	Le serveur valide tout (bon checkpoint, distance, durée).
+	Fin de partie : une victoire est envoyée DÈS qu'elle est acquise (MinigamePanel, onWin) ;
+	l'écran de réussite (fermeture auto en 6 s) ne compte donc pas dans le temps du monde.
+	Échec ou abandon : envoyés à la fermeture, comme avant. Un seul envoi par essai ; RÉESSAYER
+	relance le chrono du serveur (…Start) et rouvre l'envoi.
 ]]
 
 local Players = game:GetService("Players")
@@ -23,6 +27,29 @@ local Toasts = require(script.Parent.Parent.UI.Screens.Toasts)
 local MinigamePanel = require(script.Parent.Parent.UI.Screens.MinigamePanel)
 
 local Interactions = {}
+
+-- Rappels de fin de partie : `send(success, score)` part une seule fois par essai (victoire
+-- tout de suite, sinon à la fermeture) ; `restart()` rouvre l'envoi pour un nouvel essai.
+local function reporter(send: (success: boolean, score: number) -> ())
+	local sent = false
+	local function report(success: boolean, score: number)
+		if sent then
+			return
+		end
+		sent = true
+		send(success, score)
+	end
+	local onWin = function(score: number, _duration: number)
+		report(true, score)
+	end
+	local onDone = function(success: boolean, score: number, _duration: number)
+		report(success, score)
+	end
+	local function restart()
+		sent = false
+	end
+	return onDone, onWin, restart
+end
 
 -- Lance le terminal antivirus du monde `world`.
 function Interactions.PlayTerminal(world: number)
@@ -46,11 +73,13 @@ function Interactions.PlayTerminal(world: number)
 	end
 	Net.Fire("MinigameStart", world)
 	local difficulty = if boss then BossLogic.BOSS_DIFFICULTY else world
-	MinigamePanel.Play(def.Minigame, difficulty, function(success: boolean, score: number, _duration: number)
+	local onDone, onWin, restart = reporter(function(success: boolean, score: number)
 		Net.Fire("MinigameEnd", world, success, score)
-	end, function()
-		Net.Fire("MinigameStart", world) -- nouvel essai : le serveur relance son chrono
 	end)
+	MinigamePanel.Play(def.Minigame, difficulty, onDone, function()
+		restart()
+		Net.Fire("MinigameStart", world) -- nouvel essai : le serveur relance son chrono
+	end, onWin)
 end
 
 -- Partie d'arcade (lobby) : petite récompense, avec un délai entre deux gains.
@@ -60,11 +89,13 @@ function Interactions.PlayArcade(kind: string)
 	end
 	App.Close()
 	Net.Fire("ArcadeStart", kind)
-	MinigamePanel.Play(kind, 2, function(success: boolean, score: number, _duration: number)
+	local onDone, onWin, restart = reporter(function(success: boolean, score: number)
 		Net.Fire("ArcadeEnd", kind, success, score)
-	end, function()
-		Net.Fire("ArcadeStart", kind)
 	end)
+	MinigamePanel.Play(kind, 2, onDone, function()
+		restart()
+		Net.Fire("ArcadeStart", kind)
+	end, onWin)
 end
 
 local HANDLERS: { [string]: (prompt: ProximityPrompt) -> () } = {

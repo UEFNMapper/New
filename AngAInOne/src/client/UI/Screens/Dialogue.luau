@@ -15,9 +15,14 @@
 	  Fluent, sans portrait) : on ne quitte plus le jeu des yeux. Sinon (lobby, mini-jeu, compagnon
 	  hors champ) : la bulle du bas, comme avant. Même texte, même frappe, même file d'attente.
 
+	- La bulle au-dessus du compagnon est réservée à ANGA (c'est lui sur le drone) : les répliques
+	  de LAGZ et d'AIO passent toujours par la bulle du bas.
+
 	API :
-		Dialogue.Say(texte, durée?, personnage?) -- réplique ponctuelle (file d'attente) ;
-		                                         -- personnage : "Anga" (défaut) | "LAGZ" | "AIO"
+		Dialogue.Say(texte, durée?, personnage?, expire?) -- réplique ponctuelle (file d'attente) ;
+		                                         -- personnage : "Anga" (défaut) | "LAGZ" | "AIO" ;
+		                                         -- expire : secondes après lesquelles la réplique,
+		                                         -- si elle n'a pas encore commencé, est jetée
 		Dialogue.SetPersistent(texte?)    -- réplique de tutoriel qui reste affichée (nil = aucune)
 		Dialogue.IsBusy()                 -- une réplique ponctuelle est affichée ou en attente
 		Dialogue.SetLift(pixels)          -- remonte la bulle du bas (bouton JOUER affiché)
@@ -40,6 +45,7 @@ local Motion = require(script.Parent.Parent.Motion)
 local Material = require(script.Parent.Parent.Material)
 local Widgets = require(script.Parent.Parent.Components.Widgets)
 local Lagz = require(script.Parent.Parent.Components.Lagz)
+local DialogueQueue = require(script.Parent.Parent.DialogueQueue)
 
 local New = Create.New
 
@@ -49,7 +55,7 @@ local Dialogue = {}
 Dialogue.OnBlip = nil :: ((pitch: number) -> ())?
 
 export type Speaker = "Anga" | "LAGZ" | "AIO"
-type Line = { Text: string, Duration: number, Speaker: Speaker }
+type Line = DialogueQueue.Line
 
 -- Couleurs de l'app AngAInOne (voix AIO).
 local AIO_ACCENT = Color3.fromHex("8B7CFF")
@@ -152,9 +158,10 @@ local function setWorldShown(value: boolean)
 	end
 end
 
--- Affiche la bonne vue : bulle au-dessus d'Anga si une ancre est fournie, sinon bulle du bas.
+-- Affiche la bonne vue : bulle au-dessus d'Anga si une ancre est fournie ET qu'Anga parle
+-- (LAGZ et AIO ne sont pas sur le drone), sinon bulle du bas.
 local function applyViews()
-	local useWorld = visible and anchor ~= nil and world ~= nil
+	local useWorld = visible and anchor ~= nil and world ~= nil and speaking == "Anga"
 	setWorldShown(useWorld)
 	setBoxShown(visible and not useWorld)
 end
@@ -232,6 +239,9 @@ local function applySpeaker(speaker: Speaker)
 			bubbleTagLabel.Text = string.upper(Branding.MascotName)
 		end
 	end
+	if box then
+		applyViews()
+	end
 end
 
 -- Hauteur de la petite « voix » de chaque personnage.
@@ -292,11 +302,11 @@ local advance: () -> ()
 advance = function()
 	lineToken += 1
 	local token = lineToken
-	local nextLine = table.remove(queue, 1)
+	local nextLine = DialogueQueue.PopNext(queue, os.clock())
 	if nextLine then
 		setVisible(true)
 		task.spawn(function()
-			typeLine(nextLine.Text, token, nextLine.Speaker)
+			typeLine(nextLine.Text, token, nextLine.Speaker :: Speaker)
 			task.wait(nextLine.Duration)
 			if token == lineToken then
 				advance()
@@ -312,6 +322,7 @@ advance = function()
 				setArrow(true)
 			end
 			-- Une réplique ponctuelle est arrivée pendant l'écriture : on l'enchaîne.
+			DialogueQueue.Prune(queue, os.clock())
 			if token == lineToken and #queue > 0 then
 				task.wait(1.2)
 				if token == lineToken then
@@ -325,8 +336,10 @@ advance = function()
 	end
 end
 
-function Dialogue.Say(text: string, duration: number?, speaker: Speaker?)
-	table.insert(queue, { Text = text, Duration = duration or 4, Speaker = speaker or "Anga" })
+function Dialogue.Say(text: string, duration: number?, speaker: Speaker?, expires: number?)
+	local now = os.clock()
+	DialogueQueue.Prune(queue, now)
+	table.insert(queue, DialogueQueue.Make(text, duration, speaker, expires, now))
 	-- Interrompt la réplique persistante (elle reviendra après), pas une réplique ponctuelle.
 	if not typing and (showing == nil or showing == persistent) then
 		advance()
@@ -334,6 +347,7 @@ function Dialogue.Say(text: string, duration: number?, speaker: Speaker?)
 end
 
 function Dialogue.IsBusy(): boolean
+	DialogueQueue.Prune(queue, os.clock())
 	return #queue > 0 or (showing ~= nil and showing ~= persistent)
 end
 
@@ -344,6 +358,7 @@ function Dialogue.SetPersistent(text: string?)
 	local previous = persistent
 	persistent = text
 	-- On ne coupe pas une réplique ponctuelle en cours : elle enchaînera d'elle-même.
+	DialogueQueue.Prune(queue, os.clock())
 	if #queue == 0 and (showing == nil or showing == previous) then
 		advance()
 	end
@@ -729,7 +744,7 @@ function Dialogue.Mount(layer: Frame)
 		Parent = box,
 	}, { New("UITextSizeConstraint", { MaxTextSize = 16, MinTextSize = 11 }) :: Instance })
 
-	-- Flèche "continuer" qui clignote
+	-- Flèche "continuer" qui clignote (fixe et opaque avec « Réduire les animations »)
 	arrow = New("Frame", {
 		Name = "Continue",
 		AnchorPoint = Vector2.new(0.5, 0.5),
@@ -745,6 +760,7 @@ function Dialogue.Mount(layer: Frame)
 
 	-- Clic / tap (bulle du bas ou bulle d'Anga) : termine la phrase, puis passe à la suivante.
 	local function onActivated()
+		DialogueQueue.Prune(queue, os.clock())
 		if typing then
 			skipTyping = true
 		elseif showing ~= persistent or #queue > 0 then
@@ -761,13 +777,15 @@ function Dialogue.Mount(layer: Frame)
 	local blink = 0
 	RunService.Heartbeat:Connect(function(dt: number)
 		if arrow.Visible then
-			blink += dt
-			local fade = if math.floor(blink * 2.5) % 2 == 0 then 0 else 0.7
+			local reduced = Motion.IsReduced()
+			blink = if reduced then 0 else blink + dt
+			local fade = if reduced or math.floor(blink * 2.5) % 2 == 0 then 0 else 0.7
+			local bob = if reduced then 0 else math.sin(blink * 6)
 			arrow.BackgroundTransparency = fade
-			arrow.Position = UDim2.new(1, -20, 0.5, math.sin(blink * 6) * 2)
+			arrow.Position = UDim2.new(1, -20, 0.5, bob * 2)
 			if world then
 				bubbleArrow.BackgroundTransparency = fade
-				bubbleArrow.Position = UDim2.new(1, -11, 1, -11 + math.sin(blink * 6) * 1.5)
+				bubbleArrow.Position = UDim2.new(1, -11, 1, -11 + bob * 1.5)
 			end
 		end
 	end)

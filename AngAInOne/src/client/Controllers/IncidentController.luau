@@ -885,6 +885,11 @@ end
 ------------------------------------------------------------------------------------
 
 local function buildBanner(layer: Frame)
+	-- Calque « Alerts » (au-dessus de Moments) : le bandeau n'est jamais caché par une bannière
+	-- ou une carte de médaille. Repli : le calque reçu (Overlays).
+	local root = layer.Parent
+	local alerts = if root then root:FindFirstChild("Alerts") else nil
+	local target: Instance = if alerts and alerts:IsA("Frame") then alerts else layer
 	banner = New("Frame", {
 		Name = "IncidentBanner",
 		AnchorPoint = Vector2.new(0.5, 0),
@@ -897,7 +902,7 @@ local function buildBanner(layer: Frame)
 		Visible = false,
 		ZIndex = 40,
 		Tag = { "Glass", "RoundL" },
-		Parent = layer,
+		Parent = target,
 	})
 	bannerStroke = New("UIStroke", { Color = Lagz.Color, Thickness = 3, Parent = banner })
 	local bubble: Frame = New("Frame", {

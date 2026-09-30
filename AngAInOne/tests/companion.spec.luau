@@ -126,4 +126,39 @@ return {
 		Expect.equal(Logic.Settle(d, true, 0.55, 0.3), true, "stable 0,3 s : bascule")
 		Expect.equal(Logic.Settle(d, false, 0.6, 0), false, "délai nul : immédiat")
 	end,
+	["visibilité : jamais effacé au zoom par défaut (lobby compris), caché en 1re personne"] = function()
+		-- Caméra Roblox par défaut : 12,5 studs derrière la tête, légèrement plongeante.
+		local root = Vector3.new(0, 5, 0)
+		local head = root + Vector3.new(0, 1.5, 0)
+		for _, yaw in { 0, 0.8, 2, -2.5 } do
+			for _, zoom in { 12.5, 8, 5 } do
+				local look = Vector3.new(-math.sin(yaw), -0.35, -math.cos(yaw)).Unit
+				local camera = head - look * zoom
+				local right = look:Cross(Vector3.new(0, 1, 0)).Unit
+				local drone = Logic.FollowTarget(root, right, look, nil)
+				local fade = Logic.WantFade((camera - head).Magnitude, (camera - drone).Magnitude)
+				Expect.equal(fade, 0, `visible (zoom {zoom}, lacet {yaw})`)
+				Expect.truthy((camera - drone).Magnitude > 4, "à bonne distance de la caméra")
+			end
+		end
+		Expect.equal(Logic.WantFade(0.5, 3), 1, "1re personne : caché")
+		Expect.equal(Logic.WantFade(3, 1), 1, "caméra collée au drone : caché")
+		Expect.between(Logic.WantFade(3, 3), 0.3, 0.5, "entre les deux : fondu")
+	end,
+	["flèche du guide : droit si en vue, sinon à l'horizontale (jamais à travers un mur ni vers le vide)"] = function()
+		local up = Vector3.new(3, 12, 4)
+		Expect.near((Logic.BeamDirection(up, true) :: any - up).Magnitude, 0, 1e-9, "en vue : droit dessus")
+		local hidden = Logic.BeamDirection(up, false) :: any
+		Expect.near(hidden.Y, 0, 1e-9, "caché : à plat")
+		Expect.near(hidden.Unit.X, 0.6, 1e-6, "caché : même direction horizontale")
+		local down = Logic.BeamDirection(Vector3.new(0, -40, 10), false) :: any
+		Expect.near(down.Y, 0, 1e-9, "checkpoint caché plus bas : ne plonge pas vers le vide")
+		Expect.equal(
+			Logic.BeamDirection(Vector3.new(0, 30, 0.2), false),
+			nil,
+			"juste au-dessus et caché : pas de flèche"
+		)
+		Expect.equal(Logic.BeamDirection(Vector3.new(0, 0.05, 0), true), nil, "déjà dessus")
+		Expect.truthy(Logic.BEAM_LENGTH > 0 and Logic.BEAM_LENGTH <= 10, "flèche courte")
+	end,
 }

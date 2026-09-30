@@ -4,7 +4,8 @@
 	- ScreenGui avec zones sûres (ScreenInsets) et un cadre "Root" mis à l'échelle par
 	  UIScale : tout est dessiné en pixels de conception (1280x720) puis adapté à l'écran.
 	  Sur téléphone, l'échelle garde les boutons de 72 px de conception à >= 44 px réels.
-	- Calques : Hud < Panels < Overlays < Moments < Toasts
+	- Calques : Hud < Panels < Overlays < Moments < Alerts < Toasts
+	  (Alerts : bandeau d'incident de LAGZ, jamais caché par une bannière ou une carte de Moments)
 	- Gestionnaire de fenêtres : une seule fenêtre ouverte à la fois, fond assombri
 	  + flou léger, fermeture par clic à l'extérieur ou Échap / bouton B manette.
 ]]
@@ -101,7 +102,8 @@ function App.Mount(): ScreenGui
 	local panelsLayer = layer("Panels", 2)
 	layer("Overlays", 3)
 	layer("Moments", 4)
-	layer("Toasts", 5)
+	layer("Alerts", 5)
+	layer("Toasts", 6)
 
 	dim = New("TextButton", {
 		Name = "Dim",

@@ -5,18 +5,23 @@
 	chaque joueur voit le sien, rien n'est répliqué.
 
 	Modèles : le serveur copie les gabarits `Anga` et `AioDrone` (ModelLibrary, assets/models) dans
-	ReplicatedStorage.ClientModels. Tant qu'ils n'y sont pas (IDs non importés), le client
-	construit un SECOURS en primitives : tête blonde, barbe, corps rouge avec un grand « A », sur un
-	disque à anneau violet. Si les modèles arrivent plus tard, le compagnon est reconstruit.
+	ReplicatedStorage.ClientModels (dossier créé tout de suite, modèles ajoutés dès que chaque
+	LoadAsset réussit, parfois bien plus tard). Tant qu'ils n'y sont pas, le client construit un
+	SECOURS en primitives : tête blonde, barbe, corps rouge avec un grand « A », sur un disque à
+	anneau violet. Chaque modèle qui arrive (ChildAdded, à n'importe quel moment) remplace sa
+	partie de secours : le compagnon est reconstruit si le modèle n'y est pas encore.
 
 	Comportement (logique pure testée : CompanionLogic.luau) :
 	- suit l'épaule droite du joueur (vue caméra) avec un ressort, flotte doucement (sauf
 	  « Réduire les animations », attribut local ReducedMotion), s'incline dans les virages ;
 	  regarde la caméra à l'arrêt, sa direction quand il vole ;
-	- se cache en vue à la 1re personne (ou collé à la caméra) : il ne bouche jamais la vue ;
+	- se cache en vue à la 1re personne (ou collé à la caméra) : il ne bouche jamais la vue
+	  (pièces, lumière, écrans SurfaceGui et givre éteints) ;
 	- GUIDE : aucun progrès depuis ~20 s en ascension -> il vole un peu devant vers le prochain
 	  checkpoint (tag Checkpoint, attribut Stage = ma Stage + 1) avec une flèche-rayon violette,
-	  et l'assistant AIO glisse un indice ;
+	  et l'assistant AIO glisse un indice. La flèche vise le checkpoint seulement s'il est en vue
+	  directe (lancer de rayon depuis le drone, personnages exclus) ; sinon elle reste
+	  horizontale dans sa direction (jamais à travers un mur ni vers le vide) ;
 	- RÉACTIONS (petite bulle d'émotion + animation) : content au checkpoint, paniqué pendant
 	  l'annonce et le déroulé d'un incident, figé (givré) pendant un FREEZE, triste quand je
 	  tombe, fête au monde nettoyé et à la victoire ;
@@ -86,10 +91,13 @@ type Rig = {
 	CFrames: { CFrame },
 	Beam: Beam,
 	Frost: Highlight,
+	Glows: { Instance }, -- lumières et SurfaceGui du drone / de mini-Anga (éteints si caché)
 	Emote: BillboardGui,
 	EmoteFrame: Frame,
 	EmoteLabel: TextLabel,
 	FromModels: boolean,
+	HasAnga: boolean, -- mini-Anga vient du vrai modèle (sinon : secours)
+	HasDrone: boolean, -- le drone vient du vrai modèle (sinon : secours)
 }
 
 local rig: Rig? = nil
@@ -413,6 +421,14 @@ local function buildRig(): Rig
 	emoteLabel.FontFace = Style.Fonts.Bold
 	emoteLabel.Parent = emoteFrame
 
+	-- Lumières et écrans (SurfaceGui) allumés à la construction : éteints quand il est caché.
+	local glows: { Instance } = {}
+	for _, node in model:GetDescendants() do
+		if (node:IsA("Light") or node:IsA("SurfaceGui")) and (node :: any).Enabled then
+			table.insert(glows, node)
+		end
+	end
+
 	local parts: { BasePart } = {}
 	for _, piece in drone do
 		table.insert(parts, piece.Part)
@@ -439,10 +455,13 @@ local function buildRig(): Rig
 		CFrames = cframes,
 		Beam = beam,
 		Frost = frost,
+		Glows = glows,
 		Emote = emote,
 		EmoteFrame = emoteFrame,
 		EmoteLabel = emoteLabel,
 		FromModels = droneTemplate ~= nil or angaTemplate ~= nil,
+		HasAnga = angaTemplate ~= nil and angaTemplate:IsA("Model"),
+		HasDrone = droneTemplate ~= nil and droneTemplate:IsA("Model"),
 	}
 end
 
@@ -492,6 +511,16 @@ local tracker = CompanionLogic.NewTracker(os.clock())
 local bubbleState = CompanionLogic.NewDebounce(false)
 local guiding = false
 local lastGuideLine = -math.huge
+local extrasHidden = false -- lumière, écrans et givre éteints (vue à la 1re personne…)
+-- Ligne de vue vers le checkpoint : lancer de rayon limité à ~5 fois par seconde.
+local SIGHT_INTERVAL = 0.2
+local sightTarget: BasePart? = nil
+local sightAt = -math.huge
+local sightClear = false
+local sightParams = RaycastParams.new()
+sightParams.FilterType = Enum.RaycastFilterType.Exclude
+sightParams.RespectCanCollide = true -- les zones de déclenchement invisibles ne bloquent pas
+sightParams.IgnoreWater = true
 
 local function applyFade(current: Rig, value: number)
 	if math.abs(value - appliedFade) < 0.02 and not (value == 1 and appliedFade ~= 1) then
@@ -513,16 +542,48 @@ local function setMood(current: Rig, value: CompanionLogic.Mood)
 	mood = value
 	local glyph = EMOTE[value]
 	current.Emote.Enabled = glyph ~= nil
-	current.Frost.Enabled = value == "Frozen"
+	current.Frost.Enabled = value == "Frozen" and not extrasHidden
 	if glyph then
 		current.EmoteLabel.Text = glyph
 		Motion.Pop(current.EmoteFrame, 0.35)
 	end
 end
 
+-- Lumière, écrans SurfaceGui et givre : éteints quand il est caché (sinon ils flottent seuls).
+local function setExtrasHidden(current: Rig, value: boolean)
+	if extrasHidden == value then
+		return
+	end
+	extrasHidden = value
+	for _, glow in current.Glows do
+		(glow :: any).Enabled = not value
+	end
+	current.Frost.Enabled = not value and mood == "Frozen"
+end
+
+-- Le checkpoint est-il en vue directe depuis le drone ? (personnages et compagnon exclus)
+local function inSight(current: Rig, from: Vector3, target: BasePart, now: number): boolean
+	if target == sightTarget and now - sightAt < SIGHT_INTERVAL then
+		return sightClear
+	end
+	sightTarget, sightAt = target, now
+	local ignore: { Instance } = { current.Model }
+	for _, other in Players:GetPlayers() do
+		if other.Character then
+			table.insert(ignore, other.Character)
+		end
+	end
+	sightParams.FilterDescendantsInstances = ignore
+	local result = Workspace:Raycast(from, target.Position - from, sightParams)
+	local hit = result and result.Instance
+	sightClear = hit == nil or hit == target or hit:IsDescendantOf(target) or target:IsDescendantOf(hit)
+	return sightClear
+end
+
 local function hide(current: Rig)
 	fade = 1
 	applyFade(current, 1)
+	setExtrasHidden(current, true)
 	current.Beam.Enabled = false
 	current.Emote.Enabled = false
 	Dialogue.SetWorldAnchor(nil)
@@ -651,8 +712,14 @@ local function update(dt: number)
 	local anchorCF = riderBase * CFrame.new(0, current.RiderHeight + 0.1, 0)
 	local coreCF = base * CFrame.new(0, current.DeckTop * 0.5, 0)
 	local tipPosition = coreCF.Position
-	if guideDir and guideDir.Magnitude > 0.1 then
-		tipPosition += guideDir.Unit * math.min(7, guideDir.Magnitude)
+	-- Flèche : droit sur le checkpoint s'il est en vue, sinon à l'horizontale dans sa direction.
+	local beamDir: Vector3? = nil
+	if guiding and target then
+		local toTarget = target.Position - coreCF.Position
+		beamDir = CompanionLogic.BeamDirection(toTarget, inSight(current, coreCF.Position, target, now))
+	end
+	if beamDir then
+		tipPosition += beamDir.Unit * math.min(CompanionLogic.BEAM_LENGTH, beamDir.Magnitude)
 	end
 	cframes[index + 1] = CFrame.new(anchorCF.Position)
 	cframes[index + 2] = coreCF
@@ -663,14 +730,15 @@ local function update(dt: number)
 	local head = if character then character:FindFirstChild("Head") else nil
 	local eyeDistance = if head and head:IsA("BasePart") then (camCF.Position - head.Position).Magnitude else 10
 	local camDistance = (camCF.Position - coreCF.Position).Magnitude
-	local wantFade = if eyeDistance < 1.6 then 1 else math.clamp((4 - camDistance) / 2.5, 0, 1)
+	local wantFade = CompanionLogic.WantFade(eyeDistance, camDistance)
 	fade += (wantFade - fade) * CompanionLogic.Damp(10, dt)
 	if wantFade == 1 and fade > 0.97 then
 		fade = 1
 	end
 	applyFade(current, fade)
 	local shown = fade < 0.5
-	current.Beam.Enabled = shown and guiding
+	setExtrasHidden(current, fade > 0.97)
+	current.Beam.Enabled = shown and guiding and beamDir ~= nil
 	current.Emote.Enabled = shown and EMOTE[mood] ~= nil
 
 	-- Bulle de dialogue au-dessus d'Anga (ascension, à l'écran, place au-dessus pour la bulle)
@@ -703,7 +771,60 @@ local function rebuild()
 	end
 	appliedFade = -1
 	mood = "Idle"
+	extrasHidden = false
+	sightTarget = nil
 	rig = buildRig()
+end
+
+-- Un vrai modèle est-il arrivé que le compagnon actuel n'utilise pas encore ? Reconstruit
+-- alors (une seule fois pour des modèles arrivés ensemble : petit délai de regroupement).
+local refreshQueued = false
+local function refreshModels()
+	if refreshQueued then
+		return
+	end
+	refreshQueued = true
+	task.delay(0.2, function()
+		refreshQueued = false
+		local folder = ReplicatedStorage:FindFirstChild("ClientModels")
+		if not folder then
+			return
+		end
+		local anga = folder:FindFirstChild("Anga")
+		local drone = folder:FindFirstChild("AioDrone")
+		local hasAnga = anga ~= nil and anga:IsA("Model")
+		local hasDrone = drone ~= nil and drone:IsA("Model")
+		local current = rig
+		if current and (current.HasAnga or not hasAnga) and (current.HasDrone or not hasDrone) then
+			return -- rien de neuf : déjà construit avec les modèles présents
+		end
+		rebuild()
+	end)
+end
+
+-- Dossier ClientModels (créé par le serveur au début du préchargement) : ce qui y est déjà,
+-- puis chaque modèle ajouté plus tard.
+local function watchModels()
+	local function watch(folder: Instance)
+		folder.ChildAdded:Connect(function(child: Instance)
+			if child.Name == "Anga" or child.Name == "AioDrone" then
+				refreshModels()
+			end
+		end)
+		refreshModels()
+	end
+	local folder = ReplicatedStorage:FindFirstChild("ClientModels")
+	if folder then
+		watch(folder)
+		return
+	end
+	local connection: RBXScriptConnection
+	connection = ReplicatedStorage.ChildAdded:Connect(function(child: Instance)
+		if child.Name == "ClientModels" then
+			connection:Disconnect()
+			watch(child)
+		end
+	end)
 end
 
 local function onFx(kind: string, payload: any)
@@ -746,19 +867,7 @@ function Companion.Start()
 	Net.On("Fx", onFx)
 	rebuild()
 
-	-- Les vrais modèles arrivent (ou arrivent plus tard) : on remplace le secours.
-	task.spawn(function()
-		local folder = ReplicatedStorage:WaitForChild("ClientModels", 60)
-		if not folder then
-			return
-		end
-		folder:WaitForChild("Anga", 10)
-		folder:WaitForChild("AioDrone", 5)
-		local current = rig
-		if not (current and current.FromModels) then
-			rebuild()
-		end
-	end)
+	watchModels()
 
 	local errors = 0
 	RunService:BindToRenderStep("AngaCompanion", Enum.RenderPriority.Camera.Value + 1, function(dt: number)

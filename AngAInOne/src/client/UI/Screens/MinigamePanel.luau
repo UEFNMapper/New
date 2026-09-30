@@ -12,6 +12,9 @@
 		-> carte de résultat : réussite (sbire K.O., confettis, CONTINUER) ou échec (le sbire
 		   ricane, RÉESSAYER / Quitter)
 		-> onDone(success, score, duration)
+	onWin(score, duration) (facultatif) est appelé DÈS que la victoire est acquise (avant le
+	bandeau et la carte de réussite) : le serveur valide la partie sans compter l'écran de
+	réussite (6 s) dans le temps du monde. onDone est quand même appelé à la fermeture.
 
 	Sbire : Tower.Worlds[difficulté].Minion (1..7). Difficulté 8 = combat final contre LAGZ
 	(Core.IsBoss) : LAGZ sur les cartes, écran qui glitche pendant la partie, victoire
@@ -24,9 +27,11 @@
 
 	API :
 		MinigamePanel.Mount(layer)                         -- une fois (App.Layers.Overlays)
-		MinigamePanel.Play(kind, difficulty, onDone, onRetry?) -- kind : Tower.MinigameKinds ; 1..7, 8 = boss
+		MinigamePanel.Play(kind, difficulty, onDone, onRetry?, onWin?) -- kind : Tower.MinigameKinds ;
+		                                                   -- 1..7, 8 = boss
 		                                                   -- onRetry : appelé à chaque RÉESSAYER (le serveur
 		                                                   -- relance alors son chrono de validation)
+		                                                   -- onWin : appelé une fois, dès la victoire
 		MinigamePanel.IsPlaying()
 		MinigamePanel.Cancel()                             -- ferme : onDone(false, 0, elapsed)
 ]]
@@ -63,6 +68,7 @@ local FC = Fluent.C -- couleurs de l'app AngAInOne (carte d'intro)
 local MinigamePanel = {}
 
 export type OnDone = (success: boolean, score: number, duration: number) -> ()
+export type OnWin = (score: number, duration: number) -> ()
 
 local GAMES: { [string]: Common.Game } = {
 	Scan = require(Minigames.Scan),
@@ -90,6 +96,8 @@ type Session = {
 	Info: Common.Info,
 	OnDone: OnDone,
 	OnRetry: (() -> ())?,
+	OnWin: OnWin?,
+	WinReported: boolean,
 	Phase: Phase,
 	Closed: boolean,
 	Root: Frame,
@@ -741,11 +749,15 @@ local function showIntro(s: Session)
 	local action = Fluent.Card(win, MAIN_X, 158, MAIN_W, 88)
 	Fluent.Glyph(action, 14, 14, 26, "!", FC.Bad)
 	Fluent.Text(action, page.Task, 52, 8, MAIN_W - 280, 26, 16, { Weight = "Medium" })
-	Fluent.Text(action, page.Detail, 52, 48, MAIN_W - 66, 20, 13, { Color = FC.Dim })
-	local actionButton = Fluent.Button(action, page.Action, MAIN_W - 214, 8, 200, 36, "Accent", 15)
+	Fluent.Text(action, page.Detail, 52, 48, MAIN_W - 280, 20, 13, { Color = FC.Dim })
+	-- Bouton violet de l'app : texte 18 px, 56 px de haut ; zone tactile de 88 px de haut
+	-- (toute la hauteur de la carte d'action) pour les doigts sur téléphone.
+	local actionButton = Fluent.Button(action, page.Action, MAIN_W - 214, 16, 200, 56, "Accent", 18)
 	local actionHit: TextButton = New("TextButton", {
 		Name = "Hit",
-		Size = UDim2.fromScale(1, 1),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.new(1, 12, 0, 88),
 		BackgroundTransparency = 1,
 		Text = "",
 		Selectable = false,
@@ -1074,6 +1086,14 @@ local function onFinish(s: Session, success: boolean, score: number)
 	s.LastScore = score
 	s.LastDuration = if s.AttemptStart then os.clock() - s.AttemptStart else 0
 	s.AttemptStart = nil
+	-- Victoire : le serveur est prévenu tout de suite (l'écran de réussite reste affiché).
+	if success and not s.WinReported then
+		s.WinReported = true
+		local onWin = s.OnWin
+		if onWin then
+			task.spawn(onWin, score, s.LastDuration)
+		end
+	end
 	if success then
 		shout(s, "BRAVO !", C.Good, 84, 1)
 		Common.Sound("Upgrade")
@@ -1318,7 +1338,7 @@ function MinigamePanel.Cancel()
 	end
 end
 
-function MinigamePanel.Play(kind: string, difficulty: number, onDone: OnDone, onRetry: (() -> ())?)
+function MinigamePanel.Play(kind: string, difficulty: number, onDone: OnDone, onRetry: (() -> ())?, onWin: OnWin?)
 	local entry = GAMES[kind]
 	local target = layer
 	if not entry or not target then
@@ -1377,6 +1397,8 @@ function MinigamePanel.Play(kind: string, difficulty: number, onDone: OnDone, on
 		Info = entry.Info(level, Common.Device()),
 		OnDone = onDone,
 		OnRetry = onRetry,
+		OnWin = onWin,
+		WinReported = false,
 		Phase = "Intro",
 		Closed = false,
 		Root = root,

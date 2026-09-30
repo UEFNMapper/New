@@ -14,8 +14,13 @@
 	- Le widget « PC d'Anga » (FPS / ping / °C) est une rangée de 3 pastilles DANS la carte de
 	  progression : valeurs de PcHealth + pics des incidents (voir refreshPerf).
 	- Les actions de course (Restaurer = revenir au dernier point de restauration, Passer l'étape,
-	  Lobby) sont rangées derrière le bouton « ⋯ » en haut à droite, visible seulement en course.
-	- Cibles tactiles ≥ 80 px de conception (≥ 42 px réels sur le plus petit téléphone).
+	  Lobby) sont rangées derrière le bouton « ⋯ » en haut à droite, visible seulement en course ;
+  le menu se referme à la mort du joueur local (HUD.CloseMenu).
+- Ping : « 48 ms », puis « 2,4 s » au-delà de 999 ms (UI/HudFormat).
+	- Colonne de gauche (x 16..256) : Bits, passes, bouclier, jusqu'à y = 204 au plus ; la carte
+  « plantage » (Controllers/CrashLog) s'affiche dessous (x 16..312, y 216..308), au-dessus de la
+  barre du boss (y ≥ 344) et à gauche de la carte de progression (x ≥ 320).
+- Cibles tactiles ≥ 80 px de conception (≥ 42 px réels sur le plus petit téléphone).
 ]]
 
 local MarketplaceService = game:GetService("MarketplaceService")
@@ -40,6 +45,7 @@ local Keycap = require(script.Parent.Parent.Components.Keycap)
 local Widgets = require(script.Parent.Parent.Components.Widgets)
 local Icon = require(script.Parent.Parent.Components.Icon)
 local App = require(script.Parent.Parent.App)
+local HudFormat = require(script.Parent.Parent.HudFormat)
 local Store = require(script.Parent.Parent.Parent.Controllers.Store)
 local Net = require(script.Parent.Parent.Parent.Controllers.Net)
 local IncidentController = require(script.Parent.Parent.Parent.Controllers.IncidentController)
@@ -633,7 +639,7 @@ refreshPerf = function(data: any)
 	end
 	ping = math.max(math.floor(ping + 0.5), 1)
 	temp = math.floor(temp + 0.5)
-	setPerf("Ping", `{NumberFormat.Grouped(ping)} ms`, PcHealth.Grade("Ping", ping))
+	setPerf("Ping", HudFormat.Ping(ping), PcHealth.Grade("Ping", ping))
 	setPerf("Temp", `{temp} °C`, PcHealth.Grade("Temp", temp))
 end
 
@@ -659,12 +665,35 @@ local function refreshFast()
 	end
 end
 
+-- Referme le menu « ⋯ » (mort du joueur, écran plein…).
+function HUD.CloseMenu()
+	if actions then
+		setMenu(false)
+	end
+end
+
+-- Mort du joueur local : le menu « ⋯ » ne reste pas ouvert par-dessus la réapparition.
+local function watchDeaths()
+	local player = Players.LocalPlayer
+	local function onCharacter(character: Model)
+		local humanoid = character:WaitForChild("Humanoid", 10)
+		if humanoid and humanoid:IsA("Humanoid") then
+			humanoid.Died:Connect(HUD.CloseMenu)
+		end
+	end
+	if player.Character then
+		task.spawn(onCharacter, player.Character)
+	end
+	player.CharacterAdded:Connect(onCharacter)
+end
+
 function HUD.Mount(layer: Frame)
 	buildTopLeft(layer)
 	buildProgress(layer)
 	buildRight(layer)
 	buildPlay(layer)
 	buildDock(layer)
+	watchDeaths()
 	Store.Changed:Connect(refreshFull)
 	local accumulator = 0
 	RunService.Heartbeat:Connect(function(dt: number)

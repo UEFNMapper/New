@@ -144,7 +144,7 @@ step("TrapController", function()
 		TrapController.Start()
 	end
 end)
--- L'app AngAInOne partout : morts = « Plantages » (carte en haut à droite), fenêtres de l'app
+-- L'app AngAInOne partout : morts = « Plantages » (carte en haut à gauche), fenêtres de l'app
 -- sur les parois de chaque monde, ponts « Téléchargement du pilote », Anga géant du lobby.
 step("CrashLog", function()
 	load(Controllers.CrashLog).Start(App.Layers.Toasts)

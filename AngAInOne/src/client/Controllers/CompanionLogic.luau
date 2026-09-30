@@ -8,6 +8,7 @@
 	                prochain checkpoint) ; ShouldGuide = aucun progrès depuis GUIDE_AFTER secondes
 	- Mood        : l'émotion affichée, par priorité (fête > tristesse > gel > panique > joie > guide)
 	- FollowTarget: où se placer (épaule droite vue de la caméra, ou un peu devant pour guider)
+	- BeamDirection: où pointe la flèche du guide (droit si le checkpoint est en vue, sinon à plat)
 	- Debounce    : bascule stable (bulle au-dessus d'Anga ↔ bulle du bas) sans clignoter
 ]]
 
@@ -97,6 +98,42 @@ function CompanionLogic.FollowTarget(root: Vector3, cameraRight: Vector3, camera
 		end
 	end
 	return root + flat(cameraRight) * 3 + flat(cameraLook) * 0.6 + up * 0.7
+end
+
+-- Caméra plus près que ça de la tête : vue à la 1re personne -> compagnon caché.
+CompanionLogic.FIRST_PERSON = 1.6
+-- Caméra à moins de FADE_NEAR studs du drone : il s'efface (entièrement à FADE_NEAR − FADE_SPAN).
+CompanionLogic.FADE_NEAR = 4
+CompanionLogic.FADE_SPAN = 2.5
+
+--[[
+	Transparence voulue (0 = visible, 1 = caché) selon la distance caméra -> tête et caméra ->
+	drone. Il ne s'efface que s'il bouche la vue : 1re personne, ou caméra collée à lui. Avec le
+	zoom par défaut de Roblox (12,5 studs), il reste toujours entièrement visible.
+]]
+function CompanionLogic.WantFade(eyeDistance: number, camDistance: number): number
+	if eyeDistance < CompanionLogic.FIRST_PERSON then
+		return 1
+	end
+	return math.clamp((CompanionLogic.FADE_NEAR - camDistance) / CompanionLogic.FADE_SPAN, 0, 1)
+end
+
+-- Longueur max de la flèche-rayon du guide (studs).
+CompanionLogic.BEAM_LENGTH = 7
+
+--[[
+	Direction de la flèche-rayon vers le prochain checkpoint (`toTarget` = checkpoint − drone).
+	- En vue directe (`clear`) : droit sur lui, montée ou descente comprise.
+	- Caché (mur, plafond, plateforme) : à l'HORIZONTALE dans sa direction — jamais à travers un
+	  mur vers le haut, ni plongée vers le vide.
+	nil = rien à montrer (déjà dessus, ou juste au-dessus / en dessous et caché).
+]]
+function CompanionLogic.BeamDirection(toTarget: Vector3, clear: boolean): Vector3?
+	if clear then
+		return if toTarget.Magnitude > 0.1 then toTarget else nil
+	end
+	local horizontal = Vector3.new(toTarget.X, 0, toTarget.Z)
+	return if horizontal.Magnitude > 0.5 then horizontal else nil
 end
 
 ------------------------------------------------------------------------------------

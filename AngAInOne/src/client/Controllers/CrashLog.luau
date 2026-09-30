@@ -1,7 +1,9 @@
 --!strict
 --[[
 	CrashLog : chaque mort du joueur local devient un « plantage », façon page Plantages de l'app
-	AngAInOne. Petite carte discrète ~2 s en haut à droite (sous le bouton Menu, jamais au centre) :
+	AngAInOne. Petite carte discrète ~2,5 s en haut à GAUCHE, sous la colonne Bits / passes du HUD
+	(x 16..312, y 216..308) : elle ne cache ni le menu « ⋯ » (en haut à droite), ni la carte de
+	progression (x ≥ 320), ni la barre du boss (y ≥ 344), ni le dock ; jamais au centre :
 	    (!)  Joueur.exe s'est fermé tout seul
 	         cause : Ventilateur · 3e fois ici
 	Compteurs de la session par cause et par monde (Util/CrashLogic), lus aussi par la fenêtre
@@ -35,9 +37,12 @@ CrashLog.Log = CrashLogic.new()
 CrashLog.Changed = Signal.new() :: Signal.Signal<CrashLogic.Log>
 
 local player = Players.LocalPlayer
-local SHOW_SECONDS = 2.2
+local SHOW_SECONDS = 2.6
 local CAUSE_WINDOW = 1.5 -- une cause notée par TrapController vaut pour la mort qui suit de près
-local WIDTH, HEIGHT = 330, 62
+-- Pixels de conception : colonne de gauche du HUD jusqu'à y = 204 (Bits + 2 passes + bouclier)
+local LEFT, TOP = 16, 216
+local WIDTH, HEIGHT = 296, 92
+local TEXT_X = 50
 
 local pendingCause: string? = nil
 local pendingAt = -math.huge
@@ -46,19 +51,29 @@ local titleLabel: TextLabel? = nil
 local detailLabel: TextLabel? = nil
 local shownAt = 0
 
+-- Texte lisible sur téléphone : 18 px de conception au minimum, rétréci jusque-là si besoin.
+local function fit(label: TextLabel, maxSize: number)
+	label.TextScaled = true
+	New("UITextSizeConstraint", { MinTextSize = 18, MaxTextSize = maxSize, Parent = label })
+end
+
 local function build(layer: Frame)
-	-- En haut à droite, sous le bouton Menu du HUD (80 px à 12 px du haut)
+	-- En haut à gauche, sous la colonne Bits / passes / bouclier du HUD
 	local frame = Fluent.Card(layer, 0, 0, WIDTH, HEIGHT)
 	frame.Name = "CrashLog"
-	frame.AnchorPoint = Vector2.new(1, 0)
-	frame.Position = UDim2.new(1, -16, 0, 102)
+	frame.Position = UDim2.fromOffset(LEFT, TOP)
 	frame.BackgroundTransparency = 0.06
 	frame.Visible = false
 	frame.Active = false
 	frame.ZIndex = 5
 	Fluent.Glyph(frame, 12, math.floor(HEIGHT / 2) - 13, 26, "!", C.Bad)
-	titleLabel = Fluent.Text(frame, "", 50, 6, WIDTH - 60, 26, 16, { Weight = "Medium" })
-	detailLabel = Fluent.Text(frame, "", 50, 32, WIDTH - 60, 22, 13, { Color = C.Dim })
+	-- Titre sur 2 lignes au besoin (« Pseudo.exe s'est fermé tout seul »), puis la cause
+	titleLabel = Fluent.Text(frame, "", TEXT_X, 6, WIDTH - TEXT_X - 10, 48, 20, { Weight = "Medium", Wrap = true })
+	detailLabel = Fluent.Text(frame, "", TEXT_X, 58, WIDTH - TEXT_X - 10, 26, 18, { Color = C.Dim })
+	if titleLabel and detailLabel then
+		fit(titleLabel, 20)
+		fit(detailLabel, 18)
+	end
 	local accent = Fluent.Box(frame, 0, 10, 3, HEIGHT - 20, C.Bad, 2)
 	accent.Name = "Accent"
 	for _, d in frame:GetDescendants() do
@@ -78,13 +93,13 @@ local function show(title: string, detail: string)
 	titleLabel.Text = title
 	detailLabel.Text = detail
 	frame.Visible = true
-	frame.Position = UDim2.new(1, 24, 0, 102)
-	Motion.Tween(frame, { Position = UDim2.new(1, -16, 0, 102) }, 0.25)
+	frame.Position = UDim2.fromOffset(-WIDTH - 24, TOP)
+	Motion.Tween(frame, { Position = UDim2.fromOffset(LEFT, TOP) }, 0.25)
 	local stamp = os.clock()
 	shownAt = stamp
 	task.delay(SHOW_SECONDS, function()
 		if shownAt == stamp and card then
-			local tween = Motion.Tween(frame, { Position = UDim2.new(1, WIDTH + 24, 0, 102) }, 0.3)
+			local tween = Motion.Tween(frame, { Position = UDim2.fromOffset(-WIDTH - 24, TOP) }, 0.3)
 			tween.Completed:Connect(function()
 				if shownAt == stamp then
 					frame.Visible = false
