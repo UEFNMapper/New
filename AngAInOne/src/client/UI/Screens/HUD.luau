@@ -1,13 +1,21 @@
 --!strict
 --[[
-	HUD du deathrun : très peu d'éléments, lisibles par un enfant.
-	┌ [Bits]                 MONDE 2 · Memory Lanes · Étape 7/35          [⚙]   ┐
-	│ [passes activables]    ▓▓▓▓▓░░░░░░░ tour     ⏱ 4:07.3          [bouclier] │
-	│ [PC d'Anga : FPS /     « ton but en une phrase »          [↺ Checkpoint]   │
-	│  ping / °C]                                                                 │
-	│                                                           [⏭ Passer]      │
-	│                        [   JOUER / CONTINUER   ] (au lobby) [⌂ Lobby]      │
-	└                    [Boutique]  [Missions]  [Menu]                          ┘
+	HUD du deathrun : très peu d'éléments, lisibles par un enfant sur téléphone (v4 « HUD allégé »).
+	Style de l'app AngAInOne : verre Fluent (Glass) et accent violet (AccentViolet).
+	Canevas de conception 1280 × 620 au pire (voir App.computeScale) :
+	┌ [Bits]        ┌ MONDE 2 · Memory Lanes                  ⏱ 4:07.3 ┐           [⋯] ┐ y 12..108
+	│ [passes]      │ ▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░░    Étape 7/35 │   ┌──────────┐│
+	│ [bouclier]    │ « ton but en une phrase »  [⚡ 144][≋ 8 ms][🌡 40°] │   │Restaurer ││ menu « ⋯ »
+	│               └───────────────────────────────────────────────────┘   │Passer    ││ y 100..372
+	│                          [🔑 clés USB]  (y 114..140)                   │Lobby     ││ fermé par
+	│                   bandeau d'incident / notifications à y = 148         └──────────┘│ défaut
+	│                        [   JOUER / CONTINUER   ] (au lobby)                        │
+	└                    [Boutique]  [Missions]  [Menu]                                ┘
+	- Le widget « PC d'Anga » (FPS / ping / °C) est une rangée de 3 pastilles DANS la carte de
+	  progression : valeurs de PcHealth + pics des incidents (voir refreshPerf).
+	- Les actions de course (Restaurer = revenir au dernier point de restauration, Passer l'étape,
+	  Lobby) sont rangées derrière le bouton « ⋯ » en haut à droite, visible seulement en course.
+	- Cibles tactiles ≥ 80 px de conception (≥ 42 px réels sur le plus petit téléphone).
 ]]
 
 local MarketplaceService = game:GetService("MarketplaceService")
@@ -43,6 +51,15 @@ local HUD = {}
 
 HUD.BitsPill = nil :: any -- cible des particules de Bits
 
+-- Dimensions (pixels de conception)
+local CARD_WIDTH = 640 -- x 320..960 : loin de la colonne de gauche (≤ 216) et du menu « ⋯ » (≥ 1048)
+local CARD_HEIGHT = 96 -- la carte finit à y = 108 : pastille des clés dessous, bandeau à 148
+local CHIP_WIDTH = 88
+local CHIP_GAP = 6
+local TOUCH = 80 -- plus petite cible tactile
+local MENU_TOP = 12 + TOUCH + 8 -- le menu « ⋯ » s'ouvre sous son bouton
+local MENU_AUTO_CLOSE = 8 -- secondes sans choix avant que le menu se referme
+
 local bitsValue: TextLabel
 local worldLabel: TextLabel
 local stageLabel: TextLabel
@@ -54,19 +71,33 @@ local keyLabel: TextLabel
 local playKey: Keycap.Keycap
 local actions: Frame
 local skipKey: Keycap.Keycap
+local menuKey: Keycap.Keycap
+local menuDots: Frame
+local menuClose: Frame
+local menuStroke: UIStroke
+local menuOpen = false
+local menuToken = 0
+local inRun = false
 local shieldPill: Frame
 local shieldLabel: TextLabel
 local toggleKeys: { [string]: Keycap.Keycap } = {}
 local badges: { [string]: Frame } = {}
 local lastBits = -1
-local perfCard: Frame
+local perfRow: Frame
 local refreshPerf: (data: any) -> ()
-local perfValues: { [string]: TextLabel } = {}
+local perfChips: { [string]: { Value: TextLabel, Stroke: UIStroke } } = {}
 local lastCleared = -1
 
 ------------------------------------------------------------------------------------
 -- Construction
 ------------------------------------------------------------------------------------
+
+local function label(parent: Instance, props: { [string]: any }, maxSize: number): TextLabel
+	props.BackgroundTransparency = 1
+	props.TextScaled = true
+	props.Parent = parent
+	return New("TextLabel", props, { New("UITextSizeConstraint", { MaxTextSize = maxSize }) :: Instance })
+end
 
 local function buildTopLeft(layer: Frame)
 	local column: Frame = New("Frame", {
@@ -101,70 +132,57 @@ local function buildTopLeft(layer: Frame)
 		toggle.Button.Visible = false
 		toggleKeys[key] = toggle
 	end
-	-- « Performance du PC » d'Anga (docs/SCENARIO.md §3) : sous le portefeuille (et les passes),
-	-- à gauche, loin de la carte de progression, des actions et du joystick.
-	perfCard = New("Frame", {
-		Name = "PcPerformance",
-		Size = UDim2.fromOffset(200, 112),
+	-- Bouclier actif : dans la colonne de gauche (le haut à droite est au menu « ⋯ »), au-dessus
+	-- de la barre du boss (BossController, y ≥ 344).
+	shieldPill = New("Frame", {
+		Name = "Shield",
+		Size = UDim2.fromOffset(200, 40),
 		BackgroundTransparency = Theme.Alpha.Glass,
 		BorderSizePixel = 0,
 		LayoutOrder = 10,
-		Tag = { "Glass", "RoundM" },
+		Visible = false,
+		Tag = { "Glass", "RoundPill" },
 		Parent = column,
-	}, {
-		New("UIStroke", { Color = Style.Color("Stroke"), Transparency = Theme.Alpha.StrokeSoft, Thickness = 1 }),
-	})
-	New("TextLabel", {
+	}, { New("UIStroke", { Color = Style.Color("AccentCyan"), Thickness = 2 }) :: Instance })
+	shieldLabel = label(shieldPill, {
+		Size = UDim2.new(1, -24, 1, -12),
 		Position = UDim2.fromOffset(12, 6),
-		Size = UDim2.new(1, -24, 0, 16),
-		BackgroundTransparency = 1,
-		Text = "PC D'ANGA",
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Tag = "TextCaption",
-		Parent = perfCard,
-	})
-	for index, row in
-		{
-			{ Key = "Fps", Label = "FPS", Icon = "Bolt" },
-			{ Key = "Ping", Label = "Ping", Icon = "Elevator" },
-			{ Key = "Temp", Label = "Temp.", Icon = "Heat" },
-		}
-	do
-		local y = 26 + (index - 1) * 28
-		local icon = Icon.new(row.Icon, 20, "TextMuted")
-		icon.Position = UDim2.fromOffset(12, y + 2)
-		icon.Parent = perfCard
-		New("TextLabel", {
-			Position = UDim2.fromOffset(40, y),
-			Size = UDim2.fromOffset(60, 24),
-			BackgroundTransparency = 1,
-			Text = row.Label,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			TextSize = 16,
-			TextColor3 = Style.Color("TextMuted"),
-			Tag = "FontBold",
-			Parent = perfCard,
-		})
-		perfValues[row.Key] = New("TextLabel", {
-			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, -12, 0, y),
-			Size = UDim2.fromOffset(92, 24),
-			BackgroundTransparency = 1,
-			Text = "",
-			TextXAlignment = Enum.TextXAlignment.Right,
-			TextSize = 20,
-			TextColor3 = Style.Color("TextPrimary"),
-			Tag = "FontHeavy",
-			Parent = perfCard,
-		})
-	end
+		Text = "",
+		TextColor3 = Style.Color("AccentCyan"),
+		Tag = "FontHeavy",
+	}, 18)
 end
 
-local function label(parent: Instance, props: { [string]: any }, maxSize: number): TextLabel
-	props.BackgroundTransparency = 1
-	props.TextScaled = true
-	props.Parent = parent
-	return New("TextLabel", props, { New("UITextSizeConstraint", { MaxTextSize = maxSize }) :: Instance })
+-- Pastille de mesure du PC d'Anga (icône + valeur), verre sombre bordé de la couleur de la note.
+local function perfChip(key: string, iconKind: string, order: number)
+	local chip: Frame = New("Frame", {
+		Name = `Perf{key}`,
+		Size = UDim2.fromOffset(CHIP_WIDTH, 28),
+		BackgroundTransparency = 0.25,
+		BorderSizePixel = 0,
+		LayoutOrder = order,
+		Tag = { "GlassSunken", "RoundPill" },
+		Parent = perfRow,
+	})
+	local stroke: UIStroke = New("UIStroke", {
+		Color = Style.Color("TextMuted"),
+		Transparency = 0.45,
+		Thickness = 1.5,
+		Parent = chip,
+	})
+	local icon = Icon.new(iconKind, 16, "TextMuted")
+	icon.AnchorPoint = Vector2.new(0, 0.5)
+	icon.Position = UDim2.new(0, 8, 0.5, 0)
+	icon.Parent = chip
+	local value = label(chip, {
+		Position = UDim2.fromOffset(28, 4),
+		Size = UDim2.new(1, -36, 1, -8),
+		Text = "",
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextColor3 = Style.Color("TextPrimary"),
+		Tag = "FontHeavy",
+	}, 16)
+	perfChips[key] = { Value = value, Stroke = stroke }
 end
 
 local function buildProgress(layer: Frame)
@@ -172,32 +190,34 @@ local function buildProgress(layer: Frame)
 		Name = "Progress",
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 12),
-		Size = UDim2.fromOffset(460, 96),
+		Size = UDim2.fromOffset(CARD_WIDTH, CARD_HEIGHT),
 		BackgroundTransparency = Theme.Alpha.Glass,
 		BorderSizePixel = 0,
 		Tag = { "Glass", "RoundL" },
 		Parent = layer,
 	})
 	Material.RgbEdge(progressCard, 1.2, 0.35, 30)
+	-- Ligne 1 : monde (gauche) · chrono (droite)
 	worldLabel = label(progressCard, {
 		Position = UDim2.fromOffset(18, 8),
-		Size = UDim2.new(1, -170, 0, 26),
+		Size = UDim2.new(1, -(36 + 150 + 8), 0, 26),
 		Text = "LOBBY",
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextColor3 = Style.Color("TextPrimary"),
 		Tag = "FontHeavy",
 	}, 22)
-	stageLabel = label(progressCard, {
+	timerLabel = label(progressCard, {
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.new(1, -18, 0, 8),
-		Size = UDim2.fromOffset(140, 26),
+		Size = UDim2.fromOffset(150, 26),
 		Text = "",
 		TextXAlignment = Enum.TextXAlignment.Right,
-		TextColor3 = Style.Color("CurrencyBits"),
+		TextColor3 = Style.Color("TextPrimary"),
 		Tag = "FontHeavy",
-	}, 22)
-	towerBar = Widgets.Bar(UDim2.new(1, -36, 0, 12), Style.Color("AccentViolet"), progressCard)
-	towerBar.Root.Position = UDim2.fromOffset(18, 40)
+	}, 20)
+	-- Ligne 2 : barre de la tour · étape
+	towerBar = Widgets.Bar(UDim2.new(1, -(36 + 110), 0, 12), Style.Color("AccentViolet"), progressCard)
+	towerBar.Root.Position = UDim2.fromOffset(18, 42)
 	-- Repères des mondes sur la barre de la tour
 	for world = 1, Tower.WORLD_COUNT - 1 do
 		New("Frame", {
@@ -209,14 +229,41 @@ local function buildProgress(layer: Frame)
 			Parent = towerBar.Root,
 		})
 	end
+	stageLabel = label(progressCard, {
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -18, 0, 38),
+		Size = UDim2.fromOffset(104, 20),
+		Text = "",
+		TextXAlignment = Enum.TextXAlignment.Right,
+		TextColor3 = Style.Color("CurrencyBits"),
+		Tag = "FontHeavy",
+	}, 17)
+	-- Ligne 3 : but du moment (gauche) · PC d'Anga en 3 pastilles (droite)
+	local chipsWidth = 3 * CHIP_WIDTH + 2 * CHIP_GAP
 	goalLabel = label(progressCard, {
-		Position = UDim2.fromOffset(18, 60),
-		Size = UDim2.new(1, -170, 0, 26),
+		Position = UDim2.fromOffset(18, 62),
+		Size = UDim2.new(1, -(36 + chipsWidth + 12), 0, 26),
 		Text = "",
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextColor3 = Style.Color("TextPrimary"),
 		Tag = "FontBold",
 	}, 18)
+	perfRow = New("Frame", {
+		Name = "PcPerformance",
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -18, 0, 61),
+		Size = UDim2.fromOffset(chipsWidth, 28),
+		BackgroundTransparency = 1,
+		Parent = progressCard,
+	}, {
+		Create.List(Enum.FillDirection.Horizontal, CHIP_GAP, {
+			HorizontalAlignment = Enum.HorizontalAlignment.Right,
+			VerticalAlignment = Enum.VerticalAlignment.Center,
+		}) :: Instance,
+	})
+	perfChip("Fps", "Bolt", 1)
+	perfChip("Ping", "Elevator", 2)
+	perfChip("Temp", "Heat", 3)
 	-- Clés USB dorées : petite pastille sous la carte (monde courant + total)
 	keyLabel = label(progressCard, {
 		AnchorPoint = Vector2.new(0.5, 0),
@@ -228,94 +275,142 @@ local function buildProgress(layer: Frame)
 		Tag = { "FontBold", "Glass", "RoundL" },
 	}, 16)
 	keyLabel.BackgroundTransparency = Theme.Alpha.Glass -- `label` met un fond transparent
-	timerLabel = label(progressCard, {
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -18, 0, 60),
-		Size = UDim2.fromOffset(140, 26),
-		Text = "",
-		TextXAlignment = Enum.TextXAlignment.Right,
-		TextColor3 = Style.Color("TextPrimary"),
-		Tag = "FontHeavy",
-	}, 20)
+end
+
+-- Ouvre / ferme le menu « ⋯ » des actions de course (refermé tout seul après un moment).
+local function setMenu(open: boolean)
+	open = open and inRun
+	if menuOpen == open then
+		return
+	end
+	menuOpen = open
+	menuToken += 1
+	actions.Visible = open
+	menuDots.Visible = not open
+	menuClose.Visible = open
+	menuStroke.Transparency = if open then 0.05 else 0.45
+	if open then
+		Motion.Pop(actions, 0.05)
+		local token = menuToken
+		task.delay(MENU_AUTO_CLOSE, function()
+			if token == menuToken then
+				setMenu(false)
+			end
+		end)
+	end
 end
 
 local function buildRight(layer: Frame)
-	Keycap.new({
-		Icon = "Menu",
+	-- Bouton « ⋯ » : verre de l'app, liseré violet ; trois points (fermé) ou croix (ouvert).
+	menuKey = Keycap.new({
+		Variant = "Ghost",
 		IconOnly = true,
-		Variant = "Secondary",
-		-- Tailles de conception ≥ 80 : ≥ 42 px réels sur le plus petit téléphone (échelle 0,52).
-		Size = UDim2.fromOffset(80, 80),
+		Size = UDim2.fromOffset(TOUCH, TOUCH),
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.new(1, -16, 0, 12),
 		OnClick = function()
-			App.Toggle("Menu")
+			setMenu(not menuOpen)
 		end,
 		Parent = layer,
 	})
-	shieldPill = New("Frame", {
-		Name = "Shield",
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -16, 0, 102),
-		Size = UDim2.fromOffset(190, 40),
-		BackgroundTransparency = Theme.Alpha.Glass,
-		BorderSizePixel = 0,
-		Visible = false,
-		Tag = { "Glass", "RoundPill" },
-		Parent = layer,
-	}, { New("UIStroke", { Color = Style.Color("AccentCyan"), Thickness = 2 }) :: Instance })
-	shieldLabel = label(shieldPill, {
-		Size = UDim2.new(1, -24, 1, -12),
-		Position = UDim2.fromOffset(12, 6),
-		Text = "",
-		TextColor3 = Style.Color("AccentCyan"),
-		Tag = "FontHeavy",
-	}, 18)
+	menuKey.Button.Name = "RunMenu"
+	menuKey.Button.Visible = false
+	local cap = menuKey.Button:FindFirstChild("Cap") :: Frame
+	local content = cap:FindFirstChild("Content") :: Frame
+	menuStroke = New("UIStroke", {
+		Color = Style.Color("AccentViolet"),
+		Thickness = 2,
+		Transparency = 0.45,
+		Parent = cap,
+	})
+	menuDots = New("Frame", {
+		Name = "Dots",
+		Size = UDim2.fromOffset(44, 12),
+		BackgroundTransparency = 1,
+		LayoutOrder = 3,
+		Parent = content,
+	}, {
+		Create.List(Enum.FillDirection.Horizontal, 6, {
+			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+			VerticalAlignment = Enum.VerticalAlignment.Center,
+		}) :: Instance,
+	})
+	for _ = 1, 3 do
+		New("Frame", {
+			Size = UDim2.fromOffset(10, 10),
+			BackgroundColor3 = Style.Color("TextPrimary"),
+			BorderSizePixel = 0,
+			Parent = menuDots,
+		}, { New("UICorner", { CornerRadius = UDim.new(1, 0) }) :: Instance })
+	end
+	menuClose = Icon.new("Close", 28, "TextPrimary")
+	menuClose.LayoutOrder = 4
+	menuClose.Visible = false
+	menuClose.Parent = content
 
-	-- Actions pendant l'ascension
+	-- Menu déroulant : panneau de verre bordé de violet, sous le bouton, aligné à droite.
 	actions = New("Frame", {
 		Name = "Actions",
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -16, 0.5, 10),
-		Size = UDim2.fromOffset(200, 3 * 84 + 2 * 10),
-		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -16, 0, MENU_TOP),
+		Size = UDim2.fromOffset(216, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = Theme.Alpha.GlassStrong,
+		BorderSizePixel = 0,
+		Visible = false,
+		ZIndex = 5,
+		Tag = { "Glass", "RoundL" },
 		Parent = layer,
-	}, { Create.List(Enum.FillDirection.Vertical, 10) })
+	}, {
+		Create.List(Enum.FillDirection.Vertical, 8) :: Instance,
+		Create.Padding(8) :: Instance,
+		New("UIStroke", { Color = Style.Color("AccentViolet"), Thickness = 1.5, Transparency = 0.35 }) :: Instance,
+	})
+	local function pick(action: () -> ()): () -> ()
+		return function()
+			setMenu(false)
+			action()
+		end
+	end
+	-- « Restaurer » : les checkpoints sont des points de restauration (v3).
 	Keycap.new({
-		Text = "Checkpoint",
-		Variant = "Secondary",
-		Size = UDim2.fromOffset(200, 84),
+		Text = "Restaurer",
+		Icon = "Check",
+		Variant = "Ghost",
+		Size = UDim2.fromOffset(200, TOUCH),
 		LayoutOrder = 1,
 		Small = true,
-		OnClick = function()
+		OnClick = pick(function()
 			Net.Fire("ToCheckpoint")
-		end,
+		end),
 		Parent = actions,
 	})
 	skipKey = Keycap.new({
 		Text = "Passer l'étape",
+		Icon = "Bolt",
 		Variant = "Gold",
-		Size = UDim2.fromOffset(200, 84),
+		Size = UDim2.fromOffset(200, TOUCH),
 		LayoutOrder = 2,
 		Small = true,
-		OnClick = function()
+		OnClick = pick(function()
 			local product = Products.ProductByKey.Skip
 			if product and product.Id ~= 0 then
 				MarketplaceService:PromptProductPurchase(Players.LocalPlayer, product.Id)
 			end
-		end,
+		end),
 		Parent = actions,
 	})
 	skipKey.Button.Visible = false
 	Keycap.new({
 		Text = "Lobby",
+		Icon = "Elevator",
 		Variant = "Ghost",
-		Size = UDim2.fromOffset(200, 84),
+		Size = UDim2.fromOffset(200, TOUCH),
 		LayoutOrder = 3,
 		Small = true,
-		OnClick = function()
+		OnClick = pick(function()
 			Net.Fire("ToLobby")
-		end,
+		end),
 		Parent = actions,
 	})
 end
@@ -421,7 +516,7 @@ local function goalText(state: any): string
 	if data.Stage == Tower.TOTAL_STAGES and data.Cleared >= Tower.WORLD_COUNT then
 		return "Touche le cœur de la puce pour gagner !"
 	end
-	return "Atteins le prochain checkpoint !"
+	return "Va au prochain point de restauration !"
 end
 
 local function refreshFull(state: any)
@@ -454,7 +549,12 @@ local function refreshFull(state: any)
 	playKey.Button.Visible = state.AtLobby
 	Dialogue.SetLift(if state.AtLobby then 84 + 10 else 0) -- la boîte ne recouvre pas JOUER
 	playKey:SetText(if data.Stage > 0 then `CONTINUER · Étape {data.Stage}` else "JOUER")
-	actions.Visible = not state.AtLobby
+	-- Menu « ⋯ » : seulement en course (au lobby, rien à restaurer ni à passer).
+	inRun = not state.AtLobby
+	menuKey.Button.Visible = inRun
+	if not inRun then
+		setMenu(false)
+	end
 	-- Même règle que ProgressService.CanSkip : le repaire de LAGZ ne se passe pas.
 	skipKey.Button.Visible = Products.ProductByKey.Skip.Id ~= 0 and data.Stage < Tower.TOTAL_STAGES - 1
 	for key, toggle in toggleKeys do
@@ -480,9 +580,11 @@ end
 local GRADE_COLOR: { [string]: string } = { Good = "Success", Warn = "Warning", Bad = "Danger" }
 
 local function setPerf(key: string, value: string, grade: string)
-	local target = perfValues[key]
-	target.Text = value
-	target.TextColor3 = Style.Color(GRADE_COLOR[grade] or "TextMuted")
+	local chip = perfChips[key]
+	local color = Style.Color(GRADE_COLOR[grade] or "TextMuted")
+	chip.Value.Text = value
+	chip.Value.TextColor3 = color
+	chip.Stroke.Color = color
 end
 
 -- Valeurs du tableau du scénario, qui « vivent » un peu, avec les pics des incidents.
@@ -490,7 +592,7 @@ refreshPerf = function(data: any)
 	local cleared = if type(data.Cleared) == "number" then data.Cleared else 0
 	if cleared ~= lastCleared then
 		if lastCleared >= 0 and cleared > lastCleared then
-			Motion.Pop(perfCard, 0.1)
+			Motion.Pop(perfRow, 0.12)
 		end
 		lastCleared = cleared
 	end
@@ -523,11 +625,11 @@ refreshPerf = function(data: any)
 			setPerf("Fps", "ERR?!", "Bad")
 		else
 			fps = math.max(math.floor(fps + 0.5), 0)
-			setPerf("Fps", tostring(fps), PcHealth.Grade("Fps", fps))
+			setPerf("Fps", `{fps} FPS`, PcHealth.Grade("Fps", fps))
 		end
 	else
 		fps = math.max(math.floor(fps + 0.5), 1)
-		setPerf("Fps", tostring(fps), PcHealth.Grade("Fps", fps))
+		setPerf("Fps", `{fps} FPS`, PcHealth.Grade("Fps", fps))
 	end
 	ping = math.max(math.floor(ping + 0.5), 1)
 	temp = math.floor(temp + 0.5)

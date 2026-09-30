@@ -158,6 +158,10 @@ step("IncidentController", function()
 	end
 	IncidentController.Start(App.Layers.Overlays)
 end)
+-- Ambiance par monde (atmosphère, lumière, particules) ; laisse la main au BLACKOUT.
+step("Ambience", function()
+	load(Controllers.Ambience).Start()
+end)
 for _, name in { "WorldState", "Story", "StreamMonitor" } do
 	step(name, function()
 		local controller = load(Controllers:FindFirstChild(name) :: Instance)

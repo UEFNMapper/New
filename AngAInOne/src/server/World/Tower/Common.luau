@@ -883,10 +883,11 @@ function Common.NewContext(tower: Instance, world: Tower.World): (WorldContext, 
 			-- Monde 1 : la plaque est posée sur le bureau (fine, pour éviter le z-fighting avec lui)
 			local top = if w == 1 then 0.3 else base
 			local thickness = if w == 1 then 0.3 else 2
+			local mainShelf: Part? = nil
 			for i, r in floorRects(startCorner(w)) do
 				local sx, sz = r[2] - r[1], r[4] - r[3]
 				local center = Vector3.new((r[1] + r[2]) / 2, top, (r[3] + r[4]) / 2)
-				Build.Part({
+				local shelf = Build.Part({
 					Name = "Shelf",
 					Size = Vector3.new(sx, thickness, sz),
 					CFrame = CFrame.new(center - Vector3.new(0, thickness / 2, 0)),
@@ -895,6 +896,9 @@ function Common.NewContext(tower: Instance, world: Tower.World): (WorldContext, 
 					CastShadow = false,
 					Parent = decor,
 				})
+				if i == 1 then
+					mainShelf = shelf
+				end
 				local void = ctx.Hazard(
 					decor,
 					if i == 1 then "Void" else "VoidB",
@@ -903,7 +907,137 @@ function Common.NewContext(tower: Instance, world: Tower.World): (WorldContext, 
 					VOID,
 					"Void"
 				)
-				void.Transparency = 0.45
+				-- Un peu plus translucide qu'avant : la carte mère lumineuse se devine dessous,
+				-- mais le voile reste nettement magenta (code couleur du danger).
+				void.Transparency = 0.5
+			end
+
+			-- Fond de carte mère (v4) : pistes néon discrètes aux couleurs du monde, pastilles de
+			-- vias et une puce, posées sur la plaque SOUS le voile mortel. Décor pur (aucun tag,
+			-- aucune collision), jamais rouge ; ~38 pièces et aucune lumière par monde.
+			-- Repère local (a, b) : le coin d'entrée (trou de la plaque) est toujours en (+, +),
+			-- puis on reporte sur le vrai coin par symétrie (les pièces restent orthonormées).
+			local k = corner(startCorner(w))
+			local sx, sz = math.sign(k.X), math.sign(k.Z)
+			local board = Build.Folder("Motherboard", decor)
+			local y = top + 0.1
+			local traceColor = style.Primary
+			local padColor = style.Primary:Lerp(C.White, 0.35)
+			local function world(a: number, b: number, h: number): Vector3
+				return Vector3.new(a * sx, y + h, b * sz)
+			end
+			-- Segment de piste entre deux points locaux (prolongé d'une demi-largeur : coudes pleins).
+			local function segment(p: Vector3, q: Vector3, width: number)
+				local from, to = world(p.X, p.Z, 0.1), world(q.X, q.Z, 0.1)
+				local length = (to - from).Magnitude
+				if length < 0.5 then
+					return
+				end
+				Build.Neon({
+					Name = "PcbTrace",
+					Size = Vector3.new(width, 0.2, length + width),
+					CFrame = facing((from + to) / 2, to - from),
+					Color = traceColor,
+					Transparency = 0.35,
+					Parent = board,
+				})
+			end
+			local function via(p: Vector3)
+				Build.Neon({
+					Name = "PcbVia",
+					Size = Vector3.new(2.4, 0.3, 2.4),
+					CFrame = CFrame.new(world(p.X, p.Z, 0.15)) * CFrame.Angles(0, math.pi / 4, 0),
+					Color = padColor,
+					Transparency = 0.15,
+					Parent = board,
+				})
+			end
+			-- Faisceau de 3 pistes parallèles : départ `start`, direction `dir`, longueur `l1`, puis un
+			-- coude de `turn` radians (positif = vers la normale gauche) et une longueur `l2`.
+			-- Les pistes intérieures tournent plus tôt pour rester parallèles ; un via au bout.
+			local function bundle(start: Vector3, dir: Vector3, l1: number, turn: number, l2: number)
+				local normal = Vector3.new(-dir.Z, 0, dir.X)
+				local after = dir * math.cos(turn) + normal * math.sin(turn)
+				local shift = math.tan(turn / 2)
+				for index = 0, 2 do
+					local offset = index * 3.5
+					local p0 = start + normal * offset
+					local p1 = p0 + dir * (l1 - shift * offset)
+					local p2 = p1 + after * l2
+					segment(p0, p1, 1)
+					segment(p1, p2, 1)
+					via(p2)
+				end
+			end
+			-- Puce (socket) : dalle néon sous un boîtier sombre un peu plus petit = liseré lumineux.
+			local chip = world(-30, -30, 0)
+			Build.Neon({
+				Name = "PcbChipGlow",
+				Size = Vector3.new(40, 0.2, 40),
+				CFrame = CFrame.new(chip + Vector3.new(0, 0.1, 0)),
+				Color = style.Edge,
+				Transparency = 0.3,
+				Parent = board,
+			})
+			Build.Decor({
+				Name = "PcbChip",
+				Size = Vector3.new(36, 0.6, 36),
+				CFrame = CFrame.new(chip + Vector3.new(0, 0.3, 0)),
+				Color = C.Black,
+				Material = SMOOTH,
+				CastShadow = false,
+				Parent = board,
+			})
+			local EAST, NORTH = Vector3.new(1, 0, 0), Vector3.new(0, 0, 1)
+			bundle(Vector3.new(-10, 0, -44), EAST, 50, -math.pi / 4, 36) -- vers (+a, -b)
+			bundle(Vector3.new(-40, 0, -10), NORTH, 60, math.pi / 2, 46) -- vers (-a, +b)
+			bundle(Vector3.new(-34, 0, -50), -NORTH, 60, math.pi / 2, 88) -- vers (+a, -b), le long du bord
+			bundle(Vector3.new(30, 0, 10), NORTH, 56, math.pi / 4, 36) -- vers (-a, +b), loin du trou
+
+			-- Pistes fines « sérigraphiées » : un seul SurfaceGui autoéclairé sur la grande plaque
+			-- (0 pièce) ; motif pseudo-aléatoire reproductible propre à chaque monde.
+			if mainShelf then
+				local gui = Instance.new("SurfaceGui")
+				gui.Name = "PcbPattern"
+				gui.Face = Enum.NormalId.Top
+				gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+				gui.PixelsPerStud = 4
+				gui.LightInfluence = 0
+				gui.MaxDistance = 400
+				gui.Parent = mainShelf
+				-- Suite reproductible dans [0, 1[ (sans Random : le module est aussi construit sous Lune).
+				local seed = 7919 * w + 13
+				local function roll(low: number, high: number): number
+					seed = (seed * 1103515245 + 12345) % 2147483648
+					return low + (high - low) * seed / 2147483648
+				end
+				local thin = style.Primary:Lerp(C.Bg, 0.25)
+				local function line(x: number, y0: number, width: number, height: number)
+					local frame = Instance.new("Frame")
+					frame.BorderSizePixel = 0
+					frame.BackgroundColor3 = thin
+					frame.BackgroundTransparency = 0.55
+					frame.Position = UDim2.fromScale(x, y0)
+					frame.Size = UDim2.new(width, 3, height, 3)
+					frame.Parent = gui
+				end
+				for _ = 1, 14 do
+					-- Piste en L (horizontale puis verticale), terminée par une pastille en losange.
+					local x0, y0 = roll(0.04, 0.9), roll(0.04, 0.9)
+					local dx, dy = roll(0.08, 0.3), roll(0.08, 0.3)
+					local x1 = math.clamp(x0 + (if roll(0, 1) < 0.5 then -dx else dx), 0.03, 0.97)
+					local y1 = math.clamp(y0 + (if roll(0, 1) < 0.5 then -dy else dy), 0.03, 0.97)
+					line(math.min(x0, x1), y0, math.abs(x1 - x0), 0)
+					line(x1, math.min(y0, y1), 0, math.abs(y1 - y0))
+					local pad = Instance.new("Frame")
+					pad.BorderSizePixel = 0
+					pad.BackgroundColor3 = padColor
+					pad.BackgroundTransparency = 0.35
+					pad.Rotation = 45
+					pad.Position = UDim2.new(x1, -4, y1, -4)
+					pad.Size = UDim2.fromOffset(10, 10)
+					pad.Parent = gui
+				end
 			end
 		end,
 
