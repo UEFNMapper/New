@@ -516,11 +516,17 @@ local fakePlayer = {
 local camera = { CFrame = roblox.CFrame.new(0, 10, -300) }
 local preSimulation = fakeSignal()
 
+-- Habillage client des pièges (Traps/Common crée Workspace.TrapRigs au besoin) : dossier fourni d'avance.
+local simWorkspaceChildren: { [string]: any } = { TrapRigs = Instance.new("Folder") }
+
 local simServices: { [string]: any } = {
 	Players = { LocalPlayer = fakePlayer },
 	RunService = { PreSimulation = preSimulation },
 	Workspace = {
 		CurrentCamera = camera,
+		FindFirstChild = function(_: any, name: string)
+			return simWorkspaceChildren[name]
+		end,
 		GetServerTimeNow = function()
 			return sim.T
 		end,
