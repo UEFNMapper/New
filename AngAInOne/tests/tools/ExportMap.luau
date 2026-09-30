@@ -35,7 +35,7 @@ for _, part in captured:GetDescendants() do
 			c = { part.Color.R, part.Color.G, part.Color.B },
 			t = part.Transparency,
 			m = part.Material.Name,
-			sh = part.Shape.Name,
+			sh = if part:IsA("Part") then part.Shape.Name elseif part:IsA("WedgePart") then "Wedge" else part.ClassName,
 			col = part.CanCollide,
 		})
 	end

@@ -208,6 +208,32 @@ return {
 		print(`    {parts} pièces, dont {collidables} solides ; {#queue} cellules atteignables`)
 		Expect.between(parts, 500, 9000, "nombre de pièces")
 	end,
+	["map : budget mobile (pièces, lumières, pièces libres)"] = function()
+		local parts, lights, guis = 0, 0, 0
+		for _, d in world:GetDescendants() do
+			if d:IsA("BasePart") then
+				parts += 1
+				if not d.Anchored then
+					-- Seules les pièces soudées à un moyeu ancré qui tourne (pales, anneaux) sont libres.
+					local weld = d:FindFirstChildOfClass("WeldConstraint")
+					local hub = weld and weld.Part0
+					Expect.truthy(
+						hub ~= nil and hub.Anchored and (hub:HasTag("DecorSpin") or hub:HasTag("Spin")),
+						`pièce non ancrée sans moyeu : {d:GetFullName()}`
+					)
+				end
+			elseif d:IsA("SurfaceGui") then
+				guis += 1
+			elseif d:IsA("PointLight") or d:IsA("SpotLight") or d:IsA("SurfaceLight") then
+				lights += 1
+				Expect.equal(d.Shadows, false, `ombres sur {d:GetFullName()}`)
+			end
+		end
+		print(`    {parts} pièces, {lights} lumières, {guis} étiquettes (SurfaceGui)`)
+		Expect.truthy(parts <= 6500, `trop de pièces : {parts}`)
+		Expect.truthy(lights <= 60, `trop de lumières : {lights}`)
+		Expect.truthy(guis <= 200, `trop d'étiquettes : {guis}`)
+	end,
 	["map : aucune géométrie invalide (NaN)"] = function()
 		for _, d in world:GetDescendants() do
 			if d:IsA("BasePart") then
