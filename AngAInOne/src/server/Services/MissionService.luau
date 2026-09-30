@@ -84,7 +84,7 @@ local function onClaimDaily(session: Session.Session)
 end
 
 local function onClaimMission(session: Session.Session, id: string)
-	ensureMissions(session)
+	-- Pas de renouvellement ici : une mission finie hier peut encore être récupérée.
 	for _, mission in session.Data.Missions.List do
 		if mission.Id == id and not mission.Claimed and mission.Progress >= mission.Target then
 			mission.Claimed = true

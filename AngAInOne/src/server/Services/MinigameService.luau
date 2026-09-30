@@ -56,7 +56,9 @@ local function onEnd(session: Session.Session, world: number, success: boolean, 
 	if not durationOk(game_.Kind, game_.StartedAt) then
 		return
 	end
-	ProgressService.ClearWorld(session, world)
+	if not ProgressService.ClearWorld(session, world) then
+		return -- déjà nettoyé (ex. étape passée pendant la partie) : pas de double récompense
+	end
 	session.Data.MinigamesWon += 1
 	local bits = Wallet.Add(session, CFG.WorldBits + CFG.WorldBitsPerWorld * world, "Minigame", true)
 	Wallet.Fx(session, "WorldCleared", { World = world, Bits = bits, Score = score })
@@ -64,7 +66,8 @@ local function onEnd(session: Session.Session, world: number, success: boolean, 
 end
 
 local function onArcadeStart(session: Session.Session, kind: string)
-	if not ProgressService.IsAtLobby(session) then
+	if not ProgressService.NearArcade(session, CFG.TerminalDistance) then
+		Wallet.Notify(session, "Info", "Va jouer à la borne d'arcade du lobby pour gagner des Bits !")
 		return
 	end
 	session.Minigame = { World = 0, Kind = kind, StartedAt = os.clock() }

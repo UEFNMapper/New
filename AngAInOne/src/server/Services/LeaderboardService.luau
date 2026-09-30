@@ -82,17 +82,31 @@ local function storeFor(def: BoardDef): OrderedDataStore?
 	return if ok then store else nil
 end
 
+local function pushSession(def: BoardDef, store: OrderedDataStore, session: Session.Session)
+	local value = def.Read(session)
+	if value > 0 then
+		pcall(function()
+			store:SetAsync(tostring(session.UserId), value)
+		end)
+	end
+end
+
 local function push(def: BoardDef)
 	local store = storeFor(def)
 	if not store then
 		return
 	end
 	for _, session in Session.All() do
-		local value = def.Read(session)
-		if value > 0 then
-			pcall(function()
-				store:SetAsync(tostring(session.UserId), value)
-			end)
+		pushSession(def, store, session)
+	end
+end
+
+-- Envoie tout de suite les scores d'un joueur (victoire, départ).
+local function pushOne(session: Session.Session)
+	for _, def in BOARDS do
+		local store = storeFor(def)
+		if store then
+			pushSession(def, store, session)
 		end
 	end
 end
@@ -151,6 +165,15 @@ function LeaderboardService.Start()
 	leaderboardRemote = Remotes.Get("Leaderboard")
 	GameEvents.ClientReady:Connect(function(player: Player)
 		leaderboardRemote:FireClient(player, boards)
+	end)
+	GameEvents.Victory:Connect(function(player: Player, _time: number)
+		local session = Session.Get(player)
+		if session then
+			task.spawn(pushOne, session)
+		end
+	end)
+	Session.Removing:Connect(function(session: Session.Session)
+		task.spawn(pushOne, session)
 	end)
 	task.spawn(function()
 		task.wait(10)

@@ -33,6 +33,7 @@ local RUN = GameConfig.Run
 local COLLISION_GROUP = "Runners"
 
 local checkpoints: { [number]: BasePart } = {}
+local arcades: { Vector3 } = {}
 local terminals: { [number]: BasePart } = {}
 local lobbySpawn: CFrame = CFrame.new(0, 5, 0)
 local atLobby: { [Session.Session]: boolean } = {}
@@ -52,6 +53,23 @@ local function stopClock(session: Session.Session)
 		session.Data.RunElapsed += os.clock() - session.ClockSince
 		session.ClockSince = 0
 	end
+end
+
+-- Reporte le segment en cours dans RunElapsed sans arrêter le chrono : les sauvegardes
+-- automatiques (et une fin de session brutale) gardent ainsi un temps juste.
+local function commitClock(session: Session.Session)
+	if session.ClockSince > 0 then
+		local now = os.clock()
+		session.Data.RunElapsed += now - session.ClockSince
+		session.ClockSince = now
+	end
+end
+
+-- Un avantage (bottes, puce) est-il actif ? L'ascension n'entre alors pas au classement des temps.
+local function assistActive(session: Session.Session): boolean
+	local toggles = session.Data.Toggles
+	return (toggles.LowGravity and session.Passes.LowGravity == true)
+		or (toggles.SpeedChip and session.Passes.SpeedChip == true)
 end
 
 ------------------------------------------------------------------------------------
@@ -93,8 +111,19 @@ end
 
 function ProgressService.ToCheckpoint(session: Session.Session)
 	atLobby[session] = nil
-	teleport(session, ProgressService.CheckpointCFrame(session.Data.Stage))
 	startClock(session)
+	GameEvents.StateChanged:Fire(session.Player)
+	teleport(session, ProgressService.CheckpointCFrame(session.Data.Stage))
+end
+
+-- Le joueur est-il près d'une borne d'arcade ?
+function ProgressService.NearArcade(session: Session.Session, maxDistance: number): boolean
+	for _, position in arcades do
+		if RemoteGuard.DistanceTo(session.Player, position) <= maxDistance then
+			return true
+		end
+	end
+	return false
 end
 
 function ProgressService.ToLobby(session: Session.Session)
@@ -118,6 +147,7 @@ end
 local function advanceTo(session: Session.Session, stage: number, skipped: boolean)
 	local data = session.Data
 	local previousWorld = Tower.WorldOf(data.Stage)
+	commitClock(session)
 	data.Stage = stage
 	session.LastCheckpointAt = os.clock()
 	if stage > data.BestStage then
@@ -142,18 +172,25 @@ end
 
 local function onCheckpoint(session: Session.Session, stage: number)
 	local data = session.Data
-	atLobby[session] = nil
 	if stage == 0 then
-		-- Ligne de départ : le chrono démarre (ou reprend).
-		if data.Stage == 0 and not data.RunStarted then
+		if data.Stage > 0 then
+			-- Ascension déjà en cours : la ligne de départ ramène au dernier checkpoint.
+			ProgressService.ToCheckpoint(session)
+			return
+		end
+		atLobby[session] = nil
+		-- Ligne de départ : le chrono démarre.
+		if not data.RunStarted then
 			data.RunStarted = true
+			data.RunAssisted = assistActive(session)
 			session.LastCheckpointAt = os.clock()
 			Wallet.Fx(session, "RunStart", {})
-			GameEvents.StateChanged:Fire(session.Player)
 		end
 		startClock(session)
+		GameEvents.StateChanged:Fire(session.Player)
 		return
 	end
+	atLobby[session] = nil
 	if stage ~= data.Stage + 1 then
 		return -- retour en arrière ou étape sautée : ignoré
 	end
@@ -179,6 +216,9 @@ local function onFinish(session: Session.Session)
 		return
 	end
 	stopClock(session)
+	if assistActive(session) then
+		data.RunAssisted = true
+	end
 	local time = data.RunElapsed
 	local first = data.Wins == 0
 	data.Wins += 1
@@ -202,7 +242,8 @@ local function onFinish(session: Session.Session)
 	syncAttributes(session)
 	GameEvents.StateChanged:Fire(session.Player)
 	task.delay(7, function()
-		if Session.Get(session.Player) == session then
+		-- Seulement si le joueur n'a pas déjà relancé une ascension entre-temps.
+		if Session.Get(session.Player) == session and data.Stage == 0 and not data.RunStarted then
 			ProgressService.ToLobby(session)
 		end
 	end)
@@ -212,6 +253,15 @@ end
 function ProgressService.Skip(session: Session.Session): boolean
 	local data = session.Data
 	if data.Stage >= Tower.TOTAL_STAGES then
+		-- Au sommet, il ne reste que le dernier terminal : on le passe.
+		if data.Cleared < Tower.WORLD_COUNT then
+			data.Cleared = Tower.WORLD_COUNT
+			data.RunAssisted = true
+			session.Player:SetAttribute("Cleared", data.Cleared)
+			Wallet.Fx(session, "WorldCleared", { World = Tower.WORLD_COUNT, Bits = 0, Score = 0 })
+			GameEvents.StateChanged:Fire(session.Player)
+			return true
+		end
 		return false
 	end
 	local nextStage = data.Stage + 1
@@ -227,14 +277,16 @@ function ProgressService.Skip(session: Session.Session): boolean
 end
 
 -- Marque le monde comme nettoyé (terminal réussi) : ouvre son portail.
-function ProgressService.ClearWorld(session: Session.Session, world: number)
+function ProgressService.ClearWorld(session: Session.Session, world: number): boolean
 	local data = session.Data
-	if world == data.Cleared + 1 then
-		data.Cleared = world
-		session.Player:SetAttribute("Cleared", world)
-		GameEvents.WorldCleared:Fire(session.Player, world)
-		GameEvents.StateChanged:Fire(session.Player)
+	if world ~= data.Cleared + 1 then
+		return false
 	end
+	data.Cleared = world
+	session.Player:SetAttribute("Cleared", world)
+	GameEvents.WorldCleared:Fire(session.Player, world)
+	GameEvents.StateChanged:Fire(session.Player)
+	return true
 end
 
 ------------------------------------------------------------------------------------
@@ -279,12 +331,25 @@ local function onCharacter(session: Session.Session, character: Model)
 		GameEvents.Died:Fire(session.Player)
 		GameEvents.StateChanged:Fire(session.Player)
 	end)
-	-- Réapparition : au lobby ou au dernier checkpoint.
-	task.defer(function()
-		if atLobby[session] or session.Data.Stage == 0 and not session.Data.RunStarted then
-			teleport(session, lobbySpawn)
-		else
-			teleport(session, ProgressService.CheckpointCFrame(session.Data.Stage))
+	-- Réapparition : au lobby ou au dernier checkpoint. Le personnage apparaît d'abord au
+	-- SpawnLocation du lobby ; on le place, puis on vérifie qu'il y est bien (la première
+	-- physique du client peut écraser un déplacement trop précoce).
+	if atLobby[session] or session.Data.Stage == 0 and not session.Data.RunStarted then
+		return
+	end
+	task.spawn(function()
+		local target = ProgressService.CheckpointCFrame(session.Data.Stage)
+		task.wait(0.1)
+		for _ = 1, 3 do
+			if character.Parent == nil or Session.Get(session.Player) ~= session then
+				return
+			end
+			teleport(session, target)
+			task.wait(0.35)
+			local current = character:GetPivot().Position
+			if (current - target.Position).Magnitude < 25 then
+				return
+			end
 		end
 	end)
 end
@@ -344,6 +409,14 @@ local function indexTower(tower: Folder)
 				Wallet.Fx(session, "Coin", { Id = id, Position = part.Position })
 				GameEvents.CoinCollected:Fire(player)
 			end)
+		end
+	end
+	for _, descendant in tower:GetDescendants() do
+		if descendant:IsA("ProximityPrompt") and descendant:GetAttribute("Action") == "Arcade" then
+			local holder = descendant.Parent
+			if holder and holder:IsA("BasePart") then
+				table.insert(arcades, holder.Position)
+			end
 		end
 	end
 	local spawn = tower:FindFirstChild("LobbySpawn", true)
@@ -424,7 +497,11 @@ function ProgressService.Start()
 				local character = session.Player.Character
 				local root = character and character:FindFirstChild("HumanoidRootPart")
 				if root and root:IsA("BasePart") and root.Position.Y < RUN.FallKillBelow and session.Alive then
-					ProgressService.ToCheckpoint(session)
+					task.spawn(ProgressService.ToCheckpoint, session)
+				end
+				-- Toutes les 5 s, le chrono en cours est reporté dans la sauvegarde.
+				if session.PlaytimeCarry % 5 == 0 then
+					commitClock(session)
 				end
 			end
 		end

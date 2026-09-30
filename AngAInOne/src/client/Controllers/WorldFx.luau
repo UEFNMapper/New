@@ -220,12 +220,22 @@ local function applyCheckpoint(pad: BasePart, stage: number)
 		then Style.Color("Success")
 		elseif stage == current + 1 then Style.Color("CurrencyBits")
 		else Style.Color("MetalLight")
+	local isNext = stage == current + 1
 	for _, child in pad:GetDescendants() do
 		if child:IsA("BasePart") and child.Material == Enum.Material.Neon then
 			child.Color = accent
+			-- Transparence d'origine mémorisée : restaurée quand le pad cesse de pulser.
+			local base = child:GetAttribute("BaseTransparency")
+			if type(base) ~= "number" then
+				base = child.Transparency
+				child:SetAttribute("BaseTransparency", base)
+			end
+			if not isNext then
+				child.Transparency = base :: number
+			end
 		end
 	end
-	pad:SetAttribute("Next", stage == current + 1)
+	pad:SetAttribute("Next", isNext)
 end
 
 local function refreshAll()
