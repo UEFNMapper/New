@@ -3,7 +3,8 @@
 	AppScreen : l'écran géant du hub reproduit le "Tableau de bord" du logiciel partenaire
 	AngAInOne (gris Fluent + accent violet), alimenté par la partie DU JOUEUR LOCAL :
 	- Barre latérale : une section de l'app par monde de la tour ; ✓ quand le virus du
-	  monde est éliminé, 🔒 tant qu'on ne l'a pas atteint
+	  monde est éliminé, 🔒 tant qu'on ne l'a pas atteint ; pastille de la meilleure médaille
+	  du monde (bronze / argent / or, WorldBest)
 	- Santé du PC : Progression, Virus, Victoires, Record
 	- État en direct : 3 graphes (60 derniers relevés, 1 par seconde)
 	    CPU = progression dans la tour · GPU = Bits (relatifs au max récent) · RAM = mondes nettoyés
@@ -20,6 +21,8 @@ local Tower = require(Shared.Config.Tower)
 local Branding = require(Shared.Config.Branding)
 local NumberFormat = require(Shared.Util.NumberFormat)
 local Time = require(Shared.Util.Time)
+local Medals = require(Shared.Config.Medals)
+local MedalLogic = require(Shared.Util.MedalLogic)
 
 local Store = require(script.Parent.Store)
 local Style = require(script.Parent.Parent.UI.Style)
@@ -49,8 +52,10 @@ local BAD = color(APP.Bad)
 
 type Graph = { Bars: { Frame }, Value: TextLabel, Footer: TextLabel, Color: Color3, History: { number } }
 type Card = { Dot: Frame, Status: TextLabel }
+-- Medal : pastille de la meilleure médaille du monde (cachée tant qu'il n'y en a pas).
+type SidebarEntry = { Row: Frame, Label: TextLabel, Zone: number, Medal: Frame?, MedalName: string }
 type View = {
-	Sidebar: { { Row: Frame, Label: TextLabel, Zone: number } },
+	Sidebar: { SidebarEntry },
 	Cards: { [string]: Card },
 	Graphs: { [string]: Graph },
 	User: TextLabel,
@@ -159,11 +164,33 @@ local function build(screen: BasePart): View
 		end
 		local label = text({
 			Position = UDim2.fromScale(0.1, 0.2),
-			Size = UDim2.fromScale(0.86, 0.6),
+			Size = UDim2.fromScale(if item.Zone > 0 then 0.72 else 0.86, 0.6),
 			Text = item.Name,
 			Parent = row,
 		})
-		table.insert(sidebar, { Row = row, Label = label, Zone = item.Zone })
+		-- Pastille de médaille du monde (dégradé, comme la carte de médaille).
+		local medal: Frame? = nil
+		if item.Zone > 0 then
+			medal = New("Frame", {
+				Name = "Medal",
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.fromScale(0.95, 0.5),
+				Size = UDim2.fromScale(0, 0.55),
+				BackgroundColor3 = Color3.new(1, 1, 1),
+				BorderSizePixel = 0,
+				Visible = false,
+				Parent = row,
+			}, {
+				New("UIAspectRatioConstraint", {
+					AspectRatio = 1,
+					DominantAxis = Enum.DominantAxis.Height,
+				}) :: Instance,
+				New("UICorner", { CornerRadius = UDim.new(1, 0) }),
+				New("UIGradient", { Rotation = 45 }),
+				New("UIStroke", { Thickness = 2 }),
+			})
+		end
+		table.insert(sidebar, { Row = row, Label = label, Zone = item.Zone, Medal = medal, MedalName = "" })
 	end
 
 	-- Contenu principal
@@ -330,6 +357,39 @@ local function setCard(view: View, name: string, status: string, tint: Color3)
 	c.Dot.BackgroundColor3 = tint
 end
 
+-- Meilleure médaille sauvegardée d'un monde ("" = aucune).
+local function bestMedal(data: any, world: number): string
+	local bests = data.WorldBest
+	local best = if type(bests) == "table" then bests[MedalLogic.Key(world)] else nil
+	return if type(best) == "table" and type(best.Medal) == "string" then best.Medal else ""
+end
+
+-- Colore la pastille de médaille d'une section (seulement quand elle change).
+local function paintMedal(entry: SidebarEntry, medal: string)
+	local dotFrame = entry.Medal
+	if not dotFrame or entry.MedalName == medal then
+		return
+	end
+	entry.MedalName = medal
+	local colors = (Medals.Colors :: any)[medal]
+	dotFrame.Visible = colors ~= nil
+	if not colors then
+		return
+	end
+	local gradient = dotFrame:FindFirstChildOfClass("UIGradient")
+	if gradient then
+		gradient.Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, color(colors[1])),
+			ColorSequenceKeypoint.new(0.5, color(colors[2])),
+			ColorSequenceKeypoint.new(1, color(colors[3])),
+		})
+	end
+	local stroke = dotFrame:FindFirstChildOfClass("UIStroke")
+	if stroke then
+		stroke.Color = color(colors[3])
+	end
+end
+
 local function update(view: View)
 	local state = Store.State
 	if not state then
@@ -349,6 +409,7 @@ local function update(view: View)
 			entry.Label.TextColor3 = if cleaned then GOOD elseif reached then TEXT else DIM
 			entry.Label.TextTransparency = if reached or cleaned then 0 else 0.45
 			entry.Label.Text = if cleaned then `✓ {section}` elseif reached then section else `🔒 {section}`
+			paintMedal(entry, bestMedal(data, entry.Zone))
 		end
 	end
 	view.User.Text = `{Players.LocalPlayer.DisplayName}  ·  🏆 {data.Wins}`

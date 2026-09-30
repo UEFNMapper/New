@@ -18,6 +18,21 @@ export type MissionState = {
 	Claimed: boolean,
 }
 
+-- Meilleur résultat d'un monde (clé "W{n}") : médaille la plus haute + meilleur temps sans aide.
+export type WorldBest = {
+	Time: number, -- secondes (0 = aucun temps sans aide)
+	Medal: string, -- "Bronze" | "Silver" | "Gold" ("" = aucune)
+}
+
+-- Chrono du monde en cours pour les médailles (voir Util/MedalLogic et Config/Medals).
+export type RunSplit = {
+	World: number, -- monde chronométré (0 = aucun)
+	Start: number, -- RunElapsed à l'entrée du monde
+	Deaths: number, -- morts dans ce monde
+	Keys: number, -- clés USB trouvées dans ce monde pendant ce passage
+	Assisted: boolean, -- étape passée, bouclier ou passe avantage pendant ce monde : pas de record
+}
+
 export type PlayerData = {
 	Version: number,
 	Bits: number,
@@ -29,12 +44,14 @@ export type PlayerData = {
 	RunStarted: boolean, -- le chrono tourne (départ franchi)
 	RunAssisted: boolean, -- passe « avantage » ou saut d'étape utilisé : hors classement des temps
 	RunCoins: { [string]: boolean }, -- orbes déjà ramassées pendant cette ascension
+	RunSplit: RunSplit, -- chrono du monde en cours (médailles), redémarré au départ et à chaque monde
 	-- Records
 	BestStage: number,
 	Wins: number,
 	BestTime: number, -- secondes (0 = jamais terminé sans assistance)
 	Deaths: number,
 	MinigamesWon: number,
+	WorldBest: { [string]: WorldBest }, -- médailles et records par monde ("W1".."W7")
 	Cosmetics: {
 		Owned: { string },
 		Trail: string,
@@ -71,7 +88,7 @@ export type PlayerData = {
 
 local DataSchema = {}
 
-DataSchema.CURRENT_VERSION = 1
+DataSchema.CURRENT_VERSION = 2
 DataSchema.MAX_RECEIPTS = 50
 
 function DataSchema.Template(): PlayerData
@@ -85,11 +102,13 @@ function DataSchema.Template(): PlayerData
 		RunStarted = false,
 		RunAssisted = false,
 		RunCoins = {},
+		RunSplit = { World = 0, Start = 0, Deaths = 0, Keys = 0, Assisted = false },
 		BestStage = 0,
 		Wins = 0,
 		BestTime = 0,
 		Deaths = 0,
 		MinigamesWon = 0,
+		WorldBest = {},
 		Cosmetics = { Owned = { "TrailNone", "DeathGlitch" }, Trail = "TrailNone", DeathFx = "DeathGlitch" },
 		Toggles = { LowGravity = false, SpeedChip = false },
 		Daily = { Streak = 0, LastClaimDay = -1 },
@@ -116,7 +135,16 @@ end
 
 -- Migrations : MIGRATIONS[v] transforme des données en version v vers v + 1.
 local MIGRATIONS: { [number]: (any) -> () } = {
-	-- [1] = function(data) data.NouveauChamp = ... end,
+	-- v1 -> v2 (médailles par monde) : WorldBest et RunSplit. Les valeurs par défaut viennent du
+	-- modèle (reconcile, juste après) ; on retire seulement une valeur d'un mauvais type.
+	[1] = function(data)
+		if type(data.WorldBest) ~= "table" then
+			data.WorldBest = nil
+		end
+		if type(data.RunSplit) ~= "table" then
+			data.RunSplit = nil
+		end
+	end,
 }
 
 -- Complète récursivement les clés manquantes à partir du modèle (sans écraser l'existant).

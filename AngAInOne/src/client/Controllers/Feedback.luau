@@ -13,6 +13,7 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Tower = require(Shared.Config.Tower)
 local Cosmetics = require(Shared.Config.Cosmetics)
+local Branding = require(Shared.Config.Branding)
 local NumberFormat = require(Shared.Util.NumberFormat)
 
 local Net = require(script.Parent.Net)
@@ -22,11 +23,14 @@ local Motion = require(script.Parent.Parent.UI.Motion)
 local Toasts = require(script.Parent.Parent.UI.Screens.Toasts)
 local Moments = require(script.Parent.Parent.UI.Screens.Moments)
 local Dialogue = require(script.Parent.Parent.UI.Screens.Dialogue)
+local MedalCard = require(script.Parent.Parent.UI.Screens.MedalCard)
 
 local Feedback = {}
 
 local player = Players.LocalPlayer
 local currentWorld = -1
+local MEDAL_DELAY = 4.4 -- la bannière « VIRUS ÉLIMINÉS » reste 4 s (Moments.WorldCleared)
+local APP_NAME = Branding.PartnerApp.Name
 
 -- Léger tremblement de caméra (respecte "Réduire les animations").
 local shakeToken = 0
@@ -124,7 +128,9 @@ local function onFx(kind: string, payload: any)
 				end)
 			end
 		else
-			Toasts.Show("Success", `Checkpoint {payload.Stage} ✓`)
+			-- Checkpoint = « point de restauration », une fonction de l'app AngAInOne (l'icône du
+			-- toast « Success » est déjà la coche ✓).
+			Toasts.Show("Success", `{APP_NAME} · Point de restauration créé · Étape {payload.Stage}`)
 		end
 	elseif kind == "RunStart" then
 		Audio.Play("PowerOn")
@@ -188,6 +194,17 @@ local function onFx(kind: string, payload: any)
 				4
 			)
 		end)
+		-- Médaille du monde : carte « Rapport du monde » une fois la bannière passée.
+		if type(payload.Medal) == "string" then
+			task.delay(MEDAL_DELAY, function()
+				if payload.NewBest or payload.Medal == "Gold" then
+					Audio.Play("Unlock", 1.15)
+				else
+					Audio.Play("Toast")
+				end
+				MedalCard.Show(payload)
+			end)
+		end
 	elseif kind == "Victory" then
 		Audio.Play("Achievement")
 		Audio.Duck(6)

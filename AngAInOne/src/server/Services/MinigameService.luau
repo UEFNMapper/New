@@ -72,12 +72,25 @@ local function onEnd(session: Session.Session, world: number, success: boolean, 
 	if world == Tower.WORLD_COUNT and not BossService.TerminalOpen(session) then
 		return
 	end
-	if not ProgressService.ClearWorld(session, world) then
+	local cleared, medal = ProgressService.ClearWorld(session, world)
+	if not cleared then
 		return -- déjà nettoyé (ex. étape passée pendant la partie) : pas de double récompense
 	end
 	session.Data.MinigamesWon += 1
 	local bits = Wallet.Add(session, CFG.WorldBits + CFG.WorldBitsPerWorld * world, "Minigame", true)
-	Wallet.Fx(session, "WorldCleared", { World = world, Bits = bits, Score = score })
+	local payload: { [string]: any } = { World = world, Bits = bits, Score = score }
+	if medal then
+		-- Médaille du monde (carte de médaille côté client, après le moment « monde nettoyé »).
+		payload.Medal = medal.Medal
+		payload.Time = medal.Time
+		payload.Best = medal.Best
+		payload.NewBest = medal.NewBest
+		payload.MedalUp = medal.MedalUp
+		payload.Deaths = medal.Deaths
+		payload.Keys = medal.Keys
+		payload.Assisted = medal.Assisted
+	end
+	Wallet.Fx(session, "WorldCleared", payload)
 	Telemetry.Custom(session.Player, `MinigameWin_{game_.Kind}`, world)
 end
 

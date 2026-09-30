@@ -4,7 +4,8 @@
 	- Écrans du lobby : titre holographique, 3 classements
 	- Orbes de Bits : tournent, et disparaissent pour moi une fois ramassées (ascension en cours)
 	- Portails de monde : solides pour moi tant que le terminal n'est pas réussi
-	- Checkpoints : éteints / atteint (vert) / prochain (qui pulse)
+	- Checkpoints (« points de restauration » de l'app AngAInOne) : éteints / atteint (vert) /
+	  prochain (qui pulse)
 	- Traînées RGB animées, et étiquette « Étape X » au-dessus des autres joueurs
 	Tags : TitleHologram, LeaderboardScreen, Coin, UsbKey, WorldGate, Checkpoint.
 ]]

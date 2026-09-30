@@ -7,6 +7,8 @@
 	- Morts (signalées par le client ou détectées), réapparition au checkpoint
 	- Chrono de l'ascension (arrêté au lobby et hors connexion), victoire au sommet
 	- Orbes de Bits (une fois par ascension, à proximité), boutons checkpoint / lobby / reprendre
+	- Médailles par monde : chrono de chaque monde (RunSplit), morts et clés USB du monde,
+	  meilleurs résultats (WorldBest), calculés à ClearWorld (Config/Medals, Util/MedalLogic)
 	- Les joueurs ne se bousculent pas (groupe de collision « Runners »)
 ]]
 
@@ -19,6 +21,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameConfig = require(Shared.Config.GameConfig)
 local Tower = require(Shared.Config.Tower)
 local DataSchema = require(Shared.Data.DataSchema)
+local MedalLogic = require(Shared.Util.MedalLogic)
 local Session = require(script.Parent.Parent.Core.Session)
 local Wallet = require(script.Parent.Parent.Core.Wallet)
 local GameEvents = require(script.Parent.Parent.Core.GameEvents)
@@ -70,6 +73,61 @@ local function assistActive(session: Session.Session): boolean
 	local toggles = session.Data.Toggles
 	return (toggles.LowGravity and session.Passes.LowGravity == true)
 		or (toggles.SpeedChip and session.Passes.SpeedChip == true)
+end
+
+------------------------------------------------------------------------------------
+-- Médailles : chrono de chaque monde
+------------------------------------------------------------------------------------
+
+-- Résultat d'un monde nettoyé (envoyé au client dans l'effet « WorldCleared »).
+export type MedalResult = {
+	Medal: string, -- "Bronze" | "Silver" | "Gold"
+	Time: number, -- temps du monde (0 = inconnu)
+	Best: number, -- meilleur temps sans aide après ce passage (0 = aucun)
+	NewBest: boolean, -- nouveau record de temps du monde
+	MedalUp: boolean, -- meilleure médaille qu'avant pour ce monde
+	Deaths: number,
+	Keys: number, -- clés USB possédées dans ce monde (sur Tower.USB_KEYS_PER_WORLD)
+	Assisted: boolean, -- aide utilisée dans ce monde : médaille gardée, pas de record
+}
+
+-- Une aide est-elle active en ce moment (passe avantage ou bouclier) ?
+local function helpedNow(session: Session.Session): boolean
+	return assistActive(session) or session.ShieldUntil > os.time()
+end
+
+-- Démarre le chrono du monde `world` (à l'entrée du monde).
+local function startSplit(session: Session.Session, world: number, assisted: boolean)
+	commitClock(session)
+	MedalLogic.StartSplit(session.Data.RunSplit, world, session.Data.RunElapsed, assisted or helpedNow(session))
+end
+
+-- Termine le chrono du monde `world` (terminal réussi) : médaille + meilleur résultat.
+local function finishSplit(session: Session.Session, world: number): MedalResult
+	local data = session.Data
+	local split = data.RunSplit
+	commitClock(session)
+	if helpedNow(session) then
+		split.Assisted = true
+	end
+	local time = MedalLogic.SplitTime(split, world, data.RunElapsed)
+	local keys = MedalLogic.KeysInWorld(data.UsbKeys, world, Tower.USB_KEYS_PER_WORLD)
+	local deaths = if time then split.Deaths else 0
+	local medal = MedalLogic.Evaluate(world, time, deaths, keys, split.Assisted)
+	local key = MedalLogic.Key(world)
+	-- Record seulement sans aide et avec un temps mesuré ; la médaille est gardée dans tous les cas.
+	local best, newBest, medalUp = MedalLogic.UpdateBest(data.WorldBest[key], medal, time, not split.Assisted)
+	data.WorldBest[key] = best
+	return {
+		Medal = medal,
+		Time = time or 0,
+		Best = best.Time,
+		NewBest = newBest,
+		MedalUp = medalUp,
+		Deaths = deaths,
+		Keys = keys,
+		Assisted = split.Assisted,
+	}
 end
 
 ------------------------------------------------------------------------------------
@@ -188,6 +246,7 @@ local function onCheckpoint(session: Session.Session, stage: number)
 			data.RunStarted = true
 			data.RunAssisted = assistActive(session)
 			session.LastCheckpointAt = os.clock()
+			startSplit(session, 1, false)
 			Wallet.Fx(session, "RunStart", {})
 		end
 		startClock(session)
@@ -269,30 +328,39 @@ function ProgressService.Skip(session: Session.Session): boolean
 	end
 	if not data.RunStarted then
 		data.Cleared = 0 -- nouvelle ascension (la victoire précédente laisse la tour nettoyée)
+		startSplit(session, 1, true)
 	end
 	local nextStage = data.Stage + 1
 	local world = Tower.WorldOf(nextStage)
 	if nextStage == Tower.FirstStage(world) and data.Cleared < world - 1 then
 		data.Cleared = world - 1
+		-- Terminal sauté : pas de médaille pour le monde précédent, le monde suivant commence.
+		startSplit(session, world, true)
 	end
 	data.RunStarted = true
 	data.RunAssisted = true
+	data.RunSplit.Assisted = true -- médaille possible, mais pas de record pour ce monde
 	advanceTo(session, nextStage, true)
 	ProgressService.ToCheckpoint(session)
 	return true
 end
 
--- Marque le monde comme nettoyé (terminal réussi) : ouvre son portail.
-function ProgressService.ClearWorld(session: Session.Session, world: number): boolean
+-- Marque le monde comme nettoyé (terminal réussi) : ouvre son portail. Renvoie aussi la
+-- médaille du monde (chrono depuis l'entrée du monde) ; le chrono du monde suivant démarre.
+function ProgressService.ClearWorld(session: Session.Session, world: number): (boolean, MedalResult?)
 	local data = session.Data
 	if world ~= data.Cleared + 1 then
-		return false
+		return false, nil
 	end
 	data.Cleared = world
+	local result = finishSplit(session, world)
+	if world < Tower.WORLD_COUNT then
+		startSplit(session, world + 1, false)
+	end
 	session.Player:SetAttribute("Cleared", world)
 	GameEvents.WorldCleared:Fire(session.Player, world)
 	GameEvents.StateChanged:Fire(session.Player)
-	return true
+	return true, result
 end
 
 ------------------------------------------------------------------------------------
@@ -332,6 +400,11 @@ local function onCharacter(session: Session.Session, character: Model)
 		end
 		session.Alive = false
 		session.Data.Deaths += 1
+		-- Morts du monde en cours (médailles) : pièges signalés par le client (ReportDeath, qui
+		-- met la vie à 0), vide mortel, boss… Pas au lobby.
+		if session.Data.RunStarted and not atLobby[session] and session.Data.RunSplit.World > 0 then
+			session.Data.RunSplit.Deaths += 1
+		end
 		local position = if root:IsA("BasePart") then root.Position else Vector3.zero
 		Wallet.FxAll("Death", { UserId = session.UserId, Position = position, Fx = session.Data.Cosmetics.DeathFx })
 		GameEvents.Died:Fire(session.Player)
@@ -408,6 +481,9 @@ local function indexTower(tower: Folder)
 					return
 				end
 				data.UsbKeys[id] = true
+				if data.RunStarted and data.RunSplit.World == MedalLogic.KeyWorld(id) then
+					data.RunSplit.Keys += 1
+				end
 				local found = 0
 				for _ in data.UsbKeys do
 					found += 1
@@ -532,6 +608,10 @@ function ProgressService.Start()
 				local root = character and character:FindFirstChild("HumanoidRootPart")
 				if root and root:IsA("BasePart") and root.Position.Y < RUN.FallKillBelow and session.Alive then
 					task.spawn(ProgressService.ToCheckpoint, session)
+				end
+				-- Aide utilisée pendant le monde (bouclier, passe activé) : pas de record pour ce monde.
+				if session.Data.RunStarted and not atLobby[session] and helpedNow(session) then
+					session.Data.RunSplit.Assisted = true
 				end
 				-- Toutes les 5 s, le chrono en cours est reporté dans la sauvegarde.
 				if session.PlaytimeCarry % 5 == 0 then
