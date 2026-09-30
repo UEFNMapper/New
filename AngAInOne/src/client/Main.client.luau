@@ -58,6 +58,11 @@ step("Audio", function()
 	Audio.Start()
 end)
 
+-- La liste des joueurs de Roblox cacherait la minimap (haut droite) : les joueurs sont dans Menu > Joueurs.
+step("CoreGui", function()
+	game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+end)
+
 -- 2. Interface --------------------------------------------------------------------
 local App = load(UI.App)
 local Style = load(UI.Style)
@@ -155,6 +160,9 @@ step("Feedback", function()
 end)
 step("WorldFx", function()
 	WorldFx.Start()
+end)
+step("WorldSigns", function()
+	load(Controllers.WorldSigns).Start()
 end)
 step("AppScreen", function()
 	load(Controllers.AppScreen).Start()

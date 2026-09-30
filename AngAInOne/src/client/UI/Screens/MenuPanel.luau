@@ -510,7 +510,7 @@ function MenuPanel.Mount(layer: Frame)
 	panel = Panel.new({
 		Name = "MenuPanel",
 		Title = "MENU",
-		Subtitle = "Réglages, classements et statistiques",
+		Subtitle = "Réglages, classements et joueurs",
 		Size = UDim2.fromScale(0.78, 0.84),
 		Parent = layer,
 		Accent = Style.Color("AccentCyan"),

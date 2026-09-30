@@ -79,7 +79,7 @@ local function buildReboot(state: any)
 		"TextMuted",
 		40
 	)
-	line(scroll, 7, "<b>Conservé :</b> Chips, Nanobots, Firmware, fragments, pass, statistiques.", "TextMuted", 40)
+	line(scroll, 7, "<b>Conservé :</b> Chips, robots, Firmware, fragments, pass, statistiques.", "TextMuted", 40)
 	if not available then
 		local reason = if data.Zone < GameConfig.Reboot.RequiredZone
 			then `Débloque {Zones[GameConfig.Reboot.RequiredZone].Name} (GPU) pour rebooter.`

@@ -91,77 +91,96 @@ local function buttonsColumn(parent: Frame): Frame
 	})
 end
 
+-- Étoiles de tier (1 à 5) : plus parlant qu'un nom de matériau pour un enfant.
+local function starsFor(level: number): string
+	local count = 0
+	for _, tier in TIERS do
+		if level >= tier.Min then
+			count = #TIERS - table.find(TIERS, tier) :: number + 1
+			break
+		end
+	end
+	return string.rep("★", count) .. string.rep("☆", #TIERS - count)
+end
+
+-- Carte d'une machine : nom, niveau + étoiles, barre « x2 », UN gros bouton AMÉLIORER (+ MAX).
 local function moduleCard(def: Modules.ModuleDef, order: number)
 	local zone = Zones[def.Zone]
-	local card = Widgets.Card(UDim2.new(1, 0, 0, 132), content, order)
+	local card = Widgets.Card(UDim2.new(1, 0, 0, 120), content, order)
 	card.Name = def.Id
 	local tile: Frame = New("Frame", {
-		Position = UDim2.fromOffset(12, 12),
-		Size = UDim2.fromOffset(64, 64),
+		Position = UDim2.fromOffset(12, 14),
+		Size = UDim2.fromOffset(84, 84),
 		BackgroundColor3 = Color3.fromHex(zone.Primary),
 		BackgroundTransparency = 0.7,
 		BorderSizePixel = 0,
 		Tag = "RoundM",
 		Parent = card,
 	}, {
-		New("UIStroke", { Color = Color3.fromHex(zone.Primary), Transparency = 0.2, Thickness = 1.5 }),
+		New("UIStroke", { Color = Color3.fromHex(zone.Primary), Transparency = 0.2, Thickness = 2 }),
 	})
-	local icon = Icon.new("Cpu", 38, nil)
+	local icon = Icon.new("Cpu", 44, nil)
 	icon.AnchorPoint = Vector2.new(0.5, 0.5)
-	icon.Position = UDim2.fromScale(0.5, 0.5)
+	icon.Position = UDim2.fromScale(0.5, 0.42)
 	icon.Parent = tile
+	local levelBadge: TextLabel = New("TextLabel", {
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, -4),
+		Size = UDim2.new(1, -8, 0, 20),
+		BackgroundTransparency = 1,
+		Text = "",
+		TextScaled = true,
+		TextColor3 = Style.Color("TextPrimary"),
+		TextStrokeTransparency = 0.5,
+		Tag = "FontHeavy",
+		Parent = tile,
+	})
 	New("TextLabel", {
-		Position = UDim2.fromOffset(90, 10),
-		Size = UDim2.new(1, -290, 0, 22),
+		Position = UDim2.fromOffset(110, 12),
+		Size = UDim2.new(1, -330, 0, 26),
 		BackgroundTransparency = 1,
 		Text = def.Name,
 		TextXAlignment = Enum.TextXAlignment.Left,
+		TextTruncate = Enum.TextTruncate.AtEnd,
 		Tag = "TextHeading",
 		Parent = card,
 	})
-	New("TextLabel", {
-		Position = UDim2.fromOffset(90, 32),
-		Size = UDim2.new(1, -290, 0, 18),
-		BackgroundTransparency = 1,
-		Text = def.Description,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		TextTruncate = Enum.TextTruncate.AtEnd,
-		Tag = "TextMuted",
-		Parent = card,
-	})
-	local levelLabel: TextLabel = New("TextLabel", {
-		Position = UDim2.fromOffset(90, 54),
-		Size = UDim2.new(1, -290, 0, 20),
+	local stars: TextLabel = New("TextLabel", {
+		Position = UDim2.fromOffset(110, 40),
+		Size = UDim2.new(1, -330, 0, 24),
 		BackgroundTransparency = 1,
 		Text = "",
+		TextScaled = true,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		RichText = true,
-		Tag = "DynBody",
-		TextColor3 = Style.Color("TextPrimary"),
+		TextColor3 = Style.Color("CurrencyBits"),
+		Tag = "FontHeavy",
 		Parent = card,
-	})
+	}, { New("UITextSizeConstraint", { MaxTextSize = 22 }) :: Instance })
 	local milestoneLabel: TextLabel = New("TextLabel", {
-		Position = UDim2.fromOffset(90, 80),
-		Size = UDim2.new(1, -290, 0, 16),
+		Position = UDim2.fromOffset(110, 70),
+		Size = UDim2.new(1, -330, 0, 16),
 		BackgroundTransparency = 1,
 		Text = "",
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Tag = "TextCaption",
 		Parent = card,
 	})
-	local bar = Widgets.Bar(UDim2.new(1, -290, 0, 8), Color3.fromHex(zone.Primary), card)
-	bar.Root.Position = UDim2.fromOffset(90, 102)
+	local bar = Widgets.Bar(UDim2.new(1, -330, 0, 10), Color3.fromHex(zone.Primary), card)
+	bar.Root.Position = UDim2.fromOffset(110, 92)
 
 	local column = buttonsColumn(card)
-	local one = smallKey("", "Secondary", 1, function()
-		Net.Fire("Upgrade", def.Id, 1)
-	end)
-	one.Button.Parent = column
-	local ten = smallKey("", "Secondary", 2, function()
-		Net.Fire("Upgrade", def.Id, 10)
-	end)
-	ten.Button.Parent = column
-	local max = smallKey("", "Gold", 3, function()
+	column.Size = UDim2.fromOffset(200, 100)
+	local upgrade = Keycap.new({
+		Text = "",
+		Variant = "Success",
+		Size = UDim2.new(1, 0, 0, 58),
+		LayoutOrder = 1,
+		OnClick = function()
+			Net.Fire("Upgrade", def.Id, 1)
+		end,
+		Parent = column,
+	})
+	local max = smallKey("", "Gold", 2, function()
 		Net.Fire("Upgrade", def.Id, -1)
 	end)
 	max.Button.Parent = column
@@ -173,11 +192,8 @@ local function moduleCard(def: Modules.ModuleDef, order: number)
 		end
 		local level = data.Levels[def.Id] or 0
 		local bits = Store.Bits()
-		local tierName, tierColor = ComponentsPanel.Tier(level)
-		local prod = Formulas.ModuleProduction(def.BaseProd, level, GameConfig.Milestones)
-		local tierHex = Style.Color(tierColor):ToHex()
-		levelLabel.Text =
-			`Niv. <b>{level}</b>  ·  <font color="#{tierHex}">{tierName}</font>  ·  +{NumberFormat.Compact(prod)}/s`
+		levelBadge.Text = if level > 0 then `Niv. {level}` else "NEUF"
+		stars.Text = starsFor(level)
 		local nextM = nextMilestone(level)
 		if nextM then
 			local previous = 0
@@ -186,22 +202,25 @@ local function moduleCard(def: Modules.ModuleDef, order: number)
 					previous = m
 				end
 			end
-			milestoneLabel.Text = `Prochain palier x2 : niv. {nextM}`
+			milestoneLabel.Text = `Bonus x2 au niveau {nextM} !`
 			bar:Set((level - previous) / (nextM - previous), false)
 		else
-			milestoneLabel.Text = "Tous les paliers atteints !"
+			milestoneLabel.Text = "Machine au maximum de ses bonus !"
 			bar:Set(1, false)
 		end
 		local remaining = GameConfig.MaxModuleLevel - level
 		local cost1 = Formulas.UpgradeCost(def.BaseCost, level, GameConfig.LevelGrowth)
-		local cost10 = Formulas.BulkCost(def.BaseCost, level, math.min(10, remaining), GameConfig.LevelGrowth)
 		local maxCount = Formulas.MaxAffordable(def.BaseCost, level, bits, GameConfig.LevelGrowth, remaining)
-		one:SetText(if remaining > 0 then `x1 · {NumberFormat.Compact(cost1)}` else "MAX")
-		one:SetEnabled(remaining > 0 and bits >= cost1)
-		ten:SetText(`x10 · {NumberFormat.Compact(cost10)}`)
-		ten:SetEnabled(remaining >= 10 and bits >= cost10)
-		max:SetText(if maxCount > 0 then `MAX · +{maxCount}` else "MAX")
-		max:SetEnabled(maxCount > 0)
+		upgrade:SetText(
+			if remaining <= 0
+				then "MAXIMUM"
+				elseif level == 0 then `ACHETER · {NumberFormat.Compact(cost1)}`
+				else `AMÉLIORER · {NumberFormat.Compact(cost1)}`
+		)
+		upgrade:SetEnabled(remaining > 0 and bits >= cost1)
+		max:SetText(if maxCount > 1 then `TOUT · +{maxCount}` else "TOUT")
+		max:SetEnabled(maxCount > 1)
+		max.Button.Visible = level > 0
 	end)
 end
 
@@ -217,7 +236,7 @@ local function capacityCard(kind: string, order: number)
 		Position = UDim2.fromOffset(90, 10),
 		Size = UDim2.new(1, -290, 0, 22),
 		BackgroundTransparency = 1,
-		Text = if isPower then "Bloc d'alimentation" else "Radiateurs Cryo",
+		Text = if isPower then "Énergie du PC" else "Refroidissement",
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Tag = "TextHeading",
 		Parent = card,
@@ -240,7 +259,7 @@ local function capacityCard(kind: string, order: number)
 		Net.Fire("UpgradeCapacity", kind, 1)
 	end)
 	plus.Button.Parent = column
-	local max = smallKey("MAX", "Gold", 2, function()
+	local max = smallKey("TOUT", "Gold", 2, function()
 		Net.Fire("UpgradeCapacity", kind, -1)
 	end)
 	max.Button.Parent = column
@@ -255,15 +274,14 @@ local function capacityCard(kind: string, order: number)
 		local level = if isPower then data.PsuLevel else data.CoolingLevel
 		local capacity = if isPower then production.PowerCapacity else production.HeatCapacity
 		local demand = if isPower then production.PowerDemand else production.HeatDemand
-		local unit = if isPower then "W" else "unités"
-		info.Text = `Niv. {level} · capacité {NumberFormat.Compact(capacity)} {unit} · demande {NumberFormat.Compact(
-			demand
-		)} {unit}`
+		info.Text = if demand > capacity
+			then (if isPower then "⚡ Pas assez d'énergie ! Améliore-moi." else "🌡 Trop chaud ! Améliore-moi.")
+			else (if isPower then `⚡ Énergie OK (niveau {level})` else `❄ Température OK (niveau {level})`)
 		bar:Set(demand / math.max(capacity, 1), false)
 		bar:SetColor(Style.Color(if demand > capacity then "Danger" else accent))
 		local cost = Formulas.CapacityUpgradeCost(params, level)
 		local bits = Store.Bits()
-		plus:SetText(`+1 · {NumberFormat.Compact(cost)}`)
+		plus:SetText(`AMÉLIORER · {NumberFormat.Compact(cost)}`)
 		plus:SetEnabled(bits >= cost and level < params.MaxLevel)
 		max:SetEnabled(bits >= cost and level < params.MaxLevel)
 	end)
@@ -284,7 +302,7 @@ local function unlockCard(zoneIndex: number, order: number)
 		Position = UDim2.fromOffset(90, 14),
 		Size = UDim2.new(1, -290, 0, 24),
 		BackgroundTransparency = 1,
-		Text = `Débloquer {zone.Name}`,
+		Text = `Nouvelle zone : {zone.Name}`,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Tag = "TextHeading",
 		Parent = card,
@@ -293,7 +311,7 @@ local function unlockCard(zoneIndex: number, order: number)
 		Position = UDim2.fromOffset(90, 40),
 		Size = UDim2.new(1, -290, 0, 40),
 		BackgroundTransparency = 1,
-		Text = `{zone.Component} · {zone.Tagline}\nDébloque : {zone.Feature}`,
+		Text = `{zone.Tagline}\nNouveau : {zone.Feature}`,
 		TextWrapped = true,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Top,
@@ -301,7 +319,7 @@ local function unlockCard(zoneIndex: number, order: number)
 		Parent = card,
 	})
 	local key = Keycap.new({
-		Text = `DÉBLOQUER · {NumberFormat.Compact(zone.UnlockCost)}`,
+		Text = `OUVRIR · {NumberFormat.Compact(zone.UnlockCost)}`,
 		Variant = "Primary",
 		Size = UDim2.fromOffset(190, 48),
 		AnchorPoint = Vector2.new(1, 0.5),
@@ -337,7 +355,7 @@ local function header(zoneIndex: number, order: number)
 		Position = UDim2.fromOffset(0, 30),
 		Size = UDim2.new(1, 0, 0, 20),
 		BackgroundTransparency = 1,
-		Text = `{zone.Component} — {zone.Tagline}`,
+		Text = zone.Tagline,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Tag = "TextMuted",
 		Parent = frame,
@@ -380,12 +398,12 @@ local function buildZone(zoneIndex: number)
 	end
 	updateAll()
 	-- Met en avant le module demandé (prompt dans le monde). Position calculée depuis la mise
-	-- en page (en-tête 56 + cartes de 132, espacement 10), donc indépendante des UIScale.
+	-- en page (en-tête 56 + cartes de 120, espacement 10), donc indépendante des UIScale.
 	if focusModule then
 		local def = Modules.Get(focusModule)
 		local card = content:FindFirstChild(focusModule)
 		if def and card and card:IsA("GuiObject") then
-			content.CanvasPosition = Vector2.new(0, math.max(66 + (def.Slot - 1) * 142 - 10, 0))
+			content.CanvasPosition = Vector2.new(0, math.max(66 + (def.Slot - 1) * 130 - 10, 0))
 			task.delay(Theme.Motion.Panel, function()
 				Motion.Pop(card, 0.04)
 			end)
@@ -412,8 +430,8 @@ end
 function ComponentsPanel.Mount(layer: Frame)
 	panel = Panel.new({
 		Name = "ComponentsPanel",
-		Title = "COMPOSANTS",
-		Subtitle = "Améliore chaque pièce de ton PC",
+		Title = "AMÉLIORER",
+		Subtitle = "Rends tes machines plus fortes = plus de Bits !",
 		Size = UDim2.fromScale(0.82, 0.84),
 		Parent = layer,
 	})

@@ -93,7 +93,7 @@ local rewards: { DailyReward } = {
 	{ Day = 4, Kind = "Capsule", Amount = 1, Label = "1 capsule" },
 	{ Day = 5, Kind = "Chips", Amount = 60, Label = "60 Chips" },
 	{ Day = 6, Kind = "Boost", Amount = 30, Label = "30 min Bits x2" },
-	{ Day = 7, Kind = "EpicNanobot", Amount = 1, Label = "Nanobot Épique" },
+	{ Day = 7, Kind = "EpicNanobot", Amount = 1, Label = "Robot Épique" },
 }
 
 local byId: { [string]: QuestTemplate } = {}

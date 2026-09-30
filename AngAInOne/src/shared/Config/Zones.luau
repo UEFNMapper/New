@@ -43,7 +43,7 @@ local Zones: { ZoneDef } = {
 		Primary = "8B7CFF",
 		Secondary = "C084FC",
 		Tint = "F1EEFF",
-		Feature = "Capsules de Nanobots",
+		Feature = "Capsules de robots",
 		AppSection = "Applications",
 	},
 	{

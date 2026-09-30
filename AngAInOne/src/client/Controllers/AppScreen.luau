@@ -3,7 +3,7 @@
 	AppScreen : l'écran géant du hub reproduit le "Tableau de bord" du logiciel partenaire
 	AngAInOne (gris Fluent + accent violet), alimenté par le PC DU JOUEUR LOCAL :
 	- Barre latérale : une section de l'app par zone ; verrouillée tant que la zone l'est
-	- Santé du PC : Alimentation, Températures, Nanobots, Firmware
+	- Santé du PC : Alimentation, Températures, Robots, Firmware
 	- État en direct : 3 graphes (60 derniers relevés, 1 par seconde)
 	    CPU = production (Bits/s, relative au max récent) · GPU = remplissage du collecteur
 	    RAM = charge électrique (Watts demandés / capacité)
@@ -228,7 +228,7 @@ local function build(screen: BasePart): View
 		Parent = main,
 	})
 	local cards: { [string]: Card } = {}
-	for index, name in { "Alimentation", "Températures", "Nanobots", "Firmware" } do
+	for index, name in { "Alimentation", "Températures", "Robots", "Firmware" } do
 		local frame = card(main, UDim2.fromScale((index - 1) * 0.25, 0.285), UDim2.fromScale(0.235, 0.13))
 		text({
 			Position = UDim2.fromScale(0.08, 0.14),
@@ -366,7 +366,7 @@ local function update(view: View)
 	local equipped = #data.Nanobots.Equipped
 	setCard(
 		view,
-		"Nanobots",
+		"Robots",
 		`{equipped} équipé{if equipped > 1 then "s" else ""}`,
 		if equipped > 0 then GOOD else WARN
 	)

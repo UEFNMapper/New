@@ -51,24 +51,24 @@ Lance **Play** (F5). En Studio, un bouton **DEV** (ou **F8**) ouvre un panneau d
 | 1 | Lancer Play | Tu apparais au hub, au centre de la carte mère, en plein jour sous la vitre du boîtier. Face à toi : l'écran géant de l'app AngAInOne au-dessus du portail de The Core. Une carte « ALLUMER LE PC » avec Anga apparaît au centre. Sortie : `[AngAInOne] Serveur prêt.` |
 | 2 | Cliquer **ALLUMER LE PC** | Flash « SYSTEM ONLINE », son de démarrage, léger tremblement, les néons des machines flashent, la musique démarre. Bulle d'Anga. Les chevrons au sol te guident vers le portail ambré de La Centrale (derrière toi), puis vers le collecteur doré. |
 | 3 | Marcher sur le pad doré | Particules de Bits qui volent vers le compteur, son de collecte, compteur qui défile. |
-| 4 | Objectif « AMÉLIORER » (carte à droite) | Le panneau Composants s'ouvre sur la Cellule VoltCore. Acheter x1 : son, niveau +1, production/s augmente. |
+| 4 | Objectif « AMÉLIORER » (carte « TON BUT » à droite) | Le panneau Améliorer s'ouvre sur la Cellule VoltCore : un gros bouton vert AMÉLIORER avec le prix, les étoiles de tier et une barre « Bonus x2 au niveau 10 ». |
 | 5 | Encore une amélioration | L'objectif devient « Débloque Memory Lanes (25K) » avec une barre de progression. |
 | 6 | DEV > « +10 min de Bits », puis le terminal « Débloquer » au portail violet du hub (est) | Bannière « MEMORY LANES », la barrière du portail s'ouvre (flash), bouton « Y ALLER » qui te téléporte dans la zone (musique et teinte violette). Un toast « Memory Lanes · Applications » s'affiche à l'entrée. |
-| 7 | Terminal « Capsules » de Memory Lanes | Panneau Nanobots > Capsules avec les probabilités affichées. Ouvrir : révélation de la capsule avec halo de rareté. Le Nanobot est équipé automatiquement. |
-| 8 | Dock **Voyager** (ou un pad téléporteur) | Liste des zones avec leur section AngAInOne. Les zones verrouillées sont grisées. « Hub » te ramène au centre. Essaie aussi de traverser un portail verrouillé : il est solide, et le serveur te renvoie si tu forces. |
+| 7 | Terminal « Capsules » de Memory Lanes | Panneau Robots > Capsules avec les probabilités affichées. Ouvrir : révélation de la capsule avec halo de rareté. Le robot est équipé automatiquement. |
+| 8 | Minimap (haut droite) ou dock **Carte** (ou un pad téléporteur) | Grande carte du PC vue de dessus : ta position (point + direction), ton objectif (étoile), zones fermées grisées avec cadenas et prix. Toucher une zone ouverte = téléportation ; une zone fermée explique où l'ouvrir. En jeu, un panneau flotte au-dessus de chaque zone et le nom de la zone actuelle s'affiche en haut à droite. Essaie aussi de traverser un portail verrouillé : il est solide, et le serveur te renvoie si tu forces. |
 | 9 | DEV > « Zone suivante » jusqu'au SSD (3) | Jauge 🌡 visible. En achetant beaucoup de niveaux SSD, la chaleur monte, la bordure RGB des panneaux vire à l'ambre puis au rouge, et l'objectif affiche « SURCHAUFFE ». |
 | 10 | Cryo Tower (4), terminal « Radiateurs » | La capacité thermique augmente, la jauge redescend, les bordures redeviennent RGB. |
 | 11 | The Core (5), terminal d'overclock | Mini-jeu : l'aiguille oscille. STOP (clic, Espace ou A manette) dans la zone dorée donne « PARFAIT ! x2 », et une pilule « OVERCLOCK x2 · 2:59 » apparaît sous le Benchmark. |
 | 12 | DEV > « Activer les virus », attendre ~30 s | Une boule rouge glitchée apparaît. Prompt « Zapper » (F) : son électrique, « +X » flottant, tremblement. |
-| 13 | Dock **Quêtes** | Calendrier de 7 jours, bouton « RÉCUPÉRER », 3 quêtes du jour et 4 de la semaine, téléchargements (dès le SSD). |
-| 14 | Render Canyon (6), console BIOS | Aperçu du Firmware. **Maintenir** 1,5 s déclenche l'écran BIOS, puis la Génération 2 (Bits et zones réinitialisés, Chips et Nanobots conservés) et un retour au hub. |
+| 13 | Dock **Missions** | Calendrier de 7 jours, bouton « RÉCUPÉRER », 3 quêtes du jour et 4 de la semaine, téléchargements (dès le SSD). |
+| 14 | Render Canyon (6), console BIOS | Aperçu du Firmware. **Maintenir** 1,5 s déclenche l'écran BIOS, puis la Génération 2 (Bits et zones réinitialisés, Chips et robots conservés) et un retour au hub. |
 | 15 | DEV > zone 7 + « +1e15 Bits » plusieurs fois, BIOS > Singularité | 5 phases. La dernière déclenche la cinématique de fin. |
 | 16 | Quitter puis relancer Play | Tout est sauvegardé. Après plus d'une minute d'absence, la carte « CONTENT DE TE REVOIR » affiche les gains hors ligne. |
 | 17 | Test > Clients et serveurs > 2 joueurs | Les deux joueurs sont dans le même PC. Chacun voit SES niveaux sur les machines, SES portails ouverts, SES virus (ceux de l'autre sont invisibles). Menu > Joueurs : « LIKER » le PC de l'autre joueur, qui reçoit une notification. |
 | 18 | Émulateur d'appareil (téléphone 19,5:9, tablette) | Le HUD tient à l'écran, les boutons restent confortables au doigt, les panneaux sont centrés. |
 
 **Contrôles** :
-- **Clavier** : C Composants · N Nanobots · Q Quêtes · B Boutique · T Voyager (téléporteur) · M Menu · Échap ferme · E interagir · F zapper un virus · Espace STOP à l'overclock.
+- **Clavier** : C Améliorer · N Robots · Q Missions · T Carte · B Boutique · M Menu (roue en haut à droite) · Échap ferme · E interagir · F zapper un virus · Espace STOP à l'overclock.
 - **Manette** : Y donne le focus au dock (croix + A) · B ferme · X interagir · A STOP à l'overclock.
 - **Tactile** : les boutons du dock et les prompts à l'écran.
 

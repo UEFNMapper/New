@@ -1,15 +1,17 @@
 --!strict
 --[[
-	HUD : l'interface permanente, volontairement minimale.
-	┌ Bits / Chips / collecteur            Benchmark · Gen · effets actifs            toasts ┐
-	│                                                                      Carte OBJECTIF   │
-	│ Bulle d'Anga (tutoriel)                                              (1 seul CTA)     │
-	└ Jauges ⚡ / 🌡                 [Composants][Nanobots][Quêtes][Boutique][Étages][Menu] ┘
+	HUD : l'interface permanente, volontairement minimale et lisible par un enfant.
+	┌ Bits / Chips / à ramasser            Puissance · effets actifs      [⚙] 📍 Zone ┐
+	│ (alertes ⚡/🌡 seulement si besoin)                                   MINIMAP     │
+	│ Bulle d'Anga (tutoriel)                                           Carte TON BUT │
+	└                 [Améliorer][Robots][Missions][Carte][Boutique]                   ┘
 ]]
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Theme = require(Shared.Config.Theme)
@@ -26,9 +28,12 @@ local Material = require(script.Parent.Parent.Material)
 local Keycap = require(script.Parent.Parent.Components.Keycap)
 local Widgets = require(script.Parent.Parent.Components.Widgets)
 local Icon = require(script.Parent.Parent.Components.Icon)
+local MapView = require(script.Parent.Parent.Components.MapView)
 local Dialogue = require(script.Parent.Dialogue)
 local App = require(script.Parent.Parent.App)
 local Store = require(script.Parent.Parent.Parent.Controllers.Store)
+local WorldFx = require(script.Parent.Parent.Parent.Controllers.WorldFx)
+local Guide = require(script.Parent.Parent.Parent.Controllers.Guide)
 
 local New = Create.New
 
@@ -57,6 +62,12 @@ local powerText: TextLabel
 local heatText: TextLabel
 local heatRow: Frame
 local gauges: Frame
+local powerRow: Frame
+local genPill: Frame
+local zoneChip: Frame
+local zoneLabel: TextLabel
+local zoneDot: Frame
+local minimap: MapView.MapView
 local badges: { [string]: Frame } = {}
 local objectiveAction: string = ""
 local objectiveArg: any = nil
@@ -84,11 +95,11 @@ type Objective = {
 }
 
 local TUTORIAL_TEXT = {
-	[2] = "Tu vois ces paquets de lumière ? Ce sont tes données ! Suis le faisceau et marche sur le collecteur doré pour encaisser tes Bits.",
-	[3] = "Joli ! Maintenant on améliore ta Cellule VoltCore. Plus de niveaux, plus de Bits. Clique sur « AMÉLIORER » à droite.",
-	[4] = "Encore une ! Petit secret : aux niveaux 10, 25, 50… la production DOUBLE.",
-	[5] = "Prochaine étape : débloquer Memory Lanes, le quartier de la RAM. Collecte et améliore jusqu'à 25K Bits, puis ouvre son portail dans le hub !",
-	[6] = "Bienvenue dans la RAM ! Va au terminal violet et ouvre ta première capsule de Nanobot.",
+	[2] = "Suis les flèches au sol et marche sur le rond doré pour ramasser tes Bits !",
+	[3] = "Bravo ! Appuie sur le bouton vert AMÉLIORER pour rendre ta machine plus forte.",
+	[4] = "Encore une fois ! Plus ta machine est forte, plus tu gagnes de Bits.",
+	[5] = "Gagne 25K Bits, puis ouvre le portail violet pour découvrir une nouvelle zone !",
+	[6] = "Nouvelle zone ! Va au terminal et ouvre ta première capsule de robot.",
 }
 
 local function computeObjective(state: any): Objective
@@ -98,8 +109,8 @@ local function computeObjective(state: any): Objective
 	if not data.PoweredOn then
 		-- Le CTA d'allumage est l'écran central (Moments) : pas de second bouton ici.
 		return {
-			Title = "DÉMARRAGE",
-			Text = "Allume ton PC pour lancer la production.",
+			Title = "TON BUT",
+			Text = "Allume ton PC !",
 			Action = "PowerOn",
 			Arg = nil,
 			Ready = true,
@@ -108,8 +119,8 @@ local function computeObjective(state: any): Objective
 	if data.Tutorial == 2 then
 		local pending = Store.Pending()
 		return {
-			Title = "TUTORIEL",
-			Text = "Marche sur le collecteur doré pour encaisser.",
+			Title = "TON BUT",
+			Text = "Marche sur le rond doré ⭐",
 			Ratio = math.min(pending / 10, 1),
 			Action = "",
 			Arg = nil,
@@ -121,8 +132,8 @@ local function computeObjective(state: any): Objective
 		local level = data.Levels.Z1M1 or 0
 		local cost = if def then Formulas.UpgradeCost(def.BaseCost, level, GameConfig.LevelGrowth) else 0
 		return {
-			Title = "TUTORIEL",
-			Text = "Améliore la Cellule VoltCore.",
+			Title = "TON BUT",
+			Text = "Améliore ta première machine",
 			Ratio = math.min(bits / math.max(cost, 1), 1),
 			Button = "AMÉLIORER",
 			Action = "OpenModule",
@@ -134,8 +145,8 @@ local function computeObjective(state: any): Objective
 	if production.ThermalEfficiency < 0.9 then
 		if data.Zone >= GameConfig.Cooling.UnlockZone then
 			return {
-				Title = "SURCHAUFFE",
-				Text = `Ton PC tourne à {NumberFormat.Percent(production.ThermalEfficiency)}. Améliore tes radiateurs.`,
+				Title = "ATTENTION",
+				Text = "🌡 Ton PC a trop chaud ! Ajoute du froid.",
 				Button = "REFROIDIR",
 				Action = "OpenZone",
 				Arg = GameConfig.Cooling.UnlockZone,
@@ -143,8 +154,8 @@ local function computeObjective(state: any): Objective
 			}
 		end
 		return {
-			Title = "SURCHAUFFE",
-			Text = "Le ventirad d'origine ne suffit plus : débloque la Cryo Tower.",
+			Title = "ATTENTION",
+			Text = "🌡 Ton PC a trop chaud ! Ouvre la zone Cryo.",
 			Button = "VOIR",
 			Action = "OpenZone",
 			Arg = data.Zone,
@@ -153,8 +164,8 @@ local function computeObjective(state: any): Objective
 	end
 	if production.PowerEfficiency < 0.9 then
 		return {
-			Title = "ALIMENTATION",
-			Text = `Pas assez de Watts ({NumberFormat.Percent(production.PowerEfficiency)}). Améliore ton bloc d'alimentation.`,
+			Title = "ATTENTION",
+			Text = "⚡ Pas assez d'énergie ! Améliore l'alimentation.",
 			Button = "ALIMENTER",
 			Action = "OpenZone",
 			Arg = 1,
@@ -163,8 +174,8 @@ local function computeObjective(state: any): Objective
 	end
 	if data.Tutorial == 6 then
 		return {
-			Title = "TUTORIEL",
-			Text = "Ouvre ta première capsule de Nanobot.",
+			Title = "TON BUT",
+			Text = "Ouvre une capsule de robot",
 			Button = "CAPSULES",
 			Action = "OpenNanobots",
 			Arg = "Capsules",
@@ -175,10 +186,10 @@ local function computeObjective(state: any): Objective
 	if nextZone then
 		local ratio = bits / nextZone.UnlockCost
 		return {
-			Title = "OBJECTIF",
-			Text = `Débloque {nextZone.Name} ({NumberFormat.Compact(nextZone.UnlockCost)} Bits)`,
+			Title = "TON BUT",
+			Text = `Ouvre {nextZone.Name} : {NumberFormat.Compact(nextZone.UnlockCost)} Bits`,
 			Ratio = math.min(ratio, 1),
-			Button = if ratio >= 1 then "DÉBLOQUER" else nil,
+			Button = if ratio >= 1 then "OUVRIR !" else nil,
 			Action = "Unlock",
 			Arg = data.Zone + 1,
 			Ready = ratio >= 1,
@@ -188,8 +199,8 @@ local function computeObjective(state: any): Objective
 	if data.SingularityPhase < #phases then
 		local cost = phases[data.SingularityPhase + 1]
 		return {
-			Title = "SINGULARITÉ",
-			Text = `Phase {data.SingularityPhase + 1}/{#phases} : {NumberFormat.Compact(cost)} Bits`,
+			Title = "TON BUT",
+			Text = `Construis la Singularité ({data.SingularityPhase + 1}/{#phases})`,
 			Ratio = math.min(bits / cost, 1),
 			Button = "CONSTRUIRE",
 			Action = "OpenBios",
@@ -198,8 +209,8 @@ local function computeObjective(state: any): Objective
 		}
 	end
 	return {
-		Title = "PRESTIGE",
-		Text = `Reboot : +{state.FirmwarePreview} Firmware pour la Génération {data.Generation + 1}.`,
+		Title = "TON BUT",
+		Text = `Redémarre ton PC pour devenir encore plus fort (+{state.FirmwarePreview} ⭐)`,
 		Button = "REBOOT",
 		Action = "OpenBios",
 		Arg = "Reboot",
@@ -270,7 +281,7 @@ local function buildTopCenter(layer: Frame)
 		Position = UDim2.fromOffset(24, 6),
 		Size = UDim2.new(1, -110, 0, 14),
 		BackgroundTransparency = 1,
-		Text = "BENCHMARK",
+		Text = "PUISSANCE DU PC",
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Tag = "TextCaption",
 		Parent = center,
@@ -284,12 +295,13 @@ local function buildTopCenter(layer: Frame)
 		Tag = "TextNumber",
 		Parent = center,
 	})
-	local gen: Frame = New("Frame", {
+	genPill = New("Frame", {
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, -10, 0.5, 0),
 		Size = UDim2.fromOffset(76, 36),
 		BorderSizePixel = 0,
 		Tag = { "FillViolet", "RoundPill" },
+		Visible = false, -- seulement après le premier Reboot
 		Parent = center,
 	})
 	genLabel = New("TextLabel", {
@@ -297,7 +309,7 @@ local function buildTopCenter(layer: Frame)
 		BackgroundTransparency = 1,
 		Text = "GEN 1",
 		Tag = "TextKey",
-		Parent = gen,
+		Parent = genPill,
 	})
 	effectsRow = New("Frame", {
 		Name = "Effects",
@@ -410,26 +422,26 @@ local function buildBottomLeft(layer: Frame)
 		Create.List(Enum.FillDirection.Vertical, 4, { VerticalAlignment = Enum.VerticalAlignment.Center }) :: Instance,
 		Create.Padding(8, 12),
 	})
-	local _powerRow: Frame
-	_powerRow, powerBar, powerText = gauge(gauges, "Bolt", "CurrencyBits", 1)
+	powerRow, powerBar, powerText = gauge(gauges, "Bolt", "CurrencyBits", 1)
 	heatRow, heatBar, heatText = gauge(gauges, "Heat", "AccentCyan", 2)
 end
 
+-- 5 gros boutons, des mots simples. Le Menu (réglages, classements…) est la roue en haut à droite.
 local DOCK = {
-	{ Name = "Components", Text = "Composants", Icon = "Cpu", Key = Enum.KeyCode.C },
-	{ Name = "Nanobots", Text = "Nanobots", Icon = "Bot", Key = Enum.KeyCode.N },
-	{ Name = "Quests", Text = "Quêtes", Icon = "Quest", Key = Enum.KeyCode.Q },
+	{ Name = "Components", Text = "Améliorer", Icon = "Cpu", Key = Enum.KeyCode.C },
+	{ Name = "Nanobots", Text = "Robots", Icon = "Bot", Key = Enum.KeyCode.N },
+	{ Name = "Quests", Text = "Missions", Icon = "Quest", Key = Enum.KeyCode.Q },
+	{ Name = "Elevator", Text = "Carte", Icon = "Elevator", Key = Enum.KeyCode.T },
 	{ Name = "Shop", Text = "Boutique", Icon = "Shop", Key = Enum.KeyCode.B },
-	{ Name = "Elevator", Text = "Voyager", Icon = "Elevator", Key = Enum.KeyCode.T },
-	{ Name = "Menu", Text = "Menu", Icon = "Menu", Key = Enum.KeyCode.M },
 }
+local MENU_KEY = Enum.KeyCode.M
 
 local function buildDock(layer: Frame)
 	local dock: Frame = New("Frame", {
 		Name = "Dock",
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -14),
-		Size = UDim2.fromOffset(6 * 96 + 5 * 8 + 24, 96),
+		Size = UDim2.fromOffset(5 * 104 + 4 * 8 + 24, 96),
 		BackgroundTransparency = Theme.Alpha.Glass,
 		BorderSizePixel = 0,
 		Tag = { "Glass", "RoundL" },
@@ -452,7 +464,7 @@ local function buildDock(layer: Frame)
 			Text = item.Text,
 			Icon = item.Icon,
 			Variant = "Secondary",
-			Size = UDim2.fromOffset(96, 76),
+			Size = UDim2.fromOffset(104, 76),
 			LayoutOrder = index,
 			Small = true,
 			OnClick = function()
@@ -483,7 +495,105 @@ local function buildDock(layer: Frame)
 				App.Toggle(item.Name)
 			end
 		end
+		if input.KeyCode == MENU_KEY then
+			App.Toggle("Menu")
+		end
 	end)
+end
+
+-- Haut droite : roue du menu + « Tu es ici » + minimap (toucher = grande carte).
+local function buildTopRight(layer: Frame)
+	local column: Frame = New("Frame", {
+		Name = "Where",
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -16, 0, 12),
+		Size = UDim2.fromOffset(210, 200),
+		BackgroundTransparency = 1,
+		Parent = layer,
+	})
+	Keycap.new({
+		Icon = "Menu",
+		IconOnly = true,
+		Variant = "Secondary",
+		Size = UDim2.fromOffset(44, 44),
+		Position = UDim2.fromOffset(0, 0),
+		OnClick = function()
+			App.Toggle("Menu")
+		end,
+		Parent = column,
+	})
+	zoneChip = New("Frame", {
+		Name = "Zone",
+		Position = UDim2.fromOffset(52, 0),
+		Size = UDim2.new(1, -52, 0, 44),
+		BackgroundTransparency = Theme.Alpha.Glass,
+		BorderSizePixel = 0,
+		Tag = { "Glass", "RoundPill" },
+		Parent = column,
+	})
+	zoneDot = New("Frame", {
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 14, 0.5, 0),
+		Size = UDim2.fromOffset(14, 14),
+		BackgroundColor3 = Style.Color("AccentViolet"),
+		BorderSizePixel = 0,
+		Tag = "RoundPill",
+		Parent = zoneChip,
+	})
+	zoneLabel = New("TextLabel", {
+		Position = UDim2.fromOffset(36, 0),
+		Size = UDim2.new(1, -46, 1, 0),
+		BackgroundTransparency = 1,
+		Text = "Hub",
+		TextScaled = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Style.Color("TextPrimary"),
+		Tag = "FontHeavy",
+		Parent = zoneChip,
+	}, { New("UITextSizeConstraint", { MaxTextSize = 18 }) :: Instance })
+	minimap = MapView.new({
+		Parent = column,
+		Size = UDim2.new(1, 0, 0, 146),
+		Position = UDim2.fromOffset(0, 52),
+		Compact = true,
+	})
+	-- Toute la minimap est un bouton vers la grande carte
+	New("TextButton", {
+		Name = "OpenMap",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		Text = "",
+		ZIndex = 10,
+		Parent = minimap.Root,
+	}).Activated:Connect(function()
+		App.Open("Elevator")
+	end)
+end
+
+local shownZone = -1
+local function refreshWhere()
+	local state = Store.State
+	if not state then
+		return
+	end
+	local here = WorldFx.CurrentZone
+	if here ~= shownZone then
+		shownZone = here
+		zoneLabel.Text = if here == 0 then "Hub" else Zones[here].Name
+		zoneDot.BackgroundColor3 = if here == 0
+			then Style.Color("AccentViolet")
+			else Color3.fromHex(Zones[here].Primary)
+		Motion.Pop(zoneChip, 0.06)
+	end
+	minimap:Refresh(state.Data.Zone, here)
+	local character = Players.LocalPlayer.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	local camera = Workspace.CurrentCamera
+	minimap:SetPlayer(
+		if root and root:IsA("BasePart") then root.Position else nil,
+		if camera then camera.CFrame.LookVector else nil
+	)
+	minimap:SetTarget(Guide.Target)
 end
 
 ------------------------------------------------------------------------------------
@@ -593,6 +703,7 @@ local function refreshFull(state: any)
 	local data = state.Data
 	local production = state.Production
 	genLabel.Text = `GEN {data.Generation}`
+	genPill.Visible = data.Generation > 1
 	benchValue.Text = NumberFormat.Flops(state.Benchmark)
 	if data.Chips ~= lastChips then
 		if lastChips >= 0 and data.Chips > lastChips then
@@ -607,15 +718,20 @@ local function refreshFull(state: any)
 	powerBar:SetColor(
 		Style.Color(if powerRatio > 1 then "Danger" elseif powerRatio > 0.85 then "Warning" else "CurrencyBits")
 	)
-	powerText.Text = NumberFormat.Percent(powerRatio)
-	heatRow.Visible = data.Zone >= GameConfig.Cooling.HeatStartsAtZone
-	gauges.Size = UDim2.fromOffset(250, if heatRow.Visible then 74 else 44)
+	powerText.Text = if powerRatio > 1 then "TROP !" else "Presque"
+	-- Les jauges n'apparaissent QUE s'il y a un problème à régler (moins d'infos à l'écran).
+	local heatRatioPreview = production.HeatDemand / math.max(production.HeatCapacity, 1)
+	powerRow.Visible = powerRatio > 0.85
+	heatRow.Visible = data.Zone >= GameConfig.Cooling.HeatStartsAtZone and heatRatioPreview > 0.85
+	local rowsShown = (if powerRow.Visible then 1 else 0) + (if heatRow.Visible then 1 else 0)
+	gauges.Visible = rowsShown > 0
+	gauges.Size = UDim2.fromOffset(250, if rowsShown == 2 then 74 else 44)
 	local heatRatio = production.HeatDemand / math.max(production.HeatCapacity, 1)
 	heatBar:Set(heatRatio)
 	heatBar:SetColor(
 		Style.Color(if heatRatio > 1 then "Danger" elseif heatRatio > 0.85 then "Warning" else "AccentCyan")
 	)
-	heatText.Text = NumberFormat.Percent(heatRatio)
+	heatText.Text = if heatRatio > 1 then "TROP !" else "Chaud"
 	Material.SetThermalStress(if heatRow.Visible then math.clamp((heatRatio - 0.8) * 2.5, 0, 1) else 0)
 	if heatRatio > 1 and heatRow.Visible and not warnedHeat then
 		warnedHeat = true
@@ -653,8 +769,9 @@ local function refreshFast()
 	local pending = Store.Pending()
 	local cap = Store.Rate() * GameConfig.CollectorCapSeconds
 	collectorBar:Set(if cap > 0 then pending / cap else 0, false)
-	collectorText.Text =
-		`Collecteur · {NumberFormat.Compact(pending)}{if cap > 0 and pending >= cap * 0.999 then " (plein)" else ""}`
+	collectorText.Text = if cap > 0 and pending >= cap * 0.999
+		then "PLEIN ! Va sur le rond doré"
+		else `À ramasser : {NumberFormat.Compact(pending)}`
 
 	local objective = computeObjective(state)
 	objectiveAction = objective.Action
@@ -684,6 +801,7 @@ function HUD.Mount(layer: Frame)
 	buildObjective(layer)
 	buildBottomLeft(layer)
 	buildDock(layer)
+	buildTopRight(layer)
 
 	Store.Changed:Connect(refreshFull)
 	local accumulator = 0
@@ -692,6 +810,7 @@ function HUD.Mount(layer: Frame)
 		if accumulator >= 0.1 then
 			accumulator = 0
 			refreshFast()
+			refreshWhere()
 		end
 	end)
 	task.spawn(function()

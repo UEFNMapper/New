@@ -29,6 +29,9 @@ local Motion = require(script.Parent.Parent.UI.Motion)
 
 local Guide = {}
 
+-- Objectif final (position monde), lu par la carte et la minimap. nil = pas d'objectif.
+Guide.Target = nil :: Vector3?
+
 local CHEVRONS = 12
 local SPACING = 3.5
 local ARRIVED_DISTANCE = 8
@@ -97,6 +100,12 @@ local function currentGoal(): Goal?
 	if nextZone and Store.Bits() >= nextZone.UnlockCost then
 		return unlockGoal(data.Zone + 1)
 	end
+	-- Collecteur bien rempli : on va encaisser (celui de la zone où l'on est, sinon La Centrale).
+	local cap = Store.Rate() * GameConfig.CollectorCapSeconds
+	if not state.Passes.AutoCollect and cap > 0 and Store.Pending() >= cap * 0.6 then
+		local here = WorldFx.CurrentZone
+		return { Zone = if here >= 1 and here <= data.Zone then here else 1, Name = "Collector" }
+	end
 	return nil
 end
 
@@ -111,17 +120,8 @@ end
 
 -- Résout l'objectif en une destination concrète selon où se trouve le joueur.
 -- Renvoie : position au sol, objet à mettre en surbrillance, libellé.
-local function resolve(goal: Goal): (Vector3?, Instance?, string)
-	local playerZone = WorldFx.CurrentZone
-	if playerZone ~= goal.Zone then
-		-- Autre zone : on suit les portails (la carte mère est un arbre de zones).
-		local gate = WorldLayout.NextGate(playerZone, goal.Zone)
-		if gate then
-			local name = if goal.Zone == 0 then "Hub" else Zones[goal.Zone].Name
-			return gate, nil, `Portail → {name}`
-		end
-		return nil, nil, ""
-	end
+-- Objet de l'objectif (nil s'il n'est pas chargé par le streaming).
+local function findTarget(goal: Goal): Instance?
 	local target: Instance?
 	if goal.Gate then
 		local gates = worldFolder("Gates")
@@ -137,6 +137,37 @@ local function resolve(goal: Goal): (Vector3?, Instance?, string)
 			target = target:FindFirstChild(goal.Sub)
 		end
 	end
+	return target
+end
+
+-- Position finale de l'objectif, même quand l'objet est loin (repli sur la géométrie de la carte).
+local function finalPosition(goal: Goal): Vector3
+	local target = findTarget(goal)
+	local position = if target then positionOf(target) else nil
+	if position then
+		return position
+	elseif goal.Gate then
+		return WorldLayout.Zones[goal.Gate].Gate
+	elseif goal.Zone == 0 then
+		return WorldLayout.HubSpawn
+	end
+	return WorldLayout.Zones[goal.Zone].Center
+end
+
+-- Résout l'objectif en une destination concrète selon où se trouve le joueur.
+-- Renvoie : position au sol, objet à mettre en surbrillance, libellé.
+local function resolve(goal: Goal): (Vector3?, Instance?, string)
+	local playerZone = WorldFx.CurrentZone
+	if playerZone ~= goal.Zone then
+		-- Autre zone : on suit les portails (la carte mère est un arbre de zones).
+		local gate = WorldLayout.NextGate(playerZone, goal.Zone)
+		if gate then
+			local name = if goal.Zone == 0 then "Hub" else Zones[goal.Zone].Name
+			return gate, nil, `Portail → {name}`
+		end
+		return nil, nil, ""
+	end
+	local target = findTarget(goal)
 	if not target then
 		return nil, nil, ""
 	end
@@ -410,8 +441,10 @@ function Guide.Start()
 			goal = currentGoal()
 			if goal then
 				target, instance, label = resolve(goal)
+				Guide.Target = finalPosition(goal)
 			else
 				target, instance, label = nil, nil, ""
+				Guide.Target = nil
 			end
 			task.wait(0.25)
 		end

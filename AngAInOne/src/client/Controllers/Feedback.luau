@@ -38,7 +38,7 @@ local shakeToken = 0
 
 -- Ce que dit Anga en découvrant chaque zone.
 local ZONE_LINES: { [number]: string } = {
-	[2] = "Memory Lanes ! Ici, tout va à la vitesse de la lumière. Et regarde : un terminal à capsules de Nanobots !",
+	[2] = "Memory Lanes ! Ici, tout va à la vitesse de la lumière. Et regarde : un terminal à capsules de robots !",
 	[3] = "Le Data Vault… Chaque cellule garde un secret. Essaie les téléchargements : lance-en un et reviens plus tard !",
 	[4] = "Brrr, la Cryo Tower ! Surveille ta jauge de chaleur : si ton PC chauffe, améliore les radiateurs.",
 	[5] = "The Core, le cœur du réacteur. La station d'overclock t'attend : arrête l'aiguille dans la zone dorée !",
@@ -193,8 +193,8 @@ local function onFx(kind: string, payload: any)
 	elseif kind == "Fuse" then
 		Audio.Play("Achievement")
 		local def = Nanobots.ById[payload.NanobotId]
-		Toasts.Show("Milestone", `Fusion réussie : {if def then def.Name else "Nanobot"} doré !`)
-		Dialogue.Say("Un Nanobot DORÉ ! Il est 50 % plus puissant. Bien joué !", 4)
+		Toasts.Show("Milestone", `Fusion réussie : {if def then def.Name else "Robot"} doré !`)
+		Dialogue.Say("Un robot DORÉ ! Il est encore plus fort. Bien joué !", 4)
 	elseif kind == "Reward" then
 		Audio.Play("Toast")
 		local parts = {}

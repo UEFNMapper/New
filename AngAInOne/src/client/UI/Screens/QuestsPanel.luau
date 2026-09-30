@@ -395,8 +395,8 @@ end
 function QuestsPanel.Mount(layer: Frame)
 	panel = Panel.new({
 		Name = "QuestsPanel",
-		Title = "QUÊTES",
-		Subtitle = "Des Chips à gagner chaque jour",
+		Title = "MISSIONS",
+		Subtitle = "Des cadeaux à gagner chaque jour !",
 		Size = UDim2.fromScale(0.8, 0.86),
 		Parent = layer,
 		Accent = Style.Color("CurrencyChips"),

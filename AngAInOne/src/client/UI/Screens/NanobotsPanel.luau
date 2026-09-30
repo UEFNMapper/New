@@ -53,7 +53,7 @@ local function buildCollection(state: any)
 	New("TextLabel", {
 		Size = UDim2.new(1, 0, 1, 0),
 		BackgroundTransparency = 1,
-		Text = `Équipés {#equipped}/{state.NanobotSlots}  ·  Inventaire {#owned}/{GameConfig.Nanobots.MaxInventory}  ·  Bonus Bits total : x{string.format(
+		Text = `Robots équipés : {#equipped}/{state.NanobotSlots}   ·   Bonus : x{string.format(
 			"%.2f",
 			state.Bonus.Total
 		)}`,
@@ -83,7 +83,7 @@ local function buildCollection(state: any)
 		New("TextLabel", {
 			Size = UDim2.fromOffset(500, 40),
 			BackgroundTransparency = 1,
-			Text = "Aucun Nanobot pour l'instant. Ouvre une capsule !",
+			Text = "Pas encore de robot. Ouvre une capsule !",
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Tag = "TextBody",
 			Parent = grid,
@@ -124,8 +124,8 @@ local function buildCollection(state: any)
 			end
 		end
 		if not entry then
-			detailName.Text = "Sélectionne un Nanobot"
-			detailInfo.Text = "Les Nanobots équipés boostent ta production, tes Watts, ta chaleur ou ta vitesse."
+			detailName.Text = "Choisis un robot"
+			detailInfo.Text = "Équipe tes robots : ils t'aident à gagner plus de Bits !"
 			equipKey.Button.Visible = false
 			fuseKey.Button.Visible = false
 			return
@@ -418,8 +418,8 @@ end
 function NanobotsPanel.Mount(layer: Frame)
 	panel = Panel.new({
 		Name = "NanobotsPanel",
-		Title = "NANOBOTS",
-		Subtitle = "Tes compagnons de silicium",
+		Title = "ROBOTS",
+		Subtitle = "Tes petits robots t'aident à gagner plus !",
 		Size = UDim2.fromScale(0.8, 0.84),
 		Parent = layer,
 		Accent = Style.Color("AccentViolet"),
