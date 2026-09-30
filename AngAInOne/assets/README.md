@@ -46,6 +46,23 @@ Tant qu'un modèle n'a pas d'ID, le jeu construit son **décor de secours** en b
 
 ## Catalogue
 
+Personnages : face avant vers −Y dans Blender. Planches : `previews/_sheet_*.png`.
+
 | Clé | Famille | Utilisé dans | État |
 |---|---|---|---|
 | `Fan120` | Matériel PC | ventilateurs (façade, W4, W6) | ✅ |
+| `Lagz` | Personnages | boss LAGZ (arène W7), couronne-chargement qui tourne | ✅ |
+| `LagzHead` | Personnages | LAGZ qui sort des écrans (incidents, lobby) | ✅ |
+| `LagzPortalCore` | Personnages | cœur du virus au centre de l'arène du boss | ✅ |
+| `Sparky` | Personnages | sbire du monde 1 (alimentation) | ✅ |
+| `PopUp` | Personnages | sbire du monde 2 (RAM), fenêtres de pub | ✅ |
+| `Corrupto` | Personnages | sbire du monde 3 (SSD) | ✅ |
+| `Dusty` | Personnages | sbire du monde 4 (refroidissement) | ✅ |
+| `Minor` | Personnages | sbire du monde 5 (CPU) | ✅ |
+| `Freezy` | Personnages | sbire du monde 6 (GPU) | ✅ |
+| `VirusBug` | Personnages | ennemi virus qui patrouille | ✅ |
+| `UsbKey` | Personnages | clé USB dorée à collectionner (origine au centre, embout vers +X) | ✅ |
+| `BitCoin` | Personnages | orbe « Bit » à collectionner (origine au centre, puce qui tourne) | ✅ |
+| `Pickaxe` | Personnages | pioche géante du pendule (pivot en haut du manche, 31,65 studs au-dessus de la base) | ✅ |
+| `GiantCursor` | Personnages | curseur-flèche géant | ✅ |
+| `Hand` | Personnages | curseur-main géant | ✅ |

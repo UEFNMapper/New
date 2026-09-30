@@ -30,6 +30,7 @@ VALID = {"SmoothPlastic", "Plastic", "Metal", "DiamondPlate", "Glass", "Neon", "
 
 def reset():
     bpy.ops.wm.read_factory_settings(use_empty=True)
+    _mats.clear()  # les matériaux Blender sont détruits par le reset
 
 
 def hex_rgb(h):
