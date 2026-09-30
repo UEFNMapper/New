@@ -99,7 +99,7 @@ local function buildHub(world: Instance): Model
 				Size = Vector3.new(1.2, 0.2, length),
 				CFrame = CFrame.lookAt(mid + Vector3.new(0, 0.1, 0), mid + direction + Vector3.new(0, 0.1, 0)),
 				Color = if lane == 0 then C.Copper else C.Copper:Lerp(C.Bg, 0.4),
-				Transparency = 0.15,
+				Transparency = 0.55,
 				Tags = { "DataTrace" },
 				Parent = traces,
 			})
@@ -604,7 +604,7 @@ local function pad(parent: Instance, name: string, cf: CFrame, diameter: number,
 		Size = Vector3.new(0.2, diameter - 1.5, diameter - 1.5),
 		CFrame = cf * CFrame.new(0, 0.62, 0) * CFrame.Angles(0, 0, math.pi / 2),
 		Color = color,
-		Transparency = 0.25,
+		Transparency = 0.5,
 		Tags = { "PulseGlow" },
 		Parent = parent,
 	})
@@ -647,7 +647,7 @@ local function buildFloor(floors: Instance, towerCf: CFrame, k: number): Model
 			Size = Vector3.new(W - 6, 0.3, 0.8),
 			CFrame = origin * CFrame.Angles(0, side * math.pi / 2, 0) * CFrame.new(0, 0.2, -(D / 2 - 3)),
 			Color = primary,
-			Transparency = 0.1,
+			Transparency = 0.5,
 			Tags = { "ZoneEdge" },
 			Parent = floor,
 		})
@@ -664,7 +664,7 @@ local function buildFloor(floors: Instance, towerCf: CFrame, k: number): Model
 			Size = Vector3.new(0.8, 0.12, length),
 			CFrame = origin * CFrame.lookAt(mid, to),
 			Color = primary:Lerp(C.Copper, 0.5),
-			Transparency = 0.35,
+			Transparency = 0.6,
 			Tags = { "FloorTrace" },
 			Parent = floor,
 		})

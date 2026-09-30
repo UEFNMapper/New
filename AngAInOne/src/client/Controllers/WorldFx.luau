@@ -384,7 +384,7 @@ local function applyFloor(tower: Model, floor: Instance)
 		if descendant:IsA("PointLight") then
 			descendant.Enabled = on
 		elseif descendant:IsA("BasePart") and (descendant:HasTag("ZoneEdge") or descendant.Name:match("^Trace")) then
-			descendant.Transparency = if on then 0.15 else 0.85
+			descendant.Transparency = if on then (if descendant:HasTag("ZoneEdge") then 0.5 else 0.6) else 0.88
 		end
 	end
 	local plate = floor:FindFirstChild("Plate")
@@ -752,7 +752,7 @@ function WorldFx.Start()
 			end
 		end
 		for p, base in pulses do
-			p.Transparency = base + (math.sin(t * 2.4) + 1) * 0.2
+			p.Transparency = math.min(base + (math.sin(t * 2.4) + 1) * 0.12, 0.9)
 		end
 		for p, info in beacons do
 			local zone = if info.Tower then info.Tower:GetAttribute("Zone") else 0

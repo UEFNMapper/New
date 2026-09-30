@@ -51,7 +51,7 @@
       },
       "Bloom": {
         "$className": "BloomEffect",
-        "$properties": { "Intensity": 0.6, "Size": 24, "Threshold": 1.6 }
+        "$properties": { "Intensity": 0.35, "Size": 20, "Threshold": 1.8 }
       },
       "ColorCorrection": {
         "$className": "ColorCorrectionEffect",
