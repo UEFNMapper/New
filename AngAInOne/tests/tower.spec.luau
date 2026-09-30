@@ -123,9 +123,38 @@ local REQUIRED: { [string]: { [string]: string } } = {
 	Conveyor = { Direction = "Vector3", Speed = "number" },
 	Bounce = { Power = "number" },
 	Heat = { Period = "number", Duty = "number", Phase = "number" },
+	-- v2 (voir Config/Tower et Controllers/Traps)
+	Surge = { Waypoints = "string", Speed = "number" },
+	Powered = { Period = "number", Duty = "number", Phase = "number" },
+	TabRain = { Period = "number", Stay = "number" },
+	Flood = { Rise = "number", Period = "number", Phase = "number" },
+	Corrupt = { Period = "number", Duty = "number", Phase = "number" },
+	Defrag = { Waypoints = "string", Step = "number" },
+	DustBall = { Waypoints = "string", Speed = "number" },
+	Pendulum = { Axis = "string", Amplitude = "number", Period = "number", Phase = "number", Pivot = "Vector3" },
+	LagMover = { Offset = "Vector3", Period = "number", Phase = "number", Steps = "number" },
+	Spinner = { Speed = "number" },
+	DeadPixels = { Direction = "Vector3", Period = "number", Duty = "number" },
+	LoadBridge = { Period = "number", Segments = "number", Phase = "number" },
+	Cursor = { Period = "number", Radius = "number", Area = "Vector3" },
+	FirewallWall = { Offset = "Vector3", Period = "number", Phase = "number" },
 }
-local LETHAL_KINDS = { Zapper = true, SpinBar = true, Crusher = true, Laser = true, Virus = true, Heat = true }
-local SOLID_KINDS = { Mover = true, Vanish = true, Conveyor = true, Bounce = true }
+local LETHAL_KINDS = {
+	Zapper = true,
+	SpinBar = true,
+	Crusher = true,
+	Laser = true,
+	Virus = true,
+	Heat = true,
+	Surge = true,
+	TabRain = true,
+	Flood = true,
+	DustBall = true,
+	Pendulum = true,
+	Cursor = true,
+	FirewallWall = true,
+}
+local SOLID_KINDS = { Mover = true, Vanish = true, Conveyor = true, Bounce = true, Defrag = true, LagMover = true }
 
 local function isLethal(part: any): boolean
 	if part:HasTag("Hazard") then
@@ -528,9 +557,12 @@ Shim.Globals = {
 		end,
 	},
 	Enum = Enum,
+	Instance = Instance,
 	CFrame = roblox.CFrame,
 	Vector3 = V3,
 	Color3 = roblox.Color3,
+	UDim = roblox.UDim,
+	UDim2 = roblox.UDim2,
 	task = simTask,
 	warn = function(...: any)
 		table.insert(sim.Reports, "warn:" .. table.concat({ ... }, " "))
@@ -1060,7 +1092,11 @@ return {
 			if LETHAL_KINDS[kind] then
 				Expect.equal(part.CanCollide, false, `piège mortel non solide : {name}`)
 				local c = part.Color
-				Expect.truthy(c.R >= 0.45 and c.G <= 0.45, `piège mortel rouge/magenta : {name}`)
+				-- code couleur : tout ce qui tue est rouge/magenta (sauf marqueurs invisibles : TabRain, Cursor…)
+				Expect.truthy(
+					part.Transparency >= 1 or (c.R >= 0.45 and c.G <= 0.45),
+					`piège mortel rouge/magenta : {name}`
+				)
 			elseif SOLID_KINDS[kind] then
 				Expect.equal(part.CanCollide, true, `plateforme solide : {name}`)
 			end
