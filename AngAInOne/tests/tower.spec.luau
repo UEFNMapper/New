@@ -56,6 +56,7 @@ Shim.Globals = {
 
 local Tower = Shim.load("src/shared/Config/Tower.luau")
 local TowerBuilder = Shim.load("src/server/World/TowerBuilder.luau")
+local Common = Shim.load("src/server/World/Tower/Common.luau") -- même instance que celle de TowerBuilder
 Shim.Globals = {}
 
 local built = TowerBuilder.Build()
@@ -1087,6 +1088,96 @@ return {
 				Expect.truthy(found, `piège vedette {kind} absent du monde {world.Index}`)
 			end
 		end
+	end,
+
+	["pièges et dangers : attribut World = monde qui les contient"] = function()
+		local count = 0
+		for _, tag in { "Trap", "Hazard" } do
+			for _, part in tagged(tag) do
+				local w = part:GetAttribute("World")
+				local owner = worldOfInstance(part)
+				if tag == "Trap" or owner ~= nil then
+					Expect.truthy(type(w) == "number", `attribut World (nombre) manquant sur {part:GetFullName()}`)
+					Expect.equal(w, owner, `World de {part:GetFullName()}`)
+					count += 1
+				end
+			end
+		end
+		Expect.truthy(count > 0, "aucun piège vérifié")
+	end,
+
+	["mondes : entrée sur le toit de la salle précédente, salle du terminal fixe"] = function()
+		for w = 1, Tower.WORLD_COUNT do
+			-- L'entrée (ctx.Entry) est posée sur le toit de la maison d'où l'on arrive.
+			local entry = Common.EntryOf(w).Position
+			local house = if w == 1 then tower.Lobby.Start else tower[`World{w - 1}`].Terminal
+			local onRoof = false
+			for _, d in house:GetDescendants() do
+				if d:IsA("BasePart") and d.Name == "Roof" then
+					local e, c = extents(d), d.CFrame.Position
+					if
+						math.abs(entry.X - c.X) <= e.X
+						and math.abs(entry.Z - c.Z) <= e.Z
+						and math.abs(top(d) - entry.Y) < 0.01
+					then
+						onRoof = true
+					end
+				end
+			end
+			Expect.truthy(onRoof, `entrée du monde {w} hors du toit de la salle précédente`)
+			-- La salle du terminal est à l'emplacement fixe : pad TerminalStage(w) juste derrière la porte.
+			local terminalPad = pads[Tower.TerminalStage(w)]
+			local fr = Common.CornerFrame(Common.TerminalCorner(w))
+			local door = Common.CFA(fr, -8, Common.WorldBase(w) + Common.TERMINAL_FLOOR, 0)
+			Expect.near(top(terminalPad) - 0.4, door.Position.Y, 0.01, `plancher de la salle {w}`)
+			Expect.near((terminalPad.CFrame.Position - door.Position).Magnitude, 8, 0.2, `pad de la salle {w}`)
+		end
+	end,
+
+	["contexte de monde : clés USB, infecté / nettoyé, pièges, garde-fous"] = function()
+		local scratch = Instance.new("Folder")
+		local ctx, finish = Common.NewContext(scratch, Tower.Worlds[2])
+		Expect.equal(ctx.Index, 2, "Index")
+		Expect.equal(ctx.Model.Name, "World2", "Model World2")
+		Expect.equal(ctx.Model:GetAttribute("World"), 2, "attribut World du Model")
+		Expect.equal(ctx.Base, 100, "Base")
+		Expect.near((ctx.Entry.Position - Common.EntryOf(2).Position).Magnitude, 0, 1e-6, "Entry")
+		Expect.equal(#ctx.Reserved, 2, "volumes réservés")
+		-- Clé USB
+		local key = ctx.UsbKey(V3.new(0, 150, 0), 3)
+		Expect.truthy(key:HasTag("UsbKey"), "tag UsbKey")
+		Expect.equal(key:GetAttribute("KeyId"), "W2K3", "KeyId")
+		Expect.equal(key.CanCollide, false, "clé traversable")
+		Expect.equal(key.CanTouch, true, "clé touchable")
+		Expect.truthy(key:IsDescendantOf(ctx.Model), "clé dans le monde")
+		Expect.truthy(not pcall(ctx.UsbKey, V3.new(0, 150, 0), 3), "clé en double refusée")
+		Expect.truthy(not pcall(ctx.UsbKey, V3.new(0, 150, 0), Tower.USB_KEYS_PER_WORLD + 1), "index de clé refusé")
+		-- Décor infecté / nettoyé
+		local infected, cleaned = Instance.new("Part"), Instance.new("Model")
+		ctx.Infected(infected)
+		ctx.Cleaned(cleaned)
+		Expect.truthy(infected:HasTag("Infected") and infected:GetAttribute("World") == 2, "Infected + World")
+		Expect.truthy(cleaned:HasTag("Cleaned") and cleaned:GetAttribute("World") == 2, "Cleaned + World")
+		-- Piège : tag, Kind, World, paramètres
+		local part = Instance.new("Part")
+		ctx.Trap("Crusher", part, { Period = 3 })
+		Expect.truthy(part:HasTag("Trap"), "tag Trap")
+		Expect.equal(part:GetAttribute("Kind"), "Crusher", "Kind")
+		Expect.equal(part:GetAttribute("World"), 2, "World")
+		Expect.equal(part:GetAttribute("Period"), 3, "paramètres")
+		-- Bit : CoinId de l'étape courante
+		ctx.Stage(Tower.FirstStage(2))
+		local bit = ctx.Coin(V3.new(0, 120, 0))
+		Expect.equal(bit:GetAttribute("CoinId"), `S{Tower.FirstStage(2)}C1`, "CoinId")
+		-- Garde-fous : checkpoints hors du monde, salle du terminal oubliée
+		Expect.truthy(not pcall(ctx.Checkpoint, Tower.TerminalStage(2), roblox.CFrame.new()), "checkpoint de la salle")
+		Expect.truthy(
+			not pcall(ctx.Checkpoint, Tower.TerminalStage(1), roblox.CFrame.new()),
+			"checkpoint d'un autre monde"
+		)
+		Expect.truthy(not pcall(ctx.Stage, Tower.TerminalStage(2) + 1), "étape d'un autre monde")
+		Expect.truthy(not pcall(finish), "monde sans salle du terminal refusé")
+		scratch:Destroy()
 	end,
 
 	["vide mortel sous chaque monde"] = function()
