@@ -14,7 +14,7 @@ Scénario : [`SCENARIO.md`](SCENARIO.md). Contrat de la tour : `src/shared/Confi
 - [x] **A1 · Architecte de la tour** : découper `TowerBuilder` (2 100 lignes) en modules :
       `World/Tower/Common` (outils + contexte), `Shell`, `Lobby`, `Worlds/W1..W7`, salle de terminal
       standard, entrée/sortie fixes de chaque monde ; le rendu actuel est conservé, tests verts.
-- [ ] **A2 · Pièges** : `TrapController` — 14 nouveaux pièges (voir contrat), horloge `TrapClock`
+- [x] **A2 · Pièges** : `TrapController` — 14 nouveaux pièges (voir contrat), horloge `TrapClock`
       (FREEZE / LAG SPIKE), effets des incidents sur les pièges (BLACKOUT, CORRUPTION, SURCHAUFFE),
       tests de simulation.
 - [x] **A3 · Scénario en jeu** : `IncidentService` (serveur) + incidents côté client (annonce,
@@ -25,18 +25,18 @@ Scénario : [`SCENARIO.md`](SCENARIO.md). Contrat de la tour : `src/shared/Confi
       Firewall (LAGZ), tests.
 
 ### Phase 2 — Contenu 3D (5 agents en parallèle, sur la base de A1 + A2)
-- [ ] **B1 · Chambre d'Anga + tour** : lobby sur le bureau (écran du live, clavier RGB, souris,
+- [x] **B1 · Chambre d'Anga + tour** : lobby sur le bureau (écran du live, clavier RGB, souris,
       micro, tasse, lampe), Miniaturiseur AngAInOne (départ), tour vitrée plus réaliste.
-- [ ] **B2 · Mondes 1–2** (Centrale, Memory Lanes) : parcours uniques, pièges signature, décor
+- [x] **B2 · Mondes 1–2** (Centrale, Memory Lanes) : parcours uniques, pièges signature, décor
       infecté/propre, sbires, clés USB.
-- [ ] **B3 · Mondes 3–4** (Data Vault, Cryo Tower).
-- [ ] **B4 · Mondes 5–6** (The Core, Render Canyon).
-- [ ] **B5 · Monde 7 + boss LAGZ** : arène, 3 phases (serveur `BossService` + client
+- [x] **B3 · Mondes 3–4** (Data Vault, Cryo Tower).
+- [x] **B4 · Mondes 5–6** (The Core, Render Canyon).
+- [x] **B5 · Monde 7 + boss LAGZ** : arène, 3 phases (serveur `BossService` + client
       `BossController`), fin.
 
 ### Phase 2 bis — Vrais modèles 3D (Blender → glTF → MeshParts, voir `assets/README.md`)
 - [x] Pipeline : `assets/blender/common.py`, `ModelLibrary` (décor de secours), `tools/upload_models.py`
-- [ ] **M1 · Matériel PC** · **M2 · Chambre d'Anga** · **M3 · Personnages et objets**
+- [ ] **M1 · Matériel PC** · **M2 · Chambre d'Anga** · [x] **M3 · Personnages et objets**
 - [ ] Placement des modèles dans le lobby et les 7 mondes ; import sur Roblox (Open Cloud ou Studio)
 
 ### Phase 3 — Intégration (chef de projet)

@@ -4,70 +4,81 @@
 
 ## 1. Pitch
 
-**Un virus a infecté le PC d'Anga.** Tu es miniaturisé à l'intérieur de sa tour géante et tu dois
-la **grimper de bas en haut**, en traversant chaque composant (alimentation, RAM, SSD,
-refroidissement, processeur, carte graphique, puce IA) en survivant aux pièges du virus :
-décharges électriques, ventilateurs, barrettes qui écrasent, lasers, virus gardiens…
-À la fin de chaque monde, un **terminal antivirus** : un mini-jeu 2D pour nettoyer le monde et
-ouvrir la porte suivante. Tout en haut : le cœur du virus.
+**Opération Anti-Lag** (scénario complet : [`SCENARIO.md`](SCENARIO.md)). Une heure avant le plus
+gros live d'AngaTV, le PC d'Anga **rame** : 3 FPS, 999 ms de ping, freezes, pop-ups. Le coupable :
+**LAGZ**, un virus qui se nourrit de la puissance des PC. L'app **AngAInOne** en « Mode
+Intervention » te **miniaturise** et t'envoie dans la tour : tu la grimpes composant par composant
+(alimentation, RAM, SSD, refroidissement, processeur, carte graphique, puce IA), tu survis aux
+pièges et aux **incidents** que LAGZ déclenche, tu nettoies chaque monde au **terminal antivirus**
+(mini-jeu 2D)… jusqu'au **combat contre LAGZ** tout en haut. Chaque monde nettoyé répare un
+symptôme : le PC remonte à 144 FPS et **le live commence**.
 
 - **Genre** : deathrun / obby à pièges automatiques (PvE), solo ou à plusieurs sur la même tour.
 - **Public** : 8–14 ans, cross-plateforme (mobile d'abord).
-- **Règle d'or** : compréhensible en 5 secondes. *Cours, saute, n'touche pas ce qui brille en rouge.*
+- **Règle d'or** : compréhensible en 5 secondes. *Cours, saute, ne touche pas ce qui est rouge.*
 
 ## 2. Boucle de jeu
 
-1. **Lobby** (Salle de démarrage, au pied de la tour) : Anga raconte l'histoire, écran géant de
-   l'app partenaire AngAInOne, boutique, classements, borne d'arcade. Pad **JOUER**.
-2. **Étapes** : chaque monde = 5 étapes courtes (30–60 s), chacune finit par un **checkpoint**.
-   On meurt → on réapparaît au dernier checkpoint. Aucun game over.
-3. **Terminal antivirus** (5ᵉ étape du monde, salle sûre) : mini-jeu 2D de 20–40 s.
-   Réussi → le portail s'ouvre + récompense. Raté → on peut réessayer tout de suite.
-4. **Sommet** : la puce IA et le cœur du virus. Victoire → cinématique d'Anga, récompense,
-   temps enregistré, retour au lobby. On peut recommencer pour battre son record.
+1. **Lobby = la chambre d'Anga** : on apparaît minuscule sur son bureau (clavier RGB praticable,
+   écran du live « LIVE DANS 59:00 », micro, tasse…), devant la tour vitrée. Pad **JOUER** dans le
+   **Miniaturiseur AngAInOne**. Boutique, classements, arcade, cadeaux.
+2. **Étapes** : chaque monde = 5 étapes courtes, chacune finit par un **checkpoint** ; une idée
+   de piège par étape, la 5ᵉ combine tout. On meurt → dernier checkpoint. Aucun game over.
+3. **Incidents de LAGZ** (toutes les 60–120 s, annoncés 3 s avant) : FREEZE, LAG SPIKE, BLACKOUT,
+   POP-UP STORM, CORRUPTION, SURCHAUFFE — ils changent vraiment les pièges du monde.
+4. **Terminal antivirus** (salle sûre, gardée par le sbire du monde) : mini-jeu 2D. Réussi → le
+   monde passe de « infecté » à « nettoyé », le portail s'ouvre, le PC gagne des FPS.
+5. **Monde 7 → boss LAGZ** en 3 phases, puis la fin « LE LIVE COMMENCE ! ». Chrono, records.
 
-Durée : ~25–40 min pour une première ascension, 8–12 min pour un bon speedrun.
+## 3. Les 7 mondes (config : `src/shared/Config/Tower.luau`, construction : `World/Tower/Worlds/W{n}.luau`)
 
-## 3. Les 7 mondes (config : `src/shared/Config/Tower.luau`)
+| # | Monde | Parcours | Pièges signature | Incident | Sbire | Mini-jeu |
+|---|---|---|---|---|---|---|
+| 1 | La Centrale (PSU) | câbles tressés, condensateurs, grille du ventilateur | Surtension, plateformes alimentées, décharges, trampolines | BLACKOUT | Sparky | Scan |
+| 2 | Memory Lanes (RAM) | ville de barrettes, canyon | barrettes qui écrasent, pluie d'onglets, fuite mémoire | POP-UP STORM | Pop-Up | Pop-up Killer |
+| 3 | Data Vault (SSD) | damier NAND, baie de disques | dalles corrompues, défragmenteur, tiroirs, pistons | CORRUPTION | Corrupto | Défrag |
+| 4 | Cryo Tower (refroidissement) | radiateur, tube de watercooling, ventilateurs | jets de vapeur, boules de poussière, vent, pales | SURCHAUFFE | Dusty | Firewall |
+| 5 | The Core (CPU) | spirale du ventirad, broches du socket | pioches, plateformes en latence, roues de chargement | LAG SPIKE | Minor | Scan |
+| 6 | Render Canyon (GPU) | canyon de la carte graphique, piste de pixels | pixels morts, ponts de chargement, pales géantes | FREEZE | Freezy | Memory |
+| 7 | Neural Nexus (puce IA) | cerveau holographique, arène | curseur géant, pare-feu mobiles, virus | tous | LAGZ | Firewall boss |
 
-| # | Monde | Composant | Section AngAInOne | Pièges vedettes | Mini-jeu |
-|---|---|---|---|---|---|
-| 1 | La Centrale | Alimentation | Démarrage | Décharges, trampolines condensateurs, pales | Scan |
-| 2 | Memory Lanes | RAM | Applications | Barrettes qui écrasent, tapis de données, plateformes mobiles | Memory |
-| 3 | Data Vault | SSD | Nettoyage & réparation | Plateformes qui s'effacent, blocs, tapis | Dodge |
-| 4 | Cryo Tower | Refroidissement | Diagnostic | Vent des ventilateurs, pales, plateformes gelées | Firewall |
-| 5 | The Core | CPU | Optimisations | Lasers, bouches de chaleur, plateformes mobiles | Scan |
-| 6 | Render Canyon | GPU | Gaming | Pales de ventilateurs géants, lasers, décharges | Memory |
-| 7 | Neural Nexus | Puce IA | Réseau | Virus gardiens, lasers, plateformes mobiles | Firewall (boss) |
+25 types de pièges (tag `Trap`, attribut `Kind`, liste dans `Tower.luau`). Tout ce qui tue est
+**rouge / magenta** et prévenu avant de s'activer. Les pièges sont animés côté client avec l'horloge
+du serveur **de leur monde** (`TrapClock` : le FREEZE la fige, le LAG SPIKE la fait avancer par
+à-coups) : tous les joueurs voient la même chose au même moment.
 
-Pièges (tag `Trap`, attribut `Kind`) : Zapper, SpinBar, Crusher, Mover, Vanish, Wind, Laser,
-Virus, Conveyor, Bounce, Heat. Tout ce qui tue est **rouge / violet glitch** et prévenu par un
-signal (clignotement, son) avant de s'activer. Les pièges sont animés côté client avec l'heure du
-serveur : tous les joueurs voient la même chose au même moment.
+**Difficulté** : écarts ≤ 6,5 studs, fenêtres sûres ≥ 1,2 s au monde 1 → ≥ 0,8 s au monde 7.
 
 ## 4. Mini-jeux 2D antivirus
 
-| Mini-jeu | But | Contrôles |
-|---|---|---|
-| **Scan** | Tape les virus qui surgissent dans une grille avant qu'ils disparaissent (atteindre un score). | Tap / clic |
-| **Firewall** | Déplace le pare-feu en bas de l'écran et tire sur les virus qui tombent. | Glisser / flèches / stick |
-| **Memory** | Retrouve les paires de cartes (icônes de composants) en un nombre d'essais limité. | Tap / clic |
-| **Dodge** | Guide le paquet de données vers le haut entre les virus. | Tap pour monter / espace |
+| Mini-jeu | But |
+|---|---|
+| **Scan** | Tape les virus qui surgissent dans la grille avant qu'ils disparaissent. |
+| **Pop-up Killer** | Ferme les pubs (✕) avant que la RAM sature ; les faux boutons en ouvrent d'autres. |
+| **Défrag** | Échange des cases pour regrouper les fichiers de chaque couleur (toujours soluble). |
+| **Firewall** | Déplace le pare-feu et tire sur les virus. Difficulté 8 = **combat contre LAGZ** (36 PV, bouclier). |
+| **Memory** | Retrouve les paires de cartes mémoire. |
+| **Dodge** | Guide le paquet de données entre les virus (arcade). |
 
-Difficulté croissante avec le monde. Rejouables à la **borne d'arcade** du lobby (petites
-récompenses, avec délai entre deux gains).
+Le sbire du monde apparaît sur les cartes d'intro et de résultat. Les 6 jeux sont rejouables à la
+**borne d'arcade** du lobby (petites récompenses, délai entre deux gains).
 
 ## 5. Features
 
+- **Performance du PC** (widget HUD : FPS / ping / °C) qui s'améliore à chaque monde nettoyé.
+- **Mondes infectés / nettoyés** (décor différent pour chaque joueur selon sa progression).
+- **Boss LAGZ** : survivre aux lasers et au curseur, brancher 3 prises antivirus, Firewall boss.
+- **21 clés USB dorées** cachées sur des chemins difficiles (3 par monde) : Bits, compteur au HUD,
+  toutes les clés → traînée USB.
 - **Checkpoints**, bouton « Revenir au checkpoint », bouton « Lobby ».
 - **Chrono** de l'ascension + record perso ; **classements** : victoires, meilleur temps, étape max.
-- **Bits** : on les ramasse sur le parcours (orbes) et en réussissant les mini-jeux.
-- **Boutique** : traînées lumineuses, effets de mort (glitch, pixels…), auras de victoire.
+- **Bits** : orbes du parcours, mini-jeux, clés USB. **Boutique** : traînées, effets de mort.
 - **Récompenses quotidiennes** (calendrier 7 jours) et **missions du jour** (3).
-- **Multijoueur** : les joueurs ne se bousculent pas (pas de collision entre eux), on voit la
-  progression des autres (étape au-dessus de la tête), bonus d'amis.
-- **Histoire** : intro d'Anga, une réplique à l'entrée de chaque monde, fin.
-- **Réglages** : volumes, animations réduites.
+- **Multijoueur** : pas de collision entre joueurs, étape au-dessus de la tête, bonus d'amis.
+- **Histoire** : intro en 3 cartes (LAGZ apparaît), répliques d'Anga et de LAGZ, moniteur du live.
+- **Vrais modèles 3D** (Blender → MeshParts) : matériel PC, chambre, personnages
+  (voir [`../assets/README.md`](../assets/README.md)).
+- **Réglages** : volumes, animations réduites (retire aussi les effets d'écran des incidents).
 
 ## 6. Monétisation (éthique, rien d'obligatoire)
 
@@ -92,10 +103,12 @@ tricher ne fait qu'éviter de mourir soi-même, le serveur garde la main sur la 
 
 ## 8. Technique
 
-- Luau `--!strict`, Rojo. Serveur : `Core/` (Session, événements, télémétrie), `Security/`
-  (RemoteGuard), `Services/` (Data, State, Run, Minigame, Shop/Monetization, Daily/Missions,
-  Leaderboard, Dev), `World/` (Build, Props, TowerBuilder).
-- Client : `Controllers/` (Net, Store, Audio, TrapController, Story, Fx…), `UI/` (design
-  system existant : StyleSheets, Keycap, Panel…), `UI/Minigames/` (mini-jeux 2D).
-- Tests Lune : construction réelle de la tour (checkpoints, portails, budget pièces/lumières),
-  contrats client/serveur, schéma de données.
+- Luau `--!strict`, Rojo. Serveur : `Core/`, `Security/` (RemoteGuard), `Services/` (Data, State,
+  Progress, Incident, Boss, Minigame, Shop/Monetization, Mission, Leaderboard, Social, Dev),
+  `World/` (TowerBuilder → `Tower/Common`, `Lobby`, `RoomProps`, `Shell`, `Worlds/W1..W7`,
+  `ModelLibrary`).
+- Client : `Controllers/` (TrapController + `Traps/*`, IncidentController, BossController,
+  WorldState, Story, StreamMonitor, Feedback, WorldFx…), `UI/` (HUD, Moments, Dialogue…),
+  `UI/Minigames/` (6 mini-jeux + logique pure testée).
+- Tests Lune : construction réelle de la tour (checkpoints, graphe de sauts, budgets, pièges),
+  simulation du vrai TrapController, incidents, boss, mini-jeux (bots), contrats client/serveur.
