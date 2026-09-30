@@ -390,7 +390,7 @@ function Arena.Build(ctx: Common.WorldContext)
 
 	-- LAGZ, flottant au-dessus du centre, tourné vers l'entrée (-Z), et son bouclier
 	local lagzCf = CFrame.lookAt(LAGZ_BASE, LAGZ_BASE - Vector3.zAxis)
-	local lagz = ModelLibrary.Place("Lagz", lagzCf, boss, { Name = "Lagz" }, function()
+	local lagz = ModelLibrary.Place("Lagz", lagzCf, boss, { Name = "Lagz", Spin = false }, function()
 		return lagzFallback(lagzCf)
 	end)
 	if lagz then

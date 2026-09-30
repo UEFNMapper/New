@@ -66,9 +66,10 @@ local function placeModel(
 	cf: CFrame,
 	parent: Instance,
 	length: number,
-	fallback: () -> Instance?
+	fallback: () -> Instance?,
+	spin: (boolean | string)?
 ): Instance?
-	local placed = ModelLibrary.Place(key, cf, parent, { Collide = false }, fallback)
+	local placed = ModelLibrary.Place(key, cf, parent, { Collide = false, Spin = spin }, fallback)
 	if placed and placed:IsA("Model") and ModelLibrary.Has(key) then
 		local model = placed :: Model
 		local extent = model:GetExtentsSize()
@@ -317,7 +318,7 @@ return function(ctx: Common.WorldContext)
 				NEON
 			)
 			return model
-		end)
+		end, "Hide") -- les vraies pales (rouges, mortelles) tournent devant
 	end
 
 	-- Bloc de glace qui fond après contact (Vanish).

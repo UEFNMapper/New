@@ -453,7 +453,7 @@ end
 -- Tour du monde courant (pour d'autres contrôleurs).
 function WorldFx.CurrentWorld(): number
 	local d = data()
-	return if d then Tower.WorldOf(d.Stage) else 0
+	return if d then Tower.RunWorld(d.Stage, d.Cleared) else 0
 end
 
 return WorldFx

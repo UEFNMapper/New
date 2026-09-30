@@ -292,7 +292,7 @@ local function animateLagz(lagz: Lagz, t: number, root: BasePart?)
 		-- Sonné : plus bas, il titube
 		offset += Vector3.new(0, -3, 0)
 		tilt = CFrame.Angles(math.sin(t * 3) * 0.25, 0, math.cos(t * 2.3) * 0.25)
-	elseif fighting and math.floor(t * 8) % 7 == 0 then
+	elseif fighting and math.floor(t * 8) % 7 == 0 and player:GetAttribute("ReducedMotion") ~= true then
 		-- Glitch : petits sauts de côté
 		offset += Vector3.new(math.sin(t * 91) * 0.8, 0, math.cos(t * 77) * 0.8)
 	end

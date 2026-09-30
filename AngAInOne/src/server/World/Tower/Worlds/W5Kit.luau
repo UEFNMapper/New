@@ -105,8 +105,15 @@ end
 	Vrai modèle 3D posé en `cf` (centre de la base), mis à l'échelle pour mesurer `height` studs de
 	haut ; sinon le décor de secours `fallback` (primitives). Le gameplay n'en dépend jamais.
 ]]
-function Kit.Place(key: string, cf: CFrame, parent: Instance, height: number, fallback: () -> Instance?): Instance?
-	local placed = ModelLibrary.Place(key, cf, parent, { Collide = false }, fallback)
+function Kit.Place(
+	key: string,
+	cf: CFrame,
+	parent: Instance,
+	height: number,
+	fallback: () -> Instance?,
+	spin: (boolean | string)?
+): Instance?
+	local placed = ModelLibrary.Place(key, cf, parent, { Collide = false, Spin = spin }, fallback)
 	if placed and ModelLibrary.Has(key) and placed:IsA("Model") then
 		local model = placed :: Model
 		local _, size = model:GetBoundingBox()

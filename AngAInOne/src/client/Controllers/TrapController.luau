@@ -233,6 +233,9 @@ local function register(instance: Instance, tag: string)
 		return
 	end
 	local part = instance :: BasePart
+	if tag == "TrapSpin" and not part.Anchored then
+		return -- décor tournant soudé à un objet mobile : c'est lui qui le déplace
+	end
 	local kind = if tag == "Hazard" then "Hazard" elseif tag == "TrapSpin" then "Spin" else part:GetAttribute("Kind")
 	if type(kind) ~= "string" then
 		return

@@ -180,4 +180,14 @@ return {
 			Expect.truthy(#world.Symptom > 0 and #world.Minion > 0 and #world.Cleaned > 0, "scénario du monde")
 		end
 	end,
+	["Tower.RunWorld : pendant la 1re étape d'un monde, on court déjà dans ce monde"] = function()
+		Expect.equal(Tower.RunWorld(0, 0), 1, "ligne de départ -> monde 1")
+		Expect.equal(Tower.RunWorld(3, 0), 1)
+		Expect.equal(Tower.RunWorld(5, 0), 1, "salle du terminal, pas encore nettoyé")
+		Expect.equal(Tower.RunWorld(5, 1), 2, "terminal réussi -> étape 6 du monde 2")
+		Expect.equal(Tower.RunWorld(6, 1), 2)
+		Expect.equal(Tower.RunWorld(30, 6), 7, "vers le monde 7")
+		Expect.equal(Tower.RunWorld(35, 6), 7, "arène du boss")
+		Expect.equal(Tower.RunWorld(35, 7), 7, "sommet : pas de monde 8")
+	end,
 }

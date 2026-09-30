@@ -1013,10 +1013,10 @@ function IncidentController.LocalWorld(): number
 		return 0
 	end
 	local data = state.Data
-	if not data.RunStarted or data.Stage <= 0 then
+	if not data.RunStarted then
 		return 0
 	end
-	return Tower.WorldOf(data.Stage)
+	return Tower.RunWorld(data.Stage, data.Cleared)
 end
 
 local function readWorld(world: number): (string, number, number, number)

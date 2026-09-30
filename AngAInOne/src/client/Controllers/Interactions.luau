@@ -48,6 +48,8 @@ function Interactions.PlayTerminal(world: number)
 	local difficulty = if boss then BossLogic.BOSS_DIFFICULTY else world
 	MinigamePanel.Play(def.Minigame, difficulty, function(success: boolean, score: number, _duration: number)
 		Net.Fire("MinigameEnd", world, success, score)
+	end, function()
+		Net.Fire("MinigameStart", world) -- nouvel essai : le serveur relance son chrono
 	end)
 end
 
@@ -60,6 +62,8 @@ function Interactions.PlayArcade(kind: string)
 	Net.Fire("ArcadeStart", kind)
 	MinigamePanel.Play(kind, 2, function(success: boolean, score: number, _duration: number)
 		Net.Fire("ArcadeEnd", kind, success, score)
+	end, function()
+		Net.Fire("ArcadeStart", kind)
 	end)
 end
 

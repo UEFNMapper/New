@@ -210,6 +210,21 @@ function Tower.WorldOf(stage: number): number
 	return math.min(math.ceil(stage / Tower.STAGES_PER_WORLD), Tower.WORLD_COUNT)
 end
 
+-- Monde que le joueur est en train de PARCOURIR. Différent de WorldOf pendant la 1re étape d'un
+-- monde : le 1er checkpoint est au bout de l'étape, donc Stage vaut encore le checkpoint de la
+-- salle du terminal précédente (ou 0 au départ). Si ce terminal est nettoyé, on court déjà dans
+-- le monde suivant. Sert aux incidents, au HUD, à l'ambiance.
+function Tower.RunWorld(stage: number, cleared: number): number
+	if stage <= 0 then
+		return 1
+	end
+	local world = Tower.WorldOf(stage)
+	if stage == world * Tower.STAGES_PER_WORLD and cleared >= world and world < #Tower.Worlds then
+		return world + 1
+	end
+	return world
+end
+
 -- Checkpoint de la salle du terminal (dernière étape) du monde.
 function Tower.TerminalStage(world: number): number
 	return world * Tower.STAGES_PER_WORLD

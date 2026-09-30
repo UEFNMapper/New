@@ -122,6 +122,10 @@ export type PlaceOptions = {
 	Scale: number?, -- 1 = taille modélisée (1 unité Blender = 1 stud)
 	Collide: boolean?, -- pièces solides (par défaut : décor sans collision)
 	Name: string?,
+	-- Pièces `__Spin` : true (défaut) = tournent côté client ; false = figées (modèle que l'on
+	-- anime soi-même, ex. LAGZ) ; "Hide" = retirées (ex. ventilateur posé sur des pales mortelles :
+	-- seules les vraies pales, rouges, doivent tourner).
+	Spin: (boolean | string)?,
 }
 
 -- Place le modèle `key` (origine = centre de la base) au CFrame donné. Sinon : `fallback()`.
@@ -151,13 +155,17 @@ function ModelLibrary.Place(
 	local base = boxCf * CFrame.new(0, -size.Y / 2, 0)
 	model.WorldPivot = CFrame.new(base.Position)
 	model:PivotTo(cframe)
+	local spin = if opts.Spin == nil then true else opts.Spin
 	for _, descendant in model:GetDescendants() do
 		if descendant:IsA("BasePart") then
-			if opts.Collide and descendant:GetAttribute("SpinPart") ~= true then
+			local isSpin = descendant:GetAttribute("SpinPart") == true
+			if opts.Collide and not isSpin then
 				descendant.CanCollide = true
 				descendant.CanQuery = true
 			end
-			if descendant:GetAttribute("SpinPart") == true then
+			if isSpin and spin == "Hide" then
+				descendant:Destroy()
+			elseif isSpin and spin == true then
 				descendant:AddTag("TrapSpin")
 			end
 		end

@@ -424,7 +424,7 @@ end
 
 local function refreshFull(state: any)
 	local data = state.Data
-	local world = Tower.WorldOf(data.Stage)
+	local world = if data.Stage > 0 then Tower.RunWorld(data.Stage, data.Cleared) else 0
 	local def = Tower.Worlds[math.max(world, 1)]
 	if state.AtLobby then
 		worldLabel.Text = "LOBBY · Salle de démarrage"
@@ -452,7 +452,8 @@ local function refreshFull(state: any)
 	playKey.Button.Visible = state.AtLobby
 	playKey:SetText(if data.Stage > 0 then `CONTINUER · Étape {data.Stage}` else "JOUER")
 	actions.Visible = not state.AtLobby
-	skipKey.Button.Visible = Products.ProductByKey.Skip.Id ~= 0 and data.Stage < Tower.TOTAL_STAGES
+	-- Même règle que ProgressService.CanSkip : le repaire de LAGZ ne se passe pas.
+	skipKey.Button.Visible = Products.ProductByKey.Skip.Id ~= 0 and data.Stage < Tower.TOTAL_STAGES - 1
 	for key, toggle in toggleKeys do
 		local owned = state.Passes[key] == true
 		toggle.Button.Visible = owned

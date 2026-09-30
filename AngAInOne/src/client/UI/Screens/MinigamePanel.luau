@@ -24,7 +24,9 @@
 
 	API :
 		MinigamePanel.Mount(layer)                         -- une fois (App.Layers.Overlays)
-		MinigamePanel.Play(kind, difficulty, onDone)       -- kind : Tower.MinigameKinds ; 1..7, 8 = boss
+		MinigamePanel.Play(kind, difficulty, onDone, onRetry?) -- kind : Tower.MinigameKinds ; 1..7, 8 = boss
+		                                                   -- onRetry : appelé à chaque RÉESSAYER (le serveur
+		                                                   -- relance alors son chrono de validation)
 		MinigamePanel.IsPlaying()
 		MinigamePanel.Cancel()                             -- ferme : onDone(false, 0, elapsed)
 ]]
@@ -84,6 +86,7 @@ type Session = {
 	Game: Common.Game,
 	Info: Common.Info,
 	OnDone: OnDone,
+	OnRetry: (() -> ())?,
 	Phase: Phase,
 	Closed: boolean,
 	Root: Frame,
@@ -937,6 +940,9 @@ local function showResult(s: Session, success: boolean)
 		})
 		local row = buttonRow(card, 300)
 		local retry = function()
+			if s.OnRetry then
+				s.OnRetry()
+			end
 			startCountdown(s)
 		end
 		local quit = function()
@@ -1272,7 +1278,7 @@ function MinigamePanel.Cancel()
 	end
 end
 
-function MinigamePanel.Play(kind: string, difficulty: number, onDone: OnDone)
+function MinigamePanel.Play(kind: string, difficulty: number, onDone: OnDone, onRetry: (() -> ())?)
 	local entry = GAMES[kind]
 	local target = layer
 	if not entry or not target then
@@ -1330,6 +1336,7 @@ function MinigamePanel.Play(kind: string, difficulty: number, onDone: OnDone)
 		Game = entry,
 		Info = entry.Info(level, Common.Device()),
 		OnDone = onDone,
+		OnRetry = onRetry,
 		Phase = "Intro",
 		Closed = false,
 		Root = root,

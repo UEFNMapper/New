@@ -9,6 +9,7 @@
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
 
 local Theme = require(ReplicatedStorage:WaitForChild("Shared").Config.Theme)
 
@@ -35,6 +36,12 @@ end
 
 function Motion.SetReduced(value: boolean)
 	reduced = value
+	-- Attribut LOCAL (non répliqué) lu par les contrôleurs du monde : pièges (clignotements,
+	-- décor tournant), boss, incidents.
+	local player = Players.LocalPlayer
+	if player then
+		player:SetAttribute("ReducedMotion", value)
+	end
 end
 
 function Motion.IsReduced(): boolean

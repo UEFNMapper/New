@@ -787,6 +787,13 @@ function Common.NewContext(tower: Instance, world: Tower.World): (WorldContext, 
 				Box(key, "PlugHole", Vector3.new(0.3, 0.1, 0.4), cf * CFrame.new(x, 0.29, -2.5), C.Black)
 			end
 			Box(key, "Cap", Vector3.new(1.9, 0.9, 0.5), cf * CFrame.new(0, 0, 1.6), C.Gold, Enum.Material.Foil)
+			-- Les détails suivent le corps quand le client le fait tourner (WorldFx).
+			for _, child in key:GetChildren() do
+				if child:IsA("BasePart") then
+					child.CanTouch = false
+					Props.WeldTo(key, child)
+				end
+			end
 			return key
 		end,
 

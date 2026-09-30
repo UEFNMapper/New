@@ -1260,7 +1260,9 @@ return {
 					local weld = d:FindFirstChildOfClass("WeldConstraint")
 					local root = weld and weld.Part0
 					Expect.truthy(
-						root ~= nil and root.Anchored and (root:HasTag("Trap") or root:HasTag("TrapSpin")),
+						root ~= nil
+							and root.Anchored
+							and (root:HasTag("Trap") or root:HasTag("TrapSpin") or root:HasTag("UsbKey")),
 						`pièce non ancrée sans racine animée : {d:GetFullName()}`
 					)
 				end

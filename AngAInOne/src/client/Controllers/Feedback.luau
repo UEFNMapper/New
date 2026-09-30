@@ -218,7 +218,7 @@ function Feedback.Start()
 		Toasts.Show(kind, text)
 	end)
 	Store.Changed:Connect(function(state: any)
-		applyWorld(if state.AtLobby then 0 else Tower.WorldOf(state.Data.Stage))
+		applyWorld(if state.AtLobby then 0 else Tower.RunWorld(state.Data.Stage, state.Data.Cleared))
 	end)
 end
 

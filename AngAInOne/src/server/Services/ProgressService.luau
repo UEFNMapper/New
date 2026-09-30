@@ -111,6 +111,7 @@ end
 
 function ProgressService.ToCheckpoint(session: Session.Session)
 	atLobby[session] = nil
+	session.Minigame = nil -- une partie ouverte ne survit pas à un déplacement
 	startClock(session)
 	GameEvents.StateChanged:Fire(session.Player)
 	teleport(session, ProgressService.CheckpointCFrame(session.Data.Stage))
@@ -128,6 +129,7 @@ end
 
 function ProgressService.ToLobby(session: Session.Session)
 	atLobby[session] = true
+	session.Minigame = nil
 	stopClock(session)
 	teleport(session, lobbySpawn)
 	GameEvents.StateChanged:Fire(session.Player)
@@ -149,6 +151,7 @@ local function advanceTo(session: Session.Session, stage: number, skipped: boole
 	local previousWorld = Tower.WorldOf(data.Stage)
 	commitClock(session)
 	data.Stage = stage
+	session.Minigame = nil
 	session.LastCheckpointAt = os.clock()
 	if stage > data.BestStage then
 		data.BestStage = stage
@@ -181,6 +184,7 @@ local function onCheckpoint(session: Session.Session, stage: number)
 		atLobby[session] = nil
 		-- Ligne de départ : le chrono démarre.
 		if not data.RunStarted then
+			data.Cleared = 0 -- nouvelle ascension : la tour est de nouveau infectée
 			data.RunStarted = true
 			data.RunAssisted = assistActive(session)
 			session.LastCheckpointAt = os.clock()
@@ -239,6 +243,9 @@ local function onFinish(session: Session.Session)
 		Wins = data.Wins,
 	})
 	DataSchema.ResetRun(data)
+	-- La tour reste NETTOYÉE (décor, PC à 144 FPS, live, LAGZ vaincu) jusqu'à la prochaine
+	-- ascension : Cleared ne repasse à 0 qu'au départ suivant (voir onCheckpoint, stage 0).
+	data.Cleared = Tower.WORLD_COUNT
 	syncAttributes(session)
 	GameEvents.StateChanged:Fire(session.Player)
 	task.delay(7, function()
@@ -249,20 +256,19 @@ local function onFinish(session: Session.Session)
 	end)
 end
 
+-- Le repaire de LAGZ (dernière étape + arène + terminal final) ne se passe pas : le boss se mérite.
+function ProgressService.CanSkip(data: any): boolean
+	return data.Stage < Tower.TOTAL_STAGES - 1
+end
+
 -- Passe l'étape (achat Robux) : checkpoint suivant ; saute aussi le terminal si besoin.
 function ProgressService.Skip(session: Session.Session): boolean
 	local data = session.Data
-	if data.Stage >= Tower.TOTAL_STAGES then
-		-- Au sommet, il ne reste que le dernier terminal : on le passe.
-		if data.Cleared < Tower.WORLD_COUNT then
-			data.Cleared = Tower.WORLD_COUNT
-			data.RunAssisted = true
-			session.Player:SetAttribute("Cleared", data.Cleared)
-			Wallet.Fx(session, "WorldCleared", { World = Tower.WORLD_COUNT, Bits = 0, Score = 0 })
-			GameEvents.StateChanged:Fire(session.Player)
-			return true
-		end
-		return false
+	if not ProgressService.CanSkip(data) then
+		return false -- remboursé en Bits par MonetizationService
+	end
+	if not data.RunStarted then
+		data.Cleared = 0 -- nouvelle ascension (la victoire précédente laisse la tour nettoyée)
 	end
 	local nextStage = data.Stage + 1
 	local world = Tower.WorldOf(nextStage)

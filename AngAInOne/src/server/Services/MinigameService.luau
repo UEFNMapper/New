@@ -65,6 +65,11 @@ local function onEnd(session: Session.Session, world: number, success: boolean, 
 		return
 	end
 	if not durationOk(game_.Kind, game_.StartedAt) then
+		Wallet.Notify(session, "Info", "Partie non validée : relance le terminal pour réessayer.")
+		return
+	end
+	-- Monde 7 : le combat doit toujours être gagné (ex. partie ouverte, puis Lobby / Reprendre).
+	if world == Tower.WORLD_COUNT and not BossService.TerminalOpen(session) then
 		return
 	end
 	if not ProgressService.ClearWorld(session, world) then

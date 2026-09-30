@@ -18,6 +18,7 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Tower = require(Shared.Config.Tower)
+local GameConfig = require(Shared.Config.GameConfig)
 local Incidents = require(Shared.Config.Incidents)
 local IncidentSchedule = require(Shared.Util.IncidentSchedule)
 local Session = require(script.Parent.Parent.Core.Session)
@@ -39,13 +40,16 @@ end
 -- Monde où le joueur court (0 = lobby, départ, mini-jeu, pas encore chargé).
 function IncidentService.RunningWorld(session: Session.Session): number
 	local data = session.Data
-	if not data.RunStarted or data.Stage <= 0 or session.Minigame ~= nil then
+	local minigame = session.Minigame
+	-- Un mini-jeu ouvert mais jamais terminé ne coupe pas les incidents indéfiniment.
+	local playing = minigame ~= nil and os.clock() - minigame.StartedAt < GameConfig.Minigame.MaxSeconds
+	if not data.RunStarted or playing then
 		return 0
 	end
 	if ProgressService.IsAtLobby(session) then
 		return 0
 	end
-	return Tower.WorldOf(data.Stage)
+	return Tower.RunWorld(data.Stage, data.Cleared)
 end
 
 local function publish(world: number, state: IncidentSchedule.State)

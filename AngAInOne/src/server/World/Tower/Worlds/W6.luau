@@ -226,7 +226,8 @@ return function(ctx: Ctx)
 			local logo = Box(m, "Logo", Vector3.new(0.4, 8, 60), cardCf * CFrame.new(-8.8, 30, 0), C.Bg)
 			Props.Label(logo, "RENDER", S, Enum.NormalId.Left, Enum.Font.GothamBlack)
 			return m
-		end
+		end,
+		false -- ventilateurs du modèle figés : seules les vraies pales (mortelles) tournent
 	)
 	-- Câbles d'alimentation gainés branchés sur le bord ouest de la carte (vers l'alimentation)
 	for i, z in { -70, -48 } do

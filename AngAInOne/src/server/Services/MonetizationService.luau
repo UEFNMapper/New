@@ -130,9 +130,9 @@ function MonetizationService.Start()
 	end)
 	MonetizationService.RegisterProduct("Skip", function(session, _product)
 		if not ProgressService.Skip(session) then
-			-- Rien à passer (déjà au sommet) : on dédommage plutôt que de bloquer le reçu.
+			-- Rien à passer (repaire de LAGZ) : on dédommage plutôt que de bloquer le reçu.
 			Wallet.Add(session, 150, "SkipRefund", false)
-			Wallet.Notify(session, "Info", "Tu es déjà au sommet : 150 Bits offerts à la place !")
+			Wallet.Notify(session, "Info", "Le repaire de LAGZ ne se passe pas : 150 Bits offerts à la place !")
 		end
 		return true
 	end)

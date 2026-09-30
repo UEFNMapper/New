@@ -109,14 +109,28 @@ end
 function ShopService.GrantShield(session: Session.Session, seconds: number)
 	session.ShieldUntil = math.max(session.ShieldUntil, os.time()) + seconds
 	session.Player:SetAttribute("Shielded", true)
+	-- Invincible = course assistée (pas de record au classement des temps).
+	if session.Data.RunStarted then
+		session.Data.RunAssisted = true
+	end
 	Wallet.Fx(session, "Shield", { Until = session.ShieldUntil })
 	GameEvents.StateChanged:Fire(session.Player)
-	task.delay(seconds + 0.5, function()
-		if session.ShieldUntil <= os.time() and session.Player.Parent then
+	-- Fin du bouclier : on revérifie jusqu'à l'échéance réelle (plusieurs achats se cumulent).
+	local function check()
+		if not session.Player.Parent then
+			return
+		end
+		local left = session.ShieldUntil - os.time()
+		if left > 0 then
+			task.delay(left + 0.5, check)
+			return
+		end
+		if session.Player:GetAttribute("Shielded") then
 			session.Player:SetAttribute("Shielded", false)
 			GameEvents.StateChanged:Fire(session.Player)
 		end
-	end)
+	end
+	task.delay(seconds + 0.5, check)
 end
 
 -- Donne un cosmétique (récompense quotidienne…).
