@@ -94,6 +94,7 @@ def bevel(obj, width, segments=3, angle=35):
 
 
 def smooth(obj, angle=35):
+    bpy.ops.object.select_all(action="DESELECT")  # sinon le lissage touche toute la sélection
     bpy.context.view_layer.objects.active = obj
     obj.select_set(True)
     bpy.ops.object.shade_smooth_by_angle(angle=math.radians(angle))

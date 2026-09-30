@@ -51,7 +51,7 @@ Tant qu'un modèle n'a pas d'ID, le jeu construit son **décor de secours** en b
 
 ## Catalogue
 
-Personnages : face avant vers −Y dans Blender. Planches : `previews/_sheet_*.png`.
+Personnages : face avant vers −Y dans Blender. Chambre d'Anga : façade vers +Y Blender (= LookVector −Z Roblox). Planches : `previews/_sheet_*.png`.
 
 | Clé | Famille | Utilisé dans | État |
 |---|---|---|---|
@@ -80,6 +80,22 @@ Personnages : face avant vers −Y dans Blender. Planches : `previews/_sheet_*.p
 | `DimmSlot` | Matériel PC | slot DDR5 à loquets (carte mère) | ✅ |
 | `IoShield` | Matériel PC | panneau I/O arrière (arrière carte mère) | ✅ |
 | `CaseFrame` | Matériel PC | pilier d'angle alu + passe-câbles (parois de la tour) | ✅ |
+| `Keyboard` | Chambre d'Anga | clavier TKL sur le bureau (touches praticables) | ✅ |
+| `Mouse` | Chambre d'Anga | souris gaming à droite du clavier | ✅ |
+| `Monitor` | Chambre d'Anga | écran incurvé 32" (SurfaceGui sur `Screen`) | ✅ |
+| `MicArm` | Chambre d'Anga | bras micro pincé au bord arrière du bureau (pince 40 studs sous le plateau) | ✅ |
+| `Mug` | Chambre d'Anga | mug AngaTV sur le bureau | ✅ |
+| `DeskLamp` | Chambre d'Anga | lampe d'architecte sur le bureau | ✅ |
+| `Headset` | Chambre d'Anga | casque sur son support, sur le bureau | ✅ |
+| `GamingChair` | Chambre d'Anga | fauteuil gaming au sol devant le bureau | ✅ |
+| `Desk` | Chambre d'Anga | bureau du lobby (plateau à 720, tapis XXL) | ✅ |
+| `Miniaturiseur` | Chambre d'Anga | portail de départ « Mode Intervention » (`Beam` séparé) | ✅ |
+| `TerminalConsole` | Chambre d'Anga | borne antivirus des salles sûres (`Screen`, néon recolorable) | ✅ |
+| `WebcamLight` | Chambre d'Anga | ring light + webcam sur le bureau | ✅ |
+| `Speaker` | Chambre d'Anga | enceintes de bureau (paire) | ✅ |
+| `ArcadeCabinet` | Chambre d'Anga | borne d'arcade du lobby (`Screen`) | ✅ |
+| `ShopKiosk` | Chambre d'Anga | kiosque boutique du lobby (`Screen`) | ✅ |
+| `Plant` | Chambre d'Anga | succulente en pot sur le bureau | ✅ |
 | `Lagz` | Personnages | boss LAGZ (arène W7), couronne-chargement qui tourne | ✅ |
 | `LagzHead` | Personnages | LAGZ qui sort des écrans (incidents, lobby) | ✅ |
 | `LagzPortalCore` | Personnages | cœur du virus au centre de l'arène du boss | ✅ |
