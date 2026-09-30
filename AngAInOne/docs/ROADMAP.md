@@ -11,17 +11,17 @@ Scénario : [`SCENARIO.md`](SCENARIO.md). Contrat de la tour : `src/shared/Confi
 - [x] Découpage du travail entre agents (ci-dessous)
 
 ### Phase 1 — Fondations (4 agents en parallèle)
-- [ ] **A1 · Architecte de la tour** : découper `TowerBuilder` (2 100 lignes) en modules :
+- [x] **A1 · Architecte de la tour** : découper `TowerBuilder` (2 100 lignes) en modules :
       `World/Tower/Common` (outils + contexte), `Shell`, `Lobby`, `Worlds/W1..W7`, salle de terminal
       standard, entrée/sortie fixes de chaque monde ; le rendu actuel est conservé, tests verts.
 - [ ] **A2 · Pièges** : `TrapController` — 14 nouveaux pièges (voir contrat), horloge `TrapClock`
       (FREEZE / LAG SPIKE), effets des incidents sur les pièges (BLACKOUT, CORRUPTION, SURCHAUFFE),
       tests de simulation.
-- [ ] **A3 · Scénario en jeu** : `IncidentService` (serveur) + incidents côté client (annonce,
+- [x] **A3 · Scénario en jeu** : `IncidentService` (serveur) + incidents côté client (annonce,
       effets d'écran, tempête de pop-ups à fermer, blackout), widget « Performance du PC »
       (FPS / ping / °C), mondes infectés ↔ nettoyés (tags), répliques d'Anga et de LAGZ,
       moniteur du live dans le lobby, cinématique de fin « le live commence ».
-- [ ] **A4 · Mini-jeux** : 2 nouveaux mini-jeux (Pop-up Killer, Défrag) + variante boss du
+- [x] **A4 · Mini-jeux** : 2 nouveaux mini-jeux (Pop-up Killer, Défrag) + variante boss du
       Firewall (LAGZ), tests.
 
 ### Phase 2 — Contenu 3D (5 agents en parallèle, sur la base de A1 + A2)
@@ -33,6 +33,11 @@ Scénario : [`SCENARIO.md`](SCENARIO.md). Contrat de la tour : `src/shared/Confi
 - [ ] **B4 · Mondes 5–6** (The Core, Render Canyon).
 - [ ] **B5 · Monde 7 + boss LAGZ** : arène, 3 phases (serveur `BossService` + client
       `BossController`), fin.
+
+### Phase 2 bis — Vrais modèles 3D (Blender → glTF → MeshParts, voir `assets/README.md`)
+- [x] Pipeline : `assets/blender/common.py`, `ModelLibrary` (décor de secours), `tools/upload_models.py`
+- [ ] **M1 · Matériel PC** · **M2 · Chambre d'Anga** · **M3 · Personnages et objets**
+- [ ] Placement des modèles dans le lobby et les 7 mondes ; import sur Roblox (Open Cloud ou Studio)
 
 ### Phase 3 — Intégration (chef de projet)
 - [ ] Fusion, clés USB (serveur + HUD + récompenses), équilibrage, relecture indépendante,
@@ -63,6 +68,9 @@ Fin d'un FREEZE : `Offset{w} += End - Start` et `Kind{w} = ""` dans la même fra
 ### Décor infecté / propre (A3 ↔ mondes)
 Tag `Infected` : visible seulement tant que le joueur n'a pas nettoyé le monde (`World`).
 Tag `Cleaned` : visible seulement après. Les deux portent l'attribut `World`.
+
+### Boss (A4 → B5)
+Phase 3 du boss : `MinigamePanel.Play("Firewall", 8, …)` (Firewall contre LAGZ, 36 PV, bouclier).
 
 ### Clés USB (mondes → phase 3)
 Tag `UsbKey`, attribut `KeyId` = `W{n}K{i}` (i = 1..3), non collidable, touchable.
