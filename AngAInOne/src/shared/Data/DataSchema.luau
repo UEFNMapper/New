@@ -45,6 +45,7 @@ export type PlayerData = {
 	RunAssisted: boolean, -- passe « avantage » ou saut d'étape utilisé : hors classement des temps
 	RunCoins: { [string]: boolean }, -- orbes déjà ramassées pendant cette ascension
 	RunSplit: RunSplit, -- chrono du monde en cours (médailles), redémarré au départ et à chaque monde
+	RunDeaths: number, -- chutes pendant cette ascension (rapport de fin)
 	-- Records
 	BestStage: number,
 	Wins: number,
@@ -103,6 +104,7 @@ function DataSchema.Template(): PlayerData
 		RunAssisted = false,
 		RunCoins = {},
 		RunSplit = { World = 0, Start = 0, Deaths = 0, Keys = 0, Assisted = false },
+		RunDeaths = 0,
 		BestStage = 0,
 		Wins = 0,
 		BestTime = 0,
@@ -131,6 +133,7 @@ function DataSchema.ResetRun(data: PlayerData)
 	data.RunStarted = false
 	data.RunAssisted = false
 	data.RunCoins = {}
+	data.RunDeaths = 0
 end
 
 -- Migrations : MIGRATIONS[v] transforme des données en version v vers v + 1.

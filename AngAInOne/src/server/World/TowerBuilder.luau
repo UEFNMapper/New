@@ -43,6 +43,7 @@ local Common = require(TowerParts.Common)
 local Legacy = require(TowerParts.Legacy)
 local Lobby = require(TowerParts.Lobby)
 local Shell = require(TowerParts.Shell)
+local Cameos = require(TowerParts.Cameos)
 local ModelLibrary = require(script.Parent.ModelLibrary)
 
 type WorldBuilder = (ctx: Common.WorldContext) -> ()
@@ -81,6 +82,7 @@ function TowerBuilder.Build(): Folder
 		WORLDS[i](ctx)
 		finish()
 	end
+	Cameos.Build(tower) -- LAGZ dans un écran sur les parois de chaque monde (client LagzCameo)
 	tower:SetAttribute("PointLights", Common.LightCount())
 	tower.Parent = Workspace
 	return tower

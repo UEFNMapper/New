@@ -42,6 +42,23 @@ Story.LagzIncident = {
 	Overheat = { "On monte le chauffage à fond !", "Ça chauffe, ça chauffe ! Mouahaha !" },
 }
 
+-- LAGZ qui surgit de son écran sur une paroi du monde (Controllers/LagzCameo), 2 par monde.
+Story.LagzCameo = {
+	{ "Coucou ! C'est moi qui mange tes électrons !", "Bzzt ! Encore une petite coupure ? Hé hé !" },
+	{ "Tu fermes mes pubs ? J'en ai 200 !", "Oups, j'ai encore ouvert un onglet ! Hé hé !" },
+	{ "Ton disque est tout rose ! J'adore !", "Chargement de ta défaite : 99 %…" },
+	{ "Il fait chaud, hein ? Le chauffage, c'est moi !", "Atchoum ! Oups, de la poussière partout !" },
+	{ "Mon mineur creuse, creuse, creuse ! Mouahaha !", "Processeur à 100 % ! Et toi, à combien ?" },
+	{ "Tiens, un freeze ! Oh, pardon… Hé hé !", "Image figée ! Souris pour la photo !" },
+	{ "Tu es chez moi, ici ! Essuie tes pieds !", "Encore un pas et… écran bleu ! Mouahaha !" },
+}
+
+-- Réplique d'une apparition : la 1re ou la 2e du monde selon l'étape.
+function Story.CameoLine(world: number, index: number): string?
+	local lines = Story.LagzCameo[world]
+	return if lines then lines[(index - 1) % #lines + 1] else nil
+end
+
 -- Anga quand l'incident est passé (pas à chaque fois).
 Story.AngaRelief = {
 	"Ouf ! LAGZ a raté son coup !",

@@ -243,6 +243,7 @@ local function onCheckpoint(session: Session.Session, stage: number)
 		-- Ligne de départ : le chrono démarre.
 		if not data.RunStarted then
 			data.Cleared = 0 -- nouvelle ascension : la tour est de nouveau infectée
+			data.RunDeaths = 0
 			data.RunStarted = true
 			data.RunAssisted = assistActive(session)
 			session.LastCheckpointAt = os.clock()
@@ -293,6 +294,10 @@ local function onFinish(session: Session.Session)
 	local bits = Wallet.Add(session, if first then RUN.VictoryBits else RUN.RepeatVictoryBits, "Victory", true)
 	Telemetry.Progression(session.Player, "Tower", Tower.TOTAL_STAGES + 1, "Victory")
 	GameEvents.Victory:Fire(session.Player, time)
+	local keys = 0
+	for _ in data.UsbKeys do
+		keys += 1
+	end
 	Wallet.Fx(session, "Victory", {
 		Time = time,
 		Record = record,
@@ -300,6 +305,10 @@ local function onFinish(session: Session.Session)
 		First = first,
 		Bits = bits,
 		Wins = data.Wins,
+		-- Rapport d'optimisation (UI/Screens/Moments) : chutes de CETTE ascension, clés USB trouvées.
+		Deaths = data.RunDeaths,
+		Keys = keys,
+		KeysTotal = Tower.WORLD_COUNT * Tower.USB_KEYS_PER_WORLD,
 	})
 	DataSchema.ResetRun(data)
 	-- La tour reste NETTOYÉE (décor, PC à 144 FPS, live, LAGZ vaincu) jusqu'à la prochaine
@@ -329,6 +338,7 @@ function ProgressService.Skip(session: Session.Session): boolean
 	if not data.RunStarted then
 		data.Cleared = 0 -- nouvelle ascension (la victoire précédente laisse la tour nettoyée)
 		startSplit(session, 1, true)
+		data.RunDeaths = 0
 	end
 	local nextStage = data.Stage + 1
 	local world = Tower.WorldOf(nextStage)
@@ -400,6 +410,9 @@ local function onCharacter(session: Session.Session, character: Model)
 		end
 		session.Alive = false
 		session.Data.Deaths += 1
+		if session.Data.RunStarted then
+			session.Data.RunDeaths += 1 -- rapport de fin
+		end
 		-- Morts du monde en cours (médailles) : pièges signalés par le client (ReportDeath, qui
 		-- met la vie à 0), vide mortel, boss… Pas au lobby.
 		if session.Data.RunStarted and not atLobby[session] and session.Data.RunSplit.World > 0 then

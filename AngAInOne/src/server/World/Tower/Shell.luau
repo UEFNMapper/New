@@ -40,6 +40,27 @@ local STEEL = Color3.fromRGB(30, 33, 42) -- tôle peinte noire
 local GUNMETAL = Color3.fromRGB(44, 47, 58) -- cadre de façade
 local MESH = Color3.fromRGB(70, 74, 88)
 
+-- Néon piloté par le client TowerGlow (la tour s'allume monde par monde, visible du lobby) :
+-- tag ShellLight + attribut World (1..7 = bande du monde, 0 = toute la tour). Split = bande
+-- verticale que le client découpe par monde. Remplace RgbStrip (un seul pilote par néon).
+local function shellLight(part: BasePart, world: number, split: boolean?)
+	part:RemoveTag("RgbStrip")
+	part:AddTag("ShellLight")
+	part:SetAttribute("World", world)
+	if split then
+		part:SetAttribute("Split", true)
+	end
+end
+
+-- Tag ShellLight sur les segments de l'anneau RGB d'un ventilateur (RoomProps.CaseFan).
+local function fanLight(fan: Model, world: number)
+	for _, d in fan:GetDescendants() do
+		if d:IsA("BasePart") and d.Name == "FanRgb" then
+			shellLight(d, world)
+		end
+	end
+end
+
 -- Treillis en losanges dans le plan (X, Y) de `cf` (centre du rectangle w × h), barres en Z = 0.
 local function lattice(parent: Instance, cf: CFrame, w: number, h: number, spacing: number, bar: number, color: Color3)
 	local model = Build.Model("Mesh", parent)
@@ -176,14 +197,14 @@ function Shell.Build(tower: Folder)
 	for i = 0, 5 do
 		Box(shell, "ShroudVent", Vector3.new(0.4, 18, 4), CFrame.new(outer + 0.1, shroudTop / 2, 50 + i * 12), silk)
 	end
-	Build.Neon({
+	local shroudRgb = Build.Neon({
 		Name = "ShroudRgb",
 		Size = Vector3.new(0.6, 1, INNER * 2 - 16),
 		CFrame = CFrame.new(outer + 0.3, shroudTop - 1.5, 0),
 		Color = APP_GLOW,
-		Tags = { "RgbStrip" },
 		Parent = shell,
 	})
+	shellLight(shroudRgb, 1)
 	-- Rails lumineux aux planchers des mondes (vus à travers la vitre)
 	for w = 2, Tower.WORLD_COUNT do
 		local y = worldBase(w)
@@ -195,14 +216,14 @@ function Shell.Build(tower: Folder)
 			C.Aluminum,
 			METAL
 		)
-		Build.Neon({
+		local rail = Build.Neon({
 			Name = "RgbRail",
 			Size = Vector3.new(0.4, 0.8, INNER * 2 - 16),
 			CFrame = CFrame.new(INNER + 3.6, y - 1, 0),
 			Color = hex(Tower.Worlds[w].Primary),
-			Tags = { "RgbStrip" },
 			Parent = shell,
 		})
+		shellLight(rail, w)
 	end
 
 	------------------------------------------------------------------------------
@@ -228,7 +249,7 @@ function Shell.Build(tower: Folder)
 	-- Ventilateurs derrière le treillis (moyeux tournés par le client)
 	for i, y in { 200, 393, 586 } do
 		local fanCf = CFrame.fromMatrix(Vector3.new(0, y, -outer), -Vector3.zAxis, UP)
-		RoomProps.CaseFan(shell, fanCf, 170, hex(Tower.Worlds[i * 2].Primary), 1.4)
+		fanLight(RoomProps.CaseFan(shell, fanCf, 170, hex(Tower.Worlds[i * 2].Primary), 1.4), i * 2)
 	end
 	lattice(
 		shell,
@@ -240,24 +261,24 @@ function Shell.Build(tower: Folder)
 		MESH
 	)
 	for _, x in { doorX0 + 0.8, INNER - 0.8 } do
-		Build.Neon({
+		local strip = Build.Neon({
 			Name = "FrontStrip",
 			Size = Vector3.new(0.8, meshTop - meshBottom, 0.6),
 			CFrame = CFrame.new(x, (meshBottom + meshTop) / 2, -(outer + panelDepth) + 0.3),
 			Color = APP_GLOW,
-			Tags = { "RgbStrip" },
 			Parent = shell,
 		})
+		shellLight(strip, 0, true) -- jauge verticale : un morceau par monde (côté client)
 	end
 	for _, y in { meshBottom + 0.8, meshTop - 0.8 } do
-		Build.Neon({
+		local strip = Build.Neon({
 			Name = "FrontStrip",
 			Size = Vector3.new(INNER * 2, 0.8, 0.6),
 			CFrame = CFrame.new(0, y, -(outer + panelDepth) + 0.3),
 			Color = APP_GLOW,
-			Tags = { "RgbStrip" },
 			Parent = shell,
 		})
+		shellLight(strip, math.clamp(math.floor(y / Common.BAND) + 1, 1, Tower.WORLD_COUNT))
 	end
 	-- Bandeau haut : logo, bouton d'alimentation à LED, reset, USB, jacks
 	local ioY = (meshTop + h) / 2
@@ -266,8 +287,12 @@ function Shell.Build(tower: Folder)
 	RoomProps.Print(logo, Branding.GameName, C.White, Enum.NormalId.Front, Enum.Font.GothamBlack, 6)
 	local power = frontCf(96, ioY, panelDepth) * CFrame.Angles(0, math.pi / 2, 0) -- axe X local = -Z monde
 	Rod(shell, "PowerButton", power * CFrame.new(1, 0, 0), 2, 20, C.MetalLight, METAL)
-	Props.Ring(shell, "PowerRing", power * CFrame.new(2.2, 0, 0), 12, 1.4, 0.6, 16, C.Cyan, Enum.Material.Neon)
-	Box(
+	local powerRing =
+		Props.Ring(shell, "PowerRing", power * CFrame.new(2.2, 0, 0), 12, 1.4, 0.6, 16, C.Cyan, Enum.Material.Neon)
+	for _, segment in powerRing do
+		shellLight(segment, 0) -- bouton d'alimentation : l'état de toute la tour
+	end
+	local powerIcon = Box(
 		shell,
 		"PowerIcon",
 		Vector3.new(1.6, 7, 0.4),
@@ -275,6 +300,7 @@ function Shell.Build(tower: Folder)
 		C.Cyan,
 		Enum.Material.Neon
 	)
+	shellLight(powerIcon, 0)
 	Rod(
 		shell,
 		"ResetButton",
@@ -342,13 +368,14 @@ function Shell.Build(tower: Folder)
 	------------------------------------------------------------------------------
 	local filterX, filterW, filterD = 24, 136, 264
 	for _, z in { -62, 62 } do
-		RoomProps.CaseFan(
+		local topFan = RoomProps.CaseFan(
 			shell,
 			CFrame.fromMatrix(Vector3.new(filterX, h + 6, z), UP, Vector3.zAxis),
 			112,
 			C.Violet,
 			1.8
 		)
+		fanLight(topFan, Tower.WORLD_COUNT)
 	end
 	lattice(
 		shell,
@@ -413,7 +440,9 @@ function Shell.Build(tower: Folder)
 	for i, color in { Color3.fromRGB(255, 140, 190), Color3.fromRGB(104, 224, 140), Color3.fromRGB(80, 160, 255) } do
 		Rod(shell, "AudioJack", rearCf(-104, 600 - i * 9, 1) * CFrame.Angles(0, math.pi / 2, 0), 1.2, 5.5, color)
 	end
-	RoomProps.CaseFan(shell, CFrame.fromMatrix(Vector3.new(4, 626, outer), Vector3.zAxis, UP), 110, C.Violet, 1.6)
+	local rearFan =
+		RoomProps.CaseFan(shell, CFrame.fromMatrix(Vector3.new(4, 626, outer), Vector3.zAxis, UP), 110, C.Violet, 1.6)
+	fanLight(rearFan, Tower.WORLD_COUNT)
 	lattice(shell, rearCf(4, 626, 4.6), 112, 112, 9, 0.9, MESH)
 	-- Équerres PCIe : carte graphique (2 emplacements, sorties vidéo) puis caches ventilés
 	for slot = 0, 6 do
