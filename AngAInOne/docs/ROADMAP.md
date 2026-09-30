@@ -36,12 +36,14 @@ Scénario : [`SCENARIO.md`](SCENARIO.md). Contrat de la tour : `src/shared/Confi
 
 ### Phase 2 bis — Vrais modèles 3D (Blender → glTF → MeshParts, voir `assets/README.md`)
 - [x] Pipeline : `assets/blender/common.py`, `ModelLibrary` (décor de secours), `tools/upload_models.py`
-- [ ] **M1 · Matériel PC** · **M2 · Chambre d'Anga** · [x] **M3 · Personnages et objets**
-- [ ] Placement des modèles dans le lobby et les 7 mondes ; import sur Roblox (Open Cloud ou Studio)
+- [x] **M1 · Matériel PC** (24) · **M2 · Chambre d'Anga** (16) · **M3 · Personnages et objets** (15)
+- [x] Placement des modèles dans le lobby, les 7 mondes, les terminaux et les collectibles (décor de secours sinon)
+- [ ] Import sur Roblox (Open Cloud ou Studio) puis vérification des orientations en jeu
 
 ### Phase 3 — Intégration (chef de projet)
-- [ ] Fusion, clés USB (serveur + HUD + récompenses), équilibrage, relecture indépendante,
+- [x] Fusion, clés USB (serveur + HUD + récompenses), relecture indépendante (11 corrections),
       rendus, README, build `.rbxl`, envoi.
+- [ ] Équilibrage en jeu réel (Studio) : temps par monde, difficulté des incidents.
 
 ## Contrats techniques
 
