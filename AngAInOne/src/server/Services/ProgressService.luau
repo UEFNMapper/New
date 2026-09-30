@@ -387,6 +387,34 @@ local function indexTower(tower: Folder)
 			end)
 		end
 	end
+	-- Clés USB dorées : trouvées une fois pour toujours (chemins difficiles facultatifs).
+	local totalKeys = Tower.WORLD_COUNT * Tower.USB_KEYS_PER_WORLD
+	for _, part in CollectionService:GetTagged("UsbKey") do
+		local id = part:GetAttribute("KeyId")
+		if part:IsA("BasePart") and type(id) == "string" then
+			part.Touched:Connect(function(hit: BasePart)
+				local player, session = playerFromHit(hit)
+				if not player or not session or not session.Alive then
+					return
+				end
+				local data = session.Data
+				if data.UsbKeys[id] or RemoteGuard.DistanceTo(player, part.Position) > RUN.CoinPickupDistance then
+					return
+				end
+				data.UsbKeys[id] = true
+				local found = 0
+				for _ in data.UsbKeys do
+					found += 1
+				end
+				local bits = Wallet.Add(session, RUN.UsbKeyBits, "UsbKey", true)
+				if found >= totalKeys and not table.find(data.Cosmetics.Owned, RUN.UsbAllKeysCosmetic) then
+					table.insert(data.Cosmetics.Owned, RUN.UsbAllKeysCosmetic)
+				end
+				Wallet.Fx(session, "UsbKey", { Id = id, Found = found, Total = totalKeys, Bits = bits })
+				GameEvents.StateChanged:Fire(player)
+			end)
+		end
+	end
 	for _, part in CollectionService:GetTagged("Coin") do
 		local id = part:GetAttribute("CoinId")
 		if part:IsA("BasePart") and type(id) == "string" then

@@ -72,6 +72,15 @@ local list: { CosmeticDef } = {
 		Source = "VIP",
 		Order = 7,
 	},
+	{
+		Id = "TrailUsb",
+		Kind = "Trail",
+		Name = "Anti-Lag Légendaire",
+		Price = 0,
+		Colors = { "F6E05E", "FFFFFF", "F6E05E" },
+		Source = "Usb",
+		Order = 8,
+	},
 	-- Effets de mort
 	{ Id = "DeathGlitch", Kind = "DeathFx", Name = "Glitch", Price = 0, Colors = { "ED64A6", "8B7CFF" }, Order = 0 },
 	{ Id = "DeathPixels", Kind = "DeathFx", Name = "Pixels", Price = 200, Colors = { "48BB78", "4FD1C5" }, Order = 1 },

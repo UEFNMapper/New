@@ -16,6 +16,7 @@ local RunService = game:GetService("RunService")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Products = require(Shared.Config.Products)
 local Cosmetics = require(Shared.Config.Cosmetics)
+local Tower = require(Shared.Config.Tower)
 local NumberFormat = require(Shared.Util.NumberFormat)
 
 local Create = require(script.Parent.Parent.Create)
@@ -172,12 +173,19 @@ local function buildCosmetics(state: any, kind: string)
 			text, variant, enabled = "Pass VIP", "Secondary", false
 		elseif def.Source == "Daily" then
 			text, variant, enabled = "Jour 7 🎁", "Secondary", false
+		elseif def.Source == "Usb" then
+			local found = 0
+			for _ in data.UsbKeys do
+				found += 1
+			end
+			text, variant, enabled = `🔑 {found}/{Tower.WORLD_COUNT * Tower.USB_KEYS_PER_WORLD}`, "Secondary", false
 		else
 			text, variant, enabled = `{NumberFormat.Compact(def.Price)} Bits`, "Gold", data.Bits >= def.Price
 		end
 		local description = if def.Source == "VIP"
 			then "Offerte avec le pass VIP."
 			elseif def.Source == "Daily" then "Cadeau du 7ᵉ jour du calendrier."
+			elseif def.Source == "Usb" then "Trouve TOUTES les clés USB dorées cachées dans la tour !"
 			elseif kind == "Trail" then "Une traînée lumineuse derrière toi."
 			else "L'effet quand un piège t'attrape."
 		item(

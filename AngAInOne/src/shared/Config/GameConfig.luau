@@ -22,6 +22,8 @@ GameConfig.Run = table.freeze({
 	VictoryBits = 250, -- première victoire
 	RepeatVictoryBits = 120, -- victoires suivantes
 	CoinPickupDistance = 14, -- distance max (studs) entre le joueur et l'orbe
+	UsbKeyBits = 25, -- clé USB dorée (chemins difficiles), une seule fois pour toujours
+	UsbAllKeysCosmetic = "TrailUsb", -- récompense : toutes les clés USB de la tour
 })
 
 -- Mini-jeux
