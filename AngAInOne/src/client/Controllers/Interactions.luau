@@ -1,17 +1,20 @@
 --!strict
 --[[
 	Interactions : les prompts du monde (E / X manette / tap).
-	- "Minigame" (terminal antivirus en fin de monde) : lance le mini-jeu 2D du monde
+	- "Minigame" (terminal antivirus en fin de monde) : lance le mini-jeu 2D du monde ; au monde 7,
+	  c'est la phase 3 du combat contre LAGZ (bouclier détruit, Firewall boss = difficulté 8)
 	- "Arcade" (lobby) : choisir un mini-jeu pour gagner quelques Bits
 	- "Shop" / "Daily" (lobby) : ouvrent la boutique / les missions
 	Le serveur valide tout (bon checkpoint, distance, durée).
 ]]
 
+local Players = game:GetService("Players")
 local ProximityPromptService = game:GetService("ProximityPromptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Tower = require(Shared.Config.Tower)
+local BossLogic = require(Shared.Util.BossLogic)
 
 local Net = require(script.Parent.Net)
 local Store = require(script.Parent.Store)
@@ -36,8 +39,14 @@ function Interactions.PlayTerminal(world: number)
 		Toasts.Show("Info", "Atteins d'abord le checkpoint de cette salle !")
 		return
 	end
+	local boss = world == BossLogic.WORLD
+	if boss and Players.LocalPlayer:GetAttribute("BossPhase") ~= BossLogic.Phase.Terminal then
+		Toasts.Show("Info", "Le bouclier de LAGZ protège ce terminal : branche d'abord les 3 prises antivirus !")
+		return
+	end
 	Net.Fire("MinigameStart", world)
-	MinigamePanel.Play(def.Minigame, world, function(success: boolean, score: number, _duration: number)
+	local difficulty = if boss then BossLogic.BOSS_DIFFICULTY else world
+	MinigamePanel.Play(def.Minigame, difficulty, function(success: boolean, score: number, _duration: number)
 		Net.Fire("MinigameEnd", world, success, score)
 	end)
 end

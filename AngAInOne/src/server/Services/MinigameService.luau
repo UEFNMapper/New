@@ -4,6 +4,7 @@
 	Les mini-jeux se jouent côté client (2D) ; le serveur valide ce qui est vérifiable :
 	- le joueur est au bon checkpoint (salle du terminal) et près du terminal
 	- le monde précédent est nettoyé, la partie a été ouverte par MinigameStart
+	- monde 7 : le bouclier de LAGZ est détruit (BossService, phase 3 du combat final)
 	- la durée est plausible (minimum par type de jeu, maximum global)
 	Réussite -> le portail du monde s'ouvre (ProgressService.ClearWorld) + Bits.
 ]]
@@ -19,6 +20,7 @@ local GameEvents = require(script.Parent.Parent.Core.GameEvents)
 local Telemetry = require(script.Parent.Parent.Core.Telemetry)
 local RemoteGuard = require(script.Parent.Parent.Security.RemoteGuard)
 local ProgressService = require(script.Parent.ProgressService)
+local BossService = require(script.Parent.BossService)
 
 local MinigameService = {}
 
@@ -38,6 +40,15 @@ local function onStart(session: Session.Session, world: number)
 	end
 	local terminal = ProgressService.TerminalPosition(world)
 	if not terminal or RemoteGuard.DistanceTo(session.Player, terminal) > CFG.TerminalDistance then
+		return
+	end
+	-- Monde 7 : le terminal final (phase 3 du combat) n'ouvre qu'une fois le bouclier de LAGZ détruit.
+	if world == Tower.WORLD_COUNT and not BossService.TerminalOpen(session) then
+		Wallet.Notify(
+			session,
+			"Info",
+			"Le bouclier de LAGZ protège ce terminal : branche d'abord les 3 prises antivirus !"
+		)
 		return
 	end
 	session.Minigame = { World = world, Kind = def.Minigame, StartedAt = os.clock() }

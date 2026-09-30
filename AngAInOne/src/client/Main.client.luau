@@ -137,6 +137,10 @@ step("TrapController", function()
 		TrapController.Start()
 	end
 end)
+-- Combat final contre LAGZ (monde 7) : arène, pièges de chaque phase, prises, bandeau.
+step("BossController", function()
+	load(Controllers.BossController).Start(App.Layers.Hud)
+end)
 -- Scénario « Opération Anti-Lag » : incidents de LAGZ, décor infecté / propre, répliques,
 -- écran du live dans le lobby.
 step("IncidentController", function()

@@ -17,6 +17,7 @@ local ORDER = {
 	"StateService",
 	"ProgressService",
 	"IncidentService",
+	"BossService", -- après ProgressService (arène construite), avant DataService
 	"ShopService",
 	"MonetizationService",
 	"MinigameService",

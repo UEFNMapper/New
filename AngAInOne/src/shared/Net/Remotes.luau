@@ -21,6 +21,7 @@ local CLIENT_TO_SERVER = {
 	"MinigameEnd", -- (world: number, success: boolean, score: number)
 	"ArcadeStart", -- (kind: string) borne d'arcade du lobby
 	"ArcadeEnd", -- (kind: string, success: boolean, score: number)
+	"BossPlug", -- (index: number) combat de LAGZ, phase 2 : le personnage est sur la prise antivirus
 	"BuyCosmetic", -- (id: string)
 	"EquipCosmetic", -- (id: string)
 	"ToggleAssist", -- (key: string, on: boolean) "LowGravity" | "SpeedChip"
