@@ -45,7 +45,7 @@ local views: { [BasePart]: View } = {}
 local history: { Message } = {}
 
 local CHAT_LINES = 7
-local VIEW_DISTANCE = 320
+local VIEW_DISTANCE = 450
 local CANVAS_WIDTH = 960
 
 local RED = Color3.fromHex("F0565B")

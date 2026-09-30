@@ -1,23 +1,41 @@
 --!strict
 --[[
-	Lobby (Salle de démarrage) : le bureau d'Anga devant la tour (Workspace.Tower.Lobby, Model persistant).
-	LobbySpawn, AppScreen, LeaderboardScreen×3 (attribut Board), TitleHologram, bornes Shop / Arcade /
-	Daily (prompt Action), AngaSpot, portique « JOUER » + checkpoint 0, décor du bureau, et la maison de
-	départ (Lobby.Start) dont le toit est l'entrée du monde 1.
+	Lobby : la chambre d'Anga (docs/SCENARIO.md §6), à l'échelle géante. Le joueur, miniaturisé,
+	apparaît SUR LE BUREAU devant la tour PC (Workspace.Tower.Lobby, Model persistant).
+
+	Contrat (lu par ProgressService, WorldFx, AppScreen, StreamMonitor) :
+	- LobbySpawn (SpawnLocation), sur le tapis de souris XXL, devant le clavier ;
+	- StreamMonitor : dalle de l'écran d'Anga (face avant dessinée par le client : « LIVE DANS
+	  59:00 » + chat), tournée vers le spawn, à moins de 300 studs (le client ne met à jour que de près) ;
+	- AppScreen : écran LCD intégré en bas de la façade de la tour (face avant dessinée par le client) ;
+	- LeaderboardScreen ×3 (attribut Board = Wins / BestTime / Stage), TitleHologram, AngaSpot ;
+	- bornes Shop / Arcade / Daily (ProximityPrompt, attribut Action) ;
+	- le Miniaturiseur AngAInOne (portail de départ « JOUER ») autour du checkpoint 0, devant la porte
+	  de la façade ; la maison de départ (Lobby.Start) monte jusqu'au toit = entrée du monde 1.
+
+	Géométrie (bureau à y = 0, tour centrée en X = Z = 0, façade vers -Z, vitre côté +X) :
+	- le setup du streamer (écran, clavier, souris, micro, casque, Stream Deck) est côté vitre de la tour
+	  (+X), tourné de 60° vers le spawn : de là, on voit l'écran en entier à côté de la tour ;
+	- la base (bornes, classements) est entre le spawn et le Miniaturiseur (côté -X), Anga devant le spawn ;
+	- la chaise, les murs, la fenêtre au coucher de soleil et les posters habillent la chambre autour.
+	Toute la base est accessible à pied depuis le spawn (tests/tower.spec.luau).
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Tower = require(Shared.Config.Tower)
+local Branding = require(Shared.Config.Branding)
 local Build = require(script.Parent.Parent.Build)
 local Props = require(script.Parent.Parent.Props)
 local Common = require(script.Parent.Common)
+local RoomProps = require(script.Parent.RoomProps)
 
 local Lobby = {}
 
 local INNER, WALL = Common.INNER, Common.WALL
 local C = Common.C
+local UP = Common.UP
 local Box, Rod = Props.Box, Props.Rod
 local METAL = Enum.Material.Metal
 local NEON = Enum.Material.Neon
@@ -28,58 +46,421 @@ local SPRING = Common.Colors.Spring
 local facing = Common.Facing
 local lamp = Common.Lamp
 
-function Lobby.Build(tower: Folder)
-	local lobby = Build.Model("Lobby", tower)
-	lobby.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
-	local padTop = 0.4
+local APP_ACCENT = Color3.fromHex(Branding.PartnerApp.Accent) -- violet de l'app AngAInOne
+local APP_GLOW = APP_ACCENT:Lerp(C.White, 0.25)
 
-	-- Bureau (sol), tapis de souris RGB (zone du lobby), murets invisibles au bord du bureau
+------------------------------------------------------------------------------------
+-- Repères de la scène
+------------------------------------------------------------------------------------
+
+local FACE_Z = -(INNER + WALL) -- façade de la tour (la face mesh dépasse jusqu'à -143)
+local PANEL_Z = FACE_Z - 5 -- devant de la face mesh (voir Shell)
+local MAT_TOP = 0.6
+
+-- Spawn : sur le tapis XXL, devant le clavier, à ~180 studs du checkpoint 0
+local SPAWN = Vector3.new(-30, MAT_TOP + 0.5, -290)
+
+-- Setup du streamer : écran en M, tourné de 60° vers le spawn (L = vers le joueur qui tape)
+local MONITOR_AT = Vector3.new(230, 0, -260)
+local SETUP_ANGLE = math.rad(60)
+local L = Vector3.new(-math.sin(SETUP_ANGLE), 0, -math.cos(SETUP_ANGLE))
+local R = L:Cross(UP) -- droite de l'écran vue de face (= gauche du joueur qui tape)
+local SCREEN_W, SCREEN_H, SCREEN_BOTTOM = 240, 135, 70
+local KEYBOARD_AT = MONITOR_AT + L * 130
+local MAT_W, MAT_D = 640, 300 -- tapis XXL (le long de R, le long de L), centré sur le clavier + 60 R + 10 L
+
+-- Bureau (dessus à y = 0) et chambre
+local DESK_X0, DESK_X1, DESK_Z0, DESK_Z1 = -760, 900, -660, 330
+local FLOOR_Y = -900
+local ROOM_X0, ROOM_X1, ROOM_Z0, ROOM_Z1, CEILING_Y = -1500, 1600, -2100, 380, 1700
+
+-- Repère « setup » : origine au pied de l'écran, u le long de L (vers le joueur), v le long de R.
+local function setup(u: number, y: number, v: number): Vector3
+	return MONITOR_AT + L * u + R * v + Vector3.new(0, y, 0)
+end
+
+------------------------------------------------------------------------------------
+-- Chambre : bureau, sol, murs, plafond, fenêtre, posters, chaise
+------------------------------------------------------------------------------------
+
+-- Grande dalle de la pièce découpée en morceaux ≤ 2000 studs (limite des pièces Roblox).
+local function slab(parent: Instance, name: string, a: Vector3, b: Vector3, color: Color3, material: Enum.Material)
+	local lo = Vector3.new(math.min(a.X, b.X), math.min(a.Y, b.Y), math.min(a.Z, b.Z))
+	local hi = Vector3.new(math.max(a.X, b.X), math.max(a.Y, b.Y), math.max(a.Z, b.Z))
+	local span = hi - lo
+	local nx, ny, nz = math.ceil(span.X / 2000), math.ceil(span.Y / 2000), math.ceil(span.Z / 2000)
+	local step = Vector3.new(span.X / nx, span.Y / ny, span.Z / nz)
+	for i = 0, nx - 1 do
+		for j = 0, ny - 1 do
+			for k = 0, nz - 1 do
+				local part = Build.Part({
+					Name = name,
+					Size = step,
+					CFrame = CFrame.new(lo + step * Vector3.new(i + 0.5, j + 0.5, k + 0.5)),
+					Color = color,
+					Material = material,
+					CastShadow = false, -- la chambre ne bloque pas le soleil : le bureau reste lumineux
+					Parent = parent,
+				})
+				part.CanQuery = false
+			end
+		end
+	end
+end
+
+local function buildRoom(lobby: Model)
+	local room = Build.Folder("Room", lobby)
+	local wallColor = Color3.fromRGB(78, 74, 118)
+	-- Bureau (le sol du lobby), chant avec ruban LED, pieds
+	local deskSize = Vector3.new(DESK_X1 - DESK_X0, 44, DESK_Z1 - DESK_Z0)
+	local deskCenter = Vector3.new((DESK_X0 + DESK_X1) / 2, -22, (DESK_Z0 + DESK_Z1) / 2)
 	Build.Part({
 		Name = "Desk",
-		Size = Vector3.new(640, 6, 700),
-		CFrame = CFrame.new(0, -3, -110),
-		Color = Color3.fromRGB(58, 44, 38),
-		Material = Enum.Material.WoodPlanks,
-		Parent = lobby,
+		Size = deskSize,
+		CFrame = CFrame.new(deskCenter),
+		Color = Color3.fromRGB(112, 78, 56),
+		Material = Enum.Material.Wood,
+		Parent = room,
 	})
-	Build.Part({
-		Name = "MousePad",
-		Size = Vector3.new(360, 0.4, 250),
-		CFrame = CFrame.new(-40, padTop / 2, -290),
-		Color = Color3.fromRGB(24, 26, 34),
-		Material = Enum.Material.Fabric,
-		Parent = lobby,
+	Build.Neon({
+		Name = "DeskLed",
+		Size = Vector3.new(deskSize.X, 3, 0.6),
+		CFrame = CFrame.new(deskCenter.X, -6, DESK_Z0 - 0.3),
+		Color = APP_GLOW,
+		Transparency = 0.1,
+		Tags = { "RgbStrip" },
+		Parent = room,
 	})
-	for _, edge in
-		{ { 0, -125.2, 360.4, 0.6 }, { 0, 125.2, 360.4, 0.6 }, { -180.2, 0, 0.6, 250 }, { 180.2, 0, 0.6, 250 } }
-	do
-		Build.Neon({
-			Name = "PadRgb",
-			Size = Vector3.new(edge[3], 0.5, edge[4]),
-			CFrame = CFrame.new(-40 + edge[1], padTop, -290 + edge[2]),
-			Color = C.Violet,
-			Tags = { "RgbStrip" },
-			Parent = lobby,
-		})
+	for _, x in { DESK_X0 + 60, DESK_X1 - 60 } do
+		for _, z in { DESK_Z0 + 60, DESK_Z1 - 60 } do
+			Box(
+				room,
+				"DeskLeg",
+				Vector3.new(60, -44 - FLOOR_Y, 60),
+				CFrame.new(x, (FLOOR_Y - 44) / 2, z),
+				C.Black,
+				METAL
+			)
+		end
 	end
-	for _, b in { { 0, 240, 640, 2 }, { 0, -460, 640, 2 }, { -320, -110, 2, 700 }, { 320, -110, 2, 700 } } do
+	-- Murets invisibles au bord du bureau (on ne tombe pas de 900 studs)
+	local ex, ez = deskSize.X, deskSize.Z
+	for _, b in
+		{
+			{ deskCenter.X, DESK_Z0 - 1, ex + 4, 2 },
+			{ deskCenter.X, DESK_Z1 + 1, ex + 4, 2 },
+			{ DESK_X0 - 1, deskCenter.Z, 2, ez + 4 },
+			{ DESK_X1 + 1, deskCenter.Z, 2, ez + 4 },
+		}
+	do
 		local barrier = Build.Part({
 			Name = "DeskEdge",
-			Size = Vector3.new(b[3], 60, b[4]),
-			CFrame = CFrame.new(b[1], 30, b[2]),
+			Size = Vector3.new(b[3], 120, b[4]),
+			CFrame = CFrame.new(b[1], 60, b[2]),
 			Transparency = 1,
-			Parent = lobby,
+			CastShadow = false,
+			Parent = room,
 		})
 		barrier.CanQuery = false
 	end
 
-	-- Spawn : face à la tour, entre l'écran géant et la porte du parcours
-	local spawnPos = Vector3.new(-40, padTop + 0.5, -290)
-	local spawnLook = Vector3.new(-28, 0, -182) - Vector3.new(-40, 0, -290)
+	-- Sol (parquet), tapis rond sous la chaise, murs, plafond
+	slab(
+		room,
+		"RoomFloor",
+		Vector3.new(ROOM_X0, FLOOR_Y - 20, ROOM_Z0),
+		Vector3.new(ROOM_X1, FLOOR_Y, ROOM_Z1),
+		Color3.fromRGB(150, 108, 76),
+		Enum.Material.WoodPlanks
+	)
+	Rod(
+		room,
+		"Rug",
+		CFrame.new(-560, FLOOR_Y + 1, -900) * VERTICAL,
+		2,
+		1500,
+		Color3.fromRGB(70, 60, 110),
+		Enum.Material.Fabric
+	)
+	slab(
+		room,
+		"RoomWallBack",
+		Vector3.new(ROOM_X0, FLOOR_Y, ROOM_Z1),
+		Vector3.new(ROOM_X1, CEILING_Y, ROOM_Z1 + 20),
+		wallColor,
+		SMOOTH
+	)
+	slab(
+		room,
+		"RoomWallFront",
+		Vector3.new(ROOM_X0, FLOOR_Y, ROOM_Z0 - 20),
+		Vector3.new(ROOM_X1, CEILING_Y, ROOM_Z0),
+		wallColor,
+		SMOOTH
+	)
+	slab(
+		room,
+		"RoomWallLeft",
+		Vector3.new(ROOM_X0 - 20, FLOOR_Y, ROOM_Z0),
+		Vector3.new(ROOM_X0, CEILING_Y, ROOM_Z1),
+		wallColor,
+		SMOOTH
+	)
+	slab(
+		room,
+		"RoomWallRight",
+		Vector3.new(ROOM_X1, FLOOR_Y, ROOM_Z0),
+		Vector3.new(ROOM_X1 + 20, CEILING_Y, ROOM_Z1),
+		wallColor,
+		SMOOTH
+	)
+	slab(
+		room,
+		"RoomCeiling",
+		Vector3.new(ROOM_X0, CEILING_Y, ROOM_Z0),
+		Vector3.new(ROOM_X1, CEILING_Y + 20, ROOM_Z1),
+		Color3.fromRGB(236, 232, 240),
+		SMOOTH
+	)
+	-- Ruban LED au plafond (violet de l'app), le long des 4 murs
+	for _, strip in
+		{
+			{ (ROOM_X0 + ROOM_X1) / 2, ROOM_Z1 - 6, ROOM_X1 - ROOM_X0, 4 },
+			{ (ROOM_X0 + ROOM_X1) / 2, ROOM_Z0 + 6, ROOM_X1 - ROOM_X0, 4 },
+			{ ROOM_X0 + 6, (ROOM_Z0 + ROOM_Z1) / 2, 4, ROOM_Z1 - ROOM_Z0 },
+			{ ROOM_X1 - 6, (ROOM_Z0 + ROOM_Z1) / 2, 4, ROOM_Z1 - ROOM_Z0 },
+		}
+	do
+		Build.Neon({
+			Name = "CeilingLed",
+			Size = Vector3.new(math.min(strip[3], 2000), 10, math.min(strip[4], 2000)),
+			CFrame = CFrame.new(strip[1], CEILING_Y - 30, strip[2]),
+			Color = APP_GLOW,
+			Tags = { "RgbStrip" },
+			Parent = room,
+		})
+	end
+
+	-- Fenêtre au coucher de soleil (mur -X), enseigne néon et mousse acoustique (mur du fond, côté -X)
+	RoomProps.Window(room, facing(Vector3.new(ROOM_X0 + 2, 360, -520), Vector3.xAxis), 820, 760)
+	local backWall = function(x: number, y: number): CFrame
+		return facing(Vector3.new(x, y, ROOM_Z1 - 1), -Vector3.zAxis)
+	end
+	RoomProps.NeonSign(room, backWall(-1000, 760), 520, 170, "AngaTV", Color3.fromRGB(255, 92, 170))
+	RoomProps.AcousticFoam(room, backWall(-1150, 380), 110, Color3.fromRGB(58, 52, 96))
+	RoomProps.AcousticFoam(room, backWall(-800, 380), 110, Color3.fromRGB(58, 52, 96))
+	-- Posters (mur du fond côté +X, au-dessus de l'écran ; mur +X ; mur de devant, derrière la chaise)
+	RoomProps.Poster(room, backWall(900, 560), 380, 540, {
+		Top = Color3.fromRGB(240, 86, 91),
+		Bottom = Color3.fromRGB(120, 30, 50),
+		Glyph = "A",
+		Title = "AngaTV",
+		TitleColor = C.White,
+		Subtitle = "LIVE CHAQUE SOIR · 20h",
+	})
+	RoomProps.Poster(room, backWall(1340, 520), 320, 440, {
+		Top = Color3.fromRGB(255, 232, 170),
+		Bottom = Color3.fromRGB(230, 190, 120),
+		Glyph = "LAGZ",
+		GlyphColor = Color3.fromRGB(120, 60, 200),
+		Title = "RECHERCHÉ",
+		TitleColor = Color3.fromRGB(70, 40, 30),
+		Subtitle = "Récompense : 144 FPS",
+	})
+	RoomProps.Poster(room, facing(Vector3.new(ROOM_X1 - 1, 500, -420), -Vector3.xAxis), 460, 620, {
+		Top = Color3.fromRGB(80, 60, 190),
+		Bottom = Color3.fromRGB(20, 110, 150),
+		Glyph = "7",
+		GlyphColor = Color3.fromRGB(120, 255, 236),
+		Title = "OPÉRATION ANTI-LAG",
+		TitleColor = C.White,
+		Subtitle = "7 mondes · 1 virus · ce soir",
+	})
+	RoomProps.Poster(room, facing(Vector3.new(-200, 300, ROOM_Z0 + 1), Vector3.zAxis), 500, 360, {
+		Top = Color3.fromRGB(30, 30, 40),
+		Bottom = Color3.fromRGB(60, 40, 110),
+		Glyph = "GG",
+		GlyphColor = Color3.fromRGB(246, 196, 83),
+		Title = "144 FPS OU RIEN",
+		TitleColor = C.White,
+	})
+	-- Porte de la chambre (mur de devant)
+	local doorCf = facing(Vector3.new(700, FLOOR_Y + 560, ROOM_Z0 + 8), Vector3.zAxis)
+	Box(room, "RoomDoor", Vector3.new(520, 1120, 12), doorCf, Color3.fromRGB(236, 232, 226))
+	Box(room, "RoomDoorFrame", Vector3.new(580, 1170, 8), doorCf * CFrame.new(0, 25, 8), Color3.fromRGB(210, 206, 200))
+	Rod(room, "RoomDoorKnob", doorCf * CFrame.new(-200, -20, -14) * CFrame.Angles(0, math.pi / 2, 0), 24, 30, C.Nickel)
+
+	-- Chaise gamer d'Anga : hors du bureau, derrière le spawn, tournée vers l'écran
+	local chairAt = KEYBOARD_AT + L * 820
+	RoomProps.Chair(room, facing(Vector3.new(chairAt.X, FLOOR_Y, chairAt.Z), -L))
+end
+
+------------------------------------------------------------------------------------
+-- Setup du streamer (écran, clavier, souris, micro, casque, tasse, lampe, câbles, post-it)
+------------------------------------------------------------------------------------
+
+local function buildSetup(lobby: Model, spawnCf: CFrame)
+	local desk = Build.Folder("DeskSetup", lobby)
+	-- Tapis XXL (sol du lobby) sous le clavier et la souris
+	local matCf = facing(KEYBOARD_AT + R * 60 + L * 10 + Vector3.new(0, MAT_TOP, 0), L)
+	RoomProps.DeskMat(desk, matCf, MAT_W, MAT_D, "AngAInOne")
+
+	-- Écran d'Anga : la dalle StreamMonitor regarde le spawn
+	local monitorCf = facing(MONITOR_AT, L)
+	local monitor = RoomProps.Monitor(desk, monitorCf, SCREEN_W, SCREEN_H, SCREEN_BOTTOM)
+	local screen = Build.Part({
+		Name = "StreamMonitor",
+		Size = monitor.ScreenSize,
+		CFrame = monitor.Screen * CFrame.new(0, 0, 0.3),
+		Color = Color3.fromRGB(14, 14, 20),
+		Material = Enum.Material.Glass,
+		Reflectance = 0.05,
+		CastShadow = false,
+		Tags = { "StreamMonitor" },
+		Parent = desk,
+	})
+	screen.CanCollide = false
+	screen.CanQuery = false
+	lamp(desk, (monitor.Screen * CFrame.new(0, -30, -40)).Position, Color3.fromRGB(170, 190, 255), 1, 60)
+	RoomProps.Webcam(desk, monitor.Top)
+	-- Post-it collés sur les bords de l'écran
+	RoomProps.StickyNote(
+		desk,
+		monitor.Screen * CFrame.new(-SCREEN_W / 2 - 8, -SCREEN_H / 2 + 26, -0.4) * CFrame.Angles(0, 0, math.rad(6)),
+		"LIVE 20h !",
+		RoomProps.Colors.PaperYellow,
+		26
+	)
+	RoomProps.StickyNote(
+		desk,
+		monitor.Screen * CFrame.new(SCREEN_W / 2 + 8, -SCREEN_H / 2 + 22, -0.4) * CFrame.Angles(0, 0, math.rad(-5)),
+		"NE PAS ÉTEINDRE LE PC !!",
+		RoomProps.Colors.PaperPink,
+		26
+	)
+
+	-- Clavier mécanique (dos à l'écran = le joueur qui tape le regarde depuis le spawn), souris à côté
+	RoomProps.Keyboard(desk, facing(KEYBOARD_AT + Vector3.new(0, MAT_TOP, 0), -L))
+	lamp(desk, KEYBOARD_AT + Vector3.new(0, 30, 0), Color3.fromRGB(150, 120, 255), 0.8, 60)
+	RoomProps.Mouse(
+		desk,
+		facing(KEYBOARD_AT + R * 238 + L * 16 + Vector3.new(0, MAT_TOP, 0), -L) * CFrame.Angles(0, math.rad(-8), 0)
+	)
+
+	-- Micro sur bras (socle à côté de la vitre de la tour), casque sur support, multiprise
+	RoomProps.MicArm(desk, setup(-40, 0, -150), setup(40, 330, -150), setup(210, 190, -95), setup(480, 330, -120))
+	RoomProps.HeadsetStand(desk, facing(setup(-20, 0, 190), L + R * 0.4))
+	RoomProps.StreamDeck(desk, facing(setup(40, MAT_TOP, 150), L))
+	local stripCf = facing(Vector3.new(300, 0, 60), Vector3.xAxis)
+	RoomProps.PowerStrip(desk, stripCf)
+	local function plug(i: number): Vector3
+		return (stripCf * CFrame.new(-40 + i * 34, 24, 0)).Position
+	end
+
+	-- Tasse géante et lampe de bureau (côté -X de la tour)
+	RoomProps.Mug(desk, Vector3.new(-470, 0, -250), SPAWN - Vector3.new(-470, 0, -250))
+	RoomProps.DeskLamp(
+		desk,
+		Vector3.new(-560, 0, 80),
+		Vector3.new(-600, 360, 10),
+		Vector3.new(-420, 470, -90),
+		Vector3.new(-200, 0, -260)
+	)
+
+	-- Spaghetti de câbles : écran, clavier, webcam, micro -> arrière de la tour ; tour, écran -> multiprise
+	local backZ = INNER + WALL + 6
+	local function cable(points: { Vector3 }, color: Color3, radius: number)
+		Props.Cable(desk, points, radius, color)
+	end
+	local rear = monitor.Rear.Position
+	local braid = Color3.fromRGB(140, 80, 220)
+	cable({
+		rear,
+		rear + Vector3.new(0, -70, 0) + L * -20,
+		setup(-70, 1.5, 20),
+		Vector3.new(160, 1.5, 40),
+		Vector3.new(158, 1.5, 150),
+		Vector3.new(60, 1.5, backZ),
+	}, C.Black, 2)
+	cable({
+		setup(66, 2, 0),
+		setup(20, 1.5, -70),
+		Vector3.new(172, 1.5, -20),
+		Vector3.new(214, 1.5, 110),
+		Vector3.new(120, 1.5, 158),
+		Vector3.new(30, 1.5, backZ),
+	}, braid, 1.4)
+	cable({
+		monitor.Top.Position + Vector3.new(0, 4, 0) - L * 10,
+		rear + R * 30 + Vector3.new(0, -40, 0),
+		setup(-80, 1.5, 60),
+		Vector3.new(250, 1.5, 90),
+		Vector3.new(170, 1.5, 180),
+		Vector3.new(10, 1.5, backZ),
+	}, Color3.fromRGB(210, 210, 220), 1.2)
+	cable({
+		setup(-40, 3, -150),
+		Vector3.new(185, 1.5, -40),
+		Vector3.new(150, 1.5, 60),
+		Vector3.new(190, 1.5, 165),
+		Vector3.new(-10, 1.5, backZ),
+	}, C.Black, 1.4)
+	cable({
+		Vector3.new(15, 70, backZ - 2.5),
+		Vector3.new(15, 1.5, 190),
+		Vector3.new(150, 1.5, 205),
+		Vector3.new(260, 1.5, 130),
+		plug(3),
+	}, C.Black, 2.4)
+	cable(
+		{ rear + R * -20 + Vector3.new(0, -20, 0), setup(-60, 1.5, -40), Vector3.new(250, 1.5, 20), plug(0) },
+		C.Black,
+		1.8
+	)
+	cable({
+		(stripCf * CFrame.new(85, 7, 0)).Position,
+		Vector3.new(310, 1.5, 200),
+		Vector3.new(420, 1.5, 290),
+		Vector3.new(440, 1.5, DESK_Z1 - 2),
+		Vector3.new(450, -80, DESK_Z1 + 10),
+	}, Color3.fromRGB(230, 230, 236), 2)
+	cable({
+		Vector3.new(-560, 2, 80),
+		Vector3.new(-600, 1.5, 200),
+		Vector3.new(-520, 1.5, 300),
+		Vector3.new(-500, 1.5, DESK_Z1 - 2),
+		Vector3.new(-490, -80, DESK_Z1 + 10),
+	}, C.Black, 1.4)
+
+	-- Post-it sur le bureau, devant le spawn, et sur la façade de la tour
+	RoomProps.StickyNote(
+		desk,
+		spawnCf * CFrame.new(-34, MAT_TOP + 0.16 - SPAWN.Y, 4) * CFrame.Angles(0, math.rad(12), 0),
+		"Réparer le PC avant 20h !",
+		RoomProps.Colors.PaperYellow,
+		22,
+		true
+	)
+	RoomProps.StickyNote(
+		desk,
+		facing(Vector3.new(40, 150, PANEL_Z - 0.4), -Vector3.zAxis) * CFrame.Angles(0, 0, math.rad(-7)),
+		"Mode Intervention : ON",
+		RoomProps.Colors.PaperCyan,
+		26
+	)
+end
+
+------------------------------------------------------------------------------------
+-- Base : spawn, écran de l'app, classements, bornes, Anga, titre
+------------------------------------------------------------------------------------
+
+local function buildBase(lobby: Model): CFrame
+	-- Spawn : face à la tour et à l'écran d'Anga (le bouton JOUER du HUD mène au pad 0, au Miniaturiseur)
+	local spawnCf = facing(SPAWN, Vector3.new(170, 0, -80) - SPAWN)
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "LobbySpawn"
 	spawn.Size = Vector3.new(12, 1, 12)
-	spawn.CFrame = facing(spawnPos, spawnLook)
+	spawn.CFrame = spawnCf
 	spawn.Anchored = true
 	spawn.Neutral = true
 	spawn.Duration = 0
@@ -87,61 +468,38 @@ function Lobby.Build(tower: Folder)
 	spawn.Material = METAL
 	spawn.TopSurface = Enum.SurfaceType.Smooth
 	spawn.Parent = lobby
-	Props.Ring(lobby, "SpawnRing", spawn.CFrame * CFrame.new(0, 0.6, 0) * VERTICAL, 6.2, 0.5, 0.3, 16, C.Cyan, NEON)
+	Props.Ring(lobby, "SpawnRing", spawnCf * CFrame.new(0, 0.6, 0) * VERTICAL, 6.2, 0.5, 0.3, 16, C.Cyan, NEON)
+	lamp(lobby, SPAWN + Vector3.new(0, 36, 0), Color3.fromRGB(255, 236, 214), 1, 60)
 
-	-- Écran géant de l'app AngAInOne (face avant dessinée par le client), tourné vers le spawn
-	local screenPos = Vector3.new(80, 42, -222)
-	local screenCf = facing(screenPos, spawnPos - screenPos)
-	Build.Part({
-		Name = "MonitorBezel",
-		Size = Vector3.new(116, 68, 3),
-		CFrame = screenCf * CFrame.new(0, 0, 1.8),
-		Color = C.Black,
-		Material = METAL,
-		Parent = lobby,
-	})
+	-- Écran de l'app AngAInOne : LCD intégré en bas de la façade de la tour (à droite du portail)
+	local appCf = CFrame.new(-20, 60, PANEL_Z - 0.6)
+	Box(lobby, "AppScreenBezel", Vector3.new(118, 70, 0.8), appCf * CFrame.new(0, 0, 0.5), C.Black, METAL)
 	local appScreen = Build.Decor({
 		Name = "AppScreen",
 		Size = Vector3.new(110, 62, 0.4),
-		CFrame = screenCf,
-		Color = Color3.fromHex("202020"),
+		CFrame = appCf,
+		Color = Color3.fromHex(Branding.PartnerApp.Surface),
 		Material = SMOOTH,
 		Tags = { "AppScreen" },
 		Parent = lobby,
 	})
-	Build.PointLight(appScreen, C.Violet, 1.2, 70)
+	Build.PointLight(appScreen, APP_GLOW, 1.2, 60)
 	Common.CountLight()
 	Build.Neon({
-		Name = "Ambilight",
-		Size = Vector3.new(114, 66, 0.4),
-		CFrame = screenCf * CFrame.new(0, 0, 3.6),
-		Color = C.Violet,
-		Transparency = 0.2,
+		Name = "AppScreenGlow",
+		Size = Vector3.new(120, 0.6, 0.6),
+		CFrame = appCf * CFrame.new(0, -35.4, 0),
+		Color = APP_GLOW,
 		Tags = { "RgbStrip" },
 		Parent = lobby,
 	})
-	Build.Part({
-		Name = "MonitorNeck",
-		Size = Vector3.new(10, 12, 4),
-		CFrame = screenCf * CFrame.new(0, -38, 6),
-		Color = C.MetalLight,
-		Material = METAL,
-		Parent = lobby,
-	})
-	Build.Part({
-		Name = "MonitorFoot",
-		Size = Vector3.new(44, 1.6, 26),
-		CFrame = facing(Vector3.new(screenPos.X, 0.8, screenPos.Z), spawnPos - screenPos) * CFrame.new(0, 0, 10),
-		Color = C.MetalLight,
-		Material = METAL,
-		Parent = lobby,
-	})
 
-	-- Hologramme du titre, sur la façade au-dessus de la porte
+	-- Hologramme du titre, au-dessus du Miniaturiseur et de l'écran de l'app
+	local titlePos = Vector3.new(-73, 128, FACE_Z - 18)
 	local title = Build.Decor({
 		Name = "TitleHologram",
 		Size = Vector3.new(80, 20, 0.2),
-		CFrame = facing(Vector3.new(-60, 52, -150), spawnPos - Vector3.new(-60, 52, -150)),
+		CFrame = facing(titlePos, SPAWN - titlePos),
 		Transparency = 1,
 		Tags = { "TitleHologram" },
 		Parent = lobby,
@@ -149,13 +507,13 @@ function Lobby.Build(tower: Folder)
 	Build.PointLight(title, C.Violet, 1.6, 60)
 	Common.CountLight()
 
-	-- Classements (face avant dessinée par le client), côté droit du spawn
+	-- Classements (face avant dessinée par le client), côté -X, tournés vers le spawn
 	for i, board in { "Wins", "BestTime", "Stage" } do
-		local position = Vector3.new(-185, 20, -335 + i * 38)
-		local cf = facing(position, spawnPos - position)
+		local position = Vector3.new(-250 - (i - 2) ^ 2 * 14, 20, -320 + (i - 2) * 50)
+		local cf = facing(position, SPAWN - position)
 		Build.Part({
 			Name = `{board}Frame`,
-			Size = Vector3.new(32, 22, 1.4),
+			Size = Vector3.new(33, 23, 1.6),
 			CFrame = cf * CFrame.new(0, 0, 1),
 			Color = C.MetalDark,
 			Material = METAL,
@@ -175,16 +533,24 @@ function Lobby.Build(tower: Folder)
 		Build.Part({
 			Name = `{board}Leg`,
 			Size = Vector3.new(3, 9, 3),
-			CFrame = cf * CFrame.new(0, -14.5, 1.2),
+			CFrame = cf * CFrame.new(0, -15.5, 1.2),
 			Color = C.MetalLight,
+			Material = METAL,
+			Parent = lobby,
+		})
+		Build.Part({
+			Name = `{board}Foot`,
+			Size = Vector3.new(16, 1, 10),
+			CFrame = facing(Vector3.new(position.X, 0.5, position.Z), SPAWN - position) * CFrame.new(0, 0, 1.2),
+			Color = C.MetalDark,
 			Material = METAL,
 			Parent = lobby,
 		})
 		Build.Neon({
 			Name = `{board}Trim`,
-			Size = Vector3.new(32, 0.5, 0.5),
-			CFrame = cf * CFrame.new(0, -11.2, 0),
-			Color = C.Cyan,
+			Size = Vector3.new(33, 0.5, 0.5),
+			CFrame = cf * CFrame.new(0, -11.8, 0),
+			Color = if i == 1 then C.Gold elseif i == 2 then C.Cyan else C.Violet,
 			Parent = lobby,
 		})
 	end
@@ -196,25 +562,25 @@ function Lobby.Build(tower: Folder)
 			Text = "Boutique",
 			Object = "Skins et effets",
 			Color = C.Gold,
-			At = Vector3.new(0, 0, -262),
+			At = Vector3.new(-150, 0, -250),
 		},
 		{
 			Action = "Arcade",
 			Text = "Arcade",
 			Object = "Mini-jeux antivirus",
 			Color = C.Cyan,
-			At = Vector3.new(8, 0, -298),
+			At = Vector3.new(-170, 0, -300),
 		},
 		{
 			Action = "Daily",
 			Text = "Cadeau du jour",
 			Object = "Récompenses",
 			Color = SPRING,
-			At = Vector3.new(-6, 0, -332),
+			At = Vector3.new(-155, 0, -350),
 		},
 	}
 	for _, kiosk in kiosks do
-		local cf = facing(kiosk.At + Vector3.new(0, padTop, 0), spawnPos - kiosk.At)
+		local cf = facing(kiosk.At, SPAWN - kiosk.At)
 		local model = Build.Model(`{kiosk.Action}Kiosk`, lobby)
 		local stand = Build.Part({
 			Name = "Stand",
@@ -225,6 +591,7 @@ function Lobby.Build(tower: Folder)
 			Parent = model,
 		})
 		model.PrimaryPart = stand
+		Box(model, "Base", Vector3.new(9, 0.6, 7), cf * CFrame.new(0, 0.3, 0.4), C.Black, METAL)
 		Box(
 			model,
 			"ScreenBack",
@@ -252,180 +619,203 @@ function Lobby.Build(tower: Folder)
 	end
 
 	-- Emplacement de la mascotte Anga (le client l'affiche ici), à côté du spawn
-	local angaPos = Vector3.new(-66, padTop + 3, -282)
+	local angaPos = Vector3.new(-38, 3, -246)
 	local anga = Build.Decor({
 		Name = "AngaSpot",
 		Size = Vector3.new(4, 6, 4),
-		CFrame = facing(angaPos, spawnPos - angaPos),
+		CFrame = facing(angaPos, SPAWN - angaPos),
 		Transparency = 1,
 		Parent = lobby,
 	})
 	anga.CanQuery = false
-	Rod(lobby, "AngaPodium", CFrame.new(angaPos.X, padTop + 0.4, angaPos.Z) * VERTICAL, 0.8, 9, C.MetalDark)
-	Props.Ring(
-		lobby,
-		"AngaRing",
-		CFrame.new(angaPos.X, padTop + 0.9, angaPos.Z) * VERTICAL,
-		4.4,
-		0.4,
-		0.3,
-		14,
-		C.Brand,
-		NEON
-	)
+	Rod(lobby, "AngaPodium", CFrame.new(angaPos.X, 0.4, angaPos.Z) * VERTICAL, 0.8, 9, C.MetalDark)
+	Props.Ring(lobby, "AngaRing", CFrame.new(angaPos.X, 0.9, angaPos.Z) * VERTICAL, 4.4, 0.4, 0.3, 14, C.Brand, NEON)
+	return spawnCf
+end
 
-	-- Entrée du parcours : portique « JOUER » devant la porte, chemin lumineux depuis le spawn
-	local doorX0, doorX1 = Common.EntranceDoor()
-	local doorX = (doorX0 + doorX1) / 2
-	local faceZ = -(INNER + WALL)
-	for _, x in { doorX0 - 2, doorX1 + 2 } do
-		Build.Part({
-			Name = "PortalPillar",
-			Size = Vector3.new(3, 16, 3),
-			CFrame = CFrame.new(x, 8, faceZ - 3),
-			Color = C.MetalDark,
-			Material = METAL,
-			Parent = lobby,
-		})
-		Build.Neon({
-			Name = "PortalGlow",
-			Size = Vector3.new(0.6, 15, 0.6),
-			CFrame = CFrame.new(x + (if x < doorX then 1.6 else -1.6), 8, faceZ - 4.6),
-			Color = SAFE,
-			Parent = lobby,
-		})
-	end
-	local lintel = Build.Part({
-		Name = "PortalLintel",
-		Size = Vector3.new(doorX1 - doorX0 + 7, 5, 3),
-		CFrame = CFrame.new(doorX, 18.5, faceZ - 3),
-		Color = C.Black,
-		Material = METAL,
-		Parent = lobby,
-	})
-	Props.Sign(lintel, "JOUER", "Grimpe la tour !", SAFE, C.White, Enum.NormalId.Front)
-	lamp(lobby, Vector3.new(doorX, 12, faceZ - 12), SAFE, 1.4, 36)
-	local padPos = Vector3.new(doorX, padTop, faceZ - 14)
-	for i = 1, 5 do
-		local t = i / 6
-		local position = spawnPos:Lerp(padPos, t)
-		Build.Neon({
-			Name = "Chevron",
-			Size = Vector3.new(7, 0.2, 1),
-			CFrame = facing(Vector3.new(position.X, padTop + 0.1, position.Z), padPos - spawnPos),
-			Color = SAFE,
-			Transparency = 0.25,
-			Parent = lobby,
-		})
-	end
-	Common.CheckpointPad(0, Vector3.new(doorX, padTop + 0.6, faceZ - 14), Vector3.zAxis)
+------------------------------------------------------------------------------------
+-- Miniaturiseur AngAInOne : portail de départ autour du checkpoint 0, devant la porte de la façade
+------------------------------------------------------------------------------------
 
-	-- Clavier géant (décor) derrière le spawn
-	local keyboardCf = CFrame.new(-40, 0, -420)
-	Build.Part({
-		Name = "KeyboardBase",
-		Size = Vector3.new(250, 5, 64),
-		CFrame = keyboardCf * CFrame.new(0, 2.5, 0),
-		Color = C.Black,
-		Material = METAL,
-		Parent = lobby,
-	})
-	Build.Neon({
-		Name = "KeyboardGlow",
-		Size = Vector3.new(252, 0.6, 66),
-		CFrame = keyboardCf * CFrame.new(0, 0.4, 0),
-		Color = C.Cyan,
-		Transparency = 0.3,
-		Tags = { "RgbStrip" },
-		Parent = lobby,
-	})
-	for row = 0, 3 do
-		for col = 0, 13 do
-			local wide = row == 3 and col >= 4 and col <= 9
-			if not (row == 3 and col > 4 and col <= 9) then
-				Box(
-					lobby,
-					"Key",
-					Vector3.new(if wide then 82 else 13, 3, 11),
-					keyboardCf * CFrame.new(-110 + col * 17 + (if wide then 34.5 else 0), 6, -22 + row * 14.5),
-					Color3.fromRGB(44, 46, 56)
-				)
-			end
+-- Arc de cercle vertical (segments tangents) dans le plan XY, centre `center`, de a0 à a1 (radians,
+-- 0 = en haut). Décor pur.
+local function arc(
+	parent: Instance,
+	name: string,
+	center: Vector3,
+	radius: number,
+	a0: number,
+	a1: number,
+	count: number,
+	width: number,
+	depth: number,
+	color: Color3,
+	material: Enum.Material
+)
+	for i = 0, count - 1 do
+		local t0 = a0 + (a1 - a0) * i / count
+		local t1 = a0 + (a1 - a0) * (i + 1) / count
+		local p0 = center + Vector3.new(radius * math.sin(t0), radius * math.cos(t0), 0)
+		local p1 = center + Vector3.new(radius * math.sin(t1), radius * math.cos(t1), 0)
+		local dir = (p1 - p0).Unit
+		local part = Box(
+			parent,
+			name,
+			Vector3.new((p1 - p0).Magnitude + width * 0.3, width, depth),
+			CFrame.fromMatrix((p0 + p1) / 2, dir, Vector3.zAxis:Cross(dir)),
+			color,
+			material
+		)
+		if material == NEON then
+			part.Transparency = 0.05
 		end
 	end
-	-- Souris géante (RGB), tasse de café, logo sérigraphié sur le tapis
-	local mouseCf = CFrame.new(150, 0, -330) * CFrame.Angles(0, math.rad(-12), 0)
-	Build.Part({
-		Name = "MouseBody",
-		Size = Vector3.new(26, 9, 40),
-		CFrame = mouseCf * CFrame.new(0, 4.5, 0),
-		Color = C.Black,
-		Material = SMOOTH,
-		Parent = lobby,
-	})
-	Rod(
-		lobby,
-		"MouseNose",
-		mouseCf * CFrame.new(0, 4.5, -20) * CFrame.Angles(0, math.pi / 2, 0) * VERTICAL,
-		26,
-		9,
-		C.Black
-	)
-	Rod(lobby, "MouseWheel", mouseCf * CFrame.new(0, 9.2, -12), 1.6, 5, C.MetalLight)
-	Build.Neon({
-		Name = "MouseRgb",
-		Size = Vector3.new(26.4, 0.8, 40.4),
-		CFrame = mouseCf * CFrame.new(0, 1.2, 0),
-		Color = C.Violet,
-		Tags = { "RgbStrip" },
-		Parent = lobby,
-	})
-	Props.Cable(lobby, {
-		(mouseCf * CFrame.new(0, 3, -24)).Position,
-		(mouseCf * CFrame.new(10, 1.5, -70)).Position,
-		Vector3.new(120, 1.5, -150),
-	}, 1.2, C.Rubber)
-	local mugPos = Vector3.new(-250, 0, -250)
+end
+
+local function buildMiniaturiser(lobby: Model)
+	local model = Build.Model("Miniaturiser", lobby)
+	local doorX0, doorX1 = Common.EntranceDoor()
+	local doorX = (doorX0 + doorX1) / 2
+	local padZ = PANEL_Z - 9 -- pad de 12 : son bord arrière est à 3 studs de la face mesh
+	local gateZ = padZ - 2
+	-- Socle rond sous le pad (plus bas que son dessus), cerclé de cyan (couleur « sûr » du jeu : un
+	-- disque violet lumineux au sol ressemblerait à une flaque de glitch)
+	local baseCf = CFrame.new(doorX, 0.3, padZ - 6)
 	Build.Cylinder({
-		Name = "Mug",
-		Size = Vector3.new(34, 30, 30),
-		CFrame = CFrame.new(mugPos + Vector3.new(0, 17, 0)) * VERTICAL,
-		Color = C.White,
-		Material = SMOOTH,
-		Parent = lobby,
+		Name = "MiniaturiserBase",
+		Size = Vector3.new(0.6, 52, 52),
+		CFrame = baseCf * VERTICAL,
+		Color = Color3.fromRGB(40, 36, 56),
+		Material = METAL,
+		Parent = model,
 	})
-	Rod(lobby, "Coffee", CFrame.new(mugPos + Vector3.new(0, 33.2, 0)) * VERTICAL, 0.6, 27, Color3.fromRGB(70, 42, 28))
-	-- Anse : deux barreaux horizontaux + un montant (x, y, largeur, hauteur)
-	for _, handle in { { 18, 26, 6, 3 }, { 18, 8, 6, 3 }, { 21.5, 17, 3, 21 } } do
-		Box(
-			lobby,
-			"MugHandle",
-			Vector3.new(handle[3], handle[4], 4),
-			CFrame.new(mugPos + Vector3.new(handle[1], handle[2], 0)),
-			C.White
+	Props.Ring(model, "MiniaturiserBaseRing", baseCf * CFrame.new(0, 0.2, 0) * VERTICAL, 24.6, 1, 0.3, 24, SAFE, NEON)
+	Props.Ring(
+		model,
+		"MiniaturiserBaseRing",
+		baseCf * CFrame.new(0, 0.2, 0) * VERTICAL,
+		19,
+		0.6,
+		0.3,
+		20,
+		APP_GLOW,
+		NEON
+	)
+	-- Anneaux du rayon réducteur : de plus en plus petits vers la porte (on « rétrécit » en entrant)
+	for i, ring in { { 30, gateZ - 8 }, { 21, gateZ + 2 }, { 13, PANEL_Z - 1.5 } } do
+		local r, z = ring[1], ring[2]
+		local center = Vector3.new(doorX, r - 1, z)
+		arc(model, "ShrinkRing", center, r + 1.8, math.rad(-128), math.rad(128), 18, 3, 3.4, C.MetalDark, METAL)
+		arc(
+			model,
+			"ShrinkRingGlow",
+			center + Vector3.new(0, 0, -1.9),
+			r,
+			math.rad(-126),
+			math.rad(126),
+			18,
+			1.3,
+			0.6,
+			if i == 2 then SAFE else APP_GLOW,
+			NEON
 		)
 	end
-	local mugLabel = Box(
-		lobby,
-		"MugLabel",
-		Vector3.new(0.2, 12, 20),
-		CFrame.new(mugPos + Vector3.new(15.1, 18, 0)) * CFrame.Angles(0, math.pi / 2, 0),
-		C.Brand
-	)
-	mugLabel.Transparency = 1
-	Props.Label(mugLabel, "ANGA", C.Brand, Enum.NormalId.Right, Enum.Font.GothamBlack)
-	Props.Decal(
-		lobby,
-		"PadLogo",
-		Vector3.new(120, 0.1, 24),
-		facing(Vector3.new(-40, padTop + 0.06, -355), spawnLook) * CFrame.Angles(0, math.pi, 0),
-		"ANGA TOWER",
-		C.Violet,
-		Enum.NormalId.Top,
-		Enum.Font.GothamBlack
-	)
+	-- Pylônes (solides, hors de la zone du pad), émetteurs, pupitres, traverse et panneau JOUER
+	local topY = 76
+	for _, side in { -1, 1 } do
+		local x = doorX + side * 38
+		Build.Part({
+			Name = "MiniaturiserPylon",
+			Size = Vector3.new(10, topY, 14),
+			CFrame = CFrame.new(x, topY / 2, gateZ),
+			Color = C.MetalDark,
+			Material = METAL,
+			Parent = model,
+		})
+		Build.Neon({
+			Name = "PylonGlow",
+			Size = Vector3.new(0.8, topY - 8, 1.4),
+			CFrame = CFrame.new(x - side * 5.2, topY / 2, gateZ - 3.5),
+			Color = APP_GLOW,
+			Tags = { "RgbStrip" },
+			Parent = model,
+		})
+		Build.Neon({
+			Name = "PylonEmitter",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.one * 9,
+			CFrame = CFrame.new(x, topY + 4, gateZ),
+			Color = SAFE,
+			Parent = model,
+		})
+		-- Pupitre de commande incliné devant le pylône
+		local console = CFrame.new(x + side * 2, 0, gateZ - 14)
+		Box(model, "ConsoleStand", Vector3.new(8, 8, 6), console * CFrame.new(0, 4, 0), C.MetalDark, METAL)
+		Box(
+			model,
+			"ConsoleScreen",
+			Vector3.new(9, 0.4, 6),
+			console * CFrame.new(0, 8.6, -0.5) * CFrame.Angles(math.rad(-25), 0, 0),
+			APP_GLOW,
+			NEON
+		)
+	end
+	Box(model, "MiniaturiserBeam", Vector3.new(86, 7, 12), CFrame.new(doorX, topY, gateZ), C.Black, METAL)
+	local sign = Box(model, "PlaySign", Vector3.new(80, 22, 1), CFrame.new(doorX, topY + 16, gateZ), C.Bg, METAL)
+	Props.Sign(sign, "JOUER", "Miniaturiseur AngAInOne", SAFE, C.White, Enum.NormalId.Front)
+	for _, y in { topY + 4.6, topY + 27.4 } do
+		Build.Neon({
+			Name = "PlaySignTrim",
+			Size = Vector3.new(82, 1, 1.4),
+			CFrame = CFrame.new(doorX, y, gateZ),
+			Color = APP_GLOW,
+			Parent = model,
+		})
+	end
+	-- Rayon réducteur : du pad jusqu'à la buse suspendue à la traverse
+	local beam = Build.Decor({
+		Name = "ShrinkBeam",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(topY - 8, 10, 10),
+		CFrame = CFrame.new(doorX, (topY - 8) / 2, padZ) * VERTICAL,
+		Color = APP_GLOW,
+		Material = Enum.Material.ForceField,
+		Transparency = 0.2,
+		CastShadow = false,
+		Parent = model,
+	})
+	beam.CanTouch = false
+	Rod(model, "BeamNozzle", CFrame.new(doorX, topY - 6, padZ) * VERTICAL, 6, 14, C.MetalLight)
+	Box(model, "BeamArm", Vector3.new(6, 3, 10), CFrame.new(doorX, topY - 3, (padZ + gateZ) / 2), C.MetalLight, METAL)
+	lamp(model, Vector3.new(doorX, 22, padZ - 16), APP_GLOW, 1.8, 50)
 
-	lamp(lobby, Vector3.new(-40, 40, -290), C.White, 1, 120)
+	-- Chemin lumineux du spawn au portail
+	local padPos = Vector3.new(doorX, 0, padZ)
+	local matCenter = KEYBOARD_AT + R * 60 + L * 10
+	for i = 1, 6 do
+		local t = i / 7
+		local position = SPAWN:Lerp(padPos, t)
+		local offset = position - matCenter
+		local onMat = math.abs(offset:Dot(R)) < MAT_W / 2 and math.abs(offset:Dot(L)) < MAT_D / 2
+		Build.Neon({
+			Name = "Chevron",
+			Size = Vector3.new(7, 0.2, 1.2),
+			CFrame = facing(Vector3.new(position.X, if onMat then MAT_TOP + 0.1 else 0.1, position.Z), padPos - SPAWN),
+			Color = SAFE,
+			Transparency = 0.2,
+			Parent = model,
+		})
+	end
+	Common.CheckpointPad(0, Vector3.new(doorX, 1, padZ), Vector3.zAxis)
+end
+
+function Lobby.Build(tower: Folder)
+	local lobby = Build.Model("Lobby", tower)
+	lobby.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
+	buildRoom(lobby)
+	local spawnCf = buildBase(lobby)
+	buildSetup(lobby, spawnCf)
+	buildMiniaturiser(lobby)
 
 	-- Maison de départ (coin 0) : de la porte de façade au toit = entrée du monde 1 (Common.EntryOf(1))
 	local start = Build.Folder("Start", lobby)

@@ -1327,4 +1327,269 @@ return {
 		local ok = reachable(rects, pads[Tower.TOTAL_STAGES], goal)
 		Expect.truthy(ok, "toit du sommet inaccessible")
 	end,
+
+	------------------------------------------------------------------------------------
+	-- Chambre d'Anga (lobby) et coque de la tour
+	------------------------------------------------------------------------------------
+
+	["lobby : écran du live (StreamMonitor) tourné vers le spawn, visible, à portée"] = function()
+		local lobby = tower.Lobby
+		local spawn = lobby.LobbySpawn
+		local screens = tagged("StreamMonitor")
+		Expect.equal(#screens, 1, "un StreamMonitor")
+		local screen = screens[1]
+		Expect.truthy(screen:IsA("BasePart") and screen:IsDescendantOf(lobby), "StreamMonitor = pièce du lobby")
+		Expect.between(screen.Size.X, 60, 400, "largeur de l'écran du live")
+		Expect.between(screen.Size.Y / screen.Size.X, 0.5, 0.62, "format 16:9")
+		local toSpawn = (spawn.CFrame.Position - screen.CFrame.Position) * V3.new(1, 0, 1)
+		Expect.truthy(
+			screen.CFrame.LookVector:Dot(toSpawn.Unit) > 0.9,
+			"la face avant du StreamMonitor regarde le spawn"
+		)
+		-- Le client (StreamMonitor.luau) ne met l'écran à jour qu'à moins de 320 studs de la caméra.
+		Expect.truthy(
+			(screen.CFrame.Position - spawn.CFrame.Position).Magnitude < 300,
+			"écran du live à portée du spawn"
+		)
+		-- Visible depuis les yeux du joueur : aucune pièce solide (tour, décor) entre le spawn et la dalle.
+		local function hits(a: any, b: any, part: any): boolean
+			local la, lb = part.CFrame:PointToObjectSpace(a), part.CFrame:PointToObjectSpace(b)
+			local half = part.Size / 2
+			local t0, t1 = 0, 1
+			for _, axis in { "X", "Y", "Z" } do
+				local p, d, h = la[axis], lb[axis] - la[axis], half[axis]
+				if math.abs(d) < 1e-9 then
+					if math.abs(p) > h then
+						return false
+					end
+				else
+					local u0, u1 = (-h - p) / d, (h - p) / d
+					t0, t1 = math.max(t0, math.min(u0, u1)), math.min(t1, math.max(u0, u1))
+					if t0 > t1 then
+						return false
+					end
+				end
+			end
+			return true
+		end
+		local solids = {}
+		for _, root in { lobby, tower.Shell } do
+			for _, d in root:GetDescendants() do
+				if d:IsA("BasePart") and d.CanCollide and d.Transparency < 1 and d ~= screen then
+					table.insert(solids, d)
+				end
+			end
+		end
+		local eye = spawn.CFrame.Position + V3.new(0, 5, 0)
+		local blocked = {}
+		for _, u in { -0.45, 0, 0.45 } do
+			for _, v in { -0.4, 0, 0.4 } do
+				local target = screen.CFrame * roblox.CFrame.new(screen.Size.X * u, screen.Size.Y * v, -1)
+				local stop = eye:Lerp(target.Position, 0.99)
+				for _, part in solids do
+					if hits(eye, stop, part) then
+						table.insert(blocked, `{part:GetFullName()} cache le point ({u}, {v})`)
+					end
+				end
+			end
+		end
+		Expect.equal(#blocked, 0, "écran du live caché :\n      " .. table.concat(blocked, "\n      "))
+	end,
+
+	["lobby : tout est accessible à pied depuis le spawn (pad 0, bornes, Anga, clavier)"] = function()
+		local lobby = tower.Lobby
+		local spawn = lobby.LobbySpawn
+		local rects: { Rect } = {}
+		for _, d in lobby:GetDescendants() do
+			if d:IsA("BasePart") then
+				surfaces(d, rects)
+			end
+		end
+		surfaces(pads[0], rects)
+		-- Ensemble des dessus atteignables depuis le spawn (sauts du personnage par défaut)
+		local start
+		local p = spawn.CFrame.Position
+		for i, r in rects do
+			if math.abs(r.Y - top(spawn)) < 0.01 and p.X >= r.X0 and p.X <= r.X1 and p.Z >= r.Z0 and p.Z <= r.Z1 then
+				start = start or i
+			end
+		end
+		Expect.truthy(start ~= nil, "spawn introuvable dans le graphe")
+		local seen = { [start] = true }
+		local queue = { start }
+		local head = 1
+		while head <= #queue do
+			local a = rects[queue[head]]
+			head += 1
+			for j, b in rects do
+				if not seen[j] and canJump(a, b) then
+					seen[j] = true
+					table.insert(queue, j)
+				end
+			end
+		end
+		local function reached(position: any, radius: number, maxDy: number): boolean
+			for i in seen do
+				local r = rects[i]
+				local dx = math.max(r.X0 - position.X, 0, position.X - r.X1)
+				local dz = math.max(r.Z0 - position.Z, 0, position.Z - r.Z1)
+				if math.sqrt(dx * dx + dz * dz) <= radius and math.abs(r.Y - position.Y) <= maxDy then
+					return true
+				end
+			end
+			return false
+		end
+		local padTop = V3.new(pads[0].CFrame.Position.X, top(pads[0]), pads[0].CFrame.Position.Z)
+		Expect.truthy(reached(padTop, 0, 0.05), "pad 0 (Miniaturiseur) inaccessible depuis le spawn")
+		for _, d in lobby:GetDescendants() do
+			if d:IsA("ProximityPrompt") then
+				local holder = d.Parent.CFrame.Position
+				Expect.truthy(
+					reached(holder, d.MaxActivationDistance - 4, 8),
+					`borne {d:GetAttribute("Action")} hors de portée à pied`
+				)
+			end
+		end
+		Expect.truthy(reached(lobby.AngaSpot.CFrame.Position, 12, 8), "Anga hors de portée à pied")
+		local keys, onKeys = 0, 0
+		for _, d in lobby:GetDescendants() do
+			if d:IsA("BasePart") and d.Name == "Key" then
+				keys += 1
+				local kp = d.CFrame.Position
+				if reached(V3.new(kp.X, top(d), kp.Z), 0, 0.05) then
+					onKeys += 1
+				end
+			end
+		end
+		Expect.truthy(keys >= 60, `clavier géant : {keys} touches`)
+		Expect.equal(onKeys, keys, "on peut sauter sur toutes les touches du clavier")
+	end,
+
+	["lobby : chambre d'Anga et Miniaturiseur (JOUER) autour du pad 0"] = function()
+		local lobby = tower.Lobby
+		for _, name in { "Room", "DeskSetup", "Miniaturiser", "Start" } do
+			Expect.truthy(lobby:FindFirstChild(name) ~= nil, `Lobby.{name}`)
+		end
+		for _, name in
+			{ "Keyboard", "Mouse", "Monitor", "Webcam", "MicArm", "HeadsetStand", "StreamDeck", "Mug", "DeskLamp" }
+		do
+			Expect.truthy(lobby.DeskSetup:FindFirstChild(name) ~= nil, `accessoire du setup : {name}`)
+		end
+		Expect.truthy(lobby.Room:FindFirstChild("GamingChair") ~= nil, "chaise gamer")
+		Expect.truthy(lobby.Room:FindFirstChild("Window") ~= nil, "fenêtre")
+		local notes = 0
+		for _, d in lobby:GetDescendants() do
+			if d.Name == "StickyNote" then
+				notes += 1
+			end
+		end
+		Expect.truthy(notes >= 3, "post-it")
+		-- Portail : panneau JOUER face au joueur, au-dessus du pad 0
+		local sign = lobby.Miniaturiser:FindFirstChild("PlaySign")
+		Expect.truthy(sign ~= nil, "panneau JOUER")
+		local gui = sign:FindFirstChildOfClass("SurfaceGui")
+		Expect.equal(gui and gui.Title.Text, "JOUER", "texte du panneau")
+		local pad = pads[0].CFrame.Position
+		Expect.truthy(math.abs(sign.CFrame.Position.X - pad.X) < 1, "panneau centré sur le pad 0")
+		-- Écran de l'app : dans la façade (devant la face mesh), au-dessus du bureau
+		local app = tagged("AppScreen")[1]
+		Expect.between(
+			app.CFrame.Position.Z,
+			-(Common.INNER + Common.WALL) - 8,
+			-(Common.INNER + Common.WALL),
+			"AppScreen sur la façade"
+		)
+	end,
+
+	["lobby + coque : budgets (≤ 1800 pièces, ≤ 16 lumières), petits détails en décor pur"] = function()
+		local parts, lights = 0, 0
+		local heavy = {}
+		for _, root in { tower.Lobby, tower.Shell } do
+			for _, d in root:GetDescendants() do
+				if d:IsA("BasePart") then
+					parts += 1
+					local s = d.Size
+					if math.max(s.X, s.Y, s.Z) <= 5 and not d:IsA("SpawnLocation") then
+						if d.CanCollide or d.CanTouch or d.CanQuery or d.CastShadow then
+							table.insert(heavy, d:GetFullName())
+						end
+					end
+				elseif d:IsA("PointLight") or d:IsA("SpotLight") or d:IsA("SurfaceLight") then
+					lights += 1
+				end
+			end
+		end
+		print(`    lobby + coque : {parts} pièces, {lights} lumières`)
+		Expect.truthy(parts <= 1800, `trop de pièces : {parts}`)
+		Expect.truthy(lights <= 16, `trop de lumières : {lights}`)
+		Expect.equal(#heavy, 0, "petits détails solides / ombrés :\n      " .. table.concat(heavy, "\n      "))
+	end,
+
+	["coque : vitre, façade mesh, ventilateurs, intérieur intact, porte libre"] = function()
+		local shell = tower:FindFirstChild("Shell")
+		Expect.truthy(shell and shell:IsA("Model"), "Shell (Model)")
+		Expect.equal(shell.ModelStreamingMode, Enum.ModelStreamingMode.Persistent, "Shell persistant")
+		local inner, top = Common.INNER, Common.TOP
+		local glass = shell:FindFirstChild("SideGlass")
+		Expect.truthy(glass and glass.Material == Enum.Material.Glass and glass.Transparency >= 0.5, "panneau vitré")
+		Expect.truthy(glass.CFrame.Position.X - glass.Size.X / 2 >= inner - 1e-3, "vitre hors du volume intérieur")
+		-- Rien de la coque ne dépasse de plus d'un stud dans le volume des mondes
+		local intrusions = {}
+		local fans = 0
+		for _, d in shell:GetDescendants() do
+			if d:IsA("BasePart") then
+				local e, c = extents(d), d.CFrame.Position
+				local x0, x1, z0, z1 = c.X - e.X, c.X + e.X, c.Z - e.Z, c.Z + e.Z
+				local inside = x1 > -inner + 1 and x0 < inner - 1 and z1 > -inner + 1 and z0 < inner - 1
+				if inside and c.Y + e.Y > 0 and c.Y - e.Y < top then
+					table.insert(intrusions, d:GetFullName())
+				end
+				if d:HasTag("TrapSpin") then
+					local blades = 0
+					for _, child in d:GetDescendants() do
+						if child:IsA("WeldConstraint") then
+							blades += 1
+						end
+					end
+					if blades >= 5 then
+						fans += 1
+					end
+				end
+			end
+		end
+		Expect.equal(
+			#intrusions,
+			0,
+			"coque dans le volume intérieur :\n      " .. table.concat(intrusions, "\n      ")
+		)
+		Expect.truthy(fans >= 6, `ventilateurs animés de la coque : {fans}`)
+		local mesh = 0
+		for _, d in shell:GetDescendants() do
+			if d.Name == "MeshBar" then
+				mesh += 1
+			end
+		end
+		Expect.truthy(mesh >= 60, "façade et filtres en mesh")
+		-- Passage de la porte (du pad 0 à la cage d'escalier) libre de toute pièce solide
+		local doorX0, doorX1 = Common.EntranceDoor()
+		local blocking = {}
+		for _, root in { tower.Lobby, shell } do
+			for _, d in root:GetDescendants() do
+				if d:IsA("BasePart") and d.CanCollide then
+					local e, c = extents(d), d.CFrame.Position
+					if
+						c.X + e.X > doorX0 + 0.5
+						and c.X - e.X < doorX1 - 0.5
+						and c.Y + e.Y > 1.2
+						and c.Y - e.Y < 7.8
+						and c.Z + e.Z > -(inner + Common.WALL) - 8
+						and c.Z - e.Z < -inner
+					then
+						table.insert(blocking, d:GetFullName())
+					end
+				end
+			end
+		end
+		Expect.equal(#blocking, 0, "porte du parcours bouchée :\n      " .. table.concat(blocking, "\n      "))
+	end,
 }

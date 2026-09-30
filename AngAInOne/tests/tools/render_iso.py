@@ -8,6 +8,8 @@
 #   --hide Nom,Nom              masque des pièces par nom
 #   --miny y                    masque les pièces dont le centre est sous y
 #   --ghost Nom,Nom             rend des pièces presque transparentes
+# Vue « à hauteur d'yeux » (perspective, pour juger une scène depuis le spawn) :
+#   --eye=x,y,z --target=x,y,z [--fov 70] [--width 1600 --height 900]
 # Les cylindres (axe X local), boules et coins (WedgePart) sont dessinés avec leur vraie forme.
 import json, sys, math, argparse
 from PIL import Image, ImageDraw, ImageFilter, ImageChops
@@ -24,13 +26,24 @@ ap.add_argument("--maxy", type=float, default=1e9)
 ap.add_argument("--miny", type=float, default=-1e9)
 ap.add_argument("--hide", default="")
 ap.add_argument("--ghost", default="")  # pièces rendues très transparentes (plafonds)
+ap.add_argument("--hide-inside", action="store_true")  # masque l'intérieur de la tour (vues du lobby)
+ap.add_argument("--eye", default=None)  # caméra perspective : position de l'œil
+ap.add_argument("--target", default=None)  # point visé
+ap.add_argument("--fov", type=float, default=70)  # champ vertical (degrés)
+ap.add_argument("--width", type=int, default=1600)
+ap.add_argument("--height", type=int, default=900)
 args = ap.parse_args()
 
 parts = json.load(open(args.src))
-FLOOR = {"Desk": -2e6, "MousePad": -1e6}  # le sol d'abord (tri du peintre)
+# Le sol d'abord (tri du peintre) : sol de la chambre, murs, bureau, tapis, puis le reste par profondeur
+FLOOR = {"RoomFloor": -4e6, "RoomWallBack": -3e6, "RoomWallFront": -3e6, "RoomWallLeft": -3e6,
+         "RoomWallRight": -3e6, "RoomCeiling": -3e6, "Desk": -2e6, "MousePad": -1e6, "DeskMat": -1e6}
 GHOST = set(filter(None, args.ghost.split(",")))
+SCREENS = {"StreamMonitor": (92, 70, 170), "AppScreen": (72, 62, 110), "LeaderboardScreen": (40, 70, 96)}
 SKIP = {"SideGlass", "DeskEdge"} | set(filter(None, args.hide.split(",")))
 def shown(p):
+    if args.hide_inside and abs(p["p"][0]) < 131.5 and abs(p["p"][2]) < 131.5 and p["p"][1] > 0.2:
+        return False  # derrière des parois opaques : le tri du peintre les ferait « fuir » à travers
     return p["n"] not in SKIP and p["t"] < 0.97 and args.miny <= p["p"][1] <= args.maxy
 
 az, el = math.radians(args.az), math.radians(args.el)
@@ -42,7 +55,34 @@ def dot(a, b): return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
 def proj(q): return (dot(q, R), dot(q, U))
 
 center = tuple(float(v) for v in args.center.split(",")) if args.center else None
-if center:
+EYE = tuple(float(v) for v in args.eye.split(",")) if args.eye else None
+if EYE:
+    tgt = tuple(float(v) for v in args.target.split(","))
+    fw = tuple(tgt[k] - EYE[k] for k in range(3)); fn = math.sqrt(dot(fw, fw)); fw = tuple(v / fn for v in fw)
+    rt = (-fw[2], 0.0, fw[0]); rn2 = math.hypot(rt[0], rt[2]); rt = (rt[0] / rn2, 0.0, rt[2] / rn2)  # droite écran
+    upv = (rt[1]*fw[2] - rt[2]*fw[1], rt[2]*fw[0] - rt[0]*fw[2], rt[0]*fw[1] - rt[1]*fw[0])      # haut écran
+    FOCAL = (args.height / 2) / math.tan(math.radians(args.fov) / 2)
+    NEAR = 1.0
+    def cam(q):
+        d_ = (q[0] - EYE[0], q[1] - EYE[1], q[2] - EYE[2])
+        return (dot(d_, rt), dot(d_, upv), dot(d_, fw))
+    def clip(poly):
+        """Découpe un polygone (repère caméra) contre le plan proche z = NEAR."""
+        out = []
+        n = len(poly)
+        for i in range(n):
+            a, b = poly[i], poly[(i + 1) % n]
+            ina, inb = a[2] >= NEAR, b[2] >= NEAR
+            if ina: out.append(a)
+            if ina != inb:
+                t = (NEAR - a[2]) / (b[2] - a[2])
+                out.append(tuple(a[k] + (b[k] - a[k]) * t for k in range(3)))
+        return out
+    def pxp(c):
+        return (args.width / 2 + c[0] / c[2] * FOCAL, args.height / 2 - c[1] / c[2] * FOCAL)
+if EYE:
+    minx = miny = 0; S = 1; pad = 0
+elif center:
     cx0, cy0 = proj(center); rad = args.radius
     minx, maxx, miny, maxy = cx0 - rad, cx0 + rad, cy0 - rad, cy0 + rad
     S = args.size / (2 * rad); pad = 0
@@ -58,7 +98,7 @@ else:
                     a, b = proj(q); xs.append(a); ys.append(b)
     minx, maxx, miny, maxy = min(xs), max(xs), min(ys), max(ys)
     pad = 20; S = (args.size - 2 * pad) / max(maxy - miny, 1) * args.scale / 1.1
-W, H = int((maxx - minx) * S) + 2 * pad, int((maxy - miny) * S) + 2 * pad
+W, H = (args.width, args.height) if EYE else (int((maxx - minx) * S) + 2 * pad, int((maxy - miny) * S) + 2 * pad)
 img = Image.new("RGB", (W, H), (22, 24, 32))
 glow = Image.new("RGB", (W, H), (0, 0, 0))
 d = ImageDraw.Draw(img, "RGBA"); g = ImageDraw.Draw(glow, "RGBA")
@@ -132,15 +172,22 @@ for p in parts:
     r = p["r"]; s = p["s"]; cx, cy, cz = p["p"]
     ax = (r[0], r[3], r[6]); ay = (r[1], r[4], r[7]); az_ = (r[2], r[5], r[8])
     h = (s[0]/2, s[1]/2, s[2]/2)
-    if center:
+    if center and not EYE:
         ext = [abs(ax[k])*h[0] + abs(ay[k])*h[1] + abs(az_[k])*h[2] for k in range(3)]
         if any(abs(p["p"][k] - center[k]) - ext[k] > args.radius * 1.2 for k in range(3)): continue
+    if EYE:
+        ext = [abs(ax[k])*h[0] + abs(ay[k])*h[1] + abs(az_[k])*h[2] for k in range(3)]
+        cc = cam((cx, cy, cz)); er = math.sqrt(sum(e*e for e in ext))
+        if cc[2] < -er: continue  # entièrement derrière la caméra
     def world(q): return (cx + ax[0]*q[0] + ay[0]*q[1] + az_[0]*q[2],
                           cy + ax[1]*q[0] + ay[1]*q[1] + az_[1]*q[2],
                           cz + ax[2]*q[0] + ay[2]*q[1] + az_[2]*q[2])
     col = [int(v*255) for v in p["c"]]
     alpha = int(255*(1 - p["t"]))
-    if p["m"] == "Glass": alpha = min(alpha, 80)
+    # Écrans dessinés par le client (SurfaceGui, invisibles ici) : rendus « allumés » sur leur face avant
+    screen = next((SCREENS[t] for t in p.get("tg", []) if t in SCREENS), None)
+    if screen: col, alpha = list(screen), 255
+    if p["m"] == "Glass" and not screen: alpha = min(alpha, 80)
     if p["m"] == "ForceField": alpha = min(alpha, 110)
     if p["n"] in GHOST: alpha = min(alpha, 60)
     neon = p["m"] == "Neon"
@@ -148,19 +195,35 @@ for p in parts:
     for nl, quad in local_faces(shape, h):
         n = (ax[0]*nl[0] + ay[0]*nl[1] + az_[0]*nl[2], ax[1]*nl[0] + ay[1]*nl[1] + az_[1]*nl[2], ax[2]*nl[0] + ay[2]*nl[1] + az_[2]*nl[2])
         nn = math.sqrt(dot(n, n)) or 1; n = (n[0]/nn, n[1]/nn, n[2]/nn)
-        if dot(n, V) <= 0.001: continue
         wq = [world(q) for q in quad]
+        if EYE:
+            fc0 = tuple(sum(q[k] for q in wq) / len(wq) for k in range(3))
+            if dot(n, tuple(EYE[k] - fc0[k] for k in range(3))) <= 0.001: continue
+        elif dot(n, V) <= 0.001: continue
         light = 0.38 + 0.62 * max(0, dot(n, LIGHT))
         if p["m"] == "Metal" or p["m"] == "DiamondPlate": light = min(1.15, light + 0.08 * max(0, dot(n, V)))
         fc = col if neon else [min(255, int(v*light)) for v in col]
+        if screen: fc = col if nl == (0, 0, -1) else [v // 4 for v in col]
+        bias = (20 if EYE else 10) if screen and nl == (0, 0, -1) else 0  # la dalle passe devant son boîtier
+        if EYE:
+            # grandes faces : tuiles d'autant plus fines qu'elles sont proches (tri du peintre plus juste)
+            dist = math.sqrt(sum((fc0[k] - EYE[k]) ** 2 for k in range(3)))
+            TILE = max(4.0, dist / 16)
         for tile in split(wq):
-            depth = sum(dot(q, V) for q in tile) / len(tile) + FLOOR.get(p["n"], 0)
+            if EYE:
+                cq = clip([cam(q) for q in tile])
+                if len(cq) < 3: continue
+                depth = -sum(math.sqrt(c[0]*c[0] + c[1]*c[1] + c[2]*c[2]) for c in cq) / len(cq) + FLOOR.get(p["n"], 0) + bias
+                faces.append((depth, [pxp(c) for c in cq], (*fc, alpha), neon))
+                continue
+            depth = sum(dot(q, V) for q in tile) / len(tile) + FLOOR.get(p["n"], 0) + bias
             faces.append((depth, [px(q) for q in tile], (*fc, alpha), neon))
 faces.sort(key=lambda f: f[0])
 for depth, poly, color, neon in faces:
     d.polygon(poly, fill=color)
-    if neon: g.polygon(poly, fill=color)
-glow = glow.filter(ImageFilter.GaussianBlur(max(2, min(7, int(6 * S)))))
+    # Le halo des néons est masqué par ce qui est dessiné devant eux (plus de lueur à travers les murs)
+    g.polygon(poly, fill=color if neon else (0, 0, 0, color[3]))
+glow = glow.filter(ImageFilter.GaussianBlur(4 if EYE else max(2, min(7, int(6 * S)))))
 out = ImageChops.add(img, glow, scale=1.4)
 out.save(args.out)
 print("ok", W, H, len(faces))
