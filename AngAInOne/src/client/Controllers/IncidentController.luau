@@ -662,12 +662,12 @@ local function popupEffect(layer: Frame): Effect
 			TextColor3 = Style.Color("BgDeep"),
 			Parent = window,
 		}, { New("UITextSizeConstraint", { MaxTextSize = 20 }) :: Instance })
-		-- Le gros ✕ : 76 px de conception = au moins 44 px réels sur téléphone (échelle ≥ 0,58).
+		-- Le gros ✕ : 88 px de conception ≈ 46 px réels sur le plus petit téléphone (échelle 0,52).
 		local close: TextButton = New("TextButton", {
 			Name = "Close",
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.new(1, -12, 0, 12),
-			Size = UDim2.fromOffset(76, 76),
+			Size = UDim2.fromOffset(88, 88),
 			Text = "",
 			AutoButtonColor = false,
 			BorderSizePixel = 0,
@@ -888,8 +888,9 @@ local function buildBanner(layer: Frame)
 	banner = New("Frame", {
 		Name = "IncidentBanner",
 		AnchorPoint = Vector2.new(0.5, 0),
-		-- Sous la carte de progression (12..108) et la première notification (112..172).
-		Position = UDim2.new(0.5, 0, 0, 196),
+		-- Sous la carte de progression (12..108) et la pastille des clés (114..140) ; les
+		-- notifications passent dessous tant qu'il est affiché (Toasts.SetInset).
+		Position = UDim2.new(0.5, 0, 0, 148),
 		Size = UDim2.fromOffset(540, 84),
 		BackgroundTransparency = 0.08,
 		BorderSizePixel = 0,
@@ -994,12 +995,14 @@ local function showBanner(kind: string, phase: string)
 	if not banner.Visible then
 		banner.Visible = true
 		banner.BackgroundTransparency = 0.08
+		Toasts.SetInset(84 + 8)
 	end
 	Motion.Pop(banner, 0.08)
 end
 
 local function hideBanner()
 	banner.Visible = false
+	Toasts.SetInset(0)
 end
 
 ------------------------------------------------------------------------------------

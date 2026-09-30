@@ -32,12 +32,23 @@ local KINDS: { [string]: { Color: string, Icon: string } } = {
 	Fragment = { Color = "AccentViolet", Icon = "Star" },
 }
 
+local TOP = 148
+local inset = 0
+
+-- Décale la pile vers le bas (ex. bandeau d'incident affiché au même endroit).
+function Toasts.SetInset(pixels: number)
+	inset = pixels
+	if container then
+		container.Position = UDim2.new(0.5, 0, 0, TOP + inset)
+	end
+end
+
 function Toasts.Mount(layer: Frame)
-	-- Haut-centre, sous le Benchmark et les effets : ne masque ni l'Objectif ni le portefeuille.
+	-- Haut-centre, sous la carte de progression (12..108) et la pastille des clés USB (114..140).
 	container = New("Frame", {
 		Name = "ToastStack",
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 112),
+		Position = UDim2.new(0.5, 0, 0, TOP + inset),
 		Size = UDim2.fromOffset(340, 200),
 		BackgroundTransparency = 1,
 		Parent = layer,

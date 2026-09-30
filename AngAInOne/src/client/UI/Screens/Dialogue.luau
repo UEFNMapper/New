@@ -56,6 +56,8 @@ local typing = false
 local skipTyping = false
 local lineToken = 0
 local visible = false
+-- Au-dessus du dock (96 + 14) ; `lift` en plus quand le bouton JOUER / CONTINUER est affiché.
+local lift = 0
 
 local function setVisible(value: boolean)
 	if visible == value then
@@ -66,9 +68,9 @@ local function setVisible(value: boolean)
 	if value then
 		box.Visible = true
 		scale.Scale = 0.85
-		box.Position = UDim2.new(0.5, 0, 1, -(96 + 14 + 4))
+		box.Position = UDim2.new(0.5, 0, 1, -(96 + 14 + 4 + lift))
 		Motion.Tween(scale, { Scale = 1 }, 0.3, Enum.EasingStyle.Back)
-		Motion.Tween(box, { Position = UDim2.new(0.5, 0, 1, -(96 + 14 + 18)) }, 0.3)
+		Motion.Tween(box, { Position = UDim2.new(0.5, 0, 1, -(96 + 14 + 18 + lift)) }, 0.3)
 	else
 		Motion.Tween(scale, { Scale = 0.9 }, 0.18).Completed:Once(function()
 			if not visible then
@@ -192,6 +194,13 @@ function Dialogue.SetPersistent(text: string?)
 	-- On ne coupe pas une réplique ponctuelle en cours : elle enchaînera d'elle-même.
 	if #queue == 0 and (showing == nil or showing == previous) then
 		advance()
+	end
+end
+
+function Dialogue.SetLift(pixels: number)
+	lift = pixels
+	if box and visible then
+		box.Position = UDim2.new(0.5, 0, 1, -(96 + 14 + 18 + lift))
 	end
 end
 

@@ -393,8 +393,9 @@ local fill: Frame? = nil
 local function buildBar(layer: Instance)
 	local frame = New("Frame", {
 		Name = "BossBar",
-		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 16, 0.42, 0),
+		-- Sous la colonne gauche du HUD (Bits, passes, PC d'Anga : 12..332).
+		AnchorPoint = Vector2.new(0, 0),
+		Position = UDim2.fromOffset(16, 344),
 		Size = UDim2.fromOffset(300, 84),
 		BackgroundColor3 = Color3.fromRGB(24, 18, 42),
 		BackgroundTransparency = 0.12,

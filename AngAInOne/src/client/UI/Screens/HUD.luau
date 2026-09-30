@@ -35,6 +35,7 @@ local App = require(script.Parent.Parent.App)
 local Store = require(script.Parent.Parent.Parent.Controllers.Store)
 local Net = require(script.Parent.Parent.Parent.Controllers.Net)
 local IncidentController = require(script.Parent.Parent.Parent.Controllers.IncidentController)
+local Dialogue = require(script.Parent.Dialogue)
 
 local New = Create.New
 
@@ -243,7 +244,8 @@ local function buildRight(layer: Frame)
 		Icon = "Menu",
 		IconOnly = true,
 		Variant = "Secondary",
-		Size = UDim2.fromOffset(48, 48),
+		-- Tailles de conception ≥ 80 : ≥ 42 px réels sur le plus petit téléphone (échelle 0,52).
+		Size = UDim2.fromOffset(80, 80),
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.new(1, -16, 0, 12),
 		OnClick = function()
@@ -254,7 +256,7 @@ local function buildRight(layer: Frame)
 	shieldPill = New("Frame", {
 		Name = "Shield",
 		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -16, 0, 70),
+		Position = UDim2.new(1, -16, 0, 102),
 		Size = UDim2.fromOffset(190, 40),
 		BackgroundTransparency = Theme.Alpha.Glass,
 		BorderSizePixel = 0,
@@ -275,14 +277,14 @@ local function buildRight(layer: Frame)
 		Name = "Actions",
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, -16, 0.5, 10),
-		Size = UDim2.fromOffset(190, 3 * 60 + 2 * 10),
+		Size = UDim2.fromOffset(200, 3 * 84 + 2 * 10),
 		BackgroundTransparency = 1,
 		Parent = layer,
 	}, { Create.List(Enum.FillDirection.Vertical, 10) })
 	Keycap.new({
 		Text = "Checkpoint",
 		Variant = "Secondary",
-		Size = UDim2.fromOffset(190, 60),
+		Size = UDim2.fromOffset(200, 84),
 		LayoutOrder = 1,
 		Small = true,
 		OnClick = function()
@@ -293,7 +295,7 @@ local function buildRight(layer: Frame)
 	skipKey = Keycap.new({
 		Text = "Passer l'étape",
 		Variant = "Gold",
-		Size = UDim2.fromOffset(190, 60),
+		Size = UDim2.fromOffset(200, 84),
 		LayoutOrder = 2,
 		Small = true,
 		OnClick = function()
@@ -308,7 +310,7 @@ local function buildRight(layer: Frame)
 	Keycap.new({
 		Text = "Lobby",
 		Variant = "Ghost",
-		Size = UDim2.fromOffset(190, 60),
+		Size = UDim2.fromOffset(200, 84),
 		LayoutOrder = 3,
 		Small = true,
 		OnClick = function()
@@ -450,6 +452,7 @@ local function refreshFull(state: any)
 		else `🔑 Clés USB : {keysTotal}/{Tower.WORLD_COUNT * Tower.USB_KEYS_PER_WORLD}`
 	keyLabel.Visible = keysTotal > 0 or inWorld
 	playKey.Button.Visible = state.AtLobby
+	Dialogue.SetLift(if state.AtLobby then 84 + 10 else 0) -- la boîte ne recouvre pas JOUER
 	playKey:SetText(if data.Stage > 0 then `CONTINUER · Étape {data.Stage}` else "JOUER")
 	actions.Visible = not state.AtLobby
 	-- Même règle que ProgressService.CanSkip : le repaire de LAGZ ne se passe pas.
