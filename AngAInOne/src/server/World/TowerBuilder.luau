@@ -7,6 +7,7 @@
 	- Tower/Worlds/W{n}.luau  un module par monde : `function(ctx: Common.WorldContext)`
 	- Tower/Common.luau       dimensions, repères, palette, contexte de monde, salle du terminal standard
 	- Tower/Legacy.luau       parcours v1 (anneau de modules) et décor v1, réutilisés par W1..W7
+	- ModelLibrary.luau       vrais modèles 3D (Blender → assets/models/*.glb), avec décor de secours
 
 	Contrat (voir Config/Tower) :
 	Workspace.Tower
@@ -42,6 +43,7 @@ local Common = require(TowerParts.Common)
 local Legacy = require(TowerParts.Legacy)
 local Lobby = require(TowerParts.Lobby)
 local Shell = require(TowerParts.Shell)
+local ModelLibrary = require(script.Parent.ModelLibrary)
 
 type WorldBuilder = (ctx: Common.WorldContext) -> ()
 
@@ -67,6 +69,7 @@ function TowerBuilder.Build(): Folder
 	if existing then
 		existing:Destroy()
 	end
+	ModelLibrary.Preload() -- vrais modèles 3D (Config/ModelAssets) ; sinon décor de secours
 	local tower = Instance.new("Folder")
 	tower.Name = "Tower"
 	Common.Begin(tower)
