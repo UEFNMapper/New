@@ -45,6 +45,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Tower = require(Shared.Config.Tower)
 local Build = require(script.Parent.Parent.Build)
 local Props = require(script.Parent.Parent.Props)
+local ModelLibrary = require(script.Parent.Parent.ModelLibrary)
 
 local Common = {}
 
@@ -753,6 +754,11 @@ function Common.NewContext(tower: Instance, world: Tower.World): (WorldContext, 
 			bit.CanTouch = true
 			bit:SetAttribute("CoinId", `S{s}C{coinCounts[s]}`)
 			bit:SetAttribute("Stage", s)
+			-- Vrai modèle (orbe « Bit », origine au centre) soudé à la sphère, qui reste la pièce touchée
+			-- et animée par le client (WorldFx) ; la sphère primitive devient invisible.
+			if ModelLibrary.Weld("BitCoin", bit, bit.CFrame, { Fit = Vector3.one * 2.2, Anchor = Vector3.zero }) then
+				bit.Transparency = 1
+			end
 			return bit
 		end,
 
@@ -782,6 +788,19 @@ function Common.NewContext(tower: Instance, world: Tower.World): (WorldContext, 
 			key.CanTouch = true
 			key:SetAttribute("KeyId", `W{w}K{index}`)
 			key:SetAttribute("World", w)
+			-- Vrai modèle (origine au centre, axe long X, embout vers +X) soudé au corps, qui reste la pièce
+			-- touchée et animée : embout tourné vers -Z comme la clé primitive (4,8 de long, centrée 0,55
+			-- vers l'embout) ; le corps primitif devient invisible.
+			local dressing = ModelLibrary.Weld(
+				"UsbKey",
+				key,
+				cf * CFrame.new(0, 0, -0.55) * CFrame.Angles(0, math.pi / 2, 0),
+				{ Fit = Vector3.new(4.8, 1.3, 1.9), Anchor = Vector3.zero }
+			)
+			if dressing then
+				key.Transparency = 1
+				return key
+			end
 			Box(key, "Plug", Vector3.new(1.3, 0.55, 1.4), cf * CFrame.new(0, 0, -2.25), C.Nickel, METAL)
 			for _, x in { -0.3, 0.3 } do
 				Box(key, "PlugHole", Vector3.new(0.3, 0.1, 0.4), cf * CFrame.new(x, 0.29, -2.5), C.Black)
@@ -931,6 +950,26 @@ function Common.NewContext(tower: Instance, world: Tower.World): (WorldContext, 
 				Style = style,
 				Parent = terminal,
 			})
+			-- Vraie borne antivirus sur la console primitive (MinigameTerminal : tag, attributs et prompt
+			-- inchangés, invisible mais solide) : largeur de la console, hauteur d'une borne à l'échelle du
+			-- joueur ; néon `Trim` aux couleurs du monde. Le grand écran mural reste l'hôte du SurfaceGui.
+			local console = room:FindFirstChild("MinigameTerminal")
+			if console and console:IsA("BasePart") and ModelLibrary.Has("TerminalConsole") then
+				local hidden: { Instance } = { console }
+				for _, name in { "Keyboard", "ConsoleGlow" } do
+					local part = room:FindFirstChild(name)
+					if part then
+						table.insert(hidden, part)
+					end
+				end
+				ModelLibrary.Dress(
+					"TerminalConsole",
+					console.CFrame * CFrame.new(0, -console.Size.Y / 2, 0),
+					room,
+					{ Fit = Vector3.new(8, 9, 6.2), Anchor = Vector3.zero, Recolor = { Trim = style.Primary } },
+					hidden
+				)
+			end
 			if w == Tower.WORLD_COUNT then
 				buildFinish(terminal, terminalFrame, terminalFloor + CLIMB)
 			end

@@ -10,6 +10,17 @@
 
 	Si un modèle n'est pas (encore) importé, `Place` construit le décor de SECOURS fourni
 	(primitives) : le jeu fonctionne toujours, et devient beau dès que les IDs sont renseignés.
+
+	Trois façons de poser un modèle :
+	- `Place`     décor pur : le modèle, sinon les primitives de secours ;
+	- `Dress`     habillage de primitives de GAMEPLAY (sol praticable, pièces à contrat) : si le modèle
+	              existe, les primitives deviennent invisibles mais gardent collision, tags, attributs et
+	              ProximityPrompt ; sinon rien ne change ;
+	- `Weld`      habillage soudé à une racine animée (Bits, clés USB) : le client anime la racine.
+	`FitScreen` recale une dalle primitive (hôte d'un SurfaceGui) sur la pièce `Screen` d'un modèle posé.
+
+	Géométrie faite à la main (boîte englobante, échelle, pose pièce par pièce) plutôt qu'avec
+	Model:ScaleTo / PivotTo : même résultat, et testable hors de Roblox (tests/models.spec.luau).
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -27,6 +38,32 @@ local ORIENT: { [string]: CFrame } = {
 	CpuCooler = CFrame.Angles(0, 0, math.rad(90)), -- haut du ventirad vers +X -> +Y
 	GpuCard = CFrame.Angles(math.rad(90), 0, 0), -- carte à plat -> debout, ventilateurs vers +Z
 }
+
+--[[
+	Origine d'export (centre de la base dans Blender) des modèles ASYMÉTRIQUES, relative au centre de
+	la base de leur boîte englobante, en unités modélisées et axes Roblox (Blender X -> X, Z -> Y,
+	Y -> -Z). Mesurée sur assets/models/<clé>.glb. Sert à l'option `Anchor` : un câble, un bras ou une
+	anse ne décale plus l'objet. Absent = origine au centre de la base (modèles symétriques).
+]]
+local ORIGIN: { [string]: Vector3 } = {
+	Monitor = Vector3.new(0, 0, -35.36), -- pied profond à l'arrière
+	Keyboard = Vector3.new(0, 0, -38.42), -- câble à l'arrière
+	Mouse = Vector3.new(-0.23, 0, -26.15), -- câble à l'avant (vers l'écran)
+	MicArm = Vector3.new(-1.15, 40, 62.12), -- pince 40 studs sous le plateau, bras vers -Z
+	Mug = Vector3.new(7.54, 0, 0.75), -- anse côté -X
+	DeskLamp = Vector3.new(0, 0, 25.73), -- abat-jour vers -Z
+	Headset = Vector3.new(0, 0, -2.04),
+	GamingChair = Vector3.new(0.19, 0, -12.12),
+	WebcamLight = Vector3.new(0, 0, 1.65),
+	Speaker = Vector3.new(0, 0, -1.77),
+	Miniaturiseur = Vector3.new(0, 0, 1.72), -- marche d'accès à l'avant
+	ArcadeCabinet = Vector3.new(0, 0, 0.28),
+	ShopKiosk = Vector3.new(0, 0, 0.5),
+	TerminalConsole = Vector3.new(0, 0, -0.87),
+	BitCoin = Vector3.new(0, 1.25, 0), -- origine au centre de l'orbe
+	UsbKey = Vector3.new(0, 0.39, 0), -- origine au centre de la clé
+}
+
 local failed: { [string]: boolean } = {}
 
 local MATERIALS: { [string]: Enum.Material } = {
@@ -130,18 +167,60 @@ function ModelLibrary.Has(key: string): boolean
 	return template ~= nil
 end
 
+-- TESTS UNIQUEMENT (tests/models.spec.luau) : simule un modèle importé (`model` passe par la même
+-- préparation qu'un asset chargé) ; `nil` le retire. Ne jamais appeler depuis le jeu.
+function ModelLibrary._SetTemplate(key: string, model: Model?)
+	if model then
+		local prepared = prepare(model, key)
+		assert(prepared, `[ModelLibrary] _SetTemplate({key}) : Model attendu`)
+		prepared.Name = key
+		templates[key] = prepared
+	else
+		templates[key] = nil
+	end
+end
+
 export type PlaceOptions = {
 	Scale: number?, -- 1 = taille modélisée (1 unité Blender = 1 stud)
 	-- Taille cible (axes du modèle, avant la rotation de `cframe`) : échelle UNIFORME maximale pour
 	-- tenir dans cette boîte. Préférable à Scale : ne dépend pas de la taille exacte du modèle.
 	Fit: Vector3?,
+	-- Point du modèle posé sur `cframe`, en unités MODÉLISÉES (avant échelle), relatif à son origine
+	-- d'export (table ORIGIN). Ex. Vector3.zero = origine Blender ; (0, 2.56, 0) = 2,56 unités au-dessus
+	-- (enfonce le modèle pour qu'une hauteur donnée affleure `cframe`). Par défaut : centre de la base
+	-- de la boîte englobante (comportement historique).
+	Anchor: Vector3?,
 	Collide: boolean?, -- pièces solides (par défaut : décor sans collision)
 	Name: string?,
 	-- Pièces `__Spin` : true (défaut) = tournent côté client ; false = figées (modèle que l'on
 	-- anime soi-même, ex. LAGZ) ; "Hide" = retirées (ex. ventilateur posé sur des pales mortelles :
 	-- seules les vraies pales, rouges, doivent tourner).
 	Spin: (boolean | string)?,
+	-- Nouvelle couleur de pièces par nom (après convention), ex. { Trim = couleur du monde }.
+	Recolor: { [string]: Color3 }?,
 }
+
+-- Boîte englobante (axes du monde) de toutes les BaseParts de `root` : coin min, coin max.
+local function bounds(root: Instance): (Vector3?, Vector3?)
+	local x0, y0, z0 = math.huge, math.huge, math.huge
+	local x1, y1, z1 = -math.huge, -math.huge, -math.huge
+	for _, descendant in root:GetDescendants() do
+		if descendant:IsA("BasePart") then
+			local cf, size = descendant.CFrame, descendant.Size
+			local r, u, l = cf.RightVector, cf.UpVector, cf.LookVector
+			local hx = (math.abs(r.X) * size.X + math.abs(u.X) * size.Y + math.abs(l.X) * size.Z) / 2
+			local hy = (math.abs(r.Y) * size.X + math.abs(u.Y) * size.Y + math.abs(l.Y) * size.Z) / 2
+			local hz = (math.abs(r.Z) * size.X + math.abs(u.Z) * size.Y + math.abs(l.Z) * size.Z) / 2
+			local p = cf.Position
+			x0, y0, z0 = math.min(x0, p.X - hx), math.min(y0, p.Y - hy), math.min(z0, p.Z - hz)
+			x1, y1, z1 = math.max(x1, p.X + hx), math.max(y1, p.Y + hy), math.max(z1, p.Z + hz)
+		end
+	end
+	if x0 > x1 then
+		return nil, nil
+	end
+	return Vector3.new(x0, y0, z0), Vector3.new(x1, y1, z1)
+end
 
 -- Place le modèle `key` (origine = centre de la base) au CFrame donné. Sinon : `fallback()`.
 function ModelLibrary.Place(
@@ -162,35 +241,48 @@ function ModelLibrary.Place(
 	local opts: PlaceOptions = options or {}
 	local model = template:Clone()
 	model.Name = opts.Name or key
-	if opts.Scale and opts.Scale ~= 1 then
-		model:ScaleTo(opts.Scale)
-	end
-	if opts.Fit then
-		local _, current = model:GetBoundingBox()
+	-- Échelle : Fit (plus grande échelle qui tient dans la boîte) prime sur Scale
+	local lo, hi = bounds(model)
+	local scale = opts.Scale or 1
+	local from = cframe.Position
+	if lo and hi then
+		local size = hi - lo
 		local fit = opts.Fit
-		local ratio = math.huge
-		for _, axis in { "X", "Y", "Z" } do
-			local have = (current :: any)[axis] :: number
-			if have > 0.01 then
-				ratio = math.min(ratio, (fit :: any)[axis] / have)
+		if fit then
+			local ratio = math.huge
+			for _, pair in { { size.X, fit.X }, { size.Y, fit.Y }, { size.Z, fit.Z } } do
+				if pair[1] > 0.01 then
+					ratio = math.min(ratio, pair[2] / pair[1])
+				end
+			end
+			if ratio < math.huge then
+				scale = ratio
 			end
 		end
-		if ratio < math.huge then
-			model:ScaleTo(model:GetScale() * ratio)
+		-- Point posé sur `cframe` : centre de la base de la boîte, ou origine d'export + Anchor
+		from = Vector3.new((lo.X + hi.X) / 2, lo.Y, (lo.Z + hi.Z) / 2)
+		if opts.Anchor then
+			from += (ORIGIN[key] or Vector3.zero) + opts.Anchor
 		end
 	end
-	-- Origine = centre de la base de la boîte englobante
-	local boxCf, size = model:GetBoundingBox()
-	local base = boxCf * CFrame.new(0, -size.Y / 2, 0)
-	model.WorldPivot = CFrame.new(base.Position)
-	model:PivotTo(cframe)
 	local spin = if opts.Spin == nil then true else opts.Spin
 	for _, descendant in model:GetDescendants() do
 		if descendant:IsA("BasePart") then
+			local cf = descendant.CFrame
+			descendant.Size *= scale
+			descendant.CFrame = cframe * CFrame.new((cf.Position - from) * scale) * (cf - cf.Position)
+			local size = descendant.Size
+			if math.max(size.X, size.Y, size.Z) <= 5 then
+				descendant.CastShadow = false -- petit détail : pas d'ombre (budget mobile, comme Props)
+			end
 			local isSpin = descendant:GetAttribute("SpinPart") == true
 			if opts.Collide and not isSpin then
 				descendant.CanCollide = true
 				descendant.CanQuery = true
+			end
+			local color = opts.Recolor and opts.Recolor[descendant.Name]
+			if color then
+				descendant.Color = color
 			end
 			if isSpin and spin == "Hide" then
 				descendant:Destroy()
@@ -199,8 +291,110 @@ function ModelLibrary.Place(
 			end
 		end
 	end
+	model.WorldPivot = cframe -- ScaleTo / PivotTo ultérieurs : autour du point posé
 	model.Parent = parent
 	return model
+end
+
+-- Rend une primitive invisible sans rien lui retirer d'autre : collision, toucher, requêtes, tags,
+-- attributs et ProximityPrompt restent ; ses SurfaceGui / Decal / Texture sont masqués.
+local function conceal(root: Instance)
+	local nodes = root:GetDescendants()
+	table.insert(nodes, root)
+	for _, node in nodes do
+		if node:IsA("BasePart") then
+			node.Transparency = 1
+			node.CastShadow = false
+		elseif node:IsA("SurfaceGui") then
+			node.Enabled = false
+		elseif node:IsA("Decal") then -- Texture hérite de Decal
+			node.Transparency = 1
+		end
+	end
+end
+
+--[[
+	Habille des primitives de GAMEPLAY avec le vrai modèle `key` (sol praticable, pièce qui porte un
+	contrat : prompt, tag, SurfaceGui lu par le client…).
+	- Modèle importé : chaque élément de `primitives` (une BasePart, ou un Model / Folder = toutes ses
+	  BaseParts) devient invisible (Transparency = 1) en GARDANT sa collision, ses tags, attributs et
+	  prompts ; le modèle est posé par-dessus comme décor sans collision (options de `Place`,
+	  `Collide` ignoré). Renvoie le modèle posé.
+	- Sinon : ne fait RIEN (les primitives restent exactement telles quelles) et renvoie nil.
+]]
+function ModelLibrary.Dress(
+	key: string,
+	cframe: CFrame,
+	parent: Instance,
+	options: PlaceOptions?,
+	primitives: { Instance }
+): Model?
+	if not templates[key] then
+		return nil
+	end
+	for _, primitive in primitives do
+		conceal(primitive)
+	end
+	local opts: PlaceOptions = table.clone(options or {})
+	opts.Collide = false
+	return ModelLibrary.Place(key, cframe, parent, opts) :: Model?
+end
+
+--[[
+	Habillage SOUDÉ à une racine animée (Bit, clé USB : le client anime le CFrame de la racine, qui
+	reste la pièce touchée). Si le modèle existe : il est posé en `cframe` sous `root`, pièces `__Spin`
+	figées, chaque pièce non ancrée, sans collision / toucher / requêtes, soudée (WeldConstraint) à
+	`root` (ancrée) ; renvoie le modèle. Sinon : ne fait rien et renvoie nil. `root` n'est pas masquée.
+]]
+function ModelLibrary.Weld(key: string, root: BasePart, cframe: CFrame, options: PlaceOptions?): Model?
+	if not templates[key] then
+		return nil
+	end
+	local opts: PlaceOptions = table.clone(options or {})
+	opts.Collide = false
+	opts.Spin = false
+	local model = ModelLibrary.Place(key, cframe, root, opts) :: Model
+	for _, descendant in model:GetDescendants() do
+		if descendant:IsA("BasePart") then
+			descendant.CanCollide = false
+			descendant.CanTouch = false
+			descendant.CanQuery = false
+			local weld = Instance.new("WeldConstraint")
+			weld.Part0 = root
+			weld.Part1 = descendant
+			weld.Parent = descendant
+			descendant.Anchored = false
+		end
+	end
+	return model
+end
+
+--[[
+	Recale `host` (dalle primitive qui porte un SurfaceGui sur sa face avant) sur la pièce `Screen` du
+	modèle posé `model` : même repère, même largeur / hauteur, juste devant sa face avant (-Z local).
+	La résolution des SurfaceGui en PixelsPerStud est conservée (texte aussi net). Renvoie false (sans
+	rien toucher) si le modèle n'a pas de `Screen`.
+]]
+function ModelLibrary.FitScreen(model: Instance, host: BasePart): boolean
+	local screen: BasePart? = nil
+	for _, descendant in model:GetDescendants() do
+		if descendant.Name == "Screen" and descendant:IsA("BasePart") then
+			screen = descendant
+			break
+		end
+	end
+	if not screen then
+		return false
+	end
+	local width = host.Size.X
+	host.Size = Vector3.new(screen.Size.X, screen.Size.Y, host.Size.Z)
+	host.CFrame = screen.CFrame * CFrame.new(0, 0, -(screen.Size.Z + host.Size.Z) / 2 - 0.05)
+	for _, gui in host:GetChildren() do
+		if gui:IsA("SurfaceGui") and gui.SizingMode == Enum.SurfaceGuiSizingMode.PixelsPerStud then
+			gui.PixelsPerStud *= width / math.max(host.Size.X, 0.01)
+		end
+	end
+	return true
 end
 
 return ModelLibrary

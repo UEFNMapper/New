@@ -1257,12 +1257,18 @@ return {
 			if d:IsA("BasePart") then
 				parts += 1
 				if not d.Anchored then
+					-- Racines animées : pièges, moyeux qui tournent, clés USB et Bits (habillage 3D soudé)
 					local weld = d:FindFirstChildOfClass("WeldConstraint")
 					local root = weld and weld.Part0
 					Expect.truthy(
 						root ~= nil
 							and root.Anchored
-							and (root:HasTag("Trap") or root:HasTag("TrapSpin") or root:HasTag("UsbKey")),
+							and (
+								root:HasTag("Trap")
+								or root:HasTag("TrapSpin")
+								or root:HasTag("UsbKey")
+								or root:HasTag("Coin")
+							),
 						`pièce non ancrée sans racine animée : {d:GetFullName()}`
 					)
 				end

@@ -19,6 +19,15 @@
 	- la base (bornes, classements) est entre le spawn et le Miniaturiseur (côté -X), Anga devant le spawn ;
 	- la chaise, les murs, la fenêtre au coucher de soleil et les posters habillent la chambre autour.
 	Toute la base est accessible à pied depuis le spawn (tests/tower.spec.luau).
+
+	Vrais modèles 3D (ModelLibrary, assets/models) : tant qu'ils ne sont pas importés, tout est
+	construit en primitives, exactement comme avant. Une fois importés :
+	- décor pur (fauteuil, ring light, enceintes, plante) : `Place`, primitives en secours ;
+	- objets solides ou à contrat (clavier, souris, écran, micro, casque, tasse, lampe, bornes Shop /
+	  Arcade, capsule du Miniaturiseur) : `Dress` → les primitives restent (invisibles) pour la
+	  collision, les touches praticables, les prompts (attribut Action) et les tags ; le modèle les habille.
+	- StreamMonitor et l'écran des bornes restent des dalles primitives (hôtes des SurfaceGui),
+	  recalées sur la pièce `Screen` du modèle (`FitScreen`). Pad 0 et LobbySpawn ne changent jamais.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -28,6 +37,7 @@ local Tower = require(Shared.Config.Tower)
 local Branding = require(Shared.Config.Branding)
 local Build = require(script.Parent.Parent.Build)
 local Props = require(script.Parent.Parent.Props)
+local ModelLibrary = require(script.Parent.Parent.ModelLibrary)
 local Common = require(script.Parent.Common)
 local RoomProps = require(script.Parent.RoomProps)
 
@@ -48,6 +58,7 @@ local lamp = Common.Lamp
 
 local APP_ACCENT = Color3.fromHex(Branding.PartnerApp.Accent) -- violet de l'app AngAInOne
 local APP_GLOW = APP_ACCENT:Lerp(C.White, 0.25)
+local ORIGIN = Vector3.zero -- `Anchor` des modèles : leur origine d'export (centre de la base dans Blender)
 
 ------------------------------------------------------------------------------------
 -- Repères de la scène
@@ -67,6 +78,8 @@ local L = Vector3.new(-math.sin(SETUP_ANGLE), 0, -math.cos(SETUP_ANGLE))
 local R = L:Cross(UP) -- droite de l'écran vue de face (= gauche du joueur qui tape)
 local SCREEN_W, SCREEN_H, SCREEN_BOTTOM = 240, 135, 70
 local KEYBOARD_AT = MONITOR_AT + L * 130
+-- Dessus moyen des touches praticables (boîtier 5 + touche 4,4 + relief de rangée 0..0,8)
+local KEY_TOP = RoomProps.KEYBOARD_SIZE.Y + 4.8
 local MAT_W, MAT_D = 640, 300 -- tapis XXL (le long de R, le long de L), centré sur le clavier + 60 R + 10 L
 
 -- Bureau (dessus à y = 0) et chambre
@@ -292,7 +305,11 @@ local function buildRoom(lobby: Model)
 
 	-- Chaise gamer d'Anga : hors du bureau, derrière le spawn, tournée vers l'écran
 	local chairAt = KEYBOARD_AT + L * 820
-	RoomProps.Chair(room, facing(Vector3.new(chairAt.X, FLOOR_Y, chairAt.Z), -L))
+	local chairCf = facing(Vector3.new(chairAt.X, FLOOR_Y, chairAt.Z), -L)
+	-- Boîte de la chaise primitive : accoudoirs 660 de large, dossier ~1490 de haut, piétement ~720
+	ModelLibrary.Place("GamingChair", chairCf, room, { Fit = Vector3.new(660, 1490, 720), Anchor = ORIGIN }, function()
+		return RoomProps.Chair(room, chairCf)
+	end)
 end
 
 ------------------------------------------------------------------------------------
@@ -321,35 +338,100 @@ local function buildSetup(lobby: Model, spawnCf: CFrame)
 	})
 	screen.CanCollide = false
 	screen.CanQuery = false
+	-- Vrai écran incurvé (pied plus profond que le V primitif) : la dalle StreamMonitor reste l'hôte du
+	-- direct, recalée devant son `Screen` ; boîtier, colonne et pied primitifs gardent leur collision.
+	local monitorModel = ModelLibrary.Dress(
+		"Monitor",
+		monitorCf,
+		desk,
+		{ Fit = Vector3.new(SCREEN_W + 10, SCREEN_BOTTOM + SCREEN_H + 5, 140), Anchor = ORIGIN },
+		{ monitor.Model }
+	)
+	if monitorModel then
+		ModelLibrary.FitScreen(monitorModel, screen)
+	end
+	-- Face avant de la dalle (= monitor.Screen en primitives) et haut du boîtier (webcam)
+	local screenFront = if monitorModel then screen.CFrame * CFrame.new(0, 0, -screen.Size.Z / 2) else monitor.Screen
+	local screenW, screenH = screen.Size.X, screen.Size.Y
+	local monitorTop = if monitorModel
+		then monitorCf * CFrame.new(0, screenFront.Position.Y - MONITOR_AT.Y + screenH / 2 + 3, 3.6)
+		else monitor.Top
 	lamp(desk, (monitor.Screen * CFrame.new(0, -30, -40)).Position, Color3.fromRGB(170, 190, 255), 1, 60)
-	RoomProps.Webcam(desk, monitor.Top)
+	-- Ring light + webcam sur trépied, à droite de l'écran (sinon : webcam clipsée sur l'écran)
+	local ringCf = facing(setup(-60, 0, 300), L - R * 0.3)
+	ModelLibrary.Place(
+		"WebcamLight",
+		ringCf,
+		desk,
+		{ Fit = Vector3.new(76, 150, 76), Anchor = ORIGIN, Name = "Webcam" },
+		function()
+			return RoomProps.Webcam(desk, monitorTop)
+		end
+	)
 	-- Post-it collés sur les bords de l'écran
 	RoomProps.StickyNote(
 		desk,
-		monitor.Screen * CFrame.new(-SCREEN_W / 2 - 8, -SCREEN_H / 2 + 26, -0.4) * CFrame.Angles(0, 0, math.rad(6)),
+		screenFront * CFrame.new(-screenW / 2 - 8, -screenH / 2 + 26, -0.4) * CFrame.Angles(0, 0, math.rad(6)),
 		"LIVE 20h !",
 		RoomProps.Colors.PaperYellow,
 		26
 	)
 	RoomProps.StickyNote(
 		desk,
-		monitor.Screen * CFrame.new(SCREEN_W / 2 + 8, -SCREEN_H / 2 + 22, -0.4) * CFrame.Angles(0, 0, math.rad(-5)),
+		screenFront * CFrame.new(screenW / 2 + 8, -screenH / 2 + 22, -0.4) * CFrame.Angles(0, 0, math.rad(-5)),
 		"NE PAS ÉTEINDRE LE PC !!",
 		RoomProps.Colors.PaperPink,
 		26
 	)
+	-- Enceintes de bureau de part et d'autre de l'écran, un peu en retrait, tournées vers le joueur
+	for _, side in { -1, 1 } do
+		ModelLibrary.Place(
+			"Speaker",
+			facing(setup(-110, 0, side * 160), L - R * side * 0.15),
+			desk,
+			{ Fit = Vector3.new(60, 110, 80), Anchor = ORIGIN }
+		)
+	end
 
 	-- Clavier mécanique (dos à l'écran = le joueur qui tape le regarde depuis le spawn), souris à côté
-	RoomProps.Keyboard(desk, facing(KEYBOARD_AT + Vector3.new(0, MAT_TOP, 0), -L))
-	lamp(desk, KEYBOARD_AT + Vector3.new(0, 30, 0), Color3.fromRGB(150, 120, 255), 0.8, 60)
-	RoomProps.Mouse(
+	local keyboard = RoomProps.Keyboard(desk, facing(KEYBOARD_AT + Vector3.new(0, MAT_TOP, 0), -L))
+	-- Vrai clavier : largeur du boîtier géant ; enfoncé dans le bureau pour que le dessus de ses touches
+	-- (11,59 unités modélisées) affleure celui des touches praticables, qui restent solides (invisibles).
+	-- Sa face avant (barre d'espace) regarde le joueur qui tape, son câble part vers l'écran.
+	ModelLibrary.Dress(
+		"Keyboard",
+		facing(KEYBOARD_AT + Vector3.new(0, MAT_TOP + KEY_TOP, 0), L),
 		desk,
-		facing(KEYBOARD_AT + R * 238 + L * 16 + Vector3.new(0, MAT_TOP, 0), -L) * CFrame.Angles(0, math.rad(-8), 0)
+		{ Fit = Vector3.new(RoomProps.KEYBOARD_SIZE.X, 40, 400), Anchor = Vector3.new(0, 11.59, 0) },
+		{ keyboard }
+	)
+	lamp(desk, KEYBOARD_AT + Vector3.new(0, 30, 0), Color3.fromRGB(150, 120, 255), 0.8, 60)
+	local mouseCf = facing(KEYBOARD_AT + R * 238 + L * 16 + Vector3.new(0, MAT_TOP, 0), -L)
+		* CFrame.Angles(0, math.rad(-8), 0)
+	local mouse = RoomProps.Mouse(desk, mouseCf)
+	-- Souris : paume (face avant du modèle) vers le joueur, câble vers l'écran
+	ModelLibrary.Dress(
+		"Mouse",
+		mouseCf * CFrame.Angles(0, math.pi, 0),
+		desk,
+		{ Fit = Vector3.new(60, 32, 170), Anchor = ORIGIN },
+		{ mouse }
 	)
 
 	-- Micro sur bras (socle à côté de la vitre de la tour), casque sur support, multiprise
-	RoomProps.MicArm(desk, setup(-40, 0, -150), setup(40, 330, -150), setup(210, 190, -95), setup(480, 330, -120))
-	RoomProps.HeadsetStand(desk, facing(setup(-20, 0, 190), L + R * 0.4))
+	local micBase, micAt = setup(-40, 0, -150), setup(210, 190, -95)
+	local micArm = RoomProps.MicArm(desk, micBase, setup(40, 330, -150), micAt, setup(480, 330, -120))
+	-- Bras modélisé vers -Z depuis son origine (pince 40 studs sous le plateau, cachée dans le bureau)
+	ModelLibrary.Dress(
+		"MicArm",
+		facing(micBase, micAt - micBase),
+		desk,
+		{ Fit = Vector3.new(100, 430, 360), Anchor = ORIGIN },
+		{ micArm }
+	)
+	local headsetCf = facing(setup(-20, 0, 190), L + R * 0.4)
+	local headset = RoomProps.HeadsetStand(desk, headsetCf)
+	ModelLibrary.Dress("Headset", headsetCf, desk, { Fit = Vector3.new(100, 151, 100), Anchor = ORIGIN }, { headset })
 	RoomProps.StreamDeck(desk, facing(setup(40, MAT_TOP, 150), L))
 	local stripCf = facing(Vector3.new(300, 0, 60), Vector3.xAxis)
 	RoomProps.PowerStrip(desk, stripCf)
@@ -357,14 +439,33 @@ local function buildSetup(lobby: Model, spawnCf: CFrame)
 		return (stripCf * CFrame.new(-40 + i * 34, 24, 0)).Position
 	end
 
-	-- Tasse géante et lampe de bureau (côté -X de la tour)
-	RoomProps.Mug(desk, Vector3.new(-470, 0, -250), SPAWN - Vector3.new(-470, 0, -250))
-	RoomProps.DeskLamp(
+	-- Tasse géante et lampe de bureau (côté -X de la tour), plante à côté de la tasse
+	local mugAt = Vector3.new(-470, 0, -250)
+	local mug = RoomProps.Mug(desk, mugAt, SPAWN - mugAt)
+	ModelLibrary.Dress(
+		"Mug",
+		facing(mugAt, SPAWN - mugAt),
 		desk,
-		Vector3.new(-560, 0, 80),
-		Vector3.new(-600, 360, 10),
-		Vector3.new(-420, 470, -90),
-		Vector3.new(-200, 0, -260)
+		{ Fit = Vector3.new(122, 121, 100), Anchor = ORIGIN },
+		{ mug }
+	)
+	local lampBase, lampHead = Vector3.new(-560, 0, 80), Vector3.new(-420, 470, -90)
+	local deskLamp =
+		RoomProps.DeskLamp(desk, lampBase, Vector3.new(-600, 360, 10), lampHead, Vector3.new(-200, 0, -260))
+	-- Abat-jour modélisé vers -Z : tourné vers la tête de la lampe primitive
+	ModelLibrary.Dress(
+		"DeskLamp",
+		facing(lampBase, lampHead - lampBase),
+		desk,
+		{ Fit = Vector3.new(100, 500, 300), Anchor = ORIGIN },
+		{ deskLamp }
+	)
+	local plantAt = Vector3.new(-580, 0, -340)
+	ModelLibrary.Place(
+		"Plant",
+		facing(plantAt, SPAWN - plantAt),
+		desk,
+		{ Fit = Vector3.new(90, 110, 90), Anchor = ORIGIN }
 	)
 
 	-- Spaghetti de câbles : écran, clavier, webcam, micro -> arrière de la tour ; tour, écran -> multiprise
@@ -390,14 +491,18 @@ local function buildSetup(lobby: Model, spawnCf: CFrame)
 		Vector3.new(120, 1.5, 158),
 		Vector3.new(30, 1.5, backZ),
 	}, braid, 1.4)
-	cable({
-		monitor.Top.Position + Vector3.new(0, 4, 0) - L * 10,
-		rear + R * 30 + Vector3.new(0, -40, 0),
-		setup(-80, 1.5, 60),
-		Vector3.new(250, 1.5, 90),
-		Vector3.new(170, 1.5, 180),
-		Vector3.new(10, 1.5, backZ),
-	}, Color3.fromRGB(210, 210, 220), 1.2)
+	-- Câble de la webcam : du haut de l'écran, ou du pied de la ring light (modèle) en contournant l'enceinte
+	local webcamCable = if ModelLibrary.Has("WebcamLight")
+		then { ringCf.Position + Vector3.new(0, 1.5, 0), setup(-150, 1.5, 250), setup(-190, 1.5, 60) }
+		else {
+			monitorTop.Position + Vector3.new(0, 4, 0) - L * 10,
+			rear + R * 30 + Vector3.new(0, -40, 0),
+			setup(-80, 1.5, 60),
+		}
+	for _, point in { Vector3.new(250, 1.5, 90), Vector3.new(170, 1.5, 180), Vector3.new(10, 1.5, backZ) } do
+		table.insert(webcamCable, point)
+	end
+	cable(webcamCable, Color3.fromRGB(210, 210, 220), 1.2)
 	cable({
 		setup(-40, 3, -150),
 		Vector3.new(185, 1.5, -40),
@@ -579,6 +684,8 @@ local function buildBase(lobby: Model): CFrame
 			At = Vector3.new(-155, 0, -350),
 		},
 	}
+	-- Vrais modèles des bornes (la borne du cadeau du jour reste en primitives)
+	local KIOSK_MODELS: { [string]: string } = { Shop = "ShopKiosk", Arcade = "ArcadeCabinet" }
 	for _, kiosk in kiosks do
 		local cf = facing(kiosk.At, SPAWN - kiosk.At)
 		local model = Build.Model(`{kiosk.Action}Kiosk`, lobby)
@@ -591,8 +698,8 @@ local function buildBase(lobby: Model): CFrame
 			Parent = model,
 		})
 		model.PrimaryPart = stand
-		Box(model, "Base", Vector3.new(9, 0.6, 7), cf * CFrame.new(0, 0.3, 0.4), C.Black, METAL)
-		Box(
+		local base = Box(model, "Base", Vector3.new(9, 0.6, 7), cf * CFrame.new(0, 0.3, 0.4), C.Black, METAL)
+		local screenBack = Box(
 			model,
 			"ScreenBack",
 			Vector3.new(8, 6, 0.6),
@@ -608,7 +715,7 @@ local function buildBase(lobby: Model): CFrame
 			C.Bg
 		)
 		Props.Sign(screen, string.upper(kiosk.Text), kiosk.Object, kiosk.Color, C.White)
-		Build.Neon({
+		local trim = Build.Neon({
 			Name = "Trim",
 			Size = Vector3.new(6.2, 0.4, 0.4),
 			CFrame = cf * CFrame.new(0, 5.1, -2),
@@ -616,6 +723,21 @@ local function buildBase(lobby: Model): CFrame
 			Parent = model,
 		})
 		Build.Prompt(stand, kiosk.Text, kiosk.Object, kiosk.Action, 12)
+		-- Modèle : Stand (porteur du prompt) et socle restent solides mais invisibles ; l'écran primitif
+		-- (texte de la borne) est recalé sur le `Screen` du modèle. Boîte de la borne primitive : 9 × 11,4 × 7,4.
+		local key = KIOSK_MODELS[kiosk.Action]
+		local placed = if key
+			then ModelLibrary.Dress(
+				key,
+				cf,
+				model,
+				{ Fit = Vector3.new(9, 11.4, 7.4), Anchor = ORIGIN },
+				{ stand, base, screenBack, trim }
+			)
+			else nil
+		if placed then
+			ModelLibrary.FitScreen(placed, screen)
+		end
 	end
 
 	-- Emplacement de la mascotte Anga (le client l'affiche ici), à côté du spawn
@@ -671,6 +793,17 @@ local function arc(
 		end
 	end
 end
+
+-- Pièces du Miniaturiseur primitif que la capsule modélisée remplace (masquées, collision gardée).
+local CAPSULE_PARTS: { [string]: boolean } = {
+	MiniaturiserBase = true,
+	MiniaturiserBaseRing = true,
+	ShrinkRing = true,
+	ShrinkRingGlow = true,
+	ShrinkBeam = true,
+	BeamNozzle = true,
+	BeamArm = true,
+}
 
 local function buildMiniaturiser(lobby: Model)
 	local model = Build.Model("Miniaturiser", lobby)
@@ -807,6 +940,24 @@ local function buildMiniaturiser(lobby: Model)
 		})
 	end
 	Common.CheckpointPad(0, Vector3.new(doorX, 1, padZ), Vector3.zAxis)
+
+	-- Vraie capsule « Mode Intervention » autour du pad 0 : entrée (-Z du modèle) vers le spawn, sol
+	-- hexagonal (2,56 unités modélisées) juste sous le dessus du pad, avancée de 4 studs pour moins
+	-- mordre dans la façade. Remplace socle, anneaux et rayon ; le portique (pylônes, traverse, panneau
+	-- JOUER, pupitres) et le chemin lumineux restent. Boîte du portail primitif : 86 × 104 × 41.
+	local capsule: { Instance } = {}
+	for _, child in model:GetChildren() do
+		if CAPSULE_PARTS[child.Name] then
+			table.insert(capsule, child)
+		end
+	end
+	ModelLibrary.Dress(
+		"Miniaturiseur",
+		facing(Vector3.new(doorX, 0.95, padZ - 4), -Vector3.zAxis),
+		model,
+		{ Fit = Vector3.new(86, 104, 41), Anchor = Vector3.new(0, 2.56, 0) },
+		capsule
+	)
 end
 
 function Lobby.Build(tower: Folder)

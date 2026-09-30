@@ -174,9 +174,12 @@ local function applyCoin(p: BasePart)
 	local d = data()
 	local taken = d ~= nil and type(id) == "string" and d.RunCoins[id] == true
 	p.LocalTransparencyModifier = if taken then 1 else 0
-	for _, child in p:GetChildren() do
-		if child:IsA("PointLight") or child:IsA("ParticleEmitter") then
-			(child :: any).Enabled = not taken
+	-- Descendants aussi : habillage 3D soudé (modèle BitCoin), lumière, particules.
+	for _, node in p:GetDescendants() do
+		if node:IsA("BasePart") then
+			node.LocalTransparencyModifier = if taken then 1 else 0
+		elseif node:IsA("PointLight") or node:IsA("ParticleEmitter") then
+			(node :: any).Enabled = not taken
 		end
 	end
 end
