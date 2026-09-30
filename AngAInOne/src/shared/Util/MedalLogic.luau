@@ -5,6 +5,8 @@
 	- StartSplit / SplitTime : chrono d'un monde, en secondes d'ascension (RunElapsed)
 	- UpdateBest : meilleur résultat sauvegardé (DataSchema.WorldBest), record seulement sans aide
 	- NextGoal : prochaine médaille à viser (affichée sur la carte de médaille)
+	- MarkAssisted : aide payante activée pendant l'ascension -> ascension ET monde marqués aussitôt
+	- WatchFall : chute dans le vide vue par le serveur, comptée une fois par chute
 ]]
 
 local Medals = require(script.Parent.Parent.Config.Medals)
@@ -72,6 +74,46 @@ function MedalLogic.StartSplit(split: Split, world: number, now: number, assiste
 	split.Deaths = 0
 	split.Keys = 0
 	split.Assisted = assisted
+end
+
+-- Sous-ensemble des données du joueur touché par une aide (DataSchema.Data).
+export type RunFlags = { RunStarted: boolean, RunAssisted: boolean, RunSplit: Split }
+
+-- Aide payante (bottes anti-gravité, puce de vitesse, bouclier) ACTIVÉE pendant une ascension :
+-- l'ascension (classement des temps) ET le monde en cours (or, record du monde) sont marqués tout de
+-- suite, sans attendre la vérification périodique (activer puis couper en moins d'une seconde ne
+-- passe plus inaperçu). Renvoie true si une ascension est en cours (donc marquée).
+function MedalLogic.MarkAssisted(data: RunFlags): boolean
+	if not data.RunStarted then
+		return false
+	end
+	data.RunAssisted = true
+	data.RunSplit.Assisted = true
+	return true
+end
+
+-- Suivi serveur d'une chute dans le vide (voir ProgressService) : `Since` = instant d'entrée dans
+-- le vide (nil = hors du vide), `Counted` = chute déjà comptée.
+export type FallWatch = { Since: number?, Counted: boolean }
+
+-- Renvoie true UNE SEULE fois par chute, quand le joueur est resté au moins `delay` secondes dans le
+-- vide ; sortir du vide réarme le suivi.
+function MedalLogic.WatchFall(watch: FallWatch, inVoid: boolean, now: number, delay: number): boolean
+	if not inVoid then
+		watch.Since = nil
+		watch.Counted = false
+		return false
+	end
+	local since = watch.Since
+	if since == nil then
+		watch.Since = now
+		return false
+	end
+	if watch.Counted or now - since < delay then
+		return false
+	end
+	watch.Counted = true
+	return true
 end
 
 -- Temps du monde `world` à `now`, ou nil si le chrono ne concerne pas ce monde.

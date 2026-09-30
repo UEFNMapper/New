@@ -1,6 +1,10 @@
 -- ModelLibrary : vrais modèles 3D (assets/models/*.glb) → convention de nom des pièces et décor de secours.
 local roblox = require("@lune/roblox")
 
+-- ReplicatedStorage.ClientModels (ModelLibrary.Preload le crée toujours ; module mis en cache par Shim
+-- et partagé avec tower.spec).
+local clientModels = roblox.Instance.new("Folder")
+clientModels.Name = "ClientModels"
 Shim.Globals = {
 	game = {
 		GetService = function(_self: any, name: string): any
@@ -8,6 +12,9 @@ Shim.Globals = {
 			return {
 				WaitForChild = function()
 					return Shim.Node("src/shared")
+				end,
+				FindFirstChild = function(_: any, child: string): any
+					return if child == "ClientModels" then clientModels else nil
 				end,
 			}
 		end,

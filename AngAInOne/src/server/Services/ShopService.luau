@@ -4,7 +4,8 @@
 	- Achat / équipement validés côté serveur (prix, possession, source VIP/quotidien)
 	- Traînée posée sur le personnage (visible par tous)
 	- Passes activables (Bottes anti-gravité, Puce de vitesse) : appliqués au Humanoid ;
-	  activer un avantage pendant une ascension la marque « assistée » (hors classement des temps)
+	  activer un avantage pendant une ascension la marque « assistée » (hors classement des temps),
+	  ainsi que le monde en cours (pas d'or ni de record du monde) : MedalLogic.MarkAssisted
 	- Bouclier (produit Robux) : attribut Shielded sur le joueur, lu par les pièges côté client
 ]]
 
@@ -13,10 +14,12 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameConfig = require(Shared.Config.GameConfig)
 local Cosmetics = require(Shared.Config.Cosmetics)
+local MedalLogic = require(Shared.Util.MedalLogic)
 local Session = require(script.Parent.Parent.Core.Session)
 local Wallet = require(script.Parent.Parent.Core.Wallet)
 local GameEvents = require(script.Parent.Parent.Core.GameEvents)
 local RemoteGuard = require(script.Parent.Parent.Security.RemoteGuard)
+local StateService = require(script.Parent.StateService)
 
 local ShopService = {}
 
@@ -90,7 +93,9 @@ local function applyTrail(session: Session.Session)
 	end)
 end
 
--- Applique les passes activables au Humanoid.
+-- Applique les passes activables au Humanoid. Un avantage appliqué pendant l'ascension (hors lobby :
+-- au retour dans la tour, ProgressService.ToCheckpoint revérifie) marque aussitôt l'ascension et le
+-- monde en cours comme assistés (MedalLogic.MarkAssisted).
 function ShopService.ApplyToggles(session: Session.Session)
 	local character = session.Player.Character
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
@@ -98,21 +103,23 @@ function ShopService.ApplyToggles(session: Session.Session)
 		return
 	end
 	local toggles = session.Data.Toggles
+	local lowGravity = toggles.LowGravity and session.Passes.LowGravity == true
+	local speedChip = toggles.SpeedChip and session.Passes.SpeedChip == true
 	humanoid.UseJumpPower = false
-	humanoid.JumpHeight = if toggles.LowGravity and session.Passes.LowGravity
-		then GameConfig.LowGravityJumpHeight
-		else 7.2
-	humanoid.WalkSpeed = if toggles.SpeedChip and session.Passes.SpeedChip then GameConfig.SpeedChipWalkSpeed else 16
+	humanoid.JumpHeight = if lowGravity then GameConfig.LowGravityJumpHeight else 7.2
+	humanoid.WalkSpeed = if speedChip then GameConfig.SpeedChipWalkSpeed else 16
+	local atLobby = StateService.AtLobby
+	if (lowGravity or speedChip) and not (atLobby and atLobby(session)) then
+		MedalLogic.MarkAssisted(session.Data)
+	end
 end
 
 -- Bouclier : invincible pendant `seconds` (produit Robux).
 function ShopService.GrantShield(session: Session.Session, seconds: number)
 	session.ShieldUntil = math.max(session.ShieldUntil, os.time()) + seconds
 	session.Player:SetAttribute("Shielded", true)
-	-- Invincible = course assistée (pas de record au classement des temps).
-	if session.Data.RunStarted then
-		session.Data.RunAssisted = true
-	end
+	-- Invincible = course assistée : pas de record au classement des temps, ni pour le monde en cours.
+	MedalLogic.MarkAssisted(session.Data)
 	Wallet.Fx(session, "Shield", { Until = session.ShieldUntil })
 	GameEvents.StateChanged:Fire(session.Player)
 	-- Fin du bouclier : on revérifie jusqu'à l'échéance réelle (plusieurs achats se cumulent).
@@ -182,9 +189,8 @@ local function onToggle(session: Session.Session, key: string, on: boolean)
 	end
 	local toggles = session.Data.Toggles :: any
 	toggles[key] = on
-	if on and session.Data.RunStarted then
-		session.Data.RunAssisted = true
-	end
+	-- Activé pendant l'ascension (même une fraction de seconde) : ApplyToggles marque aussitôt
+	-- l'ascension ET le monde en cours comme assistés.
 	ShopService.ApplyToggles(session)
 	GameEvents.StateChanged:Fire(session.Player)
 end

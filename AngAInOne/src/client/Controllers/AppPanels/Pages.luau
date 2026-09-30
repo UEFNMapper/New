@@ -335,7 +335,7 @@ local function drive(win: Fluent.Window): Updater
 	Tag(card, "SSD · NVMe", 140, 22, 28, 15, C.Text, C.Field)
 	Tag(card, "Windows", 262, 22, 28, 15, C.Text, C.Field)
 	local pill, pillText = rightTag(card, "", 22, 20, 32, 16, C.Text, C.Field)
-	Text(card, "SSD NVMe 500 Go · micrologiciel 2B2QEXM7", 86, 52, 700, 24, 16, { Color = C.Dim })
+	Text(card, `SSD NVMe 500 Go · micrologiciel {AppPages.DISK_FIRMWARE}`, 86, 52, 700, 24, 16, { Color = C.Dim })
 	local used = Text(card, "", 20, 96, 500, 30, 22, { Weight = "Bold" })
 	local free = Text(card, "", 476, 96, 400, 30, 20, { Align = "Right" })
 	local fill = Bar(card, 20, 134, 856, 14, C.Warn)
@@ -765,9 +765,10 @@ end
 local function driver(win: Fluent.Window): Updater
 	local root = win.Content
 	local head = Card(root, 0, 0, 896, 74)
-	local chip = Box(head, 14, 12, 50, 50, Color3.fromHex("76B900"), 8)
-	Text(chip, "GPU", 0, 0, 50, 50, 15, { Weight = "Heavy", Align = "Center", Color = Color3.new(0, 0, 0) })
-	Text(head, "AngaForce RTX 3070 Phantom", 78, 10, 420, 28, 19, { Weight = "Medium" })
+	-- Carte fictive de l'univers AngAInOne : puce à l'accent violet de l'app (Branding.PartnerApp).
+	local chip = Box(head, 14, 12, 50, 50, C.Accent, 8)
+	Text(chip, "GPU", 0, 0, 50, 50, 15, { Weight = "Heavy", Align = "Center", Color = C.Text })
+	Text(head, AppPages.GPU_NAME, 78, 10, 420, 28, 19, { Weight = "Medium" })
 	local current = Text(head, "", 78, 38, 420, 24, 15, { Color = C.Dim })
 	Tag(head, "GPU", 510, 22, 30, 15, C.Text, C.Field)
 	Fluent.Button(head, "Ce n'est pas ma carte", 640, 19, 240, 36, "Outline", 17)

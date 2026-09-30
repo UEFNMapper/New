@@ -4,7 +4,8 @@
 	- Construit la tour (TowerBuilder) et indexe ses checkpoints, terminaux, orbes, arrivée
 	- Checkpoints validés DANS L'ORDRE, avec un temps minimum par étape ; le premier checkpoint
 	  d'un monde n'est accepté que si le terminal antivirus du monde précédent est réussi
-	- Morts (signalées par le client ou détectées), réapparition au checkpoint
+	- Morts (signalées par le client ou détectées), réapparition au checkpoint ; contrôle serveur
+	  des chutes dans le vide (checkVoid) pour que les morts des médailles ne dépendent pas du client
 	- Chrono de l'ascension (arrêté au lobby et hors connexion), victoire au sommet
 	- Orbes de Bits (une fois par ascension, à proximité), boutons checkpoint / lobby / reprendre
 	- Médailles par monde : chrono de chaque monde (RunSplit), morts et clés USB du monde,
@@ -28,6 +29,7 @@ local GameEvents = require(script.Parent.Parent.Core.GameEvents)
 local Telemetry = require(script.Parent.Parent.Core.Telemetry)
 local RemoteGuard = require(script.Parent.Parent.Security.RemoteGuard)
 local TowerBuilder = require(script.Parent.Parent.World.TowerBuilder)
+local Common = require(script.Parent.Parent.World.Tower.Common)
 local StateService = require(script.Parent.StateService)
 
 local ProgressService = {}
@@ -40,6 +42,15 @@ local arcades: { Vector3 } = {}
 local terminals: { [number]: BasePart } = {}
 local lobbySpawn: CFrame = CFrame.new(0, 5, 0)
 local atLobby: { [Session.Session]: boolean } = {}
+
+-- Contrôle serveur des chutes dans le vide (médailles) : la racine sous le vide du monde plus de
+-- VOID_DELAY s compte une mort (une fois par chute) ; un Died dans les VOID_DIED_WINDOW s qui
+-- suivent (le client signale la même chute) n'est pas recompté.
+local VOID_POLL = 0.25
+local VOID_DELAY = 0.5
+local VOID_DIED_WINDOW = 3
+local fallWatch: { [Session.Session]: MedalLogic.FallWatch } = {}
+local voidCountedAt: { [Session.Session]: number } = {}
 
 ------------------------------------------------------------------------------------
 -- Chrono
@@ -94,6 +105,14 @@ export type MedalResult = {
 -- Une aide est-elle active en ce moment (passe avantage ou bouclier) ?
 local function helpedNow(session: Session.Session): boolean
 	return assistActive(session) or session.ShieldUntil > os.time()
+end
+
+-- Aide active en entrant (ou en revenant) dans la tour pendant l'ascension : ascension et monde
+-- marqués tout de suite (ShopService marque aussi à l'activation, hors lobby).
+local function markIfHelped(session: Session.Session)
+	if helpedNow(session) then
+		MedalLogic.MarkAssisted(session.Data)
+	end
 end
 
 -- Démarre le chrono du monde `world` (à l'entrée du monde).
@@ -170,6 +189,7 @@ end
 function ProgressService.ToCheckpoint(session: Session.Session)
 	atLobby[session] = nil
 	session.Minigame = nil -- une partie ouverte ne survit pas à un déplacement
+	markIfHelped(session)
 	startClock(session)
 	GameEvents.StateChanged:Fire(session.Player)
 	teleport(session, ProgressService.CheckpointCFrame(session.Data.Stage))
@@ -249,6 +269,8 @@ local function onCheckpoint(session: Session.Session, stage: number)
 			session.LastCheckpointAt = os.clock()
 			startSplit(session, 1, false)
 			Wallet.Fx(session, "RunStart", {})
+		else
+			markIfHelped(session) -- retour sur la ligne de départ depuis le lobby, avantage actif
 		end
 		startClock(session)
 		GameEvents.StateChanged:Fire(session.Player)
@@ -374,6 +396,52 @@ function ProgressService.ClearWorld(session: Session.Session, world: number): (b
 end
 
 ------------------------------------------------------------------------------------
+-- Morts de l'ascension et chutes dans le vide
+------------------------------------------------------------------------------------
+
+-- Une mort pendant l'ascension, hors lobby : rapport de fin (RunDeaths) et monde en cours (médailles).
+local function countRunDeath(session: Session.Session)
+	local data = session.Data
+	if not data.RunStarted or atLobby[session] then
+		return
+	end
+	data.RunDeaths += 1
+	if data.RunSplit.World > 0 then
+		data.RunSplit.Deaths += 1
+	end
+end
+
+--[[
+	Contrôle léger côté serveur : les morts par piège sont décidées par le client (ReportDeath), qui
+	pourrait ne jamais signaler une chute dans le vide. Si la racine d'un joueur en course reste dans
+	le vide d'un monde (Common.VoidWorldAt : sur ou sous la plaque, là où le voile mortel l'aurait
+	touché) plus de VOID_DELAY s, la chute compte comme une mort (une fois) et il revient au checkpoint,
+	comme pour la chute hors de la tour. Bouclier actif : rien (il marche sur le vide, course assistée).
+]]
+local function checkVoid(session: Session.Session, now: number)
+	local watch = fallWatch[session]
+	if not watch then
+		watch = { Since = nil, Counted = false }
+		fallWatch[session] = watch
+	end
+	local character = session.Player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	local inVoid = session.Alive
+		and session.Data.RunStarted
+		and not atLobby[session]
+		and session.ShieldUntil <= os.time()
+		and root ~= nil
+		and root:IsA("BasePart")
+		and Common.VoidWorldAt(root.Position) > 0
+	if MedalLogic.WatchFall(watch, inVoid == true, now, VOID_DELAY) then
+		countRunDeath(session)
+		voidCountedAt[session] = now
+		GameEvents.StateChanged:Fire(session.Player)
+		task.spawn(ProgressService.ToCheckpoint, session)
+	end
+end
+
+------------------------------------------------------------------------------------
 -- Personnages
 ------------------------------------------------------------------------------------
 
@@ -410,13 +478,13 @@ local function onCharacter(session: Session.Session, character: Model)
 		end
 		session.Alive = false
 		session.Data.Deaths += 1
-		if session.Data.RunStarted then
-			session.Data.RunDeaths += 1 -- rapport de fin
-		end
-		-- Morts du monde en cours (médailles) : pièges signalés par le client (ReportDeath, qui
-		-- met la vie à 0), vide mortel, boss… Pas au lobby.
-		if session.Data.RunStarted and not atLobby[session] and session.Data.RunSplit.World > 0 then
-			session.Data.RunSplit.Deaths += 1
+		-- Morts de l'ascension (rapport de fin) et du monde en cours (médailles) : pièges signalés
+		-- par le client (ReportDeath, qui met la vie à 0), vide mortel, boss… Pas au lobby. Une
+		-- chute dans le vide déjà comptée par le contrôle serveur (juste avant) ne compte pas deux fois.
+		local counted = voidCountedAt[session]
+		voidCountedAt[session] = nil
+		if not (counted and os.clock() - counted < VOID_DIED_WINDOW) then
+			countRunDeath(session)
 		end
 		local position = if root:IsA("BasePart") then root.Position else Vector3.zero
 		Wallet.FxAll("Death", { UserId = session.UserId, Position = position, Fx = session.Data.Cosmetics.DeathFx })
@@ -571,6 +639,8 @@ function ProgressService.Start()
 	Session.Removing:Connect(function(session: Session.Session)
 		stopClock(session)
 		atLobby[session] = nil
+		fallWatch[session] = nil
+		voidCountedAt[session] = nil
 	end)
 
 	RemoteGuard.On("ReportDeath", { Limit = "Death", Args = { RemoteGuard.String(24) } }, function(session, _cause)
@@ -622,14 +692,26 @@ function ProgressService.Start()
 				if root and root:IsA("BasePart") and root.Position.Y < RUN.FallKillBelow and session.Alive then
 					task.spawn(ProgressService.ToCheckpoint, session)
 				end
-				-- Aide utilisée pendant le monde (bouclier, passe activé) : pas de record pour ce monde.
-				if session.Data.RunStarted and not atLobby[session] and helpedNow(session) then
-					session.Data.RunSplit.Assisted = true
+				-- Aide utilisée pendant le monde (bouclier, passe activé) : pas de record pour ce monde
+				-- (filet de sécurité : ShopService et ToCheckpoint marquent déjà à l'activation).
+				if not atLobby[session] then
+					markIfHelped(session)
 				end
 				-- Toutes les 5 s, le chrono en cours est reporté dans la sauvegarde.
 				if session.PlaytimeCarry % 5 == 0 then
 					commitClock(session)
 				end
+			end
+		end
+	end)
+
+	-- Chutes dans le vide (médailles) : contrôle serveur 4 fois par seconde.
+	task.spawn(function()
+		while true do
+			task.wait(VOID_POLL)
+			local now = os.clock()
+			for _, session in Session.All() do
+				checkVoid(session, now)
 			end
 		end
 	end)

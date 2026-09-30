@@ -159,6 +159,47 @@ return {
 		Expect.equal(best.Time, rule.Gold - 20)
 		Expect.equal(newBest, true)
 	end,
+	["aide payante activée pendant l'ascension : ascension ET monde marqués aussitôt"] = function()
+		local data: any = DataSchema.Template()
+		-- Hors ascension (lobby avant le départ) : rien n'est marqué.
+		Expect.equal(MedalLogic.MarkAssisted(data), false)
+		Expect.equal(data.RunAssisted, false)
+		Expect.equal(data.RunSplit.Assisted, false)
+		-- Ascension en cours : activer puis couper tout de suite ne passe plus inaperçu.
+		data.RunStarted = true
+		MedalLogic.StartSplit(data.RunSplit, 2, 100, false)
+		Expect.equal(MedalLogic.MarkAssisted(data), true)
+		Expect.equal(data.RunAssisted, true, "hors classement des temps")
+		Expect.equal(data.RunSplit.Assisted, true, "monde en cours assisté")
+		local rule = Medals.Rule(2)
+		local time = MedalLogic.SplitTime(data.RunSplit, 2, 100 + rule.Gold - 30)
+		Expect.equal(MedalLogic.Evaluate(2, time, 0, 3, data.RunSplit.Assisted), "Silver", "pas d'or")
+		local best, newBest = MedalLogic.UpdateBest(nil, "Silver", time, not data.RunSplit.Assisted)
+		Expect.equal(newBest, false, "pas de record du monde")
+		Expect.equal(best.Time, 0)
+		-- Le monde suivant repart sans aide (si l'aide est coupée).
+		MedalLogic.StartSplit(data.RunSplit, 3, 400, false)
+		Expect.equal(data.RunSplit.Assisted, false)
+	end,
+	["chute dans le vide vue par le serveur : comptée une fois par chute, après le délai"] = function()
+		local watch: any = { Since = nil, Counted = false }
+		Expect.equal(MedalLogic.WatchFall(watch, false, 0, 0.5), false)
+		Expect.equal(MedalLogic.WatchFall(watch, true, 1, 0.5), false, "entrée dans le vide")
+		Expect.equal(MedalLogic.WatchFall(watch, true, 1.25, 0.5), false, "trop tôt")
+		Expect.equal(MedalLogic.WatchFall(watch, true, 1.5, 0.5), true, "0,5 s dans le vide : une mort")
+		Expect.equal(MedalLogic.WatchFall(watch, true, 1.75, 0.5), false, "pas deux fois pour la même chute")
+		Expect.equal(MedalLogic.WatchFall(watch, true, 5, 0.5), false)
+		-- Sorti du vide (ramené au checkpoint) : la chute suivante compte de nouveau.
+		Expect.equal(MedalLogic.WatchFall(watch, false, 5.25, 0.5), false)
+		Expect.equal(watch.Since, nil)
+		Expect.equal(MedalLogic.WatchFall(watch, true, 6, 0.5), false)
+		Expect.equal(MedalLogic.WatchFall(watch, true, 6.5, 0.5), true)
+		-- Un passage bref (saut au ras du vide) ne compte pas.
+		local brief: any = { Since = nil, Counted = false }
+		MedalLogic.WatchFall(brief, true, 0, 0.5)
+		MedalLogic.WatchFall(brief, false, 0.25, 0.5)
+		Expect.equal(MedalLogic.WatchFall(brief, true, 0.5, 0.5), false)
+	end,
 	["médailles : une aide payante plafonne à l'argent (l'or ne s'achète pas)"] = function()
 		local MedalLogicT = Shim.load("src/shared/Util/MedalLogic.luau")
 		Expect.equal(MedalLogicT.Evaluate(1, 10, 0, 0, false), "Gold")

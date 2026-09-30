@@ -9,6 +9,8 @@
 	- Victoire : cascade arc-en-ciel du bas vers le haut, puis toute la tour en arc-en-ciel
 	  (Cleared reste à WORLD_COUNT jusqu'au départ suivant : voir ProgressService.onFinish)
 	Respecte ReducedMotion (attribut local du joueur) : couleurs fixes, sans clignotement.
+	Budget : 10 mises à jour par seconde, et aucune quand la caméra est dans la tour (coque
+	invisible de l'intérieur : AppPanelLogic.InsideTower).
 	Logique pure : Shared/Util/ShellGlow.
 ]]
 
@@ -16,11 +18,13 @@ local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Tower = require(Shared.Config.Tower)
 local Branding = require(Shared.Config.Branding)
 local ShellGlow = require(Shared.Util.ShellGlow)
+local AppPages = require(Shared.Util.AppPanelLogic)
 
 local Store = require(script.Parent.Store)
 local Net = require(script.Parent.Net)
@@ -31,6 +35,7 @@ local player = Players.LocalPlayer
 local WHITE = Color3.new(1, 1, 1)
 local APP_GLOW = Color3.fromHex(Branding.PartnerApp.Accent):Lerp(WHITE, 0.25)
 local SPLIT_GAP = 3 -- studs éteints entre deux mondes sur une jauge découpée
+local UPDATE_HZ = 10 -- ~110 néons : 10 écritures par seconde suffisent (vague, vacillement, arc-en-ciel)
 
 type Light = {
 	Part: BasePart,
@@ -219,11 +224,26 @@ function TowerGlow.Start()
 	local accumulator = 0
 	RunService.Heartbeat:Connect(function(dt: number)
 		accumulator += dt
-		if accumulator < 1 / 20 then
+		if accumulator < 1 / UPDATE_HZ then
 			return
 		end
 		accumulator = 0
 		local t = os.clock()
+		-- Vagues terminées
+		for w, startedAt in waves do
+			if t - startedAt > ShellGlow.WAVE_SECONDS then
+				waves[w] = nil
+			end
+		end
+		-- Caméra dans la tour : la coque extérieure est invisible, on n'écrit rien (l'arc-en-ciel de
+		-- la victoire et le vacillement reprennent dès qu'on ressort au lobby).
+		local camera = Workspace.CurrentCamera
+		if camera then
+			local eye = camera.CFrame.Position
+			if AppPages.InsideTower(eye.X, eye.Y, eye.Z) then
+				return
+			end
+		end
 		local calm = reduced()
 		for part, light in lights do
 			if part.Parent == nil then
@@ -231,12 +251,6 @@ function TowerGlow.Start()
 			else
 				local color, alpha = shade(light, t, calm)
 				apply(light, color, alpha)
-			end
-		end
-		-- Vagues terminées
-		for w, startedAt in waves do
-			if t - startedAt > ShellGlow.WAVE_SECONDS then
-				waves[w] = nil
 			end
 		end
 	end)

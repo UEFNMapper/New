@@ -16,7 +16,15 @@
 
 	Course assistée (étape passée, bouclier, bottes anti-gravité ou puce de vitesse activés PENDANT
 	le monde) : au mieux l'ARGENT (l'or ne s'achète pas), gardé dans la collection ; le temps
-	n'entre pas au record du monde (WorldBest.Time) et ne déclenche pas « Nouveau record ».
+	n'entre pas au record du monde (WorldBest.Time) et ne déclenche pas « Nouveau record ». Le
+	marquage est immédiat dès l'activation (MedalLogic.MarkAssisted), pas seulement à la
+	vérification périodique.
+
+	Morts du monde : comptées par le serveur (Humanoid.Died, hors lobby). Les pièges sont détectés
+	par le client (ReportDeath) ; en plus, un contrôle serveur compte une chute dans le vide d'un
+	monde (racine plus de 0,5 s dans le vide, une fois par chute, sans doubler le Died qui suit) et
+	ramène au checkpoint. Un client modifié peut encore ignorer un piège mobile : les médailles
+	restent donc COSMÉTIQUES (collection, aucun gain de Bits ni d'avantage de jeu).
 
 	Estimation des seuils : chemin des checkpoints mesuré sur la tour construite (≈ 475–570 studs en
 	ligne droite par monde, ≈ 650 studs réels à 16 studs/s ≈ 40 s de course pure), plus l'attente

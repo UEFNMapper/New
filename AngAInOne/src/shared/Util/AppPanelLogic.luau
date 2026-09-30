@@ -183,6 +183,7 @@ end
 ------------------------------------------------------------------------------------
 
 AppPages.DISK_TOTAL = 464.2
+AppPages.DISK_FIRMWARE = "AIO-1.0" -- micrologiciel inventé (aucune référence de fabricant réelle)
 
 -- Go utilisés sur C: (420,5 au départ, comme dans l'app).
 function AppPages.DiskUsed(p: Progress): number
@@ -349,8 +350,11 @@ end
 -- Monde 6 · Pilotes GPU
 ------------------------------------------------------------------------------------
 
-AppPages.DRIVER_NEW = "610.47"
-AppPages.DRIVER_OLD = "399.99"
+-- Noms et versions inventés (univers AngAInOne) : aucune marque ni référence réelle
+-- (tests/brand.spec.luau refuse les marques connues dans src/).
+AppPages.GPU_NAME = "Carte graphique AngaGPU 7000"
+AppPages.DRIVER_NEW = "7.1"
+AppPages.DRIVER_OLD = "3.9"
 
 -- Étape de l'installation (1..3 ; 4 = installé) et libellé.
 AppPages.DriverSteps = table.freeze({
@@ -377,9 +381,9 @@ end
 
 -- Journal d'opération : une ligne de plus à chaque checkpoint (la dernière au nettoyage).
 AppPages.DriverLog = table.freeze({
-	"Carte détectée : AngaForce RTX 3070 Phantom",
-	"Ancien pilote 399.99 : Freezy a tout figé",
-	"Téléchargement du pilote 610.47",
+	`Carte détectée : {AppPages.GPU_NAME}`,
+	`Ancien pilote {AppPages.DRIVER_OLD} : Freezy a tout figé`,
+	`Téléchargement du pilote {AppPages.DRIVER_NEW}`,
 	"Extraction : 1 204 fichiers",
 	"Nettoyage complet de l'ancien pilote",
 	"Installation terminée, image fluide",
@@ -498,6 +502,49 @@ function AppPages.Intro(world: number): Intro
 		Task = intro.Task,
 		Detail = intro.Detail,
 	}
+end
+
+------------------------------------------------------------------------------------
+-- Budget côté client (Controllers/AppPanels, Controllers/TowerGlow)
+------------------------------------------------------------------------------------
+
+-- Dimensions de la tour (= World/Tower/Common.INNER et Common.TOP, vérifié par les tests).
+AppPages.TOWER_INNER = 132
+AppPages.TOWER_TOP = 750
+
+-- Point entre les parois de la tour, sous son plafond : de là, la coque extérieure (néons
+-- ShellLight) et le lobby autour (Anga géant) sont cachés.
+function AppPages.InsideTower(x: number, y: number, z: number): boolean
+	local inner = AppPages.TOWER_INNER
+	return math.abs(x) < inner and math.abs(z) < inner and y > -10 and y < AppPages.TOWER_TOP
+end
+
+-- Anga géant du lobby : animé seulement si la caméra est hors de la tour et à moins de cette
+-- distance du centre de sa boîte englobante (tout le lobby sur le bureau y tient).
+AppPages.GIANT_RANGE = 1500
+
+-- Fenêtres de l'app : SurfaceGui dessiné sur une grille logique de PANEL_LAYOUT_WIDTH px (tout le
+-- placement de Fluent / Pages est en px de cette grille), rendu sur une toile de PANEL_CANVAS_WIDTH
+-- px (UIScale) : texture ~2,25× plus petite, mise en page identique.
+AppPages.PANEL_LAYOUT_WIDTH = 1200
+AppPages.PANEL_CANVAS_WIDTH = 800
+-- Distance (studs, depuis la racine du personnage) : affichée en deçà de SHOW, masquée au-delà de
+-- HIDE (hystérésis : pas de bascule en boucle quand on tourne autour du seuil).
+AppPages.PANEL_SHOW = 220
+AppPages.PANEL_HIDE = 290
+
+-- Les fenêtres du monde `world` existent-elles ? Seulement celles du monde parcouru (Tower.RunWorld)
+-- et du suivant ; les autres sont détruites.
+function AppPages.PanelWorldActive(world: number, runWorld: number): boolean
+	return world == runWorld or world == runWorld + 1
+end
+
+-- Fenêtre affichée ? `shown` = état actuel, `facing` = face avant tournée vers le joueur.
+function AppPages.PanelShown(shown: boolean, distance: number, facing: boolean): boolean
+	if shown then
+		return distance <= AppPages.PANEL_HIDE
+	end
+	return facing and distance < AppPages.PANEL_SHOW
 end
 
 return table.freeze(AppPages)

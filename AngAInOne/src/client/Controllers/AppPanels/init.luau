@@ -7,14 +7,20 @@
 	- incidents de LAGZ dans ce monde (ReplicatedStorage.IncidentState via TrapClock) : coupure,
 	  « Ne répond pas », secteurs corrompus, pic de lag, surchauffe, pub relancée ;
 	- plantages de la session (Controllers/CrashLog) sur la page Plantages.
-	Budget : un SurfaceGui n'existe que pour les fenêtres proches de la caméra (≤ VIEW_DISTANCE),
-	détruit en s'éloignant ; mises à jour 4 fois par seconde. Compatible StreamingEnabled.
+	Budget (mobile) :
+	- seules les fenêtres du monde parcouru (Tower.RunWorld) et du suivant ont un SurfaceGui ; il
+	  est détruit quand le monde sort de cette bande ;
+	- distance mesurée depuis la RACINE du personnage (pas la caméra, qui tourne autour) :
+	  affichée sous AppPages.PANEL_SHOW, masquée (Enabled = false, rien n'est détruit ni reconstruit)
+	  au-delà de PANEL_HIDE (hystérésis de 70 studs) ;
+	- toile de 800 px de large (mise en page Fluent / Pages sur 1 200 px logiques, UIScale) ;
+	- mises à jour 4 fois par seconde, seulement pour les fenêtres affichées. Compatible StreamingEnabled.
 
 	Aussi :
 	- ponts de chargement du monde 6 (Trap Kind = LoadBridge, World = 6) : bulle de l'app
-	  « Téléchargement du pilote 610.47 · x % » au-dessus du pont (même avancement que le piège) ;
+	  « Téléchargement du pilote 7.1 · x % » au-dessus du pont (même avancement que le piège) ;
 	- Anga géant du lobby (tag GiantAnga) : respiration lente et tête qui tourne doucement
-	  (rien si ReducedMotion).
+	  (rien si ReducedMotion), à 30 Hz et seulement quand la caméra est au lobby, près de lui.
 ]]
 
 local CollectionService = game:GetService("CollectionService")
@@ -27,6 +33,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local AppPages = require(Shared.Util.AppPanelLogic)
 local CrashLogic = require(Shared.Util.CrashLogic)
 local TrapClock = require(Shared.Util.TrapClock)
+local Tower = require(Shared.Config.Tower)
 
 local Store = require(script.Parent.Store)
 local CrashLog = require(script.Parent.CrashLog)
@@ -39,19 +46,23 @@ local AppPanels = {}
 
 local player = Players.LocalPlayer
 
-local VIEW_DISTANCE = 230 -- SurfaceGui créé en deçà, détruit au-delà (+ marge)
 local UPDATE = 0.25
-local CANVAS_WIDTH = 1200
+local LAYOUT_WIDTH = AppPages.PANEL_LAYOUT_WIDTH -- grille logique de Fluent / Pages
+local CANVAS_WIDTH = AppPages.PANEL_CANVAS_WIDTH -- pixels réels de la toile
+local GUI_MAX_DISTANCE = AppPages.PANEL_HIDE + 80 -- depuis la caméra (un peu derrière le joueur)
 local BRIDGE_DISTANCE = 150
 local BRIDGE_WORLD = 6
+local GIANT_RANGE = AppPages.GIANT_RANGE -- Anga géant animé seulement si la caméra est plus près
+local GIANT_HZ = 30
 
 type View = {
 	Gui: SurfaceGui,
 	Update: Pages.Updater?,
+	Shown: boolean,
 }
 
 local panels: { [BasePart]: boolean } = {} -- fenêtres connues (streaming)
-local views: { [BasePart]: View } = {} -- fenêtres dessinées (proches)
+local views: { [BasePart]: View } = {} -- fenêtres dessinées (bande de mondes active)
 
 local function reduced(): boolean
 	return player:GetAttribute("ReducedMotion") == true
@@ -82,26 +93,34 @@ local function build(part: BasePart): View
 	local kind = part:GetAttribute("Kind")
 	local w = if type(world) == "number" then world else 1
 	local k = if type(kind) == "string" then kind else ""
-	local height = math.floor(CANVAS_WIDTH * part.Size.Y / math.max(part.Size.X, 0.1))
+	-- Mise en page sur la grille logique (LAYOUT_WIDTH × height), réduite à la toile par UIScale :
+	-- toutes les positions / tailles de Fluent et Pages (en px) restent proportionnelles.
+	local ratio = part.Size.Y / math.max(part.Size.X, 0.1)
+	local height = math.floor(LAYOUT_WIDTH * ratio)
+	local scale = CANVAS_WIDTH / LAYOUT_WIDTH
 	local gui = Instance.new("SurfaceGui")
 	gui.Name = "AngAInOnePage"
 	gui.Face = Enum.NormalId.Front
 	gui.SizingMode = Enum.SurfaceGuiSizingMode.FixedSize
-	gui.CanvasSize = Vector2.new(CANVAS_WIDTH, height)
+	gui.CanvasSize = Vector2.new(CANVAS_WIDTH, math.floor(CANVAS_WIDTH * ratio))
 	gui.LightInfluence = 0
 	gui.Brightness = 1.3
-	gui.MaxDistance = VIEW_DISTANCE + 40
+	gui.MaxDistance = GUI_MAX_DISTANCE
+	gui.Enabled = false -- affichée par panelLoop (hystérésis)
 	local root = Instance.new("Frame")
-	root.Size = UDim2.fromScale(1, 1)
+	root.Size = UDim2.fromOffset(LAYOUT_WIDTH, height)
 	root.BackgroundColor3 = Fluent.C.Bg
 	root.BorderSizePixel = 0
 	root.Parent = gui
+	local uiScale = Instance.new("UIScale")
+	uiScale.Scale = scale
+	uiScale.Parent = root
 	local update: Pages.Updater? = nil
 	if k == "LaunchBanner" then
-		update = Pages.BuildBanner(root, CANVAS_WIDTH, height)
+		update = Pages.BuildBanner(root, LAYOUT_WIDTH, height)
 	elseif Pages.Has(k) then
 		local window = Fluent.Window(root, {
-			Width = CANVAS_WIDTH,
+			Width = LAYOUT_WIDTH,
 			Height = height,
 			World = w,
 			User = player.DisplayName,
@@ -109,7 +128,7 @@ local function build(part: BasePart): View
 		update = Pages.Build(k, window)
 	end
 	gui.Parent = part
-	return { Gui = gui, Update = update }
+	return { Gui = gui, Update = update, Shown = false }
 end
 
 local function drop(part: BasePart)
@@ -137,37 +156,68 @@ local function refresh(part: BasePart, view: View, now: number)
 	end
 end
 
+-- Monde parcouru par le joueur local (1 avant le départ).
+local function runWorld(): number
+	local data = Store.Data()
+	return if data then Tower.RunWorld(data.Stage, data.Cleared) else 1
+end
+
+-- Point de référence : racine du personnage (stable), sinon la caméra (mort, chargement).
+local function viewpoint(): Vector3?
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if root and root:IsA("BasePart") then
+		return root.Position
+	end
+	local camera = Workspace.CurrentCamera
+	return if camera then camera.CFrame.Position else nil
+end
+
 local function panelLoop()
 	while true do
 		task.wait(UPDATE)
-		local camera = Workspace.CurrentCamera
-		if camera then
-			local eye = camera.CFrame.Position
-			local now = Workspace:GetServerTimeNow()
-			for part in panels do
-				if part.Parent == nil then
+		local eye = viewpoint()
+		if not eye then
+			continue
+		end
+		local now = Workspace:GetServerTimeNow()
+		local current = runWorld()
+		for part in panels do
+			if part.Parent == nil then
+				drop(part)
+				panels[part] = nil
+				continue
+			end
+			local attribute = part:GetAttribute("World")
+			local world = if type(attribute) == "number" then attribute else 1
+			local view = views[part]
+			-- Hors de la bande « monde parcouru + suivant » : rien n'existe.
+			if not AppPages.PanelWorldActive(world, current) then
+				if view then
 					drop(part)
-					panels[part] = nil
+				end
+				continue
+			end
+			local distance = (part.Position - eye).Magnitude
+			-- Face avant tournée vers le joueur (on ne dessine pas le dos d'une fenêtre)
+			local facing = part.CFrame.LookVector:Dot(eye - part.Position) > 0
+			local shown = AppPages.PanelShown(if view then view.Shown else false, distance, facing)
+			if shown and not view then
+				local ok, built = pcall(build, part)
+				if not ok then
+					warn(`[AppPanels] construction : {built}`)
 					continue
 				end
-				local view = views[part]
-				local distance = (part.Position - eye).Magnitude
-				-- Face avant tournée vers la caméra (on ne dessine pas le dos d'une fenêtre)
-				local facing = part.CFrame.LookVector:Dot(eye - part.Position) > 0
-				if view then
-					if distance > VIEW_DISTANCE + 30 then
-						drop(part)
-					else
-						refresh(part, view, now)
-					end
-				elseif distance < VIEW_DISTANCE and facing then
-					local ok, built = pcall(build, part)
-					if ok then
-						views[part] = built
-						refresh(part, built, now)
-					else
-						warn(`[AppPanels] construction : {built}`)
-					end
+				view = built
+				views[part] = built
+			end
+			if view then
+				if view.Shown ~= shown then
+					view.Shown = shown
+					view.Gui.Enabled = shown
+				end
+				if shown then
+					refresh(part, view, now)
 				end
 			end
 		end
@@ -175,7 +225,7 @@ local function panelLoop()
 end
 
 ------------------------------------------------------------------------------------
--- Ponts de chargement du monde 6 : « Téléchargement du pilote 610.47 · x % »
+-- Ponts de chargement du monde 6 : « Téléchargement du pilote 7.1 · x % »
 ------------------------------------------------------------------------------------
 
 type Bridge = {
@@ -253,12 +303,15 @@ end
 -- Anga géant du lobby : respiration et tête qui tourne doucement
 ------------------------------------------------------------------------------------
 
+-- Seule la tête bouge, en UN PivotTo de son groupe « Head » (décor de secours en primitives).
+-- Le vrai modèle 3D (pas de groupe Head séparé) reste immobile : bouger tout le modèle coûtait trop.
 type Giant = {
 	Model: Model,
-	Head: { { Part: BasePart, Base: CFrame } },
-	Pivot: Vector3,
+	Head: Model,
+	HeadBase: CFrame, -- pivot du groupe Head au repos
+	Pivot: Vector3, -- cou (attribut NeckPivot)
+	Center: Vector3, -- centre de la boîte englobante (test de distance)
 	Right: Vector3,
-	Base: CFrame?,
 }
 
 local giants: { [Model]: Giant } = {}
@@ -267,62 +320,65 @@ local function trackGiant(instance: Instance)
 	if not instance:IsA("Model") or giants[instance] then
 		return
 	end
-	local head = {}
-	local holder = instance:FindFirstChild("Head")
-	if holder then
-		for _, d in holder:GetDescendants() do
-			if d:IsA("BasePart") then
-				table.insert(head, { Part = d, Base = d.CFrame })
-			end
-		end
+	-- (StreamingEnabled : la tête peut arriver un peu après le modèle)
+	local head = instance:WaitForChild("Head", 10)
+	if not (head and head:IsA("Model")) or giants[instance] or instance.Parent == nil then
+		return -- vrai modèle 3D (sa tête est une simple pièce) : pas d'animation
 	end
 	local pivot = instance:GetAttribute("NeckPivot")
+	local center = instance:GetBoundingBox().Position
 	giants[instance] = {
 		Model = instance,
 		Head = head,
+		HeadBase = head:GetPivot(),
 		Pivot = if typeof(pivot) == "Vector3" then pivot else instance:GetPivot().Position,
+		Center = center,
 		Right = instance:GetPivot().RightVector,
-		-- Vrai modèle 3D (pas de tête séparée) : on fait « respirer » le modèle entier
-		Base = if #head == 0 then instance:GetPivot() else nil,
 	}
+end
+
+-- La caméra voit-elle l'Anga géant ? Au lobby (hors de la tour) et à moins de GIANT_RANGE de lui.
+local function giantVisible(giant: Giant, eye: Vector3): boolean
+	return not AppPages.InsideTower(eye.X, eye.Y, eye.Z) and (giant.Center - eye).Magnitude < GIANT_RANGE
 end
 
 local function animateGiants()
 	local rest = false
-	RunService.Heartbeat:Connect(function()
-		if not next(giants) then
+	local accumulator = 0
+	RunService.Heartbeat:Connect(function(dt: number)
+		accumulator += dt
+		if accumulator < 1 / GIANT_HZ or not next(giants) then
 			return
 		end
+		accumulator = 0
 		local still = reduced()
 		if still and rest then
 			return
 		end
 		local camera = Workspace.CurrentCamera
-		local eye = if camera then camera.CFrame.Position else Vector3.zero
+		if not camera then
+			return
+		end
+		local eye = camera.CFrame.Position
 		local t = os.clock()
 		for model, giant in giants do
-			if model.Parent == nil then
+			if model.Parent == nil or giant.Head.Parent == nil then
 				giants[model] = nil
 				continue
 			end
-			if not still and (giant.Pivot - eye).Magnitude > 4000 then
+			-- ReducedMotion : on repose la tête une fois, même hors de vue.
+			if not still and not giantVisible(giant, eye) then
 				continue
 			end
 			local yaw = if still then 0 else math.rad(7) * math.sin(t * 0.33)
 			local nod = if still then 0 else math.rad(2.5) * math.sin(t * 0.52 + 1)
 			local breath = if still then 0 else 6 * math.sin(t * 1.1)
-			if giant.Base then
-				model:PivotTo((giant.Base :: CFrame) * CFrame.new(0, breath * 0.5, 0))
-			else
-				local pivot = giant.Pivot
-				local turn = CFrame.new(pivot + Vector3.new(0, breath, 0))
-					* CFrame.Angles(0, yaw, 0)
-					* CFrame.fromAxisAngle(giant.Right, nod)
-					* CFrame.new(-pivot)
-				for _, entry in giant.Head do
-					entry.Part.CFrame = turn * entry.Base
-				end
-			end
+			local pivot = giant.Pivot
+			local turn = CFrame.new(pivot + Vector3.new(0, breath, 0))
+				* CFrame.Angles(0, yaw, 0)
+				* CFrame.fromAxisAngle(giant.Right, nod)
+				* CFrame.new(-pivot)
+			giant.Head:PivotTo(turn * giant.HeadBase)
 		end
 		rest = still
 	end)

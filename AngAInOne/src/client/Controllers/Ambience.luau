@@ -12,7 +12,8 @@
 	- La teinte ColorCorrection appartient à Feedback.applyWorld : on n'y touche pas.
 	- Un BLACKOUT (IncidentController) sauvegarde l'éclairage au début de l'incident, l'éteint puis
 	  le restaure : on ne lance aucun fondu pendant l'annonce, l'incident et la restauration
-	  (AmbiencePresets.LightingFree) ; le preset du monde est rejoué juste après.
+	  (AmbiencePresets.LightingFree) ; le preset du monde est rejoué juste après, à la fin de la
+	  période de grâce, même sans changement de monde (replayAfterBlackout).
 ]]
 
 local Lighting = game:GetService("Lighting")
@@ -33,6 +34,7 @@ local Ambience = {}
 local player = Players.LocalPlayer
 local applied = -1 -- monde dont l'éclairage est appliqué (ou en cours de fondu)
 local lastBlackout = -math.huge -- os.clock() du dernier BLACKOUT vu (annonce ou incident)
+local replayAfterBlackout = false -- preset du monde à rejouer une fois l'éclairage libéré
 local rig: Part? = nil
 local emitter: ParticleEmitter? = nil
 local particleWorld = -1
@@ -225,11 +227,15 @@ local function refresh()
 	local now = os.clock()
 	if kind == "Blackout" then
 		lastBlackout = now
+		-- IncidentController restaure l'éclairage d'AVANT la coupure : à la fin de la période de
+		-- grâce, on rejoue le preset du monde même si le monde n'a pas changé entre-temps.
+		replayAfterBlackout = true
 	end
-	if applied ~= world and AmbiencePresets.LightingFree(kind, now - lastBlackout) then
+	if (applied ~= world or replayAfterBlackout) and AmbiencePresets.LightingFree(kind, now - lastBlackout) then
 		-- Premier réglage (arrivée en cours d'ascension) : fondu court.
 		applyLighting(world, if applied < 0 then 0.6 else AmbiencePresets.TWEEN)
 		applied = world
+		replayAfterBlackout = false
 	end
 	updateParticles(world)
 end

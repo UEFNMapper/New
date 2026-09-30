@@ -66,7 +66,7 @@ local ORIGIN: { [string]: Vector3 } = {
 
 local failed: { [string]: boolean } = {}
 
--- Modèles recopiés dans ReplicatedStorage.ClientModels pour le client (voir Preload).
+-- Modèles recopiés dans ReplicatedStorage.ClientModels pour le client (voir publishForClient).
 local CLIENT_MODELS = { "Anga", "AioDrone" }
 
 local MATERIALS: { [string]: Enum.Material } = {
@@ -133,8 +133,35 @@ local function prepare(asset: Instance, key: string): Model?
 	return model
 end
 
+-- Dossier ReplicatedStorage.ClientModels : TOUJOURS présent (même vide), pour que le client
+-- (Companion) ne l'attende pas en vain ; il y trouve les modèles au fur et à mesure du chargement.
+local function clientFolder(): Folder
+	local existing = ReplicatedStorage:FindFirstChild("ClientModels")
+	if existing and existing:IsA("Folder") then
+		return existing
+	end
+	local created = Instance.new("Folder")
+	created.Name = "ClientModels"
+	created.Parent = ReplicatedStorage
+	return created
+end
+
+-- Modèle animé CÔTÉ CLIENT (compagnon mini-Anga : Companion.luau) : copie du gabarit dans
+-- ReplicatedStorage.ClientModels dès son chargement. Absent = le client garde son secours en primitives.
+local function publishForClient(key: string, template: Model)
+	if not table.find(CLIENT_MODELS, key) then
+		return
+	end
+	local folder = clientFolder()
+	if not folder:FindFirstChild(key) then
+		template:Clone().Parent = folder
+	end
+end
+
 -- Charge tous les modèles référencés (en parallèle). À appeler avant de construire la tour.
+-- Attend au plus 20 s ; un modèle plus lent reste utilisable ensuite (et publié pour le client).
 function ModelLibrary.Preload()
+	clientFolder()
 	if next(ModelAssets) == nil then
 		return -- aucun modèle importé : tout le décor utilise les primitives de secours
 	end
@@ -151,6 +178,7 @@ function ModelLibrary.Preload()
 				if model then
 					model.Name = key
 					templates[key] = model
+					publishForClient(key, model)
 				else
 					failed[key] = true
 					warn(`[ModelLibrary] modèle {key} ({id}) introuvable : décor de secours utilisé`)
@@ -162,23 +190,6 @@ function ModelLibrary.Preload()
 	local deadline = os.clock() + 20
 	while pending > 0 and os.clock() < deadline do
 		task.wait(0.05)
-	end
-	-- Modèles animés CÔTÉ CLIENT (compagnon mini-Anga : Companion.luau) : une copie du gabarit
-	-- dans ReplicatedStorage.ClientModels. Absent = le client construit son secours en primitives.
-	local folder = ReplicatedStorage:FindFirstChild("ClientModels")
-	for _, key in CLIENT_MODELS do
-		local template = templates[key]
-		if template then
-			if not folder then
-				local created = Instance.new("Folder")
-				created.Name = "ClientModels"
-				created.Parent = ReplicatedStorage
-				folder = created
-			end
-			if folder and not folder:FindFirstChild(key) then
-				template:Clone().Parent = folder
-			end
-		end
 	end
 end
 

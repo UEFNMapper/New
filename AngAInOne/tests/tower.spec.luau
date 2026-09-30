@@ -24,9 +24,14 @@ local fakeCollection = {
 		instance:AddTag(tag)
 	end,
 }
+local clientModels = Instance.new("Folder") -- ReplicatedStorage.ClientModels (ModelLibrary.Preload)
+clientModels.Name = "ClientModels"
 local fakeReplicated = {
 	WaitForChild = function(_self: any, _name: string)
 		return Shim.Node("src/shared")
+	end,
+	FindFirstChild = function(_self: any, name: string): any
+		return if name == "ClientModels" then clientModels else nil
 	end,
 }
 Shim.Globals = {
@@ -1249,6 +1254,64 @@ return {
 				Expect.truthy(covered, `vide sous l'étape {s}`)
 			end
 		end
+	end,
+
+	["vide : contrôle serveur des chutes (Common.VoidWorldAt), sans faux positif"] = function()
+		-- Debout sur la plaque d'un vide (racine ~3 studs au-dessus) : dans le vide de CE monde.
+		for w = 1, Tower.WORLD_COUNT do
+			local count = 0
+			for _, part in tower[`World{w}`]:GetDescendants() do
+				if part:IsA("BasePart") and part:HasTag("Hazard") and part:GetAttribute("Cause") == "Void" then
+					count += 1
+					local c = part.CFrame.Position
+					local plate = c.Y - part.Size.Y / 2
+					Expect.equal(Common.VoidWorldAt(V3.new(c.X, plate + 3, c.Z)), w, `debout sur le vide du monde {w}`)
+					Expect.equal(Common.VoidWorldAt(V3.new(c.X, plate - 4, c.Z)), w, `sous la plaque du monde {w}`)
+					Expect.equal(Common.VoidWorldAt(V3.new(c.X, plate + 12, c.Z)), 0, "au-dessus du vide")
+				end
+			end
+			Expect.truthy(count > 0, `vide du monde {w}`)
+		end
+		-- Aucun sol praticable (pièce solide, dessus à plat) ne met la racine d'un joueur « dans le vide ».
+		local offenders = {}
+		for _, part in descendants do
+			if part:IsA("BasePart") and part.CanCollide and part.Transparency < 1 and part.Name ~= "Shelf" then
+				local up = part.CFrame.UpVector
+				if math.abs(up.Y) > 0.99 then
+					local c = part.CFrame.Position
+					local root = V3.new(c.X, c.Y + part.Size.Y / 2 + 3, c.Z)
+					if Common.VoidWorldAt(root) > 0 then
+						table.insert(offenders, `{part:GetFullName()} ({math.floor(root.Y)})`)
+					end
+				end
+			end
+		end
+		Expect.equal(#offenders, 0, `sols dans la bande du vide : {table.concat(offenders, ", ")}`)
+		-- Checkpoints, départ, lobby : jamais dans le vide.
+		for stage, pad in pads do
+			local p = pad.CFrame.Position
+			Expect.equal(Common.VoidWorldAt(p + V3.new(0, pad.Size.Y / 2 + 3, 0)), 0, `checkpoint {stage}`)
+		end
+		local spawn = tower:FindFirstChild("LobbySpawn", true)
+		Expect.equal(Common.VoidWorldAt(spawn.CFrame.Position + V3.new(0, 3, 0)), 0, "lobby")
+		-- Salle de départ / du terminal précédent (coin d'entrée, sous la plaque) : hors du vide.
+		for w = 1, Tower.WORLD_COUNT do
+			local entry = Common.EntryOf(w).Position
+			Expect.equal(Common.VoidWorldAt(entry + V3.new(0, -10 + 3, 0)), 0, `salle sous l'entrée du monde {w}`)
+		end
+	end,
+
+	["carte mère sous le vide : SurfaceGui léger (mobile)"] = function()
+		local guis = 0
+		for _, gui in descendants do
+			if gui:IsA("SurfaceGui") and gui.Name == "PcbPattern" then
+				guis += 1
+				Expect.truthy(gui.PixelsPerStud <= 2, "2 px par stud au plus")
+				Expect.truthy(gui.MaxDistance <= 150, "affiché à moins de 150 studs")
+				Expect.truthy(#gui:GetChildren() > 0, "motif conservé")
+			end
+		end
+		Expect.equal(guis, Tower.WORLD_COUNT, "un motif par monde")
 	end,
 
 	["budget mobile : pièces, lumières, pièces libres soudées"] = function()

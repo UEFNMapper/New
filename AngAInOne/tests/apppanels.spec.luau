@@ -28,6 +28,8 @@ local CFrame = setmetatable({ lookAt = lookAt }, { __index = roblox.CFrame })
 
 local dataModel = Instance.new("DataModel")
 local workspace = dataModel:GetService("Workspace")
+local clientModels = Instance.new("Folder") -- ReplicatedStorage.ClientModels (ModelLibrary.Preload)
+clientModels.Name = "ClientModels"
 local globals = {
 	game = {
 		GetService = function(_self: any, name: string): any
@@ -37,6 +39,9 @@ local globals = {
 				return {
 					WaitForChild = function(_: any, _name: string)
 						return Shim.Node("src/shared")
+					end,
+					FindFirstChild = function(_: any, name_: string): any
+						return if name_ == "ClientModels" then clientModels else nil
 					end,
 				}
 			elseif name == "CollectionService" then
@@ -310,8 +315,8 @@ return {
 		Expect.equal(AppPages.DriverSteps[AppPages.DriverStep(progress(6, 2, false))], "Télécharger et extraire")
 		Expect.equal(AppPages.DriverPercent(progress(6, 5, true)), 100)
 		Expect.truthy(AppPages.DriverPercent(progress(6, 5, false)) < 100, "100 % seulement au nettoyage")
-		Expect.equal(AppPages.BridgeLabel(0.42, 1), "Téléchargement du pilote 610.47 · 42 %")
-		Expect.equal(AppPages.BridgeLabel(0.5, 2), "Pilote 610.47 · bloqué à 50 %")
+		Expect.equal(AppPages.BridgeLabel(0.42, 1), "Téléchargement du pilote 7.1 · 42 %")
+		Expect.equal(AppPages.BridgeLabel(0.5, 2), "Pilote 7.1 · bloqué à 50 %")
 		Expect.equal(AppPages.DriverLogLines(progress(6, 5, true)), #AppPages.DriverLog)
 		-- Plantages : réglés un par un, tous au nettoyage
 		Expect.equal(AppPages.CrashesFixed(progress(7, 0, false)), 0)
@@ -630,5 +635,66 @@ return {
 				end
 			end
 		end
+	end,
+
+	["budget client : fenêtres (bande de mondes, hystérésis, toile réduite), tour vue de dedans"] = function()
+		-- Dimensions recopiées côté client = celles de la tour construite
+		Expect.equal(AppPages.TOWER_INNER, Common.INNER)
+		Expect.equal(AppPages.TOWER_TOP, Common.TOP)
+		Expect.truthy(AppPages.InsideTower(0, 300, 0), "au milieu de la tour")
+		Expect.truthy(AppPages.InsideTower(-100, 5, 120), "au monde 1")
+		local spawn = tower.Lobby.LobbySpawn.CFrame.Position
+		Expect.truthy(not AppPages.InsideTower(spawn.X, spawn.Y + 5, spawn.Z), "au lobby")
+		Expect.truthy(not AppPages.InsideTower(0, Common.TOP + 20, 0), "au-dessus du toit")
+		-- Seuls le monde parcouru et le suivant ont des fenêtres
+		Expect.truthy(AppPages.PanelWorldActive(3, 3) and AppPages.PanelWorldActive(4, 3))
+		Expect.truthy(not AppPages.PanelWorldActive(2, 3) and not AppPages.PanelWorldActive(5, 3))
+		-- Hystérésis d'au moins 60 studs, face avant exigée seulement pour apparaître
+		local show, hide = AppPages.PANEL_SHOW, AppPages.PANEL_HIDE
+		Expect.truthy(hide - show >= 60, "hystérésis ≥ 60 studs")
+		Expect.equal(AppPages.PanelShown(false, show - 1, true), true)
+		Expect.equal(AppPages.PanelShown(false, show - 1, false), false, "de dos : pas encore")
+		Expect.equal(AppPages.PanelShown(false, show + 10, true), false)
+		Expect.equal(AppPages.PanelShown(true, show + 50, false), true, "déjà affichée : reste affichée")
+		Expect.equal(AppPages.PanelShown(true, hide + 1, true), false)
+		-- Toile réduite, mise en page proportionnelle (grille logique de 1 200 px)
+		Expect.truthy(AppPages.PANEL_CANVAS_WIDTH <= 800, "toile ≤ 800 px")
+		Expect.equal(AppPages.PANEL_LAYOUT_WIDTH, 1200)
+		-- Chaque fenêtre s'affiche depuis au moins un checkpoint de son monde (racine à +3)
+		for _, panel in tagged("AppPanel") do
+			local w = panel:GetAttribute("World")
+			local nearest = math.huge
+			for _, pad in tagged("Checkpoint") do
+				local stage = pad:GetAttribute("Stage")
+				if stage > 0 and Tower.WorldOf(stage) == w then
+					local root = pad.CFrame.Position + V3.new(0, 3, 0)
+					local facing = panel.CFrame.LookVector:Dot(root - panel.CFrame.Position) > 0
+					if facing then
+						nearest = math.min(nearest, (panel.CFrame.Position - root).Magnitude)
+					end
+				end
+			end
+			Expect.truthy(nearest < show, `{panel:GetAttribute("Kind")} : checkpoint le plus proche à {nearest}`)
+		end
+		-- Anga géant : animé depuis le lobby (hors de la tour, assez près)
+		local giant = tagged("GiantAnga")[1]
+		local lo, hi = V3.new(math.huge, math.huge, math.huge), V3.new(-math.huge, -math.huge, -math.huge)
+		for _, d in giant:GetDescendants() do
+			if d:IsA("BasePart") then
+				local e, c = extents(d), d.CFrame.Position
+				lo = V3.new(math.min(lo.X, c.X - e.X), math.min(lo.Y, c.Y - e.Y), math.min(lo.Z, c.Z - e.Z))
+				hi = V3.new(math.max(hi.X, c.X + e.X), math.max(hi.Y, c.Y + e.Y), math.max(hi.Z, c.Z + e.Z))
+			end
+		end
+		local center = (lo + hi) / 2
+		local eye = spawn + V3.new(0, 8, 12)
+		Expect.truthy((center - eye).Magnitude < AppPages.GIANT_RANGE, "animé vu du spawn")
+	end,
+
+	["aucune vraie marque : carte graphique, micrologiciel et pilote inventés"] = function()
+		Expect.equal(AppPages.GPU_NAME, "Carte graphique AngaGPU 7000")
+		Expect.equal(AppPages.DISK_FIRMWARE, "AIO-1.0")
+		Expect.equal(AppPages.DRIVER_NEW, "7.1")
+		Expect.truthy(string.find(AppPages.DriverLog[1], AppPages.GPU_NAME, 1, true) ~= nil)
 	end,
 }

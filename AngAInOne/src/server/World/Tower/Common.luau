@@ -609,6 +609,42 @@ local function floorRects(cornerIndex: number): { { number } }
 	}
 end
 
+-- Vide mortel du monde w (ctx.Void) : dessus de la plaque (monde 1 : posée sur le bureau).
+local function voidTop(w: number): number
+	return if w == 1 then 0.3 else worldBase(w)
+end
+Common.VoidTop = voidTop
+
+-- Bande verticale « dans le vide » autour de la plaque, pour la RACINE d'un personnage : debout sur la
+-- plaque, la racine est ~3 studs au-dessus (le corps traverse alors le voile mortel) ; dessous, on
+-- s'arrête avant le plafond de la tranche inférieure (aucun parcours à moins de 8 studs sous la plaque).
+-- Motif « sérigraphié » de la carte mère sous le vide (SurfaceGui PcbPattern de ctx.Void).
+Common.PCB_PIXELS_PER_STUD = 2
+Common.PCB_MAX_DISTANCE = 150
+
+Common.VOID_ABOVE = 3.5
+Common.VOID_BELOW = 8
+
+-- Monde dont le vide contient `position` (racine d'un personnage), 0 sinon. Même emprise que la
+-- plaque de ctx.Void : tout l'intérieur sauf le carré du coin d'entrée (salle de départ / du terminal
+-- précédent). Sert au contrôle serveur des chutes (ProgressService).
+function Common.VoidWorldAt(position: Vector3): number
+	local w = math.floor((position.Y + Common.VOID_BELOW) / BAND) + 1
+	if w < 1 or w > Tower.WORLD_COUNT then
+		return 0
+	end
+	local top = voidTop(w)
+	if position.Y > top + Common.VOID_ABOVE or position.Y < top - Common.VOID_BELOW then
+		return 0
+	end
+	for _, r in floorRects(startCorner(w)) do
+		if position.X >= r[1] and position.X <= r[2] and position.Z >= r[3] and position.Z <= r[4] then
+			return w
+		end
+	end
+	return 0
+end
+
 ------------------------------------------------------------------------------------
 -- Contexte de monde
 ------------------------------------------------------------------------------------
@@ -881,7 +917,7 @@ function Common.NewContext(tower: Instance, world: Tower.World): (WorldContext, 
 
 		Void = function()
 			-- Monde 1 : la plaque est posée sur le bureau (fine, pour éviter le z-fighting avec lui)
-			local top = if w == 1 then 0.3 else base
+			local top = voidTop(w)
 			local thickness = if w == 1 then 0.3 else 2
 			local mainShelf: Part? = nil
 			for i, r in floorRects(startCorner(w)) do
@@ -996,15 +1032,23 @@ function Common.NewContext(tower: Instance, world: Tower.World): (WorldContext, 
 
 			-- Pistes fines « sérigraphiées » : un seul SurfaceGui autoéclairé sur la grande plaque
 			-- (0 pièce) ; motif pseudo-aléatoire reproductible propre à chaque monde.
+			-- Budget mémoire (mobile) : 2 px par stud (texture ~4× plus petite qu'à 4 px/stud) et
+			-- affichée seulement à moins de 150 studs ; tailles des pistes données en studs (px()),
+			-- donc même rendu qu'avant.
 			if mainShelf then
+				local PPS = Common.PCB_PIXELS_PER_STUD
+				local function px(studs: number): number
+					return math.max(1, math.floor(studs * PPS + 0.5))
+				end
 				local gui = Instance.new("SurfaceGui")
 				gui.Name = "PcbPattern"
 				gui.Face = Enum.NormalId.Top
 				gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
-				gui.PixelsPerStud = 4
+				gui.PixelsPerStud = PPS
 				gui.LightInfluence = 0
-				gui.MaxDistance = 400
+				gui.MaxDistance = Common.PCB_MAX_DISTANCE
 				gui.Parent = mainShelf
+				local lineWidth, padSize = px(0.75), px(2.5)
 				-- Suite reproductible dans [0, 1[ (sans Random : le module est aussi construit sous Lune).
 				local seed = 7919 * w + 13
 				local function roll(low: number, high: number): number
@@ -1018,7 +1062,7 @@ function Common.NewContext(tower: Instance, world: Tower.World): (WorldContext, 
 					frame.BackgroundColor3 = thin
 					frame.BackgroundTransparency = 0.55
 					frame.Position = UDim2.fromScale(x, y0)
-					frame.Size = UDim2.new(width, 3, height, 3)
+					frame.Size = UDim2.new(width, lineWidth, height, lineWidth)
 					frame.Parent = gui
 				end
 				for _ = 1, 14 do
@@ -1034,8 +1078,8 @@ function Common.NewContext(tower: Instance, world: Tower.World): (WorldContext, 
 					pad.BackgroundColor3 = padColor
 					pad.BackgroundTransparency = 0.35
 					pad.Rotation = 45
-					pad.Position = UDim2.new(x1, -4, y1, -4)
-					pad.Size = UDim2.fromOffset(10, 10)
+					pad.Position = UDim2.new(x1, -padSize // 2, y1, -padSize // 2)
+					pad.Size = UDim2.fromOffset(padSize, padSize)
 					pad.Parent = gui
 				end
 			end
