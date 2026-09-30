@@ -227,7 +227,11 @@ function NanobotService.Start()
 			return true
 		end
 		data.StarterPackBought = true
-		NanobotService.GrantRandomOfRarity(session, "Rare")
+		if not NanobotService.GrantRandomOfRarity(session, "Rare") then
+			-- Inventaire plein : le Nanobot est remplacé par sa valeur en Chips (rien n'est perdu).
+			EconomyService.AddChips(session, 150, "StarterPackCompensation")
+			EconomyService.Notify(session, "Info", "Inventaire plein : ton Nanobot Rare est converti en 150 Chips.")
+		end
 		EconomyService.AddChips(session, 300, "StarterPack")
 		data.Boosts.BitsX2Until = math.max(data.Boosts.BitsX2Until, os.time()) + GameConfig.BitsBoostPotionSeconds
 		return true

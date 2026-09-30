@@ -35,6 +35,9 @@ local scroll: ScrollingFrame
 local lastKey = ""
 local downloadLabel: TextLabel? = nil
 local downloadBar: Widgets.Bar? = nil
+-- Lignes de quêtes mises à jour EN PLACE (progression) sans reconstruire le panneau.
+type LiveRow = { Id: string, Bar: Widgets.Bar, Label: TextLabel, Kind: string, Target: number }
+local liveRows: { LiveRow } = {}
 
 local function section(title: string, order: number)
 	New("TextLabel", {
@@ -150,7 +153,7 @@ local function questRow(quest: any, order: number)
 	local progress = if template.Kind == "Collect"
 		then NumberFormat.Compact(quest.Progress)
 		else tostring(math.floor(quest.Progress))
-	New("TextLabel", {
+	local progressLabel: TextLabel = New("TextLabel", {
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.new(1, -196, 0, 38),
 		Size = UDim2.fromOffset(100, 20),
@@ -160,6 +163,10 @@ local function questRow(quest: any, order: number)
 		Tag = "TextCaption",
 		Parent = card,
 	})
+	table.insert(
+		liveRows,
+		{ Id = quest.Id, Bar = bar, Label = progressLabel, Kind = template.Kind :: string, Target = quest.Target } :: LiveRow
+	)
 	local done = quest.Progress >= quest.Target
 	local key = Keycap.new({
 		Text = if quest.Claimed then "RÉCUPÉRÉ" else `+{template.Chips} CHIPS`,
@@ -303,10 +310,31 @@ local function signature(state: any): string
 		{ tostring(data.Daily.LastClaimDay), tostring(data.Daily.Streak), data.Download.Kind, tostring(data.Zone) }
 	for _, list in { data.Quests.Daily, data.Quests.Weekly } do
 		for _, quest in list do
-			table.insert(parts, `{quest.Id}:{math.floor(quest.Progress)}:{quest.Claimed}`)
+			-- Seul le passage à "terminée" change la mise en page ; la progression est mise à jour en place.
+			table.insert(parts, `{quest.Id}:{quest.Progress >= quest.Target}:{quest.Claimed}`)
 		end
 	end
 	return table.concat(parts, "|")
+end
+
+local function updateLive(state: any)
+	local byId: { [string]: any } = {}
+	for _, list in { state.Data.Quests.Daily, state.Data.Quests.Weekly } do
+		for _, quest in list do
+			byId[quest.Id] = quest
+		end
+	end
+	for _, row in liveRows do
+		local quest = byId[row.Id]
+		if quest then
+			row.Bar:Set(quest.Progress / math.max(row.Target, 1))
+			local progress = if row.Kind == "Collect"
+				then NumberFormat.Compact(quest.Progress)
+				else tostring(math.floor(quest.Progress))
+			local target = if row.Kind == "Collect" then NumberFormat.Compact(row.Target) else tostring(row.Target)
+			row.Label.Text = `{progress}/{target}`
+		end
+	end
 end
 
 local function rebuild(force: boolean?)
@@ -316,9 +344,11 @@ local function rebuild(force: boolean?)
 	end
 	local key = signature(state)
 	if key == lastKey and not force then
+		updateLive(state)
 		return
 	end
 	lastKey = key
+	table.clear(liveRows)
 	local canvas = scroll.CanvasPosition
 	for _, child in scroll:GetChildren() do
 		if child:IsA("GuiObject") then

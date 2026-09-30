@@ -16,6 +16,23 @@ local Motion = {}
 
 local reduced = false
 
+-- Boutons actuellement enfoncés : relâchés si le doigt/la souris est levé AILLEURS
+-- (sur mobile, glisser hors d'un bouton pour faire défiler ne déclenche pas MouseButton1Up).
+local pressedResets: { [GuiButton]: () -> () } = {}
+UserInputService.InputEnded:Connect(function(input: InputObject)
+	if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+		for button, reset in pressedResets do
+			pressedResets[button] = nil
+			reset()
+		end
+	end
+end)
+
+-- Enregistre la remise à zéro d'un bouton enfoncé (appelée au prochain relâchement global).
+function Motion.TrackPress(button: GuiButton, reset: () -> ())
+	pressedResets[button] = reset
+end
+
 function Motion.SetReduced(value: boolean)
 	reduced = value
 end
@@ -67,6 +84,9 @@ function Motion.Pressable(button: GuiButton, onPress: (() -> ())?): () -> ()
 		end),
 		button.MouseButton1Down:Connect(function()
 			Motion.Tween(scale, { Scale = Theme.Motion.PressScale }, 0.08)
+			Motion.TrackPress(button, function()
+				Motion.Tween(scale, { Scale = if hovering then Theme.Motion.HoverScale else 1 }, 0.2)
+			end)
 			if onPress then
 				onPress()
 			end
@@ -81,6 +101,7 @@ function Motion.Pressable(button: GuiButton, onPress: (() -> ())?): () -> ()
 		end),
 	}
 	return function()
+		pressedResets[button] = nil
 		for _, connection in connections do
 			connection:Disconnect()
 		end

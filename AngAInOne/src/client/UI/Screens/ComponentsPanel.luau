@@ -8,6 +8,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Theme = require(Shared.Config.Theme)
 local Zones = require(Shared.Config.Zones)
 local Modules = require(Shared.Config.Modules)
 local GameConfig = require(Shared.Config.GameConfig)
@@ -378,15 +379,14 @@ local function buildZone(zoneIndex: number)
 		unlockCard(zoneIndex + 1, order)
 	end
 	updateAll()
-	-- Met en avant le module demandé (prompt dans le monde)
+	-- Met en avant le module demandé (prompt dans le monde). Position calculée depuis la mise
+	-- en page (en-tête 56 + cartes de 132, espacement 10), donc indépendante des UIScale.
 	if focusModule then
+		local def = Modules.Get(focusModule)
 		local card = content:FindFirstChild(focusModule)
-		if card and card:IsA("GuiObject") then
-			task.defer(function()
-				content.CanvasPosition = Vector2.new(
-					0,
-					math.max(card.AbsolutePosition.Y - content.AbsolutePosition.Y + content.CanvasPosition.Y - 60, 0)
-				)
+		if def and card and card:IsA("GuiObject") then
+			content.CanvasPosition = Vector2.new(0, math.max(66 + (def.Slot - 1) * 142 - 10, 0))
+			task.delay(Theme.Motion.Panel, function()
 				Motion.Pop(card, 0.04)
 			end)
 		end

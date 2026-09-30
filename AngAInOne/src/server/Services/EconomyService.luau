@@ -9,6 +9,7 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameConfig = require(Shared.Config.GameConfig)
@@ -180,7 +181,35 @@ function EconomyService.Fx(session: Session.Session, kind: string, payload: any)
 	fxRemote:FireClient(session.Player, kind, payload)
 end
 
+-- Production "de fond" pour le hors ligne : sans Server Boost, potion x2 ni overclock.
+local function offlineRate(session: Session.Session): number
+	local data = session.Data
+	local bonus = Bonuses.Compute({
+		Firmware = data.Firmware,
+		FragmentsFound = countFragments(session),
+		EquippedNanobots = equippedList(session),
+		HasDoubleBits = session.Passes.DoubleBits == true,
+		IsPremium = session.IsPremium,
+		InGroup = session.InGroup,
+		FriendsInServer = 0,
+		ServerBoostActive = false,
+		PersonalBoostActive = false,
+		OverclockMult = 1,
+	})
+	return Production.Compute({
+		Levels = data.Levels,
+		Zone = data.Zone,
+		PsuLevel = data.PsuLevel,
+		CoolingLevel = data.CoolingLevel,
+		Multiplier = bonus.Total,
+		HeatMultiplier = 1,
+		WattsReduction = bonus.WattsReduction,
+		HeatReduction = bonus.HeatReduction,
+	}).Rate
+end
+
 local function grantOffline(session: Session.Session, last: number)
+	session.OfflineHandled = true
 	local data = session.Data
 	if last <= 0 or not data.PoweredOn then
 		return
@@ -192,7 +221,7 @@ local function grantOffline(session: Session.Session, last: number)
 	local hasPass = session.Passes.OfflineMax == true
 	local cap = if hasPass then GameConfig.Offline.PassCapSeconds else GameConfig.Offline.BaseCapSeconds
 	local ratio = if hasPass then GameConfig.Offline.PassRatio else GameConfig.Offline.BaseRatio
-	local amount = Formulas.OfflineEarnings(session.Snapshot.Rate, elapsed, cap, ratio)
+	local amount = Formulas.OfflineEarnings(offlineRate(session), elapsed, cap, ratio)
 	if amount >= 1 then
 		EconomyService.AddBits(session, amount, "Offline")
 		offlineRemote:FireClient(session.Player, amount, math.min(elapsed, cap))
@@ -212,8 +241,12 @@ local function tick(dt: number)
 			if session.Passes.AutoCollect then
 				EconomyService.AddBits(session, gain, "AutoCollect")
 			else
+				-- Le plafond limite les NOUVEAUX gains ; ce qui est déjà stocké n'est jamais détruit
+				-- (ex. fin d'un boost qui fait baisser le plafond).
 				local cap = session.Snapshot.Rate * GameConfig.CollectorCapSeconds
-				data.Pending = math.min(data.Pending + gain, cap)
+				if data.Pending < cap then
+					data.Pending = math.min(data.Pending + gain, cap)
+				end
 			end
 		end
 		data.Stats.Playtime += dt
@@ -222,6 +255,7 @@ local function tick(dt: number)
 			session.PlaytimeCarry -= 60
 			GameEvents.PlaytimeMinute:Fire(session.Player)
 		end
+		session.LastTick = Workspace:GetServerTimeNow()
 		StateService.SendTick(session)
 	end
 end
@@ -243,9 +277,13 @@ function EconomyService.Start()
 		-- Lu tout de suite : la boucle de sauvegarde de LastOnline pourrait l'écraser avant le calcul.
 		local lastOnline = session.Data.Stats.LastOnline
 		EconomyService.Refresh(session)
-		-- Les pass (Auto-Collect, Hors ligne max) sont vérifiés par MonetizationService à l'arrivée :
-		-- on attend un court instant pour appliquer les bons plafonds hors ligne.
-		task.delay(3, function()
+		-- Les gains hors ligne dépendent du pass "Hors ligne max" : on attend que les pass soient
+		-- vérifiés (MonetizationService), avec un délai maximum de 15 s.
+		task.spawn(function()
+			local deadline = os.clock() + 15
+			while not session.PassesLoaded and os.clock() < deadline and Session.Get(session.Player) == session do
+				task.wait(0.2)
+			end
 			if Session.Get(session.Player) == session then
 				EconomyService.Refresh(session)
 				grantOffline(session, lastOnline)
@@ -266,7 +304,9 @@ function EconomyService.Start()
 			task.wait(60)
 			local now = os.time()
 			for _, session in Session.All() do
-				session.Data.Stats.LastOnline = now
+				if session.OfflineHandled then
+					session.Data.Stats.LastOnline = now
+				end
 			end
 		end
 	end)
@@ -284,7 +324,9 @@ function EconomyService.Start()
 
 	Players.PlayerRemoving:Connect(function(player: Player)
 		local session = Session.Get(player)
-		if session then
+		-- Reconnexion très rapide : si l'offline n'a pas encore été versé, on garde l'ancien
+		-- LastOnline pour ne pas effacer l'absence précédente.
+		if session and session.OfflineHandled then
 			session.Data.Stats.LastOnline = os.time()
 		end
 	end)

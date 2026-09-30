@@ -66,7 +66,7 @@ function Store.Start()
 		tickBits = snapshot.Data.Bits
 		tickPending = snapshot.Data.Pending
 		tickRate = snapshot.Production.Rate
-		tickTime = snapshot.ServerTime
+		tickTime = snapshot.TickTime or snapshot.ServerTime
 		Store.Ready = true
 		Store.Changed:Fire(snapshot)
 	end)

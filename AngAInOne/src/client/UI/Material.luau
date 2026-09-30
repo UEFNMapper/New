@@ -83,11 +83,15 @@ function Material.Glass(object: GuiObject, withSheen: boolean?)
 		sheen.BackgroundColor3 = Color3.new(1, 1, 1)
 		sheen.BackgroundTransparency = 0
 		sheen.BorderSizePixel = 0
-		sheen.ZIndex = object.ZIndex + 1
-		local corner = object:FindFirstChildOfClass("UICorner")
-		if corner then
-			corner:Clone().Parent = sheen
-		end
+		-- Sous le contenu (les enfants sont toujours dessinés au-dessus du parent en mode Sibling).
+		sheen.ZIndex = 0
+		local radius = if object:HasTag("RoundL")
+			then Theme.Radius.L
+			elseif object:HasTag("RoundPill") then 999
+			else Theme.Radius.M
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0, radius)
+		corner.Parent = sheen
 		local gradient = Instance.new("UIGradient")
 		gradient.Rotation = 25
 		gradient.Transparency = NumberSequence.new({

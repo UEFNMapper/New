@@ -74,6 +74,8 @@ local function buildSnapshot(session: Session.Session): { [string]: any }
 	return {
 		Data = copy,
 		ServerTime = Workspace:GetServerTimeNow(),
+		-- Bits et collecteur incluent la production jusqu'au dernier tick : sert de base à la prédiction.
+		TickTime = if session.LastTick > 0 then session.LastTick else Workspace:GetServerTimeNow(),
 		UnixTime = os.time(),
 		Production = session.Snapshot,
 		Bonus = session.Bonus,
@@ -114,7 +116,7 @@ function StateService.SendTick(session: Session.Session)
 			session.Data.Bits,
 			session.Data.Pending,
 			session.Snapshot.Rate,
-			Workspace:GetServerTimeNow()
+			if session.LastTick > 0 then session.LastTick else Workspace:GetServerTimeNow()
 		)
 	end
 end

@@ -31,13 +31,13 @@ local WorldFx = {}
 
 local player = Players.LocalPlayer
 
-local spins: { [BasePart]: { Axis: string, Speed: number } } = {}
-local rgbStrips: { [BasePart]: boolean } = {}
+local spins: { [BasePart]: { Axis: string, Speed: number, Tower: Model?, Module: Instance? } } = {}
+local rgbStrips: { [BasePart]: { Tower: Model?, Offset: number } } = {} -- tour en cache
 local tierGlows: { [BasePart]: boolean } = {}
 local pulses: { [BasePart]: number } = {}
 local viruses: { [BasePart]: { Base: CFrame, Phase: number } } = {}
 local fragments: { [BasePart]: { Base: CFrame, Phase: number } } = {}
-local beacons: { [BasePart]: number } = {}
+local beacons: { [BasePart]: { Base: number, Tower: Model? } } = {}
 local boardScreens: { [BasePart]: SurfaceGui } = {}
 
 ------------------------------------------------------------------------------------
@@ -582,7 +582,12 @@ function WorldFx.Start()
 		local p = part(instance)
 		if p then
 			local axis = p:GetAttribute("Axis")
-			spins[p] = { Axis = if type(axis) == "string" then axis else "X", Speed = 2 + math.random() }
+			spins[p] = {
+				Axis = if type(axis) == "string" then axis else "X",
+				Speed = 2 + math.random(),
+				Tower = towerOf(p),
+				Module = moduleOf(p),
+			}
 		end
 	end, function(instance)
 		spins[instance :: any] = nil
@@ -590,8 +595,9 @@ function WorldFx.Start()
 	track("RgbStrip", function(instance)
 		local p = part(instance)
 		if p then
-			rgbStrips[p] = true
-			watchTower(towerOf(p))
+			local tower = towerOf(p)
+			rgbStrips[p] = { Tower = tower, Offset = p.Position.Y / 300 }
+			watchTower(tower)
 		end
 	end, function(instance)
 		rgbStrips[instance :: any] = nil
@@ -621,7 +627,7 @@ function WorldFx.Start()
 	track("Beacon", function(instance)
 		local p = part(instance)
 		if p then
-			beacons[p] = p.Transparency
+			beacons[p] = { Base = p.Transparency, Tower = towerOf(p) }
 		end
 	end, function(instance)
 		beacons[instance :: any] = nil
@@ -685,7 +691,8 @@ function WorldFx.Start()
 	track("LeaderboardScreen", function(instance)
 		local p = part(instance)
 		if p then
-			boardScreens[p] = surface(p, Enum.NormalId.Front, 12)
+			-- 25 px/stud : les 10 lignes du classement tiennent sur l'écran de 44x32 studs.
+			boardScreens[p] = surface(p, Enum.NormalId.Front, 25)
 			renderBoard(p)
 		end
 	end, function(instance)
@@ -705,8 +712,8 @@ function WorldFx.Start()
 		local reduced = Motion.IsReduced()
 		local speedScale = if reduced then 0.3 else 1
 		for p, info in spins do
-			if (p.Position - eye).Magnitude < 220 and powered(towerOf(p)) then
-				local model = moduleOf(p)
+			if (p.Position - eye).Magnitude < 220 and powered(info.Tower) then
+				local model = info.Module
 				local level = if model then model:GetAttribute("Level") else 1
 				if type(level) == "number" and level > 0 then
 					local angle = dt * info.Speed * speedScale * (1 + math.min(level, 100) / 40)
@@ -730,11 +737,10 @@ function WorldFx.Start()
 			return
 		end
 		colorClock = 0
-		for p in rgbStrips do
-			local tower = towerOf(p)
-			local offset = p.Position.Y / 300
+		for p, info in rgbStrips do
+			local tower = info.Tower
 			if tower == nil or powered(tower) then
-				p.Color = Color3.fromHSV(hueFor(tower, offset), 0.55, 1)
+				p.Color = Color3.fromHSV(hueFor(tower, info.Offset), 0.55, 1)
 				p.Transparency = 0.05
 			else
 				p.Transparency = 0.85
@@ -748,11 +754,10 @@ function WorldFx.Start()
 		for p, base in pulses do
 			p.Transparency = base + (math.sin(t * 2.4) + 1) * 0.2
 		end
-		for p, base in beacons do
-			local tower = towerOf(p)
-			local zone = if tower then tower:GetAttribute("Zone") else 0
+		for p, info in beacons do
+			local zone = if info.Tower then info.Tower:GetAttribute("Zone") else 0
 			local strength = if type(zone) == "number" then zone / #Zones else 0
-			p.Transparency = math.clamp(base + 0.5 - strength * 0.5 + math.sin(t * 1.5) * 0.08, 0, 0.95)
+			p.Transparency = math.clamp(info.Base + 0.5 - strength * 0.5 + math.sin(t * 1.5) * 0.08, 0, 0.95)
 		end
 	end)
 

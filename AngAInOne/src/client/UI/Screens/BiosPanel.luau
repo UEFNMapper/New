@@ -129,6 +129,14 @@ local function buildReboot(state: any)
 		holdConnection:Disconnect()
 	end
 	holdConnection = RunService.RenderStepped:Connect(function()
+		if not panel:IsOpen() then
+			release()
+			if holdConnection then
+				holdConnection:Disconnect()
+				holdConnection = nil
+			end
+			return
+		end
 		if not holding then
 			return
 		end
@@ -258,10 +266,14 @@ function BiosPanel.Mount(layer: Frame)
 		BackgroundTransparency = 1,
 		Parent = panel.Body,
 	})
-	local lastPhase = -1
+	-- Reconstruit seulement si ce qui est affiché change (et jamais pendant un appui long).
+	local lastKey = ""
 	Store.Changed:Connect(function(state: any)
-		if state.Data.SingularityPhase ~= lastPhase then
-			lastPhase = state.Data.SingularityPhase
+		local data = state.Data
+		local key =
+			`{tab}|{data.SingularityPhase}|{data.Zone}|{state.FirmwarePreview}|{data.Firmware}|{data.RebootBoostPending}`
+		if key ~= lastKey then
+			lastKey = key
 			rebuild()
 		end
 	end)

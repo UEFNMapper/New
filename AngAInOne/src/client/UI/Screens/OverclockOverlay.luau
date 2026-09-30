@@ -41,15 +41,6 @@ local renderConnection: RBXScriptConnection? = nil
 
 local ACTION = "AngAInOneOverclockStop"
 
-local function stop()
-	if not running then
-		return
-	end
-	running = false
-	ContextActionService:UnbindAction(ACTION)
-	Net.Fire("OverclockStop")
-end
-
 local function hide(delay: number)
 	task.delay(delay, function()
 		if running then
@@ -70,6 +61,25 @@ local function hide(delay: number)
 		if renderConnection then
 			renderConnection:Disconnect()
 			renderConnection = nil
+		end
+	end)
+end
+
+local resultToken = 0
+
+local function stop()
+	if not running then
+		return
+	end
+	running = false
+	ContextActionService:UnbindAction(ACTION)
+	Net.Fire("OverclockStop")
+	-- Filet de sécurité : si le résultat ne revient pas (requête refusée), on range l'overlay.
+	resultToken += 1
+	local token = resultToken
+	task.delay(3, function()
+		if token == resultToken and not running then
+			hide(0)
 		end
 	end)
 end
@@ -118,6 +128,7 @@ local function begin(data: any)
 end
 
 local function result(data: any)
+	resultToken += 1
 	running = false
 	ContextActionService:UnbindAction(ACTION)
 	stopKey:SetEnabled(false)

@@ -8,6 +8,7 @@
 ]]
 
 local AnalyticsService = game:GetService("AnalyticsService")
+local Players = game:GetService("Players")
 
 local Telemetry = {}
 
@@ -23,6 +24,21 @@ function Telemetry.Onboarding(player: Player, step: number, stepName: string)
 	end)
 end
 
+-- Économie : les événements sont AGRÉGÉS par joueur et par type pendant 60 s puis envoyés
+-- en un seul appel (la production automatique ferait sinon un événement par seconde et
+-- saturerait le budget AnalyticsService, étouffant les événements importants).
+type Bucket = {
+	Player: Player,
+	Flow: string,
+	Currency: string,
+	Amount: number,
+	Balance: number,
+	Transaction: string,
+	Sku: string?,
+}
+local buckets: { [string]: Bucket } = {}
+local FLUSH_SECONDS = 60
+
 -- flow : "Source" (gagné) ou "Sink" (dépensé). currency : "Bits" | "Chips".
 function Telemetry.Economy(
 	player: Player,
@@ -33,16 +49,83 @@ function Telemetry.Economy(
 	transactionType: string,
 	sku: string?
 )
-	if amount <= 0 then
+	if amount <= 0 or amount ~= amount then
 		return
 	end
-	safe(function()
-		local flowType = if flow == "Source"
-			then Enum.AnalyticsEconomyFlowType.Source
-			else Enum.AnalyticsEconomyFlowType.Sink
-		AnalyticsService:LogEconomyEvent(player, flowType, currency, amount, balance, transactionType, sku)
-	end)
+	local key = `{player.UserId}|{flow}|{currency}|{transactionType}|{sku or ""}`
+	local bucket = buckets[key]
+	if bucket then
+		bucket.Amount += amount
+		bucket.Balance = balance
+	else
+		buckets[key] = {
+			Player = player,
+			Flow = flow,
+			Currency = currency,
+			Amount = amount,
+			Balance = balance,
+			Transaction = transactionType,
+			Sku = sku,
+		}
+	end
 end
+
+local function flush()
+	local pending = buckets
+	buckets = {}
+	for _, bucket in pending do
+		if bucket.Player.Parent then
+			safe(function()
+				local flowType = if bucket.Flow == "Source"
+					then Enum.AnalyticsEconomyFlowType.Source
+					else Enum.AnalyticsEconomyFlowType.Sink
+				AnalyticsService:LogEconomyEvent(
+					bucket.Player,
+					flowType,
+					bucket.Currency,
+					bucket.Amount,
+					bucket.Balance,
+					bucket.Transaction,
+					bucket.Sku
+				)
+			end)
+		end
+	end
+end
+
+task.spawn(function()
+	while true do
+		task.wait(FLUSH_SECONDS)
+		flush()
+	end
+end)
+
+-- Envoie les événements en attente d'un joueur qui part (sinon ils seraient perdus).
+Players.PlayerRemoving:Connect(function(player: Player)
+	local prefix = `{player.UserId}|`
+	local mine: { [string]: Bucket } = {}
+	for key, bucket in buckets do
+		if string.sub(key, 1, #prefix) == prefix then
+			mine[key] = bucket
+			buckets[key] = nil
+		end
+	end
+	for _, bucket in mine do
+		safe(function()
+			AnalyticsService:LogEconomyEvent(
+				player,
+				if bucket.Flow == "Source"
+					then Enum.AnalyticsEconomyFlowType.Source
+					else Enum.AnalyticsEconomyFlowType.Sink,
+				bucket.Currency,
+				bucket.Amount,
+				bucket.Balance,
+				bucket.Transaction,
+				bucket.Sku
+			)
+		end)
+	end
+end)
 
 function Telemetry.Progression(player: Player, path: string, level: number, levelName: string)
 	safe(function()

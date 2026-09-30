@@ -72,9 +72,10 @@ function OverclockService.Stop(session: Session.Session)
 		return
 	end
 	session.OverclockAttemptStart = 0
-	-- Compense le trajet réseau du clic (latence aller estimée, bornée).
-	local ping = math.clamp(session.Player:GetNetworkPing(), 0, 0.3)
-	local elapsed = Workspace:GetServerTimeNow() - start - ping
+	-- GetNetworkPing = aller-retour. Le client dessine l'aiguille avec l'horloge synchronisée :
+	-- le clic n'arrive qu'avec la latence ALLER de retard -> on retire la moitié du ping (bornée).
+	local oneWay = math.clamp(session.Player:GetNetworkPing() / 2, 0, 0.25)
+	local elapsed = Workspace:GetServerTimeNow() - start - oneWay
 	local grade
 	if elapsed < 0 or elapsed > cfg.MaxAttemptSeconds then
 		grade = "Miss"

@@ -29,6 +29,7 @@ local towers: { Model } = {}
 local owners: { [number]: Session.Session } = {} -- index de tour -> session
 local hubSpawn: CFrame = CFrame.new(0, 6, 0)
 local lastTravel: { [Player]: number } = {}
+local collectDebounce: { [Player]: number } = {}
 
 function PlotService.GetTower(session: Session.Session): Model?
 	return if session.Plot > 0 then towers[session.Plot] else nil
@@ -85,8 +86,13 @@ function PlotService.RandomFloorPoint(index: number, floor: number, rng: Random)
 end
 
 function PlotService.Teleport(session: Session.Session, target: CFrame)
-	local character = session.Player.Character
-	if character then
+	local player = session.Player
+	-- StreamingEnabled : on demande au client de charger la destination AVANT d'y déplacer le joueur.
+	pcall(function()
+		player:RequestStreamAroundAsync(target.Position, 5)
+	end)
+	local character = player.Character
+	if character and character.Parent then
 		character:PivotTo(target)
 	end
 end
@@ -211,7 +217,6 @@ end
 local function wireTouches(tower: Model)
 	for _, descendant in tower:GetDescendants() do
 		if descendant:IsA("BasePart") and descendant:HasTag("Collector") then
-			local debounce: { [Player]: number } = {}
 			descendant.Touched:Connect(function(hit: BasePart)
 				local player = playerFromHit(hit)
 				if not player then
@@ -222,10 +227,10 @@ local function wireTouches(tower: Model)
 					return
 				end
 				local now = os.clock()
-				if (debounce[player] or 0) > now then
+				if (collectDebounce[player] or 0) > now then
 					return
 				end
-				debounce[player] = now + 0.5
+				collectDebounce[player] = now + 0.5
 				EconomyService.Collect(owner)
 			end)
 		elseif descendant:IsA("BasePart") and descendant:HasTag("Fragment") then
@@ -263,9 +268,11 @@ function PlotService.Start()
 		assign(session)
 		local function onCharacter(character: Model)
 			-- Apparition dans sa tour, à l'étage de La Centrale (ou le plus haut pendant le tutoriel terminé)
-			task.defer(function()
-				if character.Parent and session.Plot > 0 then
-					character:PivotTo(MapBuilder.FloorSpawn(session.Plot, 1))
+			task.spawn(function()
+				-- Attend un personnage complet avant de le déplacer dans sa tour.
+				character:WaitForChild("HumanoidRootPart", 5)
+				if session.Plot > 0 and character.Parent then
+					PlotService.Teleport(session, MapBuilder.FloorSpawn(session.Plot, 1))
 				end
 			end)
 		end
@@ -276,6 +283,7 @@ function PlotService.Start()
 	end)
 	Session.Removing:Connect(function(session: Session.Session)
 		lastTravel[session.Player] = nil
+		collectDebounce[session.Player] = nil
 		release(session)
 	end)
 

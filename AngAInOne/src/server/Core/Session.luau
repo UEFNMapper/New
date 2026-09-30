@@ -45,6 +45,9 @@ export type Session = {
 	Trove: Cleaner,
 	Ready: boolean, -- le client a signalé qu'il est prêt à recevoir l'état
 	EffectsKey: string, -- effets temporaires actifs au dernier calcul (détecte les expirations)
+	PassesLoaded: boolean, -- les Game Passes ont été vérifiés (MonetizationService)
+	OfflineHandled: boolean, -- les gains hors ligne de cette connexion ont été versés
+	LastTick: number, -- heure serveur (synchronisée) du dernier ajout de production
 }
 
 local Session = {}
@@ -90,6 +93,9 @@ function Session.Create(player: Player, profile: any): Session
 		Trove = Trove.new() :: any,
 		Ready = false,
 		EffectsKey = "",
+		PassesLoaded = false,
+		OfflineHandled = false,
+		LastTick = 0,
 	}
 	sessions[player] = session
 	Session.Added:Fire(session)

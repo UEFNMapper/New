@@ -198,7 +198,8 @@ local function buildHub(world: Instance): Model
 		Build.Part({
 			Name = name .. "Frame",
 			Size = Vector3.new(46, 34, 1.5),
-			CFrame = cf * CFrame.new(0, 0, 0.6),
+			-- Le hub (spawn) est du côté +Z local : le cadre va derrière l'écran.
+			CFrame = cf * CFrame.new(0, 0, -0.6),
 			Color = C.MetalDark,
 			Material = Enum.Material.Metal,
 			Parent = boards,
@@ -206,7 +207,8 @@ local function buildHub(world: Instance): Model
 		local screen = Build.Decor({
 			Name = name,
 			Size = Vector3.new(44, 32, 0.4),
-			CFrame = cf,
+			-- Face "Front" (où le client pose le SurfaceGui) tournée vers le spawn.
+			CFrame = cf * CFrame.Angles(0, math.pi, 0),
 			Color = C.Bg,
 			Material = Enum.Material.Glass,
 			Transparency = 0.1,
@@ -526,15 +528,16 @@ local function buildMachine(
 		top += 6 + radius * 2
 	end
 
-	-- Point d'ancrage de l'étiquette et du prompt
-	local anchor = Build.Decor({
+	-- Point d'ancrage de l'étiquette de niveau (affichée par le client)
+	Build.Decor({
 		Name = "LabelAnchor",
 		Size = Vector3.one,
 		CFrame = cf * CFrame.new(0, top + 3, 0),
 		Transparency = 1,
 		Parent = model,
 	})
-	Build.Prompt(anchor, "Améliorer", def.Name, "Upgrade", 14):SetAttribute("ModuleId", def.Id)
+	-- Prompt sur le socle (à hauteur de joueur) : l'étiquette peut être haute, le prompt non.
+	Build.Prompt(base, "Améliorer", def.Name, "Upgrade", 14):SetAttribute("ModuleId", def.Id)
 	return model
 end
 
@@ -924,7 +927,8 @@ local function buildShell(tower: Model, towerCf: CFrame)
 	local sign = Build.Decor({
 		Name = "Sign",
 		Size = Vector3.new(34, 7, 0.4),
-		CFrame = towerCf * CFrame.new(0, doorHeight + 5, -D / 2 - 0.9) * CFrame.Angles(0, math.pi, 0),
+		-- Face "Front" = -Z de la tour = vers le hub.
+		CFrame = towerCf * CFrame.new(0, doorHeight + 5, -D / 2 - 0.9),
 		Color = C.Bg,
 		Transparency = 1,
 		Tags = { "TowerSign" },
@@ -942,7 +946,8 @@ local function buildTower(towers: Instance, index: number): Model
 	tower:SetAttribute("Zone", 0)
 	tower:SetAttribute("RgbHue", -1)
 	tower:SetAttribute("PoweredOn", false)
-	tower.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
+	-- Toujours chargée pour son propriétaire (AddPersistentPlayer), atomique pour les autres.
+	tower.ModelStreamingMode = Enum.ModelStreamingMode.PersistentPerPlayer
 	buildShell(tower, towerCf)
 	local floors = Build.Folder("Floors", tower)
 	for k = 1, #Zones do

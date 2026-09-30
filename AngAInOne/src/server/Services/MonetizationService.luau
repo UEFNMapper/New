@@ -187,6 +187,10 @@ function MonetizationService.Start()
 	Session.Added:Connect(function(session: Session.Session)
 		task.spawn(function()
 			checkPasses(session)
+			session.PassesLoaded = true
+			if Session.Get(session.Player) == session then
+				GameEvents.PassesLoaded:Fire(session.Player)
+			end
 			checkPolicy(session)
 			checkGroup(session)
 			if Session.Get(session.Player) == session then

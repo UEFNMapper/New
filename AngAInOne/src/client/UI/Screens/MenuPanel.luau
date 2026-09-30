@@ -82,6 +82,9 @@ local function slider(parent: Instance, order: number, label: string, value: num
 		Tag = { "GlassSunken", "RoundPill" },
 		Parent = row,
 	})
+	-- Manette : gauche/droite règlent la valeur au lieu de déplacer la sélection.
+	track.NextSelectionLeft = track
+	track.NextSelectionRight = track
 	local fill: Frame = New("Frame", {
 		Size = UDim2.fromScale(value, 1),
 		BorderSizePixel = 0,

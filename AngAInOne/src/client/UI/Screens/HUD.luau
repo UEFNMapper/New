@@ -215,7 +215,7 @@ local function buildTopLeft(layer: Frame)
 	local column: Frame = New("Frame", {
 		Name = "Wallet",
 		Position = UDim2.fromOffset(16, 12),
-		Size = UDim2.fromOffset(280, 200),
+		Size = UDim2.fromOffset(280, 320),
 		BackgroundTransparency = 1,
 		Parent = layer,
 	}, {
@@ -370,7 +370,7 @@ end
 local function gauge(parent: Frame, iconKind: string, color: string, order: number): (Frame, Widgets.Bar, TextLabel)
 	local row: Frame = New("Frame", {
 		Name = `Gauge_{iconKind}`,
-		Size = UDim2.fromOffset(250, 26),
+		Size = UDim2.fromOffset(226, 26),
 		BackgroundTransparency = 1,
 		LayoutOrder = order,
 		Parent = parent,
@@ -396,15 +396,16 @@ local function gauge(parent: Frame, iconKind: string, color: string, order: numb
 end
 
 local function buildBottomLeft(layer: Frame)
+	-- Jauges dans la colonne du portefeuille (haut gauche) : jamais sous le dock, même sur petit écran.
+	local wallet = layer:FindFirstChild("Wallet")
 	gauges = New("Frame", {
 		Name = "Gauges",
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.new(0, 16, 1, -16),
-		Size = UDim2.fromOffset(276, 74),
+		Size = UDim2.fromOffset(250, 74),
 		BackgroundTransparency = Theme.Alpha.Glass,
 		BorderSizePixel = 0,
+		LayoutOrder = 4,
 		Tag = { "Glass", "RoundM" },
-		Parent = layer,
+		Parent = wallet or layer,
 	}, {
 		Create.List(Enum.FillDirection.Vertical, 4, { VerticalAlignment = Enum.VerticalAlignment.Center }) :: Instance,
 		Create.Padding(8, 12),
@@ -417,7 +418,7 @@ local function buildBottomLeft(layer: Frame)
 	bubble = New("Frame", {
 		Name = "AngaBubble",
 		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.new(0, 16, 1, -100),
+		Position = UDim2.new(0, 16, 1, -(96 + 14 + 12)),
 		Size = UDim2.fromOffset(380, 84),
 		BackgroundTransparency = Theme.Alpha.GlassStrong,
 		BorderSizePixel = 0,
@@ -462,7 +463,7 @@ local DOCK = {
 	{ Name = "Nanobots", Text = "Nanobots", Icon = "Bot", Key = Enum.KeyCode.N },
 	{ Name = "Quests", Text = "Quêtes", Icon = "Quest", Key = Enum.KeyCode.Q },
 	{ Name = "Shop", Text = "Boutique", Icon = "Shop", Key = Enum.KeyCode.B },
-	{ Name = "Elevator", Text = "Étages", Icon = "Elevator", Key = Enum.KeyCode.E },
+	{ Name = "Elevator", Text = "Étages", Icon = "Elevator", Key = Enum.KeyCode.T },
 	{ Name = "Menu", Text = "Menu", Icon = "Menu", Key = Enum.KeyCode.M },
 }
 
@@ -509,6 +510,10 @@ local function buildDock(layer: Frame)
 			layout.FillDirection = Enum.FillDirection.Vertical
 			layout.Padding = UDim.new(0, 4)
 		end
+		key.Label.Size = UDim2.new(0, 0, 0, 16)
+		if index == 1 then
+			App.DockFocus = key.Button
+		end
 		badges[item.Name] = Widgets.Badge(key.Button)
 	end
 
@@ -528,7 +533,22 @@ end
 -- Rafraîchissement
 ------------------------------------------------------------------------------------
 
-local function effectPill(text: string, colorName: string, order: number)
+local effectPills: { [string]: { Frame: Frame, Label: TextLabel } } = {}
+
+-- Crée ou met à jour la pilule `key` (nil = la retirer). Aucune recréation à chaque seconde.
+local function effectPill(key: string, text: string?, colorName: string, order: number)
+	local existing = effectPills[key]
+	if not text then
+		if existing then
+			existing.Frame:Destroy()
+			effectPills[key] = nil
+		end
+		return
+	end
+	if existing then
+		existing.Label.Text = text
+		return
+	end
 	local pill: Frame = New("Frame", {
 		Size = UDim2.fromOffset(0, 28),
 		AutomaticSize = Enum.AutomaticSize.X,
@@ -541,7 +561,7 @@ local function effectPill(text: string, colorName: string, order: number)
 		New("UIStroke", { Color = Style.Color(colorName), Transparency = 0.3, Thickness = 1.2 }) :: Instance,
 		Create.Padding(4, 12),
 	})
-	New("TextLabel", {
+	local label: TextLabel = New("TextLabel", {
 		Size = UDim2.fromScale(0, 1),
 		AutomaticSize = Enum.AutomaticSize.X,
 		BackgroundTransparency = 1,
@@ -549,6 +569,8 @@ local function effectPill(text: string, colorName: string, order: number)
 		Tag = "TextCaption",
 		Parent = pill,
 	})
+	effectPills[key] = { Frame = pill, Label = label }
+	Motion.Pop(pill, 0.1)
 end
 
 local function refreshEffects()
@@ -556,28 +578,37 @@ local function refreshEffects()
 	if not state then
 		return
 	end
-	for _, child in effectsRow:GetChildren() do
-		if child:IsA("Frame") then
-			child:Destroy()
-		end
-	end
 	local now = Store.UnixNow()
-	if state.Overclock.Until > now then
-		effectPill(
-			`OVERCLOCK x{state.Overclock.Mult} · {NumberFormat.Duration(state.Overclock.Until - now)}`,
-			"BrandAnga",
-			1
-		)
-	end
-	if state.ServerBoostUntil > now then
-		effectPill(`SERVER BOOST x2 · {NumberFormat.Duration(state.ServerBoostUntil - now)}`, "CurrencyBits", 2)
-	end
-	if state.Data.Boosts.BitsX2Until > now then
-		effectPill(`BITS x2 · {NumberFormat.Duration(state.Data.Boosts.BitsX2Until - now)}`, "AccentCyan", 3)
-	end
-	if state.FriendsInServer > 0 then
-		effectPill(`AMIS +{math.min(state.FriendsInServer * 10, 30)} %`, "Success", 4)
-	end
+	effectPill(
+		"Overclock",
+		if state.Overclock.Until > now
+			then `OVERCLOCK x{state.Overclock.Mult} · {NumberFormat.Duration(state.Overclock.Until - now)}`
+			else nil,
+		"BrandAnga",
+		1
+	)
+	effectPill(
+		"Server",
+		if state.ServerBoostUntil > now
+			then `SERVER BOOST x2 · {NumberFormat.Duration(state.ServerBoostUntil - now)}`
+			else nil,
+		"CurrencyBits",
+		2
+	)
+	effectPill(
+		"Personal",
+		if state.Data.Boosts.BitsX2Until > now
+			then `BITS x2 · {NumberFormat.Duration(state.Data.Boosts.BitsX2Until - now)}`
+			else nil,
+		"AccentCyan",
+		3
+	)
+	effectPill(
+		"Friends",
+		if state.FriendsInServer > 0 then `AMIS +{math.min(state.FriendsInServer * 10, 30)} %` else nil,
+		"Success",
+		4
+	)
 end
 
 local function refreshBadges(state: any)
@@ -621,7 +652,7 @@ local function refreshFull(state: any)
 	)
 	powerText.Text = NumberFormat.Percent(powerRatio)
 	heatRow.Visible = data.Zone >= GameConfig.Cooling.HeatStartsAtZone
-	gauges.Size = UDim2.fromOffset(276, if heatRow.Visible then 74 else 44)
+	gauges.Size = UDim2.fromOffset(250, if heatRow.Visible then 74 else 44)
 	local heatRatio = production.HeatDemand / math.max(production.HeatCapacity, 1)
 	heatBar:Set(heatRatio)
 	heatBar:SetColor(

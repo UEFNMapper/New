@@ -128,9 +128,8 @@ function QuestService.ClaimDaily(session: Session.Session)
 		EconomyService.AddBits(session, EconomyService.ProductionValue(session, reward.Amount), "Daily")
 	elseif reward.Kind == "Capsule" then
 		local capsuleId = NanobotService.BestFreeCapsule(session)
-		if capsuleId then
-			NanobotService.OpenFree(session, capsuleId)
-		else
+		-- Pas de capsule disponible ou inventaire plein : compensation en Chips.
+		if not capsuleId or not NanobotService.OpenFree(session, capsuleId) then
 			EconomyService.AddChips(session, 50, "Daily")
 		end
 	elseif reward.Kind == "Boost" then

@@ -17,7 +17,7 @@ local New = Create.New
 local Toasts = {}
 
 local container: Frame
-local MAX = 4
+local MAX = 3
 local order = 0
 
 local KINDS: { [string]: { Color: string, Icon: string } } = {
@@ -33,15 +33,16 @@ local KINDS: { [string]: { Color: string, Icon: string } } = {
 }
 
 function Toasts.Mount(layer: Frame)
+	-- Haut-centre, sous le Benchmark et les effets : ne masque ni l'Objectif ni le portefeuille.
 	container = New("Frame", {
 		Name = "ToastStack",
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -16, 0, 70),
-		Size = UDim2.fromOffset(340, 400),
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 112),
+		Size = UDim2.fromOffset(340, 200),
 		BackgroundTransparency = 1,
 		Parent = layer,
 	}, {
-		Create.List(Enum.FillDirection.Vertical, 8, { HorizontalAlignment = Enum.HorizontalAlignment.Right }),
+		Create.List(Enum.FillDirection.Vertical, 8, { HorizontalAlignment = Enum.HorizontalAlignment.Center }),
 	})
 end
 
@@ -74,7 +75,7 @@ function Toasts.Show(kind: string, text: string)
 	})
 	local card: Frame = New("Frame", {
 		Name = "Card",
-		Position = UDim2.fromOffset(360, 0),
+		Position = UDim2.fromOffset(0, -70),
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = Theme.Alpha.Glass,
 		BorderSizePixel = 0,
@@ -118,7 +119,7 @@ function Toasts.Show(kind: string, text: string)
 		if card.Parent then
 			local out = Motion.Tween(
 				card,
-				{ Position = UDim2.fromOffset(360, 0) },
+				{ Position = UDim2.fromOffset(0, -70) },
 				0.25,
 				Enum.EasingStyle.Quad,
 				Enum.EasingDirection.In

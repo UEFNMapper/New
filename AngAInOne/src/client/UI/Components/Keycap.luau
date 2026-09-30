@@ -140,6 +140,32 @@ function Keycap.new(props: Props): Keycap
 		LayoutOrder = 2,
 		Parent = content,
 	})
+	-- Borne la largeur du texte à celle de la touche (sinon AutomaticSize.X empêche la troncature).
+	local labelLimit = Instance.new("UISizeConstraint")
+	labelLimit.Parent = label
+	local function limitLabel()
+		local iconWidth = if props.Icon and not props.IconOnly then 28 else 0
+		-- AbsoluteSize inclut les UIScale des ancêtres : on revient en pixels de conception.
+		local cumulative = 1
+		local current: Instance? = button
+		while current do
+			local uiScale = current:FindFirstChildOfClass("UIScale")
+			if uiScale then
+				cumulative *= uiScale.Scale
+			end
+			current = current.Parent
+		end
+		local width = button.AbsoluteSize.X / math.max(cumulative, 0.01)
+		labelLimit.MaxSize = Vector2.new(math.max(width - 24 - iconWidth, 20), math.huge)
+	end
+	if props.Size and props.Size.X.Scale == 0 then
+		labelLimit.MaxSize = Vector2.new(
+			math.max(props.Size.X.Offset - 24 - (if props.Icon and not props.IconOnly then 28 else 0), 20),
+			math.huge
+		)
+	else
+		button:GetPropertyChangedSignal("AbsoluteSize"):Connect(limitLabel)
+	end
 
 	local brushed: UIGradient? = nil
 
@@ -187,6 +213,10 @@ function Keycap.new(props: Props): Keycap
 	local cleanup = Motion.Pressable(button)
 	button.MouseButton1Down:Connect(function()
 		press(true)
+		Motion.TrackPress(button, function()
+			press(false)
+			Motion.Tween(Motion.ScaleOf(button), { Scale = 1 }, 0.2)
+		end)
 	end)
 	button.MouseButton1Up:Connect(function()
 		press(false)

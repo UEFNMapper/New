@@ -24,4 +24,5 @@ return table.freeze({
 	PlaytimeMinute = Signal.new() :: Signal<Player>,
 	StateChanged = Signal.new() :: Signal<Player>, -- demande de recalcul + réplication
 	ClientReady = Signal.new() :: Signal<Player>, -- le client a chargé son UI
+	PassesLoaded = Signal.new() :: Signal<Player>, -- Game Passes vérifiés pour ce joueur
 })

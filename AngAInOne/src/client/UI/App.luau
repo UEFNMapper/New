@@ -9,11 +9,11 @@
 	  + flou léger, fermeture par clic à l'extérieur ou Échap / bouton B manette.
 ]]
 
+local ContextActionService = game:GetService("ContextActionService")
 local GuiService = game:GetService("GuiService")
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
-local Workspace = game:GetService("Workspace")
 
 local Create = require(script.Parent.Create)
 local Style = require(script.Parent.Style)
@@ -40,10 +40,16 @@ local scale: UIScale
 
 local DESIGN = Vector2.new(1280, 720)
 
-local function computeScale(viewport: Vector2): number
-	local s = math.min(viewport.X / DESIGN.X, viewport.Y / 620)
-	return math.clamp(s, 0.6, 1.35)
+-- Échelle calculée sur la zone RÉELLEMENT disponible (hors barre Roblox et encoches) :
+-- le canevas de conception garde au moins ~620 px de haut.
+local function computeScale(available: Vector2): number
+	local s = math.min(available.X / DESIGN.X, available.Y / 620)
+	return math.clamp(s, 0.5, 1.35)
 end
+
+local CLOSE_ACTION = "AngAInOneClosePanel"
+local DOCK_ACTION = "AngAInOneFocusDock"
+App.DockFocus = nil :: GuiObject? -- premier bouton du dock (navigation manette)
 
 local function layer(name: string, order: number): Frame
 	local frame: Frame = New("Frame", {
@@ -81,17 +87,15 @@ function App.Mount(): ScreenGui
 	scale = New("UIScale", { Parent = root })
 
 	local function resize()
-		local camera = Workspace.CurrentCamera
-		local viewport = if camera then camera.ViewportSize else DESIGN
-		local s = computeScale(viewport)
+		local available = gui.AbsoluteSize
+		if available.X < 10 or available.Y < 10 then
+			return
+		end
+		local s = computeScale(available)
 		scale.Scale = s
 		root.Size = UDim2.fromScale(1 / s, 1 / s)
 	end
-	resize()
-	local camera = Workspace.CurrentCamera
-	if camera then
-		camera:GetPropertyChangedSignal("ViewportSize"):Connect(resize)
-	end
+	gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(resize)
 
 	layer("Hud", 1)
 	local panelsLayer = layer("Panels", 2)
@@ -120,14 +124,26 @@ function App.Mount(): ScreenGui
 	blur.Parent = Lighting
 
 	UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
-		if input.KeyCode == Enum.KeyCode.Escape or input.KeyCode == Enum.KeyCode.ButtonB then
-			if current and not processed then
-				App.Close()
-			end
+		if input.KeyCode == Enum.KeyCode.Escape and current and not processed then
+			App.Close()
 		end
 	end)
+	-- Manette : Y met le focus sur le dock (croix directionnelle + A pour choisir).
+	ContextActionService:BindAction(
+		DOCK_ACTION,
+		function(_name: string, state: Enum.UserInputState): Enum.ContextActionResult
+			if state == Enum.UserInputState.Begin and App.DockFocus and not current then
+				GuiService.SelectedObject = if GuiService.SelectedObject then nil else App.DockFocus
+				return Enum.ContextActionResult.Sink
+			end
+			return Enum.ContextActionResult.Pass
+		end,
+		false,
+		Enum.KeyCode.ButtonY
+	)
 
 	gui.Parent = player:WaitForChild("PlayerGui")
+	task.defer(resize)
 	return gui
 end
 
@@ -147,6 +163,7 @@ function App.RegisterPanel(name: string, entry: PanelEntry)
 				end
 			end)
 			GuiService.SelectedObject = nil
+			ContextActionService:UnbindAction(CLOSE_ACTION)
 		end
 	end
 end
@@ -170,6 +187,33 @@ function App.Open(name: string, arg: any?)
 		entry.OnOpen(arg)
 	end
 	entry.Panel:Open()
+	-- B (manette) ferme la fenêtre, prioritaire sur la navigation de l'interface.
+	ContextActionService:BindActionAtPriority(
+		CLOSE_ACTION,
+		function(_name: string, state: Enum.UserInputState): Enum.ContextActionResult
+			if state == Enum.UserInputState.Begin then
+				App.Close()
+				return Enum.ContextActionResult.Sink
+			end
+			return Enum.ContextActionResult.Pass
+		end,
+		false,
+		Enum.ContextActionPriority.High.Value,
+		Enum.KeyCode.ButtonB
+	)
+	-- À la manette, on sélectionne le premier bouton de la fenêtre pour naviguer.
+	if UserInputService:GetLastInputType() == Enum.UserInputType.Gamepad1 then
+		task.delay(0.3, function()
+			if current == name then
+				for _, descendant in entry.Panel.Window:GetDescendants() do
+					if descendant:IsA("GuiButton") and descendant.Visible and descendant.Name ~= "Dim" then
+						GuiService.SelectedObject = descendant
+						break
+					end
+				end
+			end
+		end)
+	end
 end
 
 function App.Close()

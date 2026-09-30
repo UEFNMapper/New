@@ -192,7 +192,11 @@ function Style.Verify(screenGui: Instance)
 	probe.Parent = screenGui
 	task.wait(0.5)
 	local expected = color("Surface")
-	local got = probe.BackgroundColor3
+	-- GetStyled renvoie la valeur issue des StyleRules ; la lecture directe ne les voit pas.
+	local okStyled, styled = pcall(function(): any
+		return probe:GetStyled("BackgroundColor3")
+	end)
+	local got: Color3 = if okStyled and typeof(styled) == "Color3" then styled else probe.BackgroundColor3
 	probe:Destroy()
 	local ok = math.abs(got.R - expected.R) < 0.01
 		and math.abs(got.G - expected.G) < 0.01

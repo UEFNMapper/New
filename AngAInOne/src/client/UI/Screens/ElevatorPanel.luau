@@ -56,7 +56,7 @@ function ElevatorPanel.Mount(layer: Frame)
 		Name = "ElevatorPanel",
 		Title = "ASCENSEUR",
 		Subtitle = "Choisis ton étage",
-		Size = UDim2.fromOffset(460, 620),
+		Size = UDim2.new(0, 460, 0.9, 0),
 		Parent = layer,
 		Accent = Style.Color("AccentCyan"),
 	})

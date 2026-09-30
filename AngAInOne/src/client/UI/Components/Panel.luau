@@ -54,11 +54,13 @@ function Panel.new(props: Props): Panel
 		BackgroundTransparency = Theme.Alpha.Glass,
 		BorderSizePixel = 0,
 		Visible = false,
+		-- Active : la fenêtre absorbe les clics (sinon ils traversent jusqu'au fond qui ferme).
+		Active = true,
 		ZIndex = 20,
 		Tag = { "Glass", "RoundL" },
 		Parent = props.Parent,
 	}, {
-		New("UISizeConstraint", { MaxSize = Vector2.new(980, 640) }),
+		New("UISizeConstraint", { MaxSize = Vector2.new(980, 640), MinSize = Vector2.new(320, 240) }),
 		New("UIShadow", {
 			BlurRadius = UDim.new(0, 28),
 			Color = Style.Color("BgDeep"),

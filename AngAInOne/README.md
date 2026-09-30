@@ -67,6 +67,11 @@ Lance **Play** (F5). En Studio, un bouton **DEV** (ou **F8**) ouvre un panneau d
 | 17 | Test > Clients et serveurs > 2 joueurs | Deux tours différentes. Menu > Tours : « LIKER » la tour de l'autre joueur, qui reçoit une notification. Les prompts de la tour d'un autre joueur sont inactifs. |
 | 18 | Émulateur d'appareil (téléphone 19,5:9, tablette) | Le HUD tient à l'écran, les boutons restent confortables au doigt, les panneaux sont centrés. |
 
+**Contrôles** :
+- **Clavier** : C Composants · N Nanobots · Q Quêtes · B Boutique · T Étages · M Menu · Échap ferme · E interagir · F zapper un virus · Espace STOP à l'overclock.
+- **Manette** : Y donne le focus au dock (croix + A) · B ferme · X interagir · A STOP à l'overclock.
+- **Tactile** : les boutons du dock et les prompts à l'écran.
+
 **À surveiller dans la Sortie** : aucune erreur rouge. Un message `[Style] Le moteur UI Styling ne s'applique pas : bascule sur le mode direct` est normal si ta version de Studio n'applique pas les StyleSheets : le rendu reste identique.
 
 ---

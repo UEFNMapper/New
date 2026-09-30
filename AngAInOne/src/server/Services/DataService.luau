@@ -59,8 +59,15 @@ local function onPlayerAdded(player: Player)
 	end
 
 	profile.OnSessionEnd:Connect(function()
+		local session = Session.Get(player)
+		if session and session.OfflineHandled then
+			session.Data.Stats.LastOnline = os.time()
+		end
 		Session.Remove(player)
-		player:Kick("Ta session a été ouverte ailleurs. Reconnecte-toi.")
+		-- Seulement si la session a été reprise par un autre serveur (pas à l'arrêt du serveur).
+		if not ProfileStore.IsClosing and player.Parent == Players then
+			player:Kick("Ta session a été ouverte ailleurs. Reconnecte-toi.")
+		end
 	end)
 
 	if player.Parent ~= Players then
@@ -80,7 +87,9 @@ local function onPlayerRemoving(player: Player)
 	if not session then
 		return
 	end
-	session.Data.Stats.LastOnline = os.time()
+	if session.OfflineHandled then
+		session.Data.Stats.LastOnline = os.time()
+	end
 	local profile = session.Profile
 	Session.Remove(player)
 	profile:EndSession()
