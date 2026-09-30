@@ -1,15 +1,15 @@
 --!strict
 --[[
-	SocialService : bonus entre amis, likes de tours, paramètres joueur.
+	SocialService : bonus entre amis, likes de PC, paramètres joueur.
 	- +10 % de Bits par ami présent dans le serveur (max +30 %)
-	- 1 like par tour et par jour ; le propriétaire est notifié
+	- 1 like par joueur et par jour ; le propriétaire est notifié
 ]]
 
 local Session = require(script.Parent.Parent.Core.Session)
 local GameEvents = require(script.Parent.Parent.Core.GameEvents)
 local RemoteGuard = require(script.Parent.Parent.Security.RemoteGuard)
 local EconomyService = require(script.Parent.EconomyService)
-local PlotService = require(script.Parent.PlotService)
+local WorldService = require(script.Parent.WorldService)
 
 local SocialService = {}
 
@@ -63,14 +63,14 @@ function SocialService.Like(session: Session.Session, ownerUserId: number)
 	local likes = session.Data.Likes
 	local key = tostring(ownerUserId)
 	if table.find(likes.GivenTo, key) then
-		EconomyService.Notify(session, "Info", "Tu as déjà liké cette tour aujourd'hui.")
+		EconomyService.Notify(session, "Info", "Tu as déjà liké ce PC aujourd'hui.")
 		return
 	end
 	table.insert(likes.GivenTo, key)
 	owner.Data.Likes.Received += 1
-	PlotService.Sync(owner)
-	EconomyService.Notify(session, "Success", `Tu as liké la tour de {owner.Player.DisplayName} !`)
-	EconomyService.Notify(owner, "Like", `{session.Player.DisplayName} a liké ta tour !`)
+	WorldService.Sync(owner)
+	EconomyService.Notify(session, "Success", `Tu as liké le PC de {owner.Player.DisplayName} !`)
+	EconomyService.Notify(owner, "Like", `{session.Player.DisplayName} a liké ton PC !`)
 	GameEvents.TowerLiked:Fire(session.Player, ownerUserId)
 end
 
@@ -86,7 +86,7 @@ function SocialService.SaveSettings(
 	settings.Sfx = sfx
 	settings.ReducedMotion = reducedMotion
 	settings.RgbHue = rgbHue
-	PlotService.Sync(session)
+	WorldService.Sync(session)
 end
 
 function SocialService.Start()

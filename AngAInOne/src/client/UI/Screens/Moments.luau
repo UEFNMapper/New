@@ -3,7 +3,7 @@
 	Moments : les instants forts, courts et passables.
 	- Allumage du PC (tout premier CTA du jeu, < 5 s après l'arrivée)
 	- Gains hors ligne (carte de retour)
-	- Nouvel étage (bannière aux couleurs de la zone)
+	- Nouvelle zone (bannière aux couleurs de la zone)
 	- Capsule (révélation avec halo de rareté)
 	- Reboot (écran BIOS de 3 s)
 	- Singularité (cinématique de fin + crédits)
@@ -226,7 +226,7 @@ function Moments.Offline(bits: number, seconds: number)
 end
 
 ------------------------------------------------------------------------------------
--- Nouvel étage
+-- Nouvelle zone
 ------------------------------------------------------------------------------------
 
 function Moments.ZoneUnlocked(zoneIndex: number)
@@ -288,7 +288,7 @@ function Moments.ZoneUnlocked(zoneIndex: number)
 		Position = UDim2.fromOffset(0, 98),
 		Size = UDim2.new(1, 0, 0, 22),
 		BackgroundTransparency = 1,
-		Text = `{zone.Tagline} · Débloque : {zone.Feature}`,
+		Text = `{zone.Tagline} · Section {zone.AppSection} · Débloque : {zone.Feature}`,
 		Tag = "TextBody",
 		Parent = band,
 	})

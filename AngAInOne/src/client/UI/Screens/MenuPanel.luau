@@ -1,14 +1,13 @@
 --!strict
 --[[
 	MenuPanel : paramètres (volumes, animations réduites, couleur RGB), classements,
-	tours du serveur (likes), statistiques et crédits.
+	joueurs du serveur (likes), statistiques et crédits.
 ]]
 
 local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
-local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameConfig = require(Shared.Config.GameConfig)
@@ -44,7 +43,7 @@ local connections: { RBXScriptConnection } = {}
 local TABS = {
 	{ Id = "Settings", Text = "Réglages" },
 	{ Id = "Boards", Text = "Classements" },
-	{ Id = "Towers", Text = "Tours" },
+	{ Id = "Towers", Text = "Joueurs" },
 	{ Id = "Stats", Text = "Stats" },
 }
 
@@ -234,7 +233,7 @@ local function buildSettings()
 			Position = UDim2.fromOffset(16, 0),
 			Size = UDim2.new(1, -200, 1, 0),
 			BackgroundTransparency = 1,
-			Text = "Couleur des néons de ta tour (pass RGB Studio)",
+			Text = "Couleur des néons de ton PC (pass RGB Studio)",
 			TextWrapped = true,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Tag = "TextMuted",
@@ -353,23 +352,21 @@ end
 
 local function buildTowers()
 	local scroll = Widgets.Scroll(body, 10)
-	local world = Workspace:FindFirstChild("World")
-	local towers = world and world:FindFirstChild("Towers")
 	local me = Players.LocalPlayer.UserId
 	local count = 0
-	if towers then
-		for _, tower in towers:GetChildren() do
-			local owner = tower:GetAttribute("OwnerUserId")
-			if type(owner) == "number" and owner ~= 0 and owner ~= me then
+	do
+		for _, other in Players:GetPlayers() do
+			local owner = other.UserId
+			if owner ~= me and other:GetAttribute("Zone") ~= nil then
 				count += 1
 				local card = Widgets.Card(UDim2.new(1, -4, 0, 72), scroll, count)
-				local zone = tower:GetAttribute("Zone")
+				local zone = other:GetAttribute("Zone")
 				local zoneName = if type(zone) == "number" and Zones[zone] then Zones[zone].Name else "?"
 				New("TextLabel", {
 					Position = UDim2.fromOffset(16, 10),
 					Size = UDim2.new(1, -220, 0, 24),
 					BackgroundTransparency = 1,
-					Text = `Tour de {tower:GetAttribute("OwnerName")}`,
+					Text = `PC de {other.DisplayName}`,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					Tag = "TextHeading",
 					Parent = card,
@@ -378,7 +375,7 @@ local function buildTowers()
 					Position = UDim2.fromOffset(16, 38),
 					Size = UDim2.new(1, -220, 0, 20),
 					BackgroundTransparency = 1,
-					Text = `GEN {tower:GetAttribute("Generation") or 1} · {zoneName} · ♥ {tower:GetAttribute(
+					Text = `GEN {other:GetAttribute("Generation") or 1} · {zoneName} · ♥ {other:GetAttribute(
 						"Likes"
 					) or 0}`,
 					TextXAlignment = Enum.TextXAlignment.Left,

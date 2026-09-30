@@ -81,7 +81,6 @@ local function buildSnapshot(session: Session.Session): { [string]: any }
 		Bonus = session.Bonus,
 		Passes = session.Passes,
 		PaidRandomAllowed = session.PaidRandomAllowed,
-		Plot = session.Plot,
 		Overclock = {
 			Until = session.OverclockUntil,
 			Mult = session.OverclockMult,

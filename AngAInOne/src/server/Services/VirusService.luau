@@ -1,12 +1,14 @@
 --!strict
 --[[
-	VirusService : des glitches apparaissent dans la tour de chaque joueur.
-	On les zappe avec un prompt (E / bouton manette / tap) : Bits + chance de Chips.
-	Le serveur crée le virus, vérifie que c'est bien le propriétaire qui zappe
+	VirusService : des glitches apparaissent près de chaque joueur, dans la zone où il est.
+	On les zappe avec un prompt (F / bouton manette / tap) : Bits + chance de Chips.
+	Chaque virus appartient à un joueur (attribut OwnerUserId) : le client cache ceux des
+	autres. Le serveur vérifie que c'est bien le propriétaire qui zappe
 	(la distance est garantie par MaxActivationDistance du prompt, revérifiée ici).
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameConfig = require(Shared.Config.GameConfig)
@@ -16,16 +18,13 @@ local GameEvents = require(script.Parent.Parent.Core.GameEvents)
 local RemoteGuard = require(script.Parent.Parent.Security.RemoteGuard)
 local Build = require(script.Parent.Parent.World.Build)
 local EconomyService = require(script.Parent.EconomyService)
-local PlotService = require(script.Parent.PlotService)
+local WorldService = require(script.Parent.WorldService)
 
 local VirusService = {}
 
 local rng = Random.new()
 local nextSpawn: { [Session.Session]: number } = {}
-
-local function aliveCount(folder: Instance): number
-	return #folder:GetChildren()
-end
+local alive: { [Session.Session]: number } = {}
 
 local function zap(session: Session.Session, virus: BasePart)
 	if not virus.Parent then
@@ -36,6 +35,7 @@ local function zap(session: Session.Session, virus: BasePart)
 	end
 	local position = virus.Position
 	virus:Destroy()
+	alive[session] = math.max((alive[session] or 1) - 1, 0)
 	local cfg = GameConfig.Virus
 	local bits = EconomyService.ProductionValue(session, cfg.RewardProductionSeconds)
 	EconomyService.AddBits(session, bits, "Virus")
@@ -51,29 +51,30 @@ local function zap(session: Session.Session, virus: BasePart)
 end
 
 local function spawnVirus(session: Session.Session)
-	local tower = PlotService.GetTower(session)
-	local folder = tower and tower:FindFirstChild("Viruses")
-	if not tower or not folder or aliveCount(folder) >= GameConfig.Virus.MaxAlive then
+	local world = Workspace:FindFirstChild("World")
+	local folder = world and world:FindFirstChild("Viruses")
+	if not folder or (alive[session] or 0) >= GameConfig.Virus.MaxAlive then
 		return
 	end
-	-- 70 % de chances d'apparaître à l'étage où se trouve le joueur (sinon un étage débloqué au hasard).
-	local floor = PlotService.CurrentFloor(session)
-	if floor == 0 or rng:NextNumber() > 0.7 then
-		floor = rng:NextInteger(1, session.Data.Zone)
+	local spot = WorldService.RandomPointNear(session, rng)
+	if not spot then
+		return
 	end
 	local virus = Build.Part({
 		Name = "Virus",
 		Shape = Enum.PartType.Ball,
 		Size = Vector3.new(3, 3, 3),
-		CFrame = PlotService.RandomFloorPoint(session.Plot, floor, rng),
+		CFrame = spot,
 		Color = Color3.fromHex(Theme.Colors.Danger),
 		Material = Enum.Material.Neon,
 		CanCollide = false,
 		CanTouch = false,
 		CastShadow = false,
 		Tags = { "Virus" },
-		Parent = folder,
 	})
+	virus:SetAttribute("OwnerUserId", session.UserId)
+	virus.Parent = folder
+	alive[session] = (alive[session] or 0) + 1
 	local prompt = Build.Prompt(virus, "Zapper", "Virus", "Zap", GameConfig.Virus.ZapDistance)
 	prompt.KeyboardKeyCode = Enum.KeyCode.F
 	prompt.Triggered:Connect(function(player: Player)
@@ -84,6 +85,7 @@ local function spawnVirus(session: Session.Session)
 	task.delay(GameConfig.Virus.LifeSeconds, function()
 		if virus.Parent then
 			virus:Destroy()
+			alive[session] = math.max((alive[session] or 1) - 1, 0)
 		end
 	end)
 end
@@ -91,6 +93,16 @@ end
 function VirusService.Start()
 	Session.Removing:Connect(function(session: Session.Session)
 		nextSpawn[session] = nil
+		alive[session] = nil
+		local world = Workspace:FindFirstChild("World")
+		local folder = world and world:FindFirstChild("Viruses")
+		if folder then
+			for _, virus in folder:GetChildren() do
+				if virus:GetAttribute("OwnerUserId") == session.UserId then
+					virus:Destroy()
+				end
+			end
+		end
 	end)
 	task.spawn(function()
 		while true do
@@ -98,7 +110,7 @@ function VirusService.Start()
 			local now = os.clock()
 			for _, session in Session.All() do
 				-- Pas de virus avant la fin des premières étapes du tutoriel.
-				if session.Data.PoweredOn and session.Data.Tutorial >= 4 and session.Plot > 0 then
+				if session.Data.PoweredOn and session.Data.Tutorial >= 4 then
 					local due = nextSpawn[session]
 					if not due then
 						nextSpawn[session] = now + rng:NextNumber(20, 40)

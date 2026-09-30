@@ -83,7 +83,7 @@ local passes: { PassDef } = {
 		Key = "RgbStudio",
 		Id = 0,
 		Name = "RGB Studio",
-		Description = "Choisis la couleur des néons de ta tour.",
+		Description = "Choisis la couleur des néons de ton PC.",
 		Price = 99,
 		Order = 7,
 	},

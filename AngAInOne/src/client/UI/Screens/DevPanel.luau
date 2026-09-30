@@ -62,7 +62,7 @@ function DevPanel.Mount(layer: Frame)
 			end,
 		},
 		{
-			Label = "Étage suivant",
+			Label = "Zone suivante",
 			Run = function()
 				local data = Store.Data()
 				Net.Fire("DevCommand", "Zone", if data then data.Zone + 1 else 2)

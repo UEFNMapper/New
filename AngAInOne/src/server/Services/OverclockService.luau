@@ -1,6 +1,6 @@
 --!strict
 --[[
-	OverclockService : mini-jeu de timing à la station d'overclock (étage CPU).
+	OverclockService : mini-jeu de timing à la station d'overclock (The Core).
 
 	Anti-triche : la position de l'aiguille est une fonction déterministe du temps
 	(Formulas.NeedlePosition). Le client l'affiche, mais c'est le SERVEUR qui calcule
@@ -19,7 +19,7 @@ local Session = require(script.Parent.Parent.Core.Session)
 local GameEvents = require(script.Parent.Parent.Core.GameEvents)
 local RemoteGuard = require(script.Parent.Parent.Security.RemoteGuard)
 local EconomyService = require(script.Parent.EconomyService)
-local PlotService = require(script.Parent.PlotService)
+local WorldService = require(script.Parent.WorldService)
 
 local OverclockService = {}
 
@@ -49,8 +49,8 @@ function OverclockService.Begin(session: Session.Session)
 		EconomyService.Notify(session, "Info", "La station refroidit encore…")
 		return
 	end
-	if PlotService.CurrentFloor(session) ~= cfg.RequiredZone then
-		EconomyService.Notify(session, "Error", "Va à la station d'overclock (étage CPU).")
+	if WorldService.ZoneOf(session) ~= cfg.RequiredZone then
+		EconomyService.Notify(session, "Error", "Va à la station d'overclock (The Core).")
 		return
 	end
 	local start = Workspace:GetServerTimeNow()

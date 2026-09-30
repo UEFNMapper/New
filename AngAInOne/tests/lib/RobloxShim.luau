@@ -5,8 +5,13 @@
 ]]
 local fs = require("@lune/fs")
 local luau = require("@lune/luau")
+local roblox = require("@lune/roblox")
 
 local Shim = {}
+
+-- Globales supplémentaires injectées dans les modules chargés (ex. game, Instance, Enum
+-- pour construire la map dans Lune). Remplies par les tests qui en ont besoin.
+Shim.Globals = {} :: { [string]: any }
 
 local nodeCache: { [string]: any } = {}
 
@@ -63,6 +68,11 @@ makeNode = function(path: string): any
 	return node
 end
 
+-- Faux noeud d'instance pour un dossier du projet (ex. "src/shared").
+function Shim.Node(path: string): any
+	return makeNode(path)
+end
+
 function Shim.load(filePath: string): any
 	if moduleCache[filePath] ~= nil then
 		return moduleCache[filePath]
@@ -70,6 +80,10 @@ function Shim.load(filePath: string): any
 	local source = fs.readFile(filePath)
 	local env = {
 		script = makeNode(filePath),
+		-- Types de données Roblox (fournis par Lune) pour les modules de géométrie partagés.
+		Vector3 = roblox.Vector3,
+		CFrame = roblox.CFrame,
+		Color3 = roblox.Color3,
 		require = function(target: any)
 			if type(target) == "table" and rawget(target, "__path") then
 				return Shim.load(rawget(target, "__path"))
@@ -77,6 +91,9 @@ function Shim.load(filePath: string): any
 			error("[RobloxShim] require non supporté : " .. tostring(target))
 		end,
 	}
+	for key, value in Shim.Globals do
+		env[key] = value
+	end
 	local chunk = luau.load(source, { debugName = filePath, environment = env })
 	local result = chunk()
 	moduleCache[filePath] = result

@@ -6,7 +6,6 @@
 
 local GameConfig = {}
 
-GameConfig.MaxPlots = 6
 GameConfig.DataStoreName = "AngAInOne_PlayerData_v1"
 
 -- Économie de base
@@ -132,7 +131,7 @@ GameConfig.RateLimits = table.freeze({
 	Upgrade = table.freeze({ Rate = 12, Burst = 20 }),
 	Settings = table.freeze({ Rate = 1, Burst = 3 }),
 })
-GameConfig.InteractDistance = 40 -- distance max (studs) pour interagir avec un module de sa tour
+GameConfig.InteractDistance = 40 -- distance max (studs) pour interagir avec un module
 
 -- Onboarding (étapes loggées dans le funnel AnalyticsService)
 GameConfig.TutorialSteps = table.freeze({

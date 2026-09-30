@@ -21,50 +21,51 @@
     "Workspace": {
       "$properties": {
         "StreamingEnabled": true,
-        "StreamingMinRadius": 128,
-        "StreamingTargetRadius": 512,
+        "StreamingMinRadius": 256,
+        "StreamingTargetRadius": 1024,
         "Gravity": 196.2
       }
     },
     "Lighting": {
       "$properties": {
         "Technology": "Future",
-        "ClockTime": 0,
-        "Brightness": 1,
-        "Ambient": [0.078, 0.086, 0.137],
-        "OutdoorAmbient": [0.118, 0.125, 0.196],
-        "EnvironmentDiffuseScale": 0.4,
+        "ClockTime": 13.6,
+        "GeographicLatitude": 30,
+        "Brightness": 2.2,
+        "Ambient": [0.36, 0.38, 0.46],
+        "OutdoorAmbient": [0.47, 0.49, 0.57],
+        "EnvironmentDiffuseScale": 1,
         "EnvironmentSpecularScale": 1,
-        "ExposureCompensation": 0.2,
+        "ExposureCompensation": 0.15,
         "GlobalShadows": true
       },
       "Atmosphere": {
         "$className": "Atmosphere",
         "$properties": {
-          "Density": 0.35,
-          "Offset": 0.1,
-          "Color": [0.157, 0.137, 0.275],
-          "Decay": [0.059, 0.078, 0.157],
+          "Density": 0.2,
+          "Offset": 0,
+          "Color": [0.78, 0.82, 0.92],
+          "Decay": [0.36, 0.4, 0.6],
           "Glare": 0,
-          "Haze": 1.2
+          "Haze": 0.4
         }
       },
       "Bloom": {
         "$className": "BloomEffect",
-        "$properties": { "Intensity": 0.35, "Size": 20, "Threshold": 1.8 }
+        "$properties": { "Intensity": 0.35, "Size": 22, "Threshold": 1.5 }
       },
       "ColorCorrection": {
         "$className": "ColorCorrectionEffect",
         "$properties": {
-          "Brightness": 0.02,
-          "Contrast": 0.08,
-          "Saturation": 0.05,
-          "TintColor": [0.961, 0.961, 1]
+          "Brightness": 0.03,
+          "Contrast": 0.12,
+          "Saturation": 0.15,
+          "TintColor": [0.98, 0.98, 1]
         }
       },
       "SunRays": {
         "$className": "SunRaysEffect",
-        "$properties": { "Intensity": 0.03, "Spread": 0.6 }
+        "$properties": { "Intensity": 0.06, "Spread": 0.5 }
       }
     },
     "SoundService": {

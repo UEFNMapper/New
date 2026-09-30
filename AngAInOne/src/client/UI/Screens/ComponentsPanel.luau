@@ -1,7 +1,7 @@
 --!strict
 --[[
 	ComponentsPanel : améliorations de modules, capacité (Watts / refroidissement)
-	et déblocage d'étage. Les cartes sont construites une fois par onglet puis
+	et déblocage de zone. Les cartes sont construites une fois par onglet puis
 	mises à jour en place (pas de scintillement, l'état de survol est conservé).
 ]]
 

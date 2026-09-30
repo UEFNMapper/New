@@ -6,9 +6,9 @@
 	2. Marqueur au-dessus de la cible : flèche flottante qui rebondit + anneau qui pulse au sol
 	   + surbrillance (Highlight) de l'objet à utiliser
 	3. Flèche au bord de l'écran (avec la distance) quand la cible n'est pas visible
-	4. Guidage intelligent : cible sur un autre étage -> l'ascenseur ; joueur dehors -> la porte
+	4. Guidage intelligent : cible dans une autre zone -> le prochain portail à franchir
 
-	Actif pendant le tutoriel, puis quand un objectif est prêt (étage à débloquer,
+	Actif pendant le tutoriel, puis quand un objectif est prêt (zone à débloquer,
 	surchauffe, manque de Watts). Tout est côté client (aucun coût serveur).
 ]]
 
@@ -42,29 +42,24 @@ local highlight: Highlight
 local edgeArrow: Frame
 local edgeLabel: TextLabel
 
-type Goal = { Floor: number, Name: string, Sub: string? }
+-- Zone : où se trouve l'objet (0 = hub). Gate : objet = terminal du portail de cette zone.
+type Goal = { Zone: number, Name: string, Sub: string?, Gate: number? }
 
 ------------------------------------------------------------------------------------
 -- Où faut-il aller ?
 ------------------------------------------------------------------------------------
 
-local function ownTower(): Model?
-	local state = Store.State
-	if not state or state.Plot == 0 then
-		return nil
-	end
+local function worldFolder(name: string): Instance?
 	local world = Workspace:FindFirstChild("World")
-	local towers = world and world:FindFirstChild("Towers")
-	local tower = towers and towers:FindFirstChild(`Tower{state.Plot}`)
-	return if tower and tower:IsA("Model") then tower else nil
+	return world and world:FindFirstChild(name)
 end
 
-local function floorModel(tower: Model, floor: number): Instance?
-	local floors = tower:FindFirstChild("Floors")
-	return floors and floors:FindFirstChild(`Floor{floor}`)
+-- Objectif "débloquer la zone n" : le terminal est côté zone parente.
+local function unlockGoal(zone: number): Goal
+	return { Zone = WorldLayout.Zones[zone].Parent, Name = "UnlockTerminal", Gate = zone }
 end
 
--- Objectif actuel (étage + nom de l'objet dans l'étage), nil = pas de guidage.
+-- Objectif actuel, nil = pas de guidage.
 local function currentGoal(): Goal?
 	local state = Store.State
 	if not state then
@@ -77,30 +72,30 @@ local function currentGoal(): Goal?
 	local step = data.Tutorial
 	local production = state.Production
 	if step == 2 then
-		return { Floor = 1, Name = "Collector" }
+		return { Zone = 1, Name = "Collector" }
 	elseif step == 3 or step == 4 then
-		return { Floor = 1, Name = "Modules", Sub = "Z1M1" }
+		return { Zone = 1, Name = "Modules", Sub = "Z1M1" }
 	elseif step == 5 then
 		if Store.Bits() >= Zones[2].UnlockCost then
-			return { Floor = 1, Name = "UnlockTerminal" }
+			return unlockGoal(2)
 		end
 		if not state.Passes.AutoCollect then
-			return { Floor = 1, Name = "Collector" }
+			return { Zone = 1, Name = "Collector" }
 		end
 		return nil
 	elseif step == 6 then
-		return { Floor = 2, Name = "CapsuleTerminal" }
+		return { Zone = 2, Name = "CapsuleTerminal" }
 	end
 	-- Après le tutoriel : seulement quand une action utile est possible (on ne harcèle pas).
 	if production.ThermalEfficiency < 0.9 and data.Zone >= GameConfig.Cooling.UnlockZone then
-		return { Floor = GameConfig.Cooling.UnlockZone, Name = "CoolingTerminal" }
+		return { Zone = GameConfig.Cooling.UnlockZone, Name = "CoolingTerminal" }
 	end
 	if production.PowerEfficiency < 0.9 then
-		return { Floor = 1, Name = "PowerTerminal" }
+		return { Zone = 1, Name = "PowerTerminal" }
 	end
 	local nextZone = Zones[data.Zone + 1]
 	if nextZone and Store.Bits() >= nextZone.UnlockCost then
-		return { Floor = data.Zone, Name = "UnlockTerminal" }
+		return unlockGoal(data.Zone + 1)
 	end
 	return nil
 end
@@ -117,31 +112,30 @@ end
 -- Résout l'objectif en une destination concrète selon où se trouve le joueur.
 -- Renvoie : position au sol, objet à mettre en surbrillance, libellé.
 local function resolve(goal: Goal): (Vector3?, Instance?, string)
-	local tower = ownTower()
-	local state = Store.State
-	if not tower or not state then
-		return nil, nil, ""
-	end
-	local playerFloor = WorldFx.CurrentFloor
-	if playerFloor == 0 then
-		-- Dehors : direction la porte de sa tour.
-		local door = WorldLayout.TowerCFrame(state.Plot)
-			* CFrame.new(0, WorldLayout.FloorY(1), -WorldLayout.TOWER_DEPTH / 2 - 6)
-		return door.Position, nil, "Ta tour"
-	end
-	if playerFloor ~= goal.Floor then
-		-- Mauvais étage : direction l'ascenseur.
-		local floor = floorModel(tower, playerFloor)
-		local elevator = floor and floor:FindFirstChild("Elevator")
-		if elevator then
-			return positionOf(elevator), elevator, `Ascenseur → étage {goal.Floor}`
+	local playerZone = WorldFx.CurrentZone
+	if playerZone ~= goal.Zone then
+		-- Autre zone : on suit les portails (la carte mère est un arbre de zones).
+		local gate = WorldLayout.NextGate(playerZone, goal.Zone)
+		if gate then
+			local name = if goal.Zone == 0 then "Hub" else Zones[goal.Zone].Name
+			return gate, nil, `Portail → {name}`
 		end
 		return nil, nil, ""
 	end
-	local floor = floorModel(tower, goal.Floor)
-	local target = floor and floor:FindFirstChild(goal.Name)
-	if target and goal.Sub then
-		target = target:FindFirstChild(goal.Sub)
+	local target: Instance?
+	if goal.Gate then
+		local gates = worldFolder("Gates")
+		local gate = gates and gates:FindFirstChild(`Gate{goal.Gate}`)
+		target = gate and gate:FindFirstChild(goal.Name)
+	else
+		local zones = worldFolder("Zones")
+		local container = if goal.Zone == 0
+			then worldFolder("Hub")
+			else zones and zones:FindFirstChild(`Zone{goal.Zone}`)
+		target = container and container:FindFirstChild(goal.Name)
+		if target and goal.Sub then
+			target = target:FindFirstChild(goal.Sub)
+		end
 	end
 	if not target then
 		return nil, nil, ""

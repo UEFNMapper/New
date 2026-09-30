@@ -14,4 +14,32 @@ return table.freeze({
 	MascotName = "Anga",
 	ChannelName = "AngaTV",
 	AngaImageId = "", -- ex. "rbxassetid://1234567890"
+
+	-- Logiciel partenaire : l'app AngAInOne (optimisation / maintenance de PC Windows).
+	-- Son interface (gris Fluent + accent violet) est reprise par les écrans du monde.
+	PartnerApp = {
+		Name = "AngAInOne",
+		Pitch = "L'app qui s'occupe de TOUT ton PC.",
+		Version = "v5.9.0",
+		Accent = "9B2FD4", -- violet des boutons de l'app
+		Surface = "202020", -- fond de fenêtre
+		Card = "2B2B2B", -- cartes
+		CardHover = "323232",
+		Text = "FFFFFF",
+		TextDim = "C5C5C5",
+		Good = "6CCB5F",
+		Warn = "FCE100",
+		Bad = "FF99A4",
+		-- Sections de la barre latérale (les zones du jeu en débloquent une chacune).
+		Sidebar = {
+			"Tableau de bord",
+			"Démarrage",
+			"Applications",
+			"Nettoyage & réparation",
+			"Diagnostic",
+			"Optimisations",
+			"Gaming",
+			"Réseau",
+		},
+	},
 })

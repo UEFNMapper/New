@@ -87,7 +87,7 @@ local TUTORIAL_TEXT = {
 	[2] = "Tu vois ces paquets de lumière ? Ce sont tes données ! Suis le faisceau et marche sur le collecteur doré pour encaisser tes Bits.",
 	[3] = "Joli ! Maintenant on améliore ta Cellule VoltCore. Plus de niveaux, plus de Bits. Clique sur « AMÉLIORER » à droite.",
 	[4] = "Encore une ! Petit secret : aux niveaux 10, 25, 50… la production DOUBLE.",
-	[5] = "Prochaine étape : débloquer Memory Lanes, l'étage de la RAM. Collecte et améliore jusqu'à 25K Bits !",
+	[5] = "Prochaine étape : débloquer Memory Lanes, le quartier de la RAM. Collecte et améliore jusqu'à 25K Bits, puis ouvre son portail dans le hub !",
 	[6] = "Bienvenue dans la RAM ! Va au terminal violet et ouvre ta première capsule de Nanobot.",
 }
 
@@ -420,7 +420,7 @@ local DOCK = {
 	{ Name = "Nanobots", Text = "Nanobots", Icon = "Bot", Key = Enum.KeyCode.N },
 	{ Name = "Quests", Text = "Quêtes", Icon = "Quest", Key = Enum.KeyCode.Q },
 	{ Name = "Shop", Text = "Boutique", Icon = "Shop", Key = Enum.KeyCode.B },
-	{ Name = "Elevator", Text = "Étages", Icon = "Elevator", Key = Enum.KeyCode.T },
+	{ Name = "Elevator", Text = "Voyager", Icon = "Elevator", Key = Enum.KeyCode.T },
 	{ Name = "Menu", Text = "Menu", Icon = "Menu", Key = Enum.KeyCode.M },
 }
 

@@ -1,6 +1,7 @@
 --!strict
 --[[
-	Zones : les 7 étages de la tour PC. Index 1 = étage du bas (PSU).
+	Zones : les 7 zones du PC géant (voir WorldLayout pour leur place sur la carte mère).
+	Chaque zone correspond à une section du logiciel partenaire AngAInOne (AppSection).
 	Les coûts viennent du GDD et sont validés par tests/pacing.spec.luau.
 ]]
 
@@ -15,6 +16,7 @@ export type ZoneDef = {
 	Secondary: string, -- hex, couleur d'accent
 	Tint: string, -- hex, teinte ColorCorrection appliquée quand on est dans la zone
 	Feature: string, -- ce que la zone débloque (affiché à l'ouverture)
+	AppSection: string, -- section de l'app AngAInOne représentée par la zone
 }
 
 local Zones: { ZoneDef } = {
@@ -29,6 +31,7 @@ local Zones: { ZoneDef } = {
 		Secondary = "F0565B",
 		Tint = "FFF3E6",
 		Feature = "Capacité électrique (Watts)",
+		AppSection = "Démarrage",
 	},
 	{
 		Index = 2,
@@ -41,6 +44,7 @@ local Zones: { ZoneDef } = {
 		Secondary = "C084FC",
 		Tint = "F1EEFF",
 		Feature = "Capsules de Nanobots",
+		AppSection = "Applications",
 	},
 	{
 		Index = 3,
@@ -53,6 +57,7 @@ local Zones: { ZoneDef } = {
 		Secondary = "4FD1C5",
 		Tint = "E9FFFB",
 		Feature = "Téléchargements",
+		AppSection = "Nettoyage & réparation",
 	},
 	{
 		Index = 4,
@@ -65,6 +70,7 @@ local Zones: { ZoneDef } = {
 		Secondary = "BEE3F8",
 		Tint = "EAF6FF",
 		Feature = "Radiateurs (capacité thermique)",
+		AppSection = "Diagnostic",
 	},
 	{
 		Index = 5,
@@ -77,6 +83,7 @@ local Zones: { ZoneDef } = {
 		Secondary = "FFFFFF",
 		Tint = "FFF9E8",
 		Feature = "Overclock",
+		AppSection = "Optimisations",
 	},
 	{
 		Index = 6,
@@ -89,6 +96,7 @@ local Zones: { ZoneDef } = {
 		Secondary = "ED64A6",
 		Tint = "F0FFF4",
 		Feature = "Reboot (prestige)",
+		AppSection = "Gaming",
 	},
 	{
 		Index = 7,
@@ -101,6 +109,7 @@ local Zones: { ZoneDef } = {
 		Secondary = "8B7CFF",
 		Tint = "F7F2FF",
 		Feature = "La Singularité",
+		AppSection = "Réseau",
 	},
 }
 

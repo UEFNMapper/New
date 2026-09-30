@@ -11,7 +11,7 @@ local function id(n: number): string
 end
 
 return table.freeze({
-	-- Une piste douce par étage (index = zone). Crossfade de 2,5 s au changement d'étage.
+	-- Une piste douce par zone (index = zone). Crossfade de 2,5 s au changement de zone.
 	Music = table.freeze({
 		Hub = id(9045437523), -- "Horizon - Instrumental" (APM)
 		[1] = id(9046862941), -- "Sunset Chill (Bed Version)" (APM)

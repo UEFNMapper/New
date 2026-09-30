@@ -1,11 +1,14 @@
 --!strict
 --[[
-	WorldFx : toute la vie visuelle du monde, côté client uniquement (zéro coût serveur).
+	WorldFx : toute la vie visuelle du PC géant, côté client uniquement (zéro coût serveur).
 	Fonctionne avec StreamingEnabled : chaque élément est pris en charge quand il
 	arrive (CollectionService) et oublié quand il repart.
 
-	Tags gérés : Spin, RgbStrip, TierGlow, PulseGlow, Beacon, ZoneEdge, Virus, Fragment,
-	TerminalScreen, TowerSign, LeaderboardScreen, TitleHologram, Collector.
+	Le monde est PARTAGÉ, mais chaque joueur y voit SA progression, calculée avec ses données :
+	tier des machines, portails ouverts/verrouillés, fragments restant à trouver, ses virus.
+
+	Tags gérés : Spin, DecorSpin, RgbStrip, TierGlow, PulseGlow, Beacon, ZoneGate, Virus,
+	Fragment, TerminalScreen, LeaderboardScreen, TitleHologram.
 ]]
 
 local CollectionService = game:GetService("CollectionService")
@@ -26,35 +29,55 @@ local Style = require(script.Parent.Parent.UI.Style)
 local Create = require(script.Parent.Parent.UI.Create)
 
 local New = Create.New
+local APP = Branding.PartnerApp
 
 local WorldFx = {}
 
+WorldFx.CurrentZone = 0 -- mis à jour par ZoneTracker (0 = hub)
+
 local player = Players.LocalPlayer
 
-local spins: { [BasePart]: { Axis: string, Speed: number, Tower: Model?, Module: Instance? } } = {}
-local rgbStrips: { [BasePart]: { Tower: Model?, Offset: number } } = {} -- tour en cache
+local spins: { [BasePart]: { Axis: string, Speed: number, Module: Instance?, Decor: boolean } } = {}
+local rgbStrips: { [BasePart]: number } = {} -- décalage de teinte
 local tierGlows: { [BasePart]: boolean } = {}
 local pulses: { [BasePart]: number } = {}
 local viruses: { [BasePart]: { Base: CFrame, Phase: number } } = {}
 local fragments: { [BasePart]: { Base: CFrame, Phase: number } } = {}
-local beacons: { [BasePart]: { Base: number, Tower: Model? } } = {}
+local beacons: { [BasePart]: number } = {}
+local gates: { [BasePart]: boolean } = {}
+local moduleModels: { [Instance]: () -> () } = {} -- modèle -> rafraîchissement de l'étiquette
 local boardScreens: { [BasePart]: SurfaceGui } = {}
 
 ------------------------------------------------------------------------------------
--- Helpers
+-- Données du joueur local
 ------------------------------------------------------------------------------------
 
-local function towerOf(instance: Instance): Model?
-	local current: Instance? = instance
-	while current do
-		if
-			current:IsA("Model")
-			and current:GetAttribute("Index") ~= nil
-			and current:GetAttribute("OwnerUserId") ~= nil
-		then
-			return current
+local function data(): any
+	return Store.Data()
+end
+
+local function powered(): boolean
+	local d = data()
+	return d ~= nil and d.PoweredOn == true
+end
+
+local function unlockedZone(): number
+	local d = data()
+	return if d then d.Zone else 1
+end
+
+local function levelOf(id: string): number
+	local d = data()
+	return if d then (d.Levels[id] or 0) else 0
+end
+
+local function fixedHue(): number?
+	local state = Store.State
+	if state and state.Passes and state.Passes.RgbStudio then
+		local hue = state.Data.Settings.RgbHue
+		if type(hue) == "number" and hue >= 0 then
+			return hue
 		end
-		current = current.Parent
 	end
 	return nil
 end
@@ -68,22 +91,6 @@ local function moduleOf(instance: Instance): Instance?
 		current = current.Parent
 	end
 	return nil
-end
-
-local function isMine(tower: Model?): boolean
-	return tower ~= nil and tower:GetAttribute("OwnerUserId") == player.UserId
-end
-
-local function powered(tower: Model?): boolean
-	return tower ~= nil and tower:GetAttribute("PoweredOn") == true
-end
-
-local function hueFor(tower: Model?, offset: number): number
-	local fixed = if tower then tower:GetAttribute("RgbHue") else nil
-	if type(fixed) == "number" and fixed >= 0 then
-		return fixed
-	end
-	return (os.clock() * 0.06 + offset) % 1
 end
 
 local TIER_COLORS = {
@@ -104,7 +111,7 @@ local function tierColor(level: number): (Color3?, boolean)
 end
 
 ------------------------------------------------------------------------------------
--- Surfaces (panneaux, enseignes, classements)
+-- Surfaces (terminaux au style de l'app AngAInOne, classements, titre)
 ------------------------------------------------------------------------------------
 
 local function surface(part: BasePart, face: Enum.NormalId, pixels: number, name: string?): SurfaceGui
@@ -126,65 +133,60 @@ local function surface(part: BasePart, face: Enum.NormalId, pixels: number, name
 	return gui
 end
 
+-- Écran de terminal : une "fenêtre" de l'app partenaire (gris Fluent, bouton violet).
 local function setupTerminal(screen: BasePart)
 	local accentHex = screen:GetAttribute("Accent")
 	local accent = if type(accentHex) == "string" then Color3.fromHex(accentHex) else Style.Color("AccentCyan")
 	local gui = surface(screen, Enum.NormalId.Front, 40)
 	gui:ClearAllChildren()
-	New("Frame", {
+	local window: Frame = New("Frame", {
 		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Style.Color("BgDeep"),
-		BackgroundTransparency = 0.1,
+		BackgroundColor3 = Color3.fromHex(APP.Surface),
 		BorderSizePixel = 0,
 		Parent = gui,
 	}, {
-		New("UIStroke", { Color = accent, Thickness = 4 }) :: Instance,
-		New("TextLabel", {
-			Size = UDim2.new(1, -20, 1, -20),
-			Position = UDim2.fromOffset(10, 10),
-			BackgroundTransparency = 1,
-			Text = tostring(screen:GetAttribute("Label") or ""),
-			TextScaled = true,
-			FontFace = Style.Fonts.Display,
-			TextColor3 = accent,
-		}),
+		Create.Corner(14) :: Instance,
+		New("UIStroke", { Color = accent, Thickness = 3, Transparency = 0.3 }),
 	})
-end
-
-local function setupSign(sign: BasePart)
-	local tower = towerOf(sign)
-	local gui = surface(sign, Enum.NormalId.Front, 30)
-	gui:ClearAllChildren()
-	local label: TextLabel = New("TextLabel", {
-		Size = UDim2.fromScale(1, 1),
+	New("TextLabel", {
+		Position = UDim2.fromScale(0.06, 0.05),
+		Size = UDim2.fromScale(0.88, 0.16),
 		BackgroundTransparency = 1,
+		Text = APP.Name,
 		TextScaled = true,
-		RichText = true,
-		FontFace = Style.Fonts.Display,
-		TextColor3 = Style.Color("TextPrimary"),
-		TextStrokeTransparency = 0.6,
-		Parent = gui,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		FontFace = Style.Fonts.Medium,
+		TextColor3 = Color3.fromHex(APP.TextDim),
+		Parent = window,
 	})
-	local function refresh()
-		if not tower then
-			return
-		end
-		local owner = tower:GetAttribute("OwnerUserId")
-		if owner == 0 or owner == nil then
-			label.Text = "TOUR LIBRE"
-			label.TextTransparency = 0.5
-		else
-			label.TextTransparency = 0
-			label.Text =
-				`{tower:GetAttribute("OwnerName")}  <font size="30">GEN {tower:GetAttribute("Generation") or 1} · ♥ {tower:GetAttribute(
-					"Likes"
-				) or 0}</font>`
-		end
-	end
-	refresh()
-	if tower then
-		tower.AttributeChanged:Connect(refresh)
-	end
+	New("TextLabel", {
+		Position = UDim2.fromScale(0.06, 0.26),
+		Size = UDim2.fromScale(0.88, 0.3),
+		BackgroundTransparency = 1,
+		Text = tostring(screen:GetAttribute("Label") or ""),
+		TextScaled = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		FontFace = Style.Fonts.Bold,
+		TextColor3 = Color3.fromHex(APP.Text),
+		Parent = window,
+	})
+	New("Frame", {
+		Position = UDim2.fromScale(0.06, 0.66),
+		Size = UDim2.fromScale(0.5, 0.22),
+		BackgroundColor3 = Color3.fromHex(APP.Accent),
+		BorderSizePixel = 0,
+		Parent = window,
+	}, {
+		Create.Corner(8) :: Instance,
+		New("TextLabel", {
+			Size = UDim2.fromScale(1, 1),
+			BackgroundTransparency = 1,
+			Text = "Ouvrir  [E]",
+			TextScaled = true,
+			FontFace = Style.Fonts.Bold,
+			TextColor3 = Color3.fromHex(APP.Text),
+		}, { New("UITextSizeConstraint", { MaxTextSize = 60 }) :: Instance }),
+	})
 end
 
 local function renderBoard(screen: BasePart)
@@ -250,51 +252,65 @@ local function setupTitle(part: BasePart)
 	for _, face in { Enum.NormalId.Front, Enum.NormalId.Back } do
 		local target = surface(part, face, 20, `Title{face.Name}`)
 		target:ClearAllChildren()
-		do
-			New("TextLabel", {
-				Size = UDim2.new(1, 0, 0.7, 0),
-				BackgroundTransparency = 1,
-				Text = Branding.GameName,
-				TextScaled = true,
-				FontFace = Style.Fonts.Display,
-				TextColor3 = Style.Color("TextPrimary"),
-				TextStrokeColor3 = Style.Color("AccentViolet"),
-				TextStrokeTransparency = 0.2,
-				Parent = target,
-			})
-			New("TextLabel", {
-				Position = UDim2.fromScale(0, 0.7),
-				Size = UDim2.new(1, 0, 0.3, 0),
-				BackgroundTransparency = 1,
-				Text = Branding.Tagline,
-				TextScaled = true,
-				FontFace = Style.Fonts.Medium,
-				TextColor3 = Style.Color("AccentCyan"),
-				Parent = target,
-			})
-		end
+		New("TextLabel", {
+			Size = UDim2.new(1, 0, 0.7, 0),
+			BackgroundTransparency = 1,
+			Text = Branding.GameName,
+			TextScaled = true,
+			FontFace = Style.Fonts.Display,
+			TextColor3 = Style.Color("TextPrimary"),
+			TextStrokeColor3 = Style.Color("AccentViolet"),
+			TextStrokeTransparency = 0.2,
+			Parent = target,
+		})
+		New("TextLabel", {
+			Position = UDim2.fromScale(0, 0.7),
+			Size = UDim2.new(1, 0, 0.3, 0),
+			BackgroundTransparency = 1,
+			Text = Branding.Tagline,
+			TextScaled = true,
+			FontFace = Style.Fonts.Medium,
+			TextColor3 = Style.Color("AccentCyan"),
+			Parent = target,
+		})
 	end
 end
 
 ------------------------------------------------------------------------------------
--- Étiquettes des machines + étages verrouillés + prompts
+-- Machines : tier et étiquette selon les niveaux DU JOUEUR LOCAL
 ------------------------------------------------------------------------------------
 
-local function setupModuleLabel(model: Instance)
-	local anchor = model:FindFirstChild("LabelAnchor")
-	if not (anchor and anchor:IsA("BasePart")) or anchor:FindFirstChild("ModuleLabel") then
+function WorldFx.PaintTier(part: BasePart)
+	local model = moduleOf(part)
+	local id = if model then model:GetAttribute("ModuleId") else nil
+	local n = if type(id) == "string" then levelOf(id) else 0
+	local color, rainbow = tierColor(n)
+	if not color or not powered() then
+		part.Color = Style.Color("MetalLight")
+		part.Transparency = 0.7
+		part:SetAttribute("Rainbow", false)
 		return
 	end
+	part.Color = color
+	part.Transparency = 0.05
+	part:SetAttribute("Rainbow", rainbow)
+end
+
+local function setupModuleLabel(model: Instance)
+	if moduleModels[model] then
+		return
+	end
+	local anchor = model:FindFirstChild("LabelAnchor")
 	local id = model:GetAttribute("ModuleId")
 	local def = if type(id) == "string" then Modules.Get(id) else nil
-	if not def then
+	if not (anchor and anchor:IsA("BasePart")) or not def then
 		return
 	end
 	local billboard: BillboardGui = New("BillboardGui", {
 		Name = "ModuleLabel",
 		Size = UDim2.fromOffset(200, 54),
 		StudsOffset = Vector3.new(0, 1.5, 0),
-		MaxDistance = 60,
+		MaxDistance = 70,
 		LightInfluence = 0,
 		Parent = anchor,
 	})
@@ -328,149 +344,178 @@ local function setupModuleLabel(model: Instance)
 		TextColor3 = Style.Color("CurrencyBits"),
 		Parent = card,
 	})
+	local shown = -1
 	local function refresh()
-		local value = model:GetAttribute("Level")
-		local n = if type(value) == "number" then value else 0
-		level.Text = if n > 0 then `NIV. {n}` else "À ACHETER"
-		for _, part in model:GetDescendants() do
-			if part:IsA("BasePart") and tierGlows[part] then
-				WorldFx.PaintTier(part)
-			end
+		local n = levelOf(def.Id)
+		if n == shown then
+			return
 		end
-	end
-	refresh()
-	model:GetAttributeChangedSignal("Level"):Connect(function()
-		refresh()
-		-- Petit flash de la machine à chaque amélioration de SA tour
-		if isMine(towerOf(model)) and not Motion.IsReduced() then
-			for _, part in model:GetDescendants() do
-				if part:IsA("BasePart") and tierGlows[part] then
-					local original = part.Transparency
-					part.Transparency = 0
+		local flash = shown >= 0 and n > shown
+		shown = n
+		level.Text = if n > 0 then `NIV. {n}` else "À ACHETER"
+		for _, descendant in model:GetDescendants() do
+			if descendant:IsA("BasePart") and tierGlows[descendant] then
+				WorldFx.PaintTier(descendant)
+				-- Petit flash de la machine à chaque amélioration
+				if flash and not Motion.IsReduced() then
+					local original = descendant.Transparency
+					descendant.Transparency = 0
 					task.delay(0.12, function()
-						part.Transparency = original
+						descendant.Transparency = original
 					end)
 				end
 			end
 		end
+	end
+	moduleModels[model] = refresh
+	refresh()
+	model.Destroying:Connect(function()
+		moduleModels[model] = nil
 	end)
 end
 
-function WorldFx.PaintTier(part: BasePart)
-	local model = moduleOf(part)
-	local tower = towerOf(part)
-	local level = if model then model:GetAttribute("Level") else 0
-	local n = if type(level) == "number" then level else 0
-	local color, rainbow = tierColor(n)
-	if not color or not powered(tower) then
-		part.Color = Style.Color("MetalLight")
-		part.Transparency = 0.7
-		part:SetAttribute("Rainbow", false)
+------------------------------------------------------------------------------------
+-- Portails de zone : barrière solide (localement) tant que la zone est verrouillée
+------------------------------------------------------------------------------------
+
+local function applyGate(barrier: BasePart)
+	local zoneAttr = barrier:GetAttribute("Zone")
+	local index = if type(zoneAttr) == "number" then zoneAttr else 2
+	local zone = Zones[index]
+	if not zone then
 		return
 	end
-	part.Color = color
-	part.Transparency = 0.05
-	part:SetAttribute("Rainbow", rainbow)
-end
-
--- Lumières et néons d'un étage selon qu'il est débloqué et que la tour est allumée.
-local function applyFloor(tower: Model, floor: Instance)
-	local zoneAttr = floor:GetAttribute("Zone")
-	local index = if type(zoneAttr) == "number" then zoneAttr else 1
-	local towerZone = tower:GetAttribute("Zone")
-	local unlocked = type(towerZone) == "number" and index <= towerZone
-	local on = unlocked and powered(tower)
-	for _, descendant in floor:GetDescendants() do
-		if descendant:IsA("PointLight") then
-			descendant.Enabled = on
-		elseif descendant:IsA("BasePart") and (descendant:HasTag("ZoneEdge") or descendant.Name:match("^Trace")) then
-			descendant.Transparency = if on then (if descendant:HasTag("ZoneEdge") then 0.5 else 0.6) else 0.88
-		end
+	local locked = index > unlockedZone()
+	-- Collision locale : seul le personnage du joueur local est concerné.
+	barrier.CanCollide = locked
+	barrier.Transparency = if locked then 0.1 else 0.92
+	local light = barrier:FindFirstChildOfClass("PointLight")
+	if light then
+		light.Enabled = locked
 	end
-	local plate = floor:FindFirstChild("Plate")
-	if plate and plate:IsA("BasePart") then
-		local hologram = plate:FindFirstChild("LockedHologram")
-		if not unlocked and isMine(tower) then
-			if not hologram then
-				local zone = Zones[index]
-				local billboard: BillboardGui = New("BillboardGui", {
-					Name = "LockedHologram",
-					Size = UDim2.fromOffset(360, 110),
-					StudsOffset = Vector3.new(0, 14, 0),
-					MaxDistance = 120,
-					LightInfluence = 0,
-					Parent = plate,
-				})
-				New("TextLabel", {
-					Size = UDim2.fromScale(1, 0.55),
-					BackgroundTransparency = 1,
-					Text = `🔒 {string.upper(zone.Name)}`,
-					TextScaled = true,
-					FontFace = Style.Fonts.Display,
-					TextColor3 = Color3.fromHex(zone.Primary),
-					TextStrokeTransparency = 0.5,
-					Parent = billboard,
-				})
-				New("TextLabel", {
-					Position = UDim2.fromScale(0, 0.58),
-					Size = UDim2.fromScale(1, 0.4),
-					BackgroundTransparency = 1,
-					Text = `{NumberFormat.Compact(zone.UnlockCost)} Bits`,
-					TextScaled = true,
-					FontFace = Style.Fonts.Heavy,
-					TextColor3 = Style.Color("CurrencyBits"),
-					Parent = billboard,
-				})
+	local gate = barrier.Parent
+	if gate then
+		for _, descendant in gate:GetDescendants() do
+			if descendant:IsA("ProximityPrompt") and descendant:GetAttribute("Action") == "Unlock" then
+				descendant.Enabled = locked
 			end
-		elseif hologram then
-			hologram:Destroy()
 		end
+	end
+	local hologram = barrier:FindFirstChild("LockedHologram")
+	if locked and not hologram then
+		local billboard: BillboardGui = New("BillboardGui", {
+			Name = "LockedHologram",
+			Size = UDim2.fromOffset(380, 120),
+			StudsOffset = Vector3.new(0, 4, 0),
+			MaxDistance = 160,
+			LightInfluence = 0,
+			Parent = barrier,
+		})
+		New("TextLabel", {
+			Size = UDim2.fromScale(1, 0.4),
+			BackgroundTransparency = 1,
+			Text = `🔒 {string.upper(zone.Name)}`,
+			TextScaled = true,
+			FontFace = Style.Fonts.Display,
+			TextColor3 = Color3.fromHex(zone.Primary),
+			TextStrokeTransparency = 0.4,
+			Parent = billboard,
+		})
+		New("TextLabel", {
+			Position = UDim2.fromScale(0, 0.42),
+			Size = UDim2.fromScale(1, 0.26),
+			BackgroundTransparency = 1,
+			Text = `Section « {zone.AppSection} »`,
+			TextScaled = true,
+			FontFace = Style.Fonts.Medium,
+			TextColor3 = Style.Color("TextPrimary"),
+			TextStrokeTransparency = 0.5,
+			Parent = billboard,
+		})
+		New("TextLabel", {
+			Position = UDim2.fromScale(0, 0.7),
+			Size = UDim2.fromScale(1, 0.3),
+			BackgroundTransparency = 1,
+			Text = `{NumberFormat.Compact(zone.UnlockCost)} Bits`,
+			TextScaled = true,
+			FontFace = Style.Fonts.Heavy,
+			TextColor3 = Style.Color("CurrencyBits"),
+			TextStrokeTransparency = 0.5,
+			Parent = billboard,
+		})
+	elseif not locked and hologram then
+		hologram:Destroy()
 	end
 end
 
-local function applyTower(tower: Model)
-	local floors = tower:FindFirstChild("Floors")
-	if floors then
-		for _, floor in floors:GetChildren() do
-			applyFloor(tower, floor)
-		end
-	end
-	local mine = isMine(tower)
-	for _, descendant in tower:GetDescendants() do
-		if descendant:IsA("ProximityPrompt") then
-			-- Seul le propriétaire interagit avec sa tour.
-			descendant.Enabled = mine
-		elseif descendant:IsA("BasePart") and tierGlows[descendant] then
-			WorldFx.PaintTier(descendant)
-		end
-	end
-end
-
--- Vague d'allumage : les étages s'illuminent de bas en haut.
-local function powerWave(tower: Model)
-	local floors = tower:FindFirstChild("Floors")
-	if not floors then
-		return
-	end
-	for index = 1, #Zones do
-		local floor = floors:FindFirstChild(`Floor{index}`)
-		if floor then
-			task.delay(index * 0.18, function()
-				applyFloor(tower, floor)
-				for _, descendant in floor:GetDescendants() do
-					if descendant:IsA("PointLight") and descendant.Enabled then
-						local target = descendant.Brightness
-						descendant.Brightness = target * 4
-						Motion.Tween(descendant, { Brightness = target }, 0.8)
-					end
-				end
-			end)
+-- Ouverture animée d'un portail (quand la zone vient d'être débloquée).
+local function openGate(index: number)
+	for barrier in gates do
+		if barrier:GetAttribute("Zone") == index then
+			local target = barrier.Transparency
+			barrier.Transparency = 0
+			barrier.Color = Style.Color("TextPrimary")
+			Motion.Tween(barrier, { Transparency = target, Color = Color3.fromHex(Zones[index].Primary) }, 1.4)
 		end
 	end
 end
 
 ------------------------------------------------------------------------------------
--- Paquets de données (tour du joueur, étage courant)
+-- Fragments et virus (propres au joueur local)
+------------------------------------------------------------------------------------
+
+local function applyFragment(p: BasePart)
+	local id = p:GetAttribute("FragmentId")
+	local d = data()
+	local zone = if type(id) == "string" then tonumber(string.match(id, "^Z(%d+)F")) else nil
+	local visible = d ~= nil and type(id) == "string" and d.Fragments[id] ~= true and zone ~= nil and zone <= d.Zone
+	p.LocalTransparencyModifier = if visible then 0 else 1
+	local light = p:FindFirstChildOfClass("PointLight")
+	if light then
+		light.Enabled = visible
+	end
+end
+
+------------------------------------------------------------------------------------
+-- Rafraîchissement global quand l'état du joueur change
+------------------------------------------------------------------------------------
+
+local lastZone = -1
+local lastPowered = false
+local function refreshAll()
+	for p in tierGlows do
+		WorldFx.PaintTier(p)
+	end
+	for _, refresh in moduleModels do
+		refresh()
+	end
+	for barrier in gates do
+		applyGate(barrier)
+	end
+	for p in fragments do
+		applyFragment(p)
+	end
+	local zone = unlockedZone()
+	if lastZone > 0 and zone > lastZone then
+		for index = lastZone + 1, zone do
+			openGate(index)
+		end
+	end
+	lastZone = zone
+	local on = powered()
+	if on and not lastPowered and not Motion.IsReduced() then
+		-- Vague d'allumage : les néons de machines flashent en blanc puis prennent leur tier.
+		for p in tierGlows do
+			local original = p.Color
+			p.Color = Style.Color("TextPrimary")
+			Motion.Tween(p, { Color = original }, 0.9)
+		end
+	end
+	lastPowered = on
+end
+
+------------------------------------------------------------------------------------
+-- Paquets de données (zone courante)
 ------------------------------------------------------------------------------------
 
 local packetFolder: Folder
@@ -494,13 +539,15 @@ local function spawnPacket(trace: BasePart, color: Color3)
 		})
 	packet.Color = color
 	packet.Transparency = 0
+	-- La piste va de la machine (côté +Z local) vers le collecteur (côté -Z local).
 	local half = trace.Size.Z / 2
 	local from = trace.CFrame * CFrame.new(0, 0.35, half)
 	local to = trace.CFrame * CFrame.new(0, 0.35, -half)
 	packet.CFrame = from
 	packet.Parent = packetFolder
 	activePackets += 1
-	local tween = Motion.Tween(packet, { CFrame = to }, 1.6, Enum.EasingStyle.Linear)
+	local duration = math.clamp(trace.Size.Z / 30, 1, 2.2)
+	local tween = Motion.Tween(packet, { CFrame = to }, duration, Enum.EasingStyle.Linear)
 	tween.Completed:Once(function()
 		activePackets -= 1
 		packet.Parent = nil
@@ -510,23 +557,19 @@ end
 
 local function packetLoop()
 	while true do
-		local state = Store.State
 		local rate = Store.Rate()
 		local interval = math.clamp(1.2 - math.log10(rate + 1) * 0.12, 0.25, 1.2)
 		task.wait(interval)
-		if state and state.Data.PoweredOn and state.Plot > 0 then
+		local zoneIndex = WorldFx.CurrentZone
+		if powered() and zoneIndex > 0 and zoneIndex <= unlockedZone() then
 			local world = Workspace:FindFirstChild("World")
-			local towers = world and world:FindFirstChild("Towers")
-			local tower = towers and towers:FindFirstChild(`Tower{state.Plot}`)
-			local floorIndex = WorldFx.CurrentFloor
-			local floors = tower and tower:FindFirstChild("Floors")
-			local floor = floors and floorIndex > 0 and floors:FindFirstChild(`Floor{floorIndex}`)
-			if floor then
-				local color = Color3.fromHex(Zones[floorIndex].Primary)
+			local zones = world and world:FindFirstChild("Zones")
+			local zoneModel = zones and zones:FindFirstChild(`Zone{zoneIndex}`)
+			if zoneModel then
+				local color = Color3.fromHex(Zones[zoneIndex].Primary)
 				for slot = 1, 3 do
-					local level = state.Data.Levels[`Z{floorIndex}M{slot}`] or 0
-					local trace = floor:FindFirstChild(`Trace{slot}`)
-					if level > 0 and trace and trace:IsA("BasePart") then
+					local trace = zoneModel:FindFirstChild(`Trace{slot}`)
+					if levelOf(`Z{zoneIndex}M{slot}`) > 0 and trace and trace:IsA("BasePart") then
 						spawnPacket(trace, color)
 					end
 				end
@@ -534,8 +577,6 @@ local function packetLoop()
 		end
 	end
 end
-
-WorldFx.CurrentFloor = 0 -- mis à jour par ZoneTracker
 
 ------------------------------------------------------------------------------------
 -- Enregistrement par tags (compatible streaming)
@@ -555,53 +596,39 @@ local function part(instance: Instance): BasePart?
 	return if instance:IsA("BasePart") then instance else nil
 end
 
-local watchedTowers: { [Model]: boolean } = {}
-local function watchTower(tower: Model?)
-	if not tower or watchedTowers[tower] then
-		return
-	end
-	watchedTowers[tower] = true
-	tower.AttributeChanged:Connect(function(attribute: string)
-		if attribute == "PoweredOn" and powered(tower) and isMine(tower) then
-			powerWave(tower)
-			applyTower(tower)
-		elseif attribute == "Zone" or attribute == "OwnerUserId" or attribute == "PoweredOn" then
-			applyTower(tower)
+local function trackSpin(decor: boolean)
+	return function(instance: Instance)
+		local p = part(instance)
+		if p then
+			local axis = p:GetAttribute("Axis")
+			local speed = p:GetAttribute("Speed")
+			spins[p] = {
+				Axis = if type(axis) == "string" then axis else "X",
+				Speed = if type(speed) == "number" then speed else (if decor then 1.2 else 2) + math.random(),
+				Module = if decor then nil else moduleOf(p),
+				Decor = decor,
+			}
 		end
-	end)
-	tower.Destroying:Connect(function()
-		watchedTowers[tower] = nil
-	end)
-	task.defer(applyTower, tower)
+	end
 end
 
 function WorldFx.Start()
 	packetFolder = New("Folder", { Name = "ClientPackets", Parent = Workspace })
 
-	track("Spin", function(instance)
-		local p = part(instance)
-		if p then
-			local axis = p:GetAttribute("Axis")
-			spins[p] = {
-				Axis = if type(axis) == "string" then axis else "X",
-				Speed = 2 + math.random(),
-				Tower = towerOf(p),
-				Module = moduleOf(p),
-			}
+	local function forget(map: { [any]: any })
+		return function(instance: Instance)
+			map[instance] = nil
 		end
-	end, function(instance)
-		spins[instance :: any] = nil
-	end)
+	end
+
+	track("Spin", trackSpin(false), forget(spins))
+	track("DecorSpin", trackSpin(true), forget(spins))
 	track("RgbStrip", function(instance)
 		local p = part(instance)
 		if p then
-			local tower = towerOf(p)
-			rgbStrips[p] = { Tower = tower, Offset = p.Position.Y / 300 }
-			watchTower(tower)
+			rgbStrips[p] = (p.Position.X + p.Position.Z) / 900
 		end
-	end, function(instance)
-		rgbStrips[instance :: any] = nil
-	end)
+	end, forget(rgbStrips))
 	track("TierGlow", function(instance)
 		local p = part(instance)
 		if p then
@@ -611,75 +638,60 @@ function WorldFx.Start()
 			if model then
 				setupModuleLabel(model)
 			end
-			watchTower(towerOf(p))
 		end
-	end, function(instance)
-		tierGlows[instance :: any] = nil
-	end)
+	end, forget(tierGlows))
 	track("PulseGlow", function(instance)
 		local p = part(instance)
 		if p then
 			pulses[p] = p.Transparency
 		end
-	end, function(instance)
-		pulses[instance :: any] = nil
-	end)
+	end, forget(pulses))
 	track("Beacon", function(instance)
 		local p = part(instance)
 		if p then
-			beacons[p] = { Base = p.Transparency, Tower = towerOf(p) }
+			beacons[p] = p.Transparency
 		end
-	end, function(instance)
-		beacons[instance :: any] = nil
-	end)
-	track("Virus", function(instance)
+	end, forget(beacons))
+	track("ZoneGate", function(instance)
 		local p = part(instance)
 		if p then
-			viruses[p] = { Base = p.CFrame, Phase = math.random() * 10 }
-			if not isMine(towerOf(p)) then
-				local prompt = p:FindFirstChildOfClass("ProximityPrompt")
-				if prompt then
-					prompt.Enabled = false
-				end
-			end
-			local highlight = Instance.new("Highlight")
-			highlight.FillTransparency = 0.6
-			highlight.OutlineColor = Style.Color("Danger")
-			highlight.FillColor = Style.Color("Danger")
-			highlight.DepthMode = Enum.HighlightDepthMode.Occluded
-			highlight.Parent = p
+			gates[p] = true
+			applyGate(p)
 		end
-	end, function(instance)
-		viruses[instance :: any] = nil
-	end)
+	end, forget(gates))
+	track("Virus", function(instance)
+		local p = part(instance)
+		if not p then
+			return
+		end
+		if p:GetAttribute("OwnerUserId") ~= player.UserId then
+			-- Virus d'un autre joueur : invisible et non interactif pour nous.
+			p.LocalTransparencyModifier = 1
+			local prompt = p:FindFirstChildOfClass("ProximityPrompt")
+			if prompt then
+				prompt.Enabled = false
+			end
+			return
+		end
+		viruses[p] = { Base = p.CFrame, Phase = math.random() * 10 }
+		local highlight = Instance.new("Highlight")
+		highlight.FillTransparency = 0.6
+		highlight.OutlineColor = Style.Color("Danger")
+		highlight.FillColor = Style.Color("Danger")
+		highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+		highlight.Parent = p
+	end, forget(viruses))
 	track("Fragment", function(instance)
 		local p = part(instance)
 		if p then
 			fragments[p] = { Base = p.CFrame, Phase = math.random() * 10 }
-			local function refresh()
-				local mine = isMine(towerOf(p))
-				p.LocalTransparencyModifier = if mine and p:GetAttribute("Found") ~= true then 0 else 1
-				local light = p:FindFirstChildOfClass("PointLight")
-				if light then
-					light.Enabled = mine and p:GetAttribute("Found") ~= true
-				end
-			end
-			refresh()
-			p:GetAttributeChangedSignal("Found"):Connect(refresh)
+			applyFragment(p)
 		end
-	end, function(instance)
-		fragments[instance :: any] = nil
-	end)
+	end, forget(fragments))
 	track("TerminalScreen", function(instance)
 		local p = part(instance)
 		if p then
 			setupTerminal(p)
-		end
-	end)
-	track("TowerSign", function(instance)
-		local p = part(instance)
-		if p then
-			setupSign(p)
 		end
 	end)
 	track("TitleHologram", function(instance)
@@ -695,14 +707,16 @@ function WorldFx.Start()
 			boardScreens[p] = surface(p, Enum.NormalId.Front, 25)
 			renderBoard(p)
 		end
-	end, function(instance)
-		boardScreens[instance :: any] = nil
-	end)
+	end, forget(boardScreens))
 	Store.BoardsChanged:Connect(function()
 		for screen in boardScreens do
 			renderBoard(screen)
 		end
 	end)
+	Store.Changed:Connect(refreshAll)
+	if Store.State then
+		task.defer(refreshAll)
+	end
 
 	-- Animation (rotation chaque image ; couleurs à 30 Hz)
 	local colorClock = 0
@@ -712,11 +726,16 @@ function WorldFx.Start()
 		local reduced = Motion.IsReduced()
 		local speedScale = if reduced then 0.3 else 1
 		for p, info in spins do
-			if (p.Position - eye).Magnitude < 220 and powered(info.Tower) then
-				local model = info.Module
-				local level = if model then model:GetAttribute("Level") else 1
-				if type(level) == "number" and level > 0 then
-					local angle = dt * info.Speed * speedScale * (1 + math.min(level, 100) / 40)
+			if (p.Position - eye).Magnitude < 320 then
+				local factor = 1
+				if not info.Decor then
+					local model = info.Module
+					local id = if model then model:GetAttribute("ModuleId") else nil
+					local level = if type(id) == "string" then levelOf(id) else 0
+					factor = if level > 0 and powered() then 1 + math.min(level, 100) / 40 else 0
+				end
+				if factor > 0 then
+					local angle = dt * info.Speed * speedScale * factor
 					p.CFrame *= if info.Axis == "Y" then CFrame.Angles(0, angle, 0) else CFrame.Angles(angle, 0, 0)
 				end
 			end
@@ -737,14 +756,9 @@ function WorldFx.Start()
 			return
 		end
 		colorClock = 0
-		for p, info in rgbStrips do
-			local tower = info.Tower
-			if tower == nil or powered(tower) then
-				p.Color = Color3.fromHSV(hueFor(tower, info.Offset), 0.55, 1)
-				p.Transparency = 0.05
-			else
-				p.Transparency = 0.85
-			end
+		local hue = fixedHue()
+		for p, offset in rgbStrips do
+			p.Color = Color3.fromHSV(hue or (t * 0.06 + offset) % 1, 0.55, 1)
 		end
 		for p in tierGlows do
 			if p:GetAttribute("Rainbow") == true then
@@ -754,18 +768,15 @@ function WorldFx.Start()
 		for p, base in pulses do
 			p.Transparency = math.min(base + (math.sin(t * 2.4) + 1) * 0.12, 0.9)
 		end
-		for p, info in beacons do
-			local zone = if info.Tower then info.Tower:GetAttribute("Zone") else 0
-			local strength = if type(zone) == "number" then zone / #Zones else 0
-			p.Transparency = math.clamp(info.Base + 0.5 - strength * 0.5 + math.sin(t * 1.5) * 0.08, 0, 0.95)
+		local strength = unlockedZone() / #Zones
+		for p, base in beacons do
+			p.Transparency = math.clamp(base + 0.2 - strength * 0.2 + math.sin(t * 1.5) * 0.08, 0, 0.95)
 		end
 	end)
 
 	task.spawn(packetLoop)
 end
 
--- La vague d'allumage est déclenchée par l'attribut PoweredOn de la tour (voir watchTower),
--- qui arrive toujours après la mise à jour serveur : rien à faire ici pour l'instant.
 function WorldFx.OnFx(_kind: string, _payload: any) end
 
 return WorldFx

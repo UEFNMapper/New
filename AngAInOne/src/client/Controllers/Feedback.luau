@@ -36,7 +36,7 @@ Feedback.OnWorldFx = nil :: ((kind: string, payload: any) -> ())?
 
 local shakeToken = 0
 
--- Ce que dit Anga en découvrant chaque étage.
+-- Ce que dit Anga en découvrant chaque zone.
 local ZONE_LINES: { [number]: string } = {
 	[2] = "Memory Lanes ! Ici, tout va à la vitesse de la lumière. Et regarde : un terminal à capsules de Nanobots !",
 	[3] = "Le Data Vault… Chaque cellule garde un secret. Essaie les téléchargements : lance-en un et reviens plus tard !",

@@ -8,6 +8,7 @@ local luau = require("@lune/luau")
 local Shim = require("./lib/RobloxShim")
 local Expect = require("./lib/Expect")
 local PacingSim = require("./lib/PacingSim")
+local roblox = require("@lune/roblox")
 
 local filter = process.args[1]
 local files = fs.readDir("tests")
@@ -18,10 +19,16 @@ for _, file in files do
 	if string.match(file, "%.spec%.luau$") and (not filter or string.find(file, filter, 1, true)) then
 		local source = fs.readFile("tests/" .. file)
 		local ok, specOrErr = pcall(function()
-			return luau.load(
-				source,
-				{ debugName = file, environment = { Shim = Shim, Expect = Expect, PacingSim = PacingSim, Fs = fs } }
-			)()
+			return luau.load(source, {
+				debugName = file,
+				environment = {
+					Shim = Shim,
+					Expect = Expect,
+					PacingSim = PacingSim,
+					Fs = fs,
+					Vector3 = roblox.Vector3,
+				},
+			})()
 		end)
 		if not ok then
 			print(`✗ {file} : échec du chargement\n    {specOrErr}`)

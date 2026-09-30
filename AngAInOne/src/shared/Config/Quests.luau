@@ -58,7 +58,7 @@ local daily: { QuestTemplate } = {
 		Kind = "Visit",
 		Target = 1,
 		Chips = 10,
-		Text = "Like la tour d'un autre joueur",
+		Text = "Like le PC d'un autre joueur",
 		RequiredZone = 1,
 	},
 }

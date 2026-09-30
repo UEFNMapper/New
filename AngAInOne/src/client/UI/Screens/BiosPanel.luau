@@ -75,7 +75,7 @@ local function buildReboot(state: any)
 	line(
 		scroll,
 		6,
-		"<b>Réinitialisé :</b> Bits, niveaux des modules, étages, alimentation, radiateurs.",
+		"<b>Réinitialisé :</b> Bits, niveaux des modules, zones, alimentation, radiateurs.",
 		"TextMuted",
 		40
 	)

@@ -4,7 +4,7 @@
 	- PowerOn : premier allumage (moment "waouh" du tutoriel)
 	- Upgrade : niveaux de modules (x1, x10, max)
 	- UpgradeCapacity : bloc d'alimentation (Watts) et radiateurs (refroidissement)
-	- UnlockZone : étage suivant
+	- UnlockZone : zone suivante (ouvre son portail)
 	- BuySingularityPhase : les 5 phases de la fin du jeu dans l'AI Core
 	Toutes les requêtes exigent d'être dans sa propre tour, PC allumé, et de pouvoir payer.
 ]]
@@ -21,7 +21,7 @@ local GameEvents = require(script.Parent.Parent.Core.GameEvents)
 local Telemetry = require(script.Parent.Parent.Core.Telemetry)
 local RemoteGuard = require(script.Parent.Parent.Security.RemoteGuard)
 local EconomyService = require(script.Parent.EconomyService)
-local PlotService = require(script.Parent.PlotService)
+local WorldService = require(script.Parent.WorldService)
 local NumberFormat = require(Shared.Util.NumberFormat)
 
 local UpgradeService = {}
@@ -30,8 +30,8 @@ local function canAct(session: Session.Session): boolean
 	if not session.Data.PoweredOn then
 		return false
 	end
-	if not PlotService.IsInOwnTower(session) then
-		EconomyService.Notify(session, "Error", "Retourne dans ta tour pour faire ça.")
+	if not WorldService.IsInWorld(session) then
+		EconomyService.Notify(session, "Error", "Retourne sur la carte mère pour faire ça.")
 		return false
 	end
 	return true

@@ -8,13 +8,13 @@
 ## 1. Pitch
 
 **Tu es rétréci à la taille d'un électron et tu vis à l'intérieur de ton propre PC gamer.**
-Guidé par **Anga** (la mascotte : barbe blonde, t-shirt rouge « A »), tu remontes ta tour étage par étage : alimentation, RAM, SSD, refroidissement, CPU, GPU… jusqu'à l'**AI Core**, le cœur qui pulse tout en haut, visible dès la première seconde.
+Guidé par **Anga** (la mascotte : barbe blonde, t-shirt rouge « A »), tu explores un **PC géant** zone par zone : alimentation, RAM, SSD, refroidissement, CPU, GPU… jusqu'au **Neural Nexus**, la puce IA dont le faisceau violet se voit de partout. Chaque zone correspond à une section du logiciel partenaire **AngAInOne** (l'app qui s'occupe de tout ton PC).
 Chaque pièce améliorée fait monter ton **Benchmark**. Ton objectif : le PC le plus puissant du serveur, puis la **Singularité**.
 
-**Fantasy** : « construire le setup de rêve » + « explorer l'intérieur de sa machine » + « voir sa tour s'illuminer de plus en plus ».
+**Fantasy** : « construire le setup de rêve » + « explorer l'intérieur de sa machine » + « voir son PC s'illuminer de plus en plus ».
 
 ### Piliers
-1. **Voir sa puissance** : chaque achat change visiblement la tour (lumière, vitesse des flux de données, taille des pièces).
+1. **Voir sa puissance** : chaque achat change visiblement ses machines (lumière, vitesse des flux de données, taille des pièces).
 2. **Toujours un prochain objectif à moins de 5 min** au début, moins de 20 min en milieu de partie.
 3. **Une vraie décision de joueur PC** : puissance ↔ énergie (Watts) ↔ chaleur (°C).
 4. **Beau et doux** : néon RGB tamisé, UI en verre sombre, musique lo-fi électronique.
@@ -24,25 +24,34 @@ Chaque pièce améliorée fait monter ton **Benchmark**. Ton objectif : le PC le
 
 ## 2. Monde et structure
 
-### 2.1 Le serveur
-- **6 joueurs par serveur.** Le hub est une **carte mère géante** (« Motherboard Plaza »). Les pistes de cuivre lumineuses font office de routes.
-- Chaque joueur reçoit **sa tour PC** (son plot), posée sur un des 6 slots autour du hub. Les panneaux en verre trempé laissent voir l'intérieur des tours des autres joueurs, ce qui crée de l'émulation.
-- On entre dans sa tour par le panneau avant. On peut visiter la tour des autres (bouton *Visiter* + *Like*).
+### 2.1 Le PC géant (monde partagé)
+- **Un seul PC géant par serveur**, couché sur le flanc : la **carte mère** est le sol, la **vitre latérale** est le plafond (330 studs), la lumière du jour de la pièce entre à travers. Parois d'acier du boîtier avec liseré RGB.
+- Vue de dessus, la carte mère est découpée en **3 × 3 districts** séparés par des cloisons de verre (44 studs). Chaque zone a **un portail d'énergie** (barrière ForceField à ses couleurs) qui la relie à sa zone « parente » : la carte forme un arbre enraciné au hub.
+- Le monde est **partagé**, mais chacun y voit **sa** progression (calculée côté client avec ses données) : tier des machines, portails ouverts/verrouillés, fragments restants, ses virus. Le serveur renvoie derrière le portail tout joueur entré dans une zone qu'il n'a pas débloquée.
+- On se croise, on se like (Menu > Joueurs), le bonus d'amis s'applique à tout le serveur. Nombre de joueurs conseillé : 12.
 
-### 2.2 La tour : progression verticale
-L'**AI Core** au sommet est le repère visible de partout : un faisceau blanc-violet qui pulse au rythme de la musique.
+```
+          A (façade, ventilateurs)   B (centre)             C (arrière, ports I/O)
+ nord 1 : Cryo Tower (4)             The Core (5)           Neural Nexus (7)
+      2 : Data Vault (3)        ←    HUB (chipset)     →    Memory Lanes (2)
+ sud  3 : ───────── La Centrale (1) ─────────               Render Canyon (6)
+ Portails : 1, 2, 3, 5 ← hub · 4 ← Data Vault · 6, 7 ← Memory Lanes
+```
 
-| Étage | Zone | Rôle gameplay | Repère visuel | Palette |
-|---|---|---|---|---|
-| 0 | **La Centrale** (PSU) | Départ, tutoriel ; définit la **capacité en Watts** | Condensateurs géants, arcs électriques doux | Ambre |
-| 1 | **Memory Lanes** (RAM) | 1ʳᵉ zone débloquée ; production rapide | 4 barrettes de 120 studs, vague RGB | Violet |
-| 2 | **Data Vault** (SSD NVMe) | Débloque les **Téléchargements** (rendez-vous) | Couloirs de cellules NAND, flux de particules | Teal |
-| 3 | **Cryo Tower** (Refroidissement) | Introduit la **Chaleur** et le **refroidissement** | Ventilateur de 80 studs qui tourne lentement, brume froide | Cyan glacé |
-| 4 | **The Core** (CPU) | Débloque l'**Overclock** ; grosse production | Temple de silicium, cœurs en forme d'immeubles | Or / blanc |
-| 5 | **Render Canyon** (GPU) | Zone « boss » ; débloque le **Reboot** | Canyon entre 3 ventilateurs, sols réfléchissants | Vert-cyan / magenta |
-| 6 | **Neural Nexus** (AI Core) | Fin du run : construire la **Singularité** | Cerveau holographique, Anga en forme finale | Blanc / violet |
+### 2.2 Les zones (et leur section de l'app AngAInOne)
+Le **hub** : chipset, dissipateurs M.2, pile BIOS, connecteur ATX 24 broches, classements, et un **écran géant qui reproduit le Tableau de bord de l'app AngAInOne** avec les stats du PC du joueur (barre latérale : une section par zone, verrouillée tant que la zone l'est).
 
-Circulation : ascenseurs à câbles tressés (à privilégier sur mobile) + jump pads + escaliers lumineux. Chaque étage a une **zone de respiration** (balcon avec vue sur la tour et banc) et **10 Fragments de données cachés** (lore d'Anga, petit bonus permanent).
+| # | Zone | Section de l'app | Rôle gameplay | Décor héros | Palette |
+|---|---|---|---|---|---|
+| 1 | **La Centrale** (PSU) | Démarrage | Départ, tutoriel ; **capacité en Watts** | Cache d'alimentation (plafond bas aux fentes ambrées), bloc PSU de 250 studs avec ventilateur sur le dessus (rampe pour y monter), condensateurs | Ambre |
+| 2 | **Memory Lanes** (RAM) | Applications | 1ʳᵉ zone débloquée ; production rapide | 4 barrettes-gratte-ciels de 124 studs, avenues RGB | Violet |
+| 3 | **Data Vault** (SSD) | Nettoyage & réparation | **Téléchargements** | Baie de 5 SSD empilés, LEDs d'activité, câbles SATA | Teal |
+| 4 | **Cryo Tower** (Refroidissement) | Diagnostic | **Chaleur** et radiateurs | 2 ventilateurs frontaux de 96 studs, radiateur, réservoir de liquide lumineux, brume froide | Cyan glacé |
+| 5 | **The Core** (CPU) | Optimisations | **Overclock** | Socket, ventirad tour à caloducs de cuivre (on passe dessous), VRM, selfs | Or |
+| 6 | **Render Canyon** (GPU) | Gaming | **Reboot** | Carte graphique de 330 studs à 3 ventilateurs, canyon derrière, câbles d'alim en arc jusqu'au PSU | Vert / magenta |
+| 7 | **Neural Nexus** (IA) | Réseau | **Singularité** | Plaque I/O (USB, HDMI, LAN), puce NPU flottante, anneaux, cerveau holographique, faisceau | Blanc / violet |
+
+Chaque zone a une **plaza** standard : 3 machines en arc face au portail, pistes de données vers le **collecteur** doré, un **téléporteur** (dock « Voyager »), le terminal de la zone et **3 fragments de données** cachés dans les coins. Au sol, des centaines de composants CMS donnent l'échelle.
 
 ### 2.3 Composants (marques fictives, pour éviter tout problème de marque déposée)
 Chaque zone contient **3 modules** améliorables de niv. 1 à 250 (ex. RAM : *Kryo DDR* ×3 barrettes). Tous les 10 niveaux, le module change de **tier visuel** : Bronze → Argent → Or → Diamant → RGB-Prisme.
@@ -53,16 +62,16 @@ Marques : VoltCore (PSU), Kryo (RAM), NovaDrive (SSD), Frostbyte (refroidissemen
 ## 3. Boucles de jeu
 
 ### 3.1 Core loop (en une phrase)
-**Collecter les Bits produits par tes composants → améliorer les pièces → ton Benchmark grimpe → débloquer l'étage suivant.**
+**Collecter les Bits produits par tes composants → améliorer les pièces → ton Benchmark grimpe → débloquer la zone suivante.**
 
-Les données sortent des composants sous forme de **paquets lumineux** qui voyagent sur les pistes (l'équivalent des convoyeurs d'un tycoon classique) jusqu'au **Collecteur** (le northbridge) de chaque étage. On marche dessus pour encaisser. Avec le pass Auto-Collect, l'encaissement est automatique.
+Les données sortent des composants sous forme de **paquets lumineux** qui voyagent sur les pistes (l'équivalent des convoyeurs d'un tycoon classique) jusqu'au **Collecteur** doré de chaque zone. On marche dessus pour encaisser. Avec le pass Auto-Collect, l'encaissement est automatique.
 
 ### 3.2 Boucles secondaires
 | Boucle | Fréquence | Récompense | Pourquoi |
 |---|---|---|---|
 | **Énergie et chaleur** : garder Watts ≤ capacité PSU et °C ≤ refroidissement | Continue | Production à 100 % | La vraie décision « builder de PC » |
 | **Overclock** : mini-jeu de timing (jauge + zone verte) sur un composant | Cooldown de 5 min | ×2 production pendant 3 min, mais +30 % de chaleur | Jeu actif, skill |
-| **Virus / Glitches** : petites créatures glitchées qui apparaissent dans ta tour ; on les zappe avec le **Debugger** | Toutes les 2 à 4 min | Bits + chance de Chips | Mouvement, action |
+| **Virus / Glitches** : petites créatures glitchées qui apparaissent près de toi (chacun voit les siens) ; on les zappe avec le **Debugger** | Toutes les 2 à 4 min | Bits + chance de Chips | Mouvement, action |
 | **Nanobots** (« pets ») : capsules → compagnons qui donnent des bonus | En continu | +% Bits, vitesse, rayon de collecte, -chaleur | Collection, long terme |
 | **Téléchargements** : lancer un DL de 30 min / 4 h / 8 h | Rendez-vous | Gros paquet de Bits / Chips / capsule | Raison de revenir |
 | **Fragments de données** | Exploration | Lore + bonus permanent de +1 % | Exploration |
@@ -151,9 +160,9 @@ Upgrades, zones, capsules (coût indexé sur la production courante), fusion de 
 | **Gains hors ligne** | Voir 4.4 | J1 |
 | **Patch Pass** (saison de 30 jours) | Piste gratuite + premium, 40 paliers, cosmétiques exclusifs | J30 |
 | **Events limités (48 h)** | *Canicule* (chaleur ×1,5, récompenses cooling), *Épidémie de virus* (virus ×3 + Nanobot d'event), *Black Friday* (-30 % sur les upgrades en Bits), saisonniers (*Malware Manor* à Halloween, *Frost Cooling* à Noël) | J7–J30 |
-| **Mises à jour** | Chaque samedi (compte à rebours dans le hub), nouveaux étages/tiers mensuels | J7–J30 |
+| **Mises à jour** | Chaque samedi (compte à rebours dans le hub), nouvelles zones/tiers mensuels | J7–J30 |
 | **Classements** | Benchmark (all-time), Bits hebdomadaires (reset le lundi, top 100 = badge + cosmétique), Génération | Compétition |
-| **Social** | +10 % de Bits par ami dans le serveur (max +30 %), *Like* d'une tour (quotidien), « Setup du jour » affiché en hologramme dans le hub, bonus de groupe Roblox (+5 %), **LAN Party** : objectif coopératif de serveur (récompense pour tous) | Viralité |
+| **Social** | +10 % de Bits par ami dans le serveur (max +30 %), *Like* du PC d'un joueur (quotidien), « Setup du jour » affiché en hologramme dans le hub, bonus de groupe Roblox (+5 %), **LAN Party** : objectif coopératif de serveur (récompense pour tous) | Viralité |
 | **Notifications** | Notifications d'expérience Roblox en opt-in (« Ton téléchargement est terminé ») — API à vérifier au moment de coder | J1 |
 
 **KPIs visés** : J1 ≥ 30 %, J7 ≥ 10 %, J30 ≥ 3,5 %, session moyenne ≥ 25 min, 1ʳᵉ session ≥ 30 min, conversion payeurs de 2 à 4 %.
@@ -171,7 +180,7 @@ Upgrades, zones, capsules (coût indexé sur la production courante), fusion de 
 | **+2 slots de Nanobots** | 199 R$ | Profondeur pour les collectionneurs |
 | **Overclock Pro** (cooldown -50 %, durée +50 %) | 179 R$ | Récompense les joueurs actifs |
 | **Hors ligne max** (8 h à 100 %) | 199 R$ | Rétention |
-| **RGB Studio** (couleurs perso de la tour) | 99 R$ | Cosmétique pur, prix d'impulsion |
+| **RGB Studio** (couleurs perso des néons du PC) | 99 R$ | Cosmétique pur, prix d'impulsion |
 
 ### Developer Products (consommables)
 | Produit | Prix | Note |
@@ -216,13 +225,13 @@ Typo : **Builder Sans** (textes, lisible sur mobile) + une police display techno
 - **HUD** (minimal) : haut gauche = Bits (compteur qui défile) + Chips ; haut centre = Benchmark ; bas = 3 boutons ronds (Boutique, Nanobots, Quêtes) + jauges ⚡/🌡️ ; toasts en haut à droite.
 - **Menus** en panneau de verre coulissant (ease Quint Out, 0,28 s) avec fond flouté (DepthOfField désactivé sur mobile bas de gamme).
 - **Écrans** : Upgrade de module (panneau contextuel en 3D au-dessus du pad, via BillboardGui/SurfaceGui), Boutique, Nanobots (inventaire + index), Quêtes / Pass, Quotidien, Reboot (arbre de Firmware), Classements, Paramètres (volumes, qualité graphique, reduced motion).
-- **Transitions** : changement d'étage = « scanline » horizontale + teinte ColorCorrection qui glisse vers la palette de la zone (0,6 s) ; Reboot = écran BIOS stylisé avec barre de chargement (3 s, passable).
+- **Transitions** : changement de zone = « scanline » horizontale + teinte ColorCorrection qui glisse vers la palette de la zone (0,6 s) ; Reboot = écran BIOS stylisé avec barre de chargement (3 s, passable).
 - **Game feel** : press scale 0,95 ; hover 1,04 ; compteurs qui roulent ; particules de Bits aspirées vers le compteur du HUD ; léger screen shake à l'achat d'un tier ; hitstop de 60 ms sur un virus zappé.
 - **Mobile-first** : boutons ≥ 44 px, ScreenInsets CoreUISafeInsets, UIScale + UIAspectRatioConstraint, tests en 16:9, 19,5:9 et 4:3 (tablette). Système de style centralisé en **StyleSheets** (UI Styling) — vérifier l'état de l'API à l'étape 3.
 
 ### 8.3 Onboarding (le joueur s'amuse dans les 30 premières secondes)
 1. **0 s** : spawn dans La Centrale, dans le noir. Seul un gros bouton POWER pulse. Bulle d'Anga : *« On est dans TON PC ! Allume-le ! »*
-2. **5 s** : appui → son de boot, léger screen shake, **vague RGB qui monte toute la tour jusqu'à l'AI Core**, la musique entre en fondu.
+2. **5 s** : appui → son de boot, léger screen shake, **vague de lumière sur toutes les machines**, la musique entre en fondu.
 3. **10 s** : les premiers paquets de données coulent vers le Collecteur. Un Beam lumineux guide au sol.
 4. **15 s** : collecte → compteur qui roule + particules + son.
 5. **25 s** : flèche vers le 1ᵉʳ upgrade (abordable tout de suite) → les paquets accélèrent.
@@ -234,7 +243,7 @@ Chaque étape est loggée dans le funnel d'onboarding (AnalyticsService).
 ---
 
 ## 9. Audio
-- **Musique adaptative** : un pad lo-fi / synthwave doux en boucle dans le hub + une couche (stem) par zone, en fondu enchaîné de 2,5 s au changement d'étage. Volume musique 0,35 par défaut. Sources : bibliothèque musicale sous licence du Creator Store (APM / Monstercat si toujours disponibles, à vérifier) ; mots-clés : « lofi », « chillwave », « ambient electronic », « synthwave calm ».
+- **Musique adaptative** : un pad lo-fi / synthwave doux en boucle dans le hub + une couche (stem) par zone, en fondu enchaîné de 2,5 s au changement de zone. Volume musique 0,35 par défaut. Sources : bibliothèque musicale sous licence du Creator Store (APM / Monstercat si toujours disponibles, à vérifier) ; mots-clés : « lofi », « chillwave », « ambient electronic », « synthwave calm ».
 - **SoundGroups** Music / SFX / UI avec sliders séparés. Ducking de la musique (-4 dB) sur les gros gains.
 - SFX doux : clic UI feutré, « blip » de collecte dont le pitch monte avec les combos, boot de PC, ventilateur ambiant (spatialisé), zap du Debugger.
 
@@ -251,9 +260,9 @@ Chaque étape est loggée dans le funnel d'onboarding (AnalyticsService).
 - Chemins guidés par des bandes de néon au sol vers le prochain objectif ; les zones verrouillées restent sombres et désaturées derrière une vitre.
 
 ### 10.2 Performance
-- StreamingEnabled ; modèles de zone en ModelStreamingMode Atomic ; `Model:AddPersistentPlayer()` pour la tour du joueur.
+- StreamingEnabled ; modèles de zone en ModelStreamingMode Atomic ; portails, hub et boîtier en Persistent (collision locale des portails toujours chargée).
 - Pièces Anchored ; CanCollide / CanTouch / CanQuery désactivés sur le décor ; meshes réutilisés (instancing) ; RenderFidelity Automatic (LOD).
-- Budget par étage : ≤ 150 k triangles visibles, ≤ 2 500 parts, ≤ 30 lumières dynamiques (Shadows seulement sur 3 ou 4 d'entre elles). Paquets de données et ventilateurs animés **côté client uniquement**.
+- Budget par zone : ≤ 150 k triangles visibles, ≤ 2 500 parts, ≤ 30 lumières dynamiques (Shadows seulement sur 3 ou 4 d'entre elles). Paquets de données et ventilateurs animés **côté client uniquement**.
 
 ---
 
@@ -275,7 +284,7 @@ Sources : **Creator Store** (créateurs vérifiés) → **Kenney / Quaternius / 
 - Luau `--!strict` partout, un module par responsabilité.
 
 ```
-src/server/Services/   DataService, PlotService, EconomyService, ComponentService, PowerThermalService,
+src/server/Services/   DataService, WorldService, EconomyService, ComponentService, PowerThermalService,
                        OverclockService, VirusService, NanobotService, DownloadService, QuestService,
                        DailyService, RebootService, LeaderboardService, MonetizationService,
                        AnalyticsService, SocialService
@@ -305,7 +314,7 @@ tests/                 Tests Lune (formules, pacing, validation des remotes)
 
 ## 14. Roadmap (une fonctionnalité testable par étape)
 1. Fondations : projet Rojo, outils, CI, DataService (ProfileStore), Remotes sécurisés, RateLimiter.
-2. Économie de base : attribution des tours, modules, upgrades, collecteur, Bits, HUD minimal → **premier prototype jouable**.
+2. Économie de base : monde partagé, modules, upgrades, collecteur, Bits, HUD minimal → **premier prototype jouable**.
 3. Design system UI (StyleSheets, tokens), transitions, audio, onboarding de 30 s.
 4. Zones et portes, Watts / Chaleur, éclairage par zone, **Map** (liste d'assets + script d'audit).
 5. Overclock, virus, fragments.

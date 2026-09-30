@@ -25,11 +25,11 @@ Le code est un projet **Rojo** : les fichiers `.luau` de `src/` deviennent les s
 | Où | Réglage | Pourquoi |
 |---|---|---|
 | Accueil > Paramètres du jeu > Sécurité | **Enable Studio Access to API Services** : ON | Sauvegardes (DataStore) et classements en test. Sans ça, le jeu bascule automatiquement sur une sauvegarde simulée. |
-| Paramètres du jeu > Places > Nombre max. de joueurs | **6** | Une tour par joueur (6 tours). |
+| Paramètres du jeu > Places > Nombre max. de joueurs | **12** | Un seul PC géant partagé : 12 joueurs restent confortables. |
 | Paramètres du jeu > Avatar | R15 | Animations modernes. |
 | Paramètres du jeu > Sécurité | Allow HTTP Requests : OFF · Third Party Sales/Teleports : OFF | Rien n'en a besoin. |
 
-L'éclairage (Future, Atmosphere, Bloom, ColorCorrection, SunRays) et le StreamingEnabled sont déjà réglés par `default.project.json`.
+L'éclairage (Future, lumière de jour à travers la vitre du boîtier, Atmosphere claire, Bloom, ColorCorrection, SunRays) et le StreamingEnabled sont déjà réglés par `default.project.json`. La map est construite au démarrage du serveur (`src/server/World/MapBuilder.luau`) : ne place rien à la main dans Workspace.
 
 ---
 
@@ -44,31 +44,31 @@ L'éclairage (Future, Atmosphere, Bloom, ColorCorrection, SunRays) et le Streami
 
 ## 3. Tester dans Studio (checklist)
 
-Lance **Play** (F5). En Studio, un bouton **DEV** (ou **F8**) ouvre un panneau de test : ajouter des Bits ou des Chips, passer à l'étage suivant, finir le tutoriel, activer les virus, réinitialiser la sauvegarde. Le serveur ignore ces commandes en ligne.
+Lance **Play** (F5). En Studio, un bouton **DEV** (ou **F8**) ouvre un panneau de test : ajouter des Bits ou des Chips, passer à la zone suivante, finir le tutoriel, activer les virus, réinitialiser la sauvegarde. Le serveur ignore ces commandes en ligne.
 
 | # | Action | Résultat attendu |
 |---|---|---|
-| 1 | Lancer Play | Tu apparais au rez-de-chaussée de ta tour (La Centrale, néons ambre). Une carte « ALLUMER LE PC » avec Anga apparaît au centre. Sortie : `[AngAInOne] Serveur prêt.` |
-| 2 | Cliquer **ALLUMER LE PC** | Flash « SYSTEM ONLINE », son de démarrage, léger tremblement, les étages s'allument de bas en haut, la musique démarre. Bulle d'Anga : « Marche sur le collecteur doré ». Un faisceau lumineux te guide. |
+| 1 | Lancer Play | Tu apparais au hub, au centre de la carte mère, en plein jour sous la vitre du boîtier. Face à toi : l'écran géant de l'app AngAInOne au-dessus du portail de The Core. Une carte « ALLUMER LE PC » avec Anga apparaît au centre. Sortie : `[AngAInOne] Serveur prêt.` |
+| 2 | Cliquer **ALLUMER LE PC** | Flash « SYSTEM ONLINE », son de démarrage, léger tremblement, les néons des machines flashent, la musique démarre. Bulle d'Anga. Les chevrons au sol te guident vers le portail ambré de La Centrale (derrière toi), puis vers le collecteur doré. |
 | 3 | Marcher sur le pad doré | Particules de Bits qui volent vers le compteur, son de collecte, compteur qui défile. |
 | 4 | Objectif « AMÉLIORER » (carte à droite) | Le panneau Composants s'ouvre sur la Cellule VoltCore. Acheter x1 : son, niveau +1, production/s augmente. |
 | 5 | Encore une amélioration | L'objectif devient « Débloque Memory Lanes (25K) » avec une barre de progression. |
-| 6 | DEV > « +10 min de Bits », puis **DÉBLOQUER** | Bannière « NOUVEL ÉTAGE · MEMORY LANES », bouton « Y ALLER » qui te téléporte à l'étage 2 (musique et teinte violette). |
-| 7 | Terminal violet « Capsules » à l'étage 2 | Panneau Nanobots > Capsules avec les probabilités affichées. Ouvrir : révélation de la capsule avec halo de rareté. Le Nanobot est équipé automatiquement. |
-| 8 | Dock **Étages** | Liste des étages. Les étages verrouillés sont grisés. Le hub te ramène sur la carte mère avec les classements. |
-| 9 | DEV > « Étage suivant » jusqu'au SSD (3) | Jauge 🌡 visible. En achetant beaucoup de niveaux SSD, la chaleur monte, la bordure RGB des panneaux vire à l'ambre puis au rouge, et l'objectif affiche « SURCHAUFFE ». |
-| 10 | Étage 4 (Cryo), terminal « Radiateurs » | La capacité thermique augmente, la jauge redescend, les bordures redeviennent RGB. |
-| 11 | Étage 5 (CPU), terminal d'overclock | Mini-jeu : l'aiguille oscille. STOP (clic, Espace ou A manette) dans la zone dorée donne « PARFAIT ! x2 », et une pilule « OVERCLOCK x2 · 2:59 » apparaît sous le Benchmark. |
+| 6 | DEV > « +10 min de Bits », puis le terminal « Débloquer » au portail violet du hub (est) | Bannière « MEMORY LANES », la barrière du portail s'ouvre (flash), bouton « Y ALLER » qui te téléporte dans la zone (musique et teinte violette). Un toast « Memory Lanes · Applications » s'affiche à l'entrée. |
+| 7 | Terminal « Capsules » de Memory Lanes | Panneau Nanobots > Capsules avec les probabilités affichées. Ouvrir : révélation de la capsule avec halo de rareté. Le Nanobot est équipé automatiquement. |
+| 8 | Dock **Voyager** (ou un pad téléporteur) | Liste des zones avec leur section AngAInOne. Les zones verrouillées sont grisées. « Hub » te ramène au centre. Essaie aussi de traverser un portail verrouillé : il est solide, et le serveur te renvoie si tu forces. |
+| 9 | DEV > « Zone suivante » jusqu'au SSD (3) | Jauge 🌡 visible. En achetant beaucoup de niveaux SSD, la chaleur monte, la bordure RGB des panneaux vire à l'ambre puis au rouge, et l'objectif affiche « SURCHAUFFE ». |
+| 10 | Cryo Tower (4), terminal « Radiateurs » | La capacité thermique augmente, la jauge redescend, les bordures redeviennent RGB. |
+| 11 | The Core (5), terminal d'overclock | Mini-jeu : l'aiguille oscille. STOP (clic, Espace ou A manette) dans la zone dorée donne « PARFAIT ! x2 », et une pilule « OVERCLOCK x2 · 2:59 » apparaît sous le Benchmark. |
 | 12 | DEV > « Activer les virus », attendre ~30 s | Une boule rouge glitchée apparaît. Prompt « Zapper » (F) : son électrique, « +X » flottant, tremblement. |
 | 13 | Dock **Quêtes** | Calendrier de 7 jours, bouton « RÉCUPÉRER », 3 quêtes du jour et 4 de la semaine, téléchargements (dès le SSD). |
-| 14 | Étage 6 (GPU), console BIOS | Aperçu du Firmware. **Maintenir** 1,5 s déclenche l'écran BIOS, puis la Génération 2 (Bits et étages réinitialisés, Chips et Nanobots conservés). |
-| 15 | DEV > étage 7 + « +1e15 Bits » plusieurs fois, BIOS > Singularité | 5 phases. La dernière déclenche la cinématique de fin. |
+| 14 | Render Canyon (6), console BIOS | Aperçu du Firmware. **Maintenir** 1,5 s déclenche l'écran BIOS, puis la Génération 2 (Bits et zones réinitialisés, Chips et Nanobots conservés) et un retour au hub. |
+| 15 | DEV > zone 7 + « +1e15 Bits » plusieurs fois, BIOS > Singularité | 5 phases. La dernière déclenche la cinématique de fin. |
 | 16 | Quitter puis relancer Play | Tout est sauvegardé. Après plus d'une minute d'absence, la carte « CONTENT DE TE REVOIR » affiche les gains hors ligne. |
-| 17 | Test > Clients et serveurs > 2 joueurs | Deux tours différentes. Menu > Tours : « LIKER » la tour de l'autre joueur, qui reçoit une notification. Les prompts de la tour d'un autre joueur sont inactifs. |
+| 17 | Test > Clients et serveurs > 2 joueurs | Les deux joueurs sont dans le même PC. Chacun voit SES niveaux sur les machines, SES portails ouverts, SES virus (ceux de l'autre sont invisibles). Menu > Joueurs : « LIKER » le PC de l'autre joueur, qui reçoit une notification. |
 | 18 | Émulateur d'appareil (téléphone 19,5:9, tablette) | Le HUD tient à l'écran, les boutons restent confortables au doigt, les panneaux sont centrés. |
 
 **Contrôles** :
-- **Clavier** : C Composants · N Nanobots · Q Quêtes · B Boutique · T Étages · M Menu · Échap ferme · E interagir · F zapper un virus · Espace STOP à l'overclock.
+- **Clavier** : C Composants · N Nanobots · Q Quêtes · B Boutique · T Voyager (téléporteur) · M Menu · Échap ferme · E interagir · F zapper un virus · Espace STOP à l'overclock.
 - **Manette** : Y donne le focus au dock (croix + A) · B ferme · X interagir · A STOP à l'overclock.
 - **Tactile** : les boutons du dock et les prompts à l'écran.
 
@@ -92,7 +92,7 @@ src/
 │  ├─ Core/        Session, GameEvents, Telemetry, ServerState
 │  ├─ Security/    RemoteGuard (types, cadence, session), RateLimiter
 │  ├─ World/       MapBuilder (map procédurale), Build
-│  ├─ Services/    Data, State, Economy, Plot, Upgrade, Overclock, Virus, Nanobot, Quest,
+│  ├─ Services/    Data, State, Economy, World, Upgrade, Overclock, Virus, Nanobot, Quest,
 │  │               Download, Reboot, Monetization, Leaderboard, Social, Onboarding, Dev
 │  └─ Packages/    ProfileStore (loleris, Apache 2.0)
 └─ client/  (StarterPlayerScripts.Client)

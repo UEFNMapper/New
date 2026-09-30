@@ -15,7 +15,7 @@ local GameEvents = require(script.Parent.Parent.Core.GameEvents)
 local Telemetry = require(script.Parent.Parent.Core.Telemetry)
 local RemoteGuard = require(script.Parent.Parent.Security.RemoteGuard)
 local EconomyService = require(script.Parent.EconomyService)
-local PlotService = require(script.Parent.PlotService)
+local WorldService = require(script.Parent.WorldService)
 local MonetizationService = require(script.Parent.MonetizationService)
 
 local RebootService = {}
@@ -59,7 +59,7 @@ function RebootService.Reboot(session: Session.Session)
 	GameEvents.StateChanged:Fire(session.Player)
 	task.delay(2.5, function()
 		if Session.Get(session.Player) == session then
-			PlotService.TeleportToFloor(session, 1)
+			WorldService.TeleportToZone(session, 0)
 		end
 	end)
 end

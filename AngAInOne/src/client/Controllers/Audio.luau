@@ -1,6 +1,6 @@
 --!strict
 --[[
-	Audio : musique adaptative par étage (fondu enchaîné) + effets sonores.
+	Audio : musique adaptative par zone (fondu enchaîné) + effets sonores.
 	SoundGroups Music / SFX réglables dans les paramètres. Ducking léger de la
 	musique pendant les gros gains pour que la récompense "sonne".
 ]]

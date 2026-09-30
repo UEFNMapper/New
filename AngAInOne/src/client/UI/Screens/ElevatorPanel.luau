@@ -1,7 +1,7 @@
 --!strict
 --[[
-	ElevatorPanel : se déplacer entre les étages débloqués de sa tour, ou revenir au hub.
-	Le serveur valide (étage débloqué, 1 trajet par seconde).
+	ElevatorPanel : le téléporteur. Se rendre dans une zone débloquée du PC, ou revenir au hub.
+	Le serveur valide (zone débloquée, 1 trajet par seconde).
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -46,7 +46,7 @@ local function refresh()
 			local zone = Zones[floor]
 			local unlocked = floor <= data.Zone
 			key:SetEnabled(unlocked)
-			key:SetText(if unlocked then `{floor}  ·  {zone.Name}` else `{floor}  ·  Verrouillé`)
+			key:SetText(if unlocked then `{zone.Name}  ·  {zone.AppSection}` else `{zone.Name}  ·  Verrouillé`)
 		end
 	end
 end
@@ -54,8 +54,8 @@ end
 function ElevatorPanel.Mount(layer: Frame)
 	panel = Panel.new({
 		Name = "ElevatorPanel",
-		Title = "ASCENSEUR",
-		Subtitle = "Choisis ton étage",
+		Title = "TÉLÉPORTEUR",
+		Subtitle = "Voyage dans ton PC",
 		Size = UDim2.new(0, 460, 0.9, 0),
 		Parent = layer,
 		Accent = Style.Color("AccentCyan"),

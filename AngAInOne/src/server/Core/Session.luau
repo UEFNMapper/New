@@ -32,7 +32,6 @@ export type Session = {
 	InGroup: boolean,
 	FriendsInServer: number,
 	PaidRandomAllowed: boolean,
-	Plot: number, -- 0 = aucune tour
 	Snapshot: Production.Snapshot,
 	Bonus: Bonuses.Breakdown,
 	OverclockUntil: number,
@@ -80,7 +79,6 @@ function Session.Create(player: Player, profile: any): Session
 		InGroup = false,
 		FriendsInServer = 0,
 		PaidRandomAllowed = false,
-		Plot = 0,
 		Snapshot = EMPTY_SNAPSHOT,
 		Bonus = { Total = 1, WattsReduction = 0, HeatReduction = 0, SpeedBonus = 0, Lines = {} },
 		OverclockUntil = 0,
