@@ -26,7 +26,7 @@ GameConfig.Run = table.freeze({
 
 -- Mini-jeux
 GameConfig.Minigame = table.freeze({
-	MinSeconds = table.freeze({ Scan = 8, Firewall = 10, Memory = 8, Dodge = 8 }),
+	MinSeconds = table.freeze({ Scan = 8, Firewall = 8, Memory = 5, Dodge = 8 }),
 	MaxSeconds = 180, -- au-delà, la partie est considérée abandonnée
 	TerminalDistance = 24, -- distance max au terminal pour lancer le mini-jeu
 	WorldBits = 20, -- + 5 par monde
