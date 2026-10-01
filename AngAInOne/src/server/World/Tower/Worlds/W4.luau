@@ -60,7 +60,8 @@ local function waypoints(points: { Vector3 }): string
 end
 
 -- Pose un vrai modèle 3D (ou son décor de secours), mis à l'échelle pour que sa plus grande
--- dimension vaille `length` studs (l'échelle d'import des modèles n'est pas garantie).
+-- dimension vaille `length` studs (l'échelle d'import des modèles n'est pas garantie) :
+-- `Fit` cubique = échelle uniforme bornée par la plus grande dimension.
 local function placeModel(
 	key: string,
 	cf: CFrame,
@@ -69,17 +70,7 @@ local function placeModel(
 	fallback: () -> Instance?,
 	spin: (boolean | string)?
 ): Instance?
-	local placed = ModelLibrary.Place(key, cf, parent, { Collide = false, Spin = spin }, fallback)
-	if placed and placed:IsA("Model") and ModelLibrary.Has(key) then
-		local model = placed :: Model
-		local extent = model:GetExtentsSize()
-		local biggest = math.max(extent.X, extent.Y, extent.Z)
-		if biggest > 0 then
-			model:ScaleTo(model:GetScale() * length / biggest)
-			model:PivotTo(cf)
-		end
-	end
-	return placed
+	return ModelLibrary.Place(key, cf, parent, { Collide = false, Spin = spin, Fit = Vector3.one * length }, fallback)
 end
 
 return function(ctx: Common.WorldContext)
@@ -790,9 +781,16 @@ return function(ctx: Common.WorldContext)
 	end
 
 	-- Radiateur AIO géant debout contre la vitre (+X), 3 ventilateurs tournés vers le parcours.
+	-- Modèle à plat (123 × 25 × 33 : longueur X, épaisseur Y avec les ventilateurs côté Y bas, largeur Z) :
+	-- dressé sur son long côté, longueur → Z, ventilateurs → -X, largeur → hauteur (≈ 35 studs) ;
+	-- Anchor = bord bas (Z min du modèle) posé au sol, face des ventilateurs en x = 92.
 	local function giantAio()
-		local cf = CFrame.new(112, base, -20)
-		placeModel("AioRadiator", cf * CFrame.Angles(0, math.pi / 2, 0), decor, 130, function(): Instance?
+		local standing = CFrame.fromMatrix(Vector3.new(92, base, -20), Vector3.zAxis, Vector3.xAxis, Vector3.yAxis)
+		ModelLibrary.Place("AioRadiator", standing, decor, {
+			Collide = false,
+			Fit = Vector3.one * 130,
+			Anchor = Vector3.new(0, 0, -16.5),
+		}, function(): Instance?
 			local model = Build.Model("AioRadiator", decor)
 			Box(model, "Core", Vector3.new(8, 40, 120), CFrame.new(112, base + 24, -20), C.Aluminum, METAL)
 			for _, y in { base + 3, base + 45 } do

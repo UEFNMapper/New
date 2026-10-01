@@ -67,7 +67,8 @@ local function waypoints(points: { Vector3 }): string
 end
 
 -- Pose un vrai modèle 3D (ou son décor de secours), mis à l'échelle pour que sa plus grande
--- dimension vaille `length` studs (l'échelle d'import des modèles n'est pas garantie).
+-- dimension vaille `length` studs (l'échelle d'import des modèles n'est pas garantie) :
+-- `Fit` cubique = échelle uniforme bornée par la plus grande dimension.
 local function placeModel(
 	key: string,
 	cf: CFrame,
@@ -75,17 +76,7 @@ local function placeModel(
 	length: number,
 	fallback: () -> Instance?
 ): Instance?
-	local placed = ModelLibrary.Place(key, cf, parent, { Collide = false }, fallback)
-	if placed and placed:IsA("Model") and ModelLibrary.Has(key) then
-		local model = placed :: Model
-		local extent = model:GetExtentsSize()
-		local biggest = math.max(extent.X, extent.Y, extent.Z)
-		if biggest > 0 then
-			model:ScaleTo(model:GetScale() * length / biggest)
-			model:PivotTo(cf)
-		end
-	end
-	return placed
+	return ModelLibrary.Place(key, cf, parent, { Collide = false, Fit = Vector3.one * length }, fallback)
 end
 
 return function(ctx: Common.WorldContext)

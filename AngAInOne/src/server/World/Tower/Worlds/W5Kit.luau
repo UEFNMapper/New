@@ -102,8 +102,9 @@ function Kit.Trap(
 end
 
 --[[
-	Vrai modèle 3D posé en `cf` (centre de la base), mis à l'échelle pour mesurer `height` studs de
-	haut ; sinon le décor de secours `fallback` (primitives). Le gameplay n'en dépend jamais.
+	Vrai modèle 3D posé en `cf` (centre de la base), mis à l'échelle (uniforme) pour mesurer `height`
+	studs de haut UNE FOIS TOURNÉ par `cf` (un ventilateur modélisé à plat puis dressé mesure bien
+	`height`) ; sinon le décor de secours `fallback` (primitives). Le gameplay n'en dépend jamais.
 ]]
 function Kit.Place(
 	key: string,
@@ -113,16 +114,7 @@ function Kit.Place(
 	fallback: () -> Instance?,
 	spin: (boolean | string)?
 ): Instance?
-	local placed = ModelLibrary.Place(key, cf, parent, { Collide = false, Spin = spin }, fallback)
-	if placed and ModelLibrary.Has(key) and placed:IsA("Model") then
-		local model = placed :: Model
-		local _, size = model:GetBoundingBox()
-		if size.Y > 0.01 then
-			model:ScaleTo(model:GetScale() * height / size.Y)
-			model:PivotTo(cf)
-		end
-	end
-	return placed
+	return ModelLibrary.Place(key, cf, parent, { Collide = false, Spin = spin, Height = height }, fallback)
 end
 
 -- Soude toutes les pièces d'un modèle placé à la racine d'un piège (elles la suivent).

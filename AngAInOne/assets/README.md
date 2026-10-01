@@ -39,6 +39,18 @@ python3 tools/upload_models.py             # modèles 3D → ModelAssets.luau
 python3 tools/upload_models.py --portrait  # portrait d'Anga (Decal) → Branding.AngaImageId
 ```
 
+## Vérifier un placement sans Studio
+
+`python3 tools/model_bounds.py` écrit `assets/models/bounds.json` (boîte de chaque noeud-maillage de
+chaque `.glb`, à régénérer après avoir modifié un modèle). Les tests Lune s'en servent pour **simuler les
+modèles importés** (`tests/lib/FakeModels.luau`, `tests/lib/IsolatedTower.luau`) : `tests/placement.spec.luau`
+contrôle chaque pose (dans la tour, `Fit` / `Height` respectés, objets au sol sur leur support, radiateur
+debout, barrettes au ras du slot…), `lune run tests/tools/PlacementReport.luau` détaille chaque pose, et
+`lune run tests/tools/ExportMap.luau tour.json --models` + `render_top.py` / `render_iso.py` dessinent
+la tour avec les modèles. Deux options de `ModelLibrary.Place` évitent de dépendre de l'orientation du
+fichier : `Fit` (boîte cible dans les axes du modèle, échelle uniforme) et `Height` (hauteur MONDE une
+fois le modèle tourné : un ventilateur modélisé à plat puis dressé mesure bien `Height`).
+
 Le fichier `assets/models/manifest.json` (commité) mémorise l'ID et l'empreinte de chaque modèle
 envoyé : relancer le script ne renvoie que les `.glb` modifiés, en mettant à jour l'asset existant.
 

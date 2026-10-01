@@ -8,6 +8,7 @@ local luau = require("@lune/luau")
 local Shim = require("./lib/RobloxShim")
 local Expect = require("./lib/Expect")
 local PacingSim = require("./lib/PacingSim")
+local IsolatedTower = require("./lib/IsolatedTower")
 local roblox = require("@lune/roblox")
 
 local filter = process.args[1]
@@ -25,6 +26,7 @@ for _, file in files do
 					Shim = Shim,
 					Expect = Expect,
 					PacingSim = PacingSim,
+					IsolatedTower = IsolatedTower, -- tour construite à part, avec modèles 3D simulés
 					Fs = fs,
 					Vector3 = roblox.Vector3,
 				},

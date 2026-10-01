@@ -73,7 +73,7 @@ Chaque monde a **son propre parcours** (plus d'anneau identique partout), **2 pi
 nouveaux**, un **incident vedette**, un **sbire** qui garde le terminal, et une **épreuve finale**
 (5ᵉ étape) qui combine tout. Les étapes 1 à 4 introduisent un piège à la fois, puis le combinent.
 
-### Monde 1 · La Centrale (Alimentation) — « Le PC s'éteint tout seul »
+### Monde 1 · Alimentation (le bloc d'alimentation) — « Le PC s'éteint tout seul »
 - **Parcours** : sous le carénage du bloc d'alimentation, on court **sur les câbles tressés
   géants**, on saute de condensateur en condensateur, puis on traverse la grille du ventilateur du PSU.
 - **Pièges** : décharges (Zapper), condensateurs-trampolines, **Rails de surtension** (une

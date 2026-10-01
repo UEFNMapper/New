@@ -20,7 +20,8 @@
 	`FitScreen` recale une dalle primitive (hôte d'un SurfaceGui) sur la pièce `Screen` d'un modèle posé.
 
 	Géométrie faite à la main (boîte englobante, échelle, pose pièce par pièce) plutôt qu'avec
-	Model:ScaleTo / PivotTo : même résultat, et testable hors de Roblox (tests/models.spec.luau).
+	Model:ScaleTo / PivotTo : même résultat, et testable hors de Roblox (tests/models.spec.luau,
+	tests/placement.spec.luau avec les modèles simulés de tests/lib/FakeModels.luau).
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -107,6 +108,28 @@ function ModelLibrary.ApplyConvention(part: BasePart): boolean
 	return flag == "__Spin"
 end
 
+-- Boîte englobante (axes du monde) de toutes les BaseParts de `root` : coin min, coin max.
+local function bounds(root: Instance): (Vector3?, Vector3?)
+	local x0, y0, z0 = math.huge, math.huge, math.huge
+	local x1, y1, z1 = -math.huge, -math.huge, -math.huge
+	for _, descendant in root:GetDescendants() do
+		if descendant:IsA("BasePart") then
+			local cf, size = descendant.CFrame, descendant.Size
+			local r, u, l = cf.RightVector, cf.UpVector, cf.LookVector
+			local hx = (math.abs(r.X) * size.X + math.abs(u.X) * size.Y + math.abs(l.X) * size.Z) / 2
+			local hy = (math.abs(r.Y) * size.X + math.abs(u.Y) * size.Y + math.abs(l.Y) * size.Z) / 2
+			local hz = (math.abs(r.Z) * size.X + math.abs(u.Z) * size.Y + math.abs(l.Z) * size.Z) / 2
+			local p = cf.Position
+			x0, y0, z0 = math.min(x0, p.X - hx), math.min(y0, p.Y - hy), math.min(z0, p.Z - hz)
+			x1, y1, z1 = math.max(x1, p.X + hx), math.max(y1, p.Y + hy), math.max(z1, p.Z + hz)
+		end
+	end
+	if x0 > x1 then
+		return nil, nil
+	end
+	return Vector3.new(x0, y0, z0), Vector3.new(x1, y1, z1)
+end
+
 local function prepare(asset: Instance, key: string): Model?
 	local model = asset:FindFirstChildWhichIsA("Model") or (if asset:IsA("Model") then asset else nil)
 	if not model then
@@ -114,8 +137,17 @@ local function prepare(asset: Instance, key: string): Model?
 	end
 	local fix = ORIENT[key]
 	if fix then
-		model:PivotTo(model:GetPivot() * fix)
-		model.WorldPivot = CFrame.new(model:GetPivot().Position) -- boîte englobante alignée sur le monde
+		-- Rotation de toutes les pièces autour du centre de la boîte englobante (équivalent de
+		-- Model:PivotTo, écrit à la main : testable hors de Roblox ; le pivot est posé par Place).
+		local lo, hi = bounds(model)
+		if lo and hi then
+			local pivot = CFrame.new((lo + hi) / 2)
+			for _, descendant in model:GetDescendants() do
+				if descendant:IsA("BasePart") then
+					descendant.CFrame = pivot * fix * pivot:Inverse() * descendant.CFrame
+				end
+			end
+		end
 	end
 	for _, descendant in model:GetDescendants() do
 		if descendant:IsA("BasePart") then
@@ -216,6 +248,10 @@ export type PlaceOptions = {
 	-- Taille cible (axes du modèle, avant la rotation de `cframe`) : échelle UNIFORME maximale pour
 	-- tenir dans cette boîte. Préférable à Scale : ne dépend pas de la taille exacte du modèle.
 	Fit: Vector3?,
+	-- Hauteur MONDE visée (studs) une fois le modèle tourné par `cframe` : échelle uniforme telle que
+	-- son étendue verticale vaille cette valeur. Indépendant de l'orientation du fichier (un ventilateur
+	-- modélisé à plat puis dressé mesure bien `Height` de haut). Prime sur Fit et Scale.
+	Height: number?,
 	-- Point du modèle posé sur `cframe`, en unités MODÉLISÉES (avant échelle), relatif à son origine
 	-- d'export (table ORIGIN). Ex. Vector3.zero = origine Blender ; (0, 2.56, 0) = 2,56 unités au-dessus
 	-- (enfonce le modèle pour qu'une hauteur donnée affleure `cframe`). Par défaut : centre de la base
@@ -230,28 +266,6 @@ export type PlaceOptions = {
 	-- Nouvelle couleur de pièces par nom (après convention), ex. { Trim = couleur du monde }.
 	Recolor: { [string]: Color3 }?,
 }
-
--- Boîte englobante (axes du monde) de toutes les BaseParts de `root` : coin min, coin max.
-local function bounds(root: Instance): (Vector3?, Vector3?)
-	local x0, y0, z0 = math.huge, math.huge, math.huge
-	local x1, y1, z1 = -math.huge, -math.huge, -math.huge
-	for _, descendant in root:GetDescendants() do
-		if descendant:IsA("BasePart") then
-			local cf, size = descendant.CFrame, descendant.Size
-			local r, u, l = cf.RightVector, cf.UpVector, cf.LookVector
-			local hx = (math.abs(r.X) * size.X + math.abs(u.X) * size.Y + math.abs(l.X) * size.Z) / 2
-			local hy = (math.abs(r.Y) * size.X + math.abs(u.Y) * size.Y + math.abs(l.Y) * size.Z) / 2
-			local hz = (math.abs(r.Z) * size.X + math.abs(u.Z) * size.Y + math.abs(l.Z) * size.Z) / 2
-			local p = cf.Position
-			x0, y0, z0 = math.min(x0, p.X - hx), math.min(y0, p.Y - hy), math.min(z0, p.Z - hz)
-			x1, y1, z1 = math.max(x1, p.X + hx), math.max(y1, p.Y + hy), math.max(z1, p.Z + hz)
-		end
-	end
-	if x0 > x1 then
-		return nil, nil
-	end
-	return Vector3.new(x0, y0, z0), Vector3.new(x1, y1, z1)
-end
 
 -- Place le modèle `key` (origine = centre de la base) au CFrame donné. Sinon : `fallback()`.
 function ModelLibrary.Place(
@@ -279,7 +293,14 @@ function ModelLibrary.Place(
 	if lo and hi then
 		local size = hi - lo
 		local fit = opts.Fit
-		if fit then
+		if opts.Height then
+			-- étendue verticale monde du modèle tourné (échelle 1) = projection de sa boîte sur l'axe Y
+			local r, u, l = cframe.RightVector, cframe.UpVector, cframe.LookVector
+			local vertical = math.abs(r.Y) * size.X + math.abs(u.Y) * size.Y + math.abs(l.Y) * size.Z
+			if vertical > 0.01 then
+				scale = opts.Height / vertical
+			end
+		elseif fit then
 			local ratio = math.huge
 			for _, pair in { { size.X, fit.X }, { size.Y, fit.Y }, { size.Z, fit.Z } } do
 				if pair[1] > 0.01 then

@@ -349,7 +349,10 @@ return function(ctx: Common.WorldContext)
 	local function ramStick(x: number, z: number, alongX: boolean, label: string?)
 		stickCount += 1
 		local index = stickCount
-		local fit = Vector3.new(STICK_H, STICK_W, 4) -- axes du modèle : longueur, hauteur, épaisseur
+		-- Axes du modèle (40 × 14,15 × 1,8) : longueur, hauteur, épaisseur. La LONGUEUR doit borner
+		-- l'échelle (84 studs, du slot au sommet) : hauteur et épaisseur un peu lâches, sinon la barrette
+		-- raccourcit et flotte au-dessus du slot (elle est posée centrée à mi-hauteur).
+		local fit = Vector3.new(STICK_H, STICK_W * 1.3, 4.5)
 		local base = CFrame.new(V(x, SLOT_TOP + STICK_H / 2, z))
 			* (if alongX then CFrame.identity else CFrame.Angles(0, math.pi / 2, 0))
 		local pivot = base * CFrame.new(STICK_W / 2, 0, 0) * CFrame.Angles(0, 0, math.pi / 2)

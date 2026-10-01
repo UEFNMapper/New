@@ -76,7 +76,7 @@ AmbiencePresets.Presets = table.freeze({
 		Particles = nil,
 	},
 	[1] = {
-		Name = "La Centrale · orange électrique",
+		Name = "Alimentation · orange électrique",
 		Brightness = 2.3,
 		Ambient = { 0.42, 0.31, 0.22 },
 		OutdoorAmbient = { 0.56, 0.41, 0.28 },

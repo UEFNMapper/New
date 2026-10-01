@@ -1,6 +1,6 @@
 --!strict
 --[[
-	Monde 1 : La Centrale (alimentation) — « Le PC s'éteint tout seul ».
+	Monde 1 : Alimentation (le bloc d'alimentation) — « Le PC s'éteint tout seul ».
 
 	Tout le monde est une CENTRALE ÉLECTRIQUE miniature : au centre, le bloc d'alimentation géant
 	(le « réacteur »), autour, les câbles tressés qui en sortent (lignes à haute tension), une forêt
@@ -897,16 +897,17 @@ return function(ctx: Common.WorldContext)
 	local room = ctx.TerminalRoom()
 
 	------------------------------------------------------------------------------------
-	-- Décor : la centrale
+	-- Décor : le bloc d'alimentation
 	------------------------------------------------------------------------------------
 
 	-- Le bloc d'alimentation géant (sous la grille praticable de l'étape 4) et son ventilateur
 	ModelLibrary.Place("Psu", CFrame.new(V(0, FLOOR_Y, 0)), decor, { Fit = Vector3.new(100, 46, 100) }, psuFallback)
+	-- (modèle 17,9 × 3,3 × 16 : Fit en Y assez large pour que ce soit le diamètre qui borne l'échelle)
 	ModelLibrary.Place(
 		"Fan140",
 		CFrame.new(V(0, 33, 0)),
 		decor,
-		{ Fit = Vector3.new(88, 12, 88) },
+		{ Fit = Vector3.new(88, 18, 88) },
 		function(): Instance?
 			return Props.Fan(
 				decor,
@@ -929,7 +930,9 @@ return function(ctx: Common.WorldContext)
 	)
 	Props.Cable(decor, { V(-6, 27, -50), V(-6, 18, -66), V(-40, 18, -66), V(-60, 12.5, -38) }, 2.5, BRAID)
 	Props.Cable(decor, { V(18, 17, -50), V(18, 9, -70), V(60, 9, -70), V(90, 30, -30), V(90, 59.5, -30) }, 3, BRAID)
-	-- Faisceaux gainés qui montent du bloc vers la carte mère, au plafond (modèle `CableSleeved8`)
+	-- Faisceaux gainés qui montent du bloc vers la carte mère, au plafond (modèle `CableSleeved8` :
+	-- plat, 28 × 29, monte du connecteur bas-gauche (x = -20) au connecteur haut-droit ; posé dans le
+	-- plan vertical de sa trajectoire, connecteur bas en path[1], haut vers path[3]).
 	for i, path in
 		{
 			{ V(-44, 48, -44), V(-46, 76, -62), V(-52, 98, -84) },
@@ -937,11 +940,14 @@ return function(ctx: Common.WorldContext)
 			{ V(-44, 48, 44), V(-58, 76, 50), V(-70, 98, 60) },
 		} :: { { Vector3 } }
 	do
+		local run = path[3] - path[1]
+		local along = Vector3.new(run.X, 0, run.Z)
+		local plane = CFrame.fromMatrix(path[1], along.Unit, Vector3.yAxis, along.Unit:Cross(Vector3.yAxis))
 		ModelLibrary.Place(
 			"CableSleeved8",
-			CFrame.new(path[1]),
+			plane,
 			decor,
-			{ Fit = Vector3.new(30, 50, 30) },
+			{ Fit = Vector3.new(along.Magnitude, run.Y, 12), Anchor = Vector3.new(-14.1, 0, 0) },
 			function(): Instance?
 				return Props.ArcCable(decor, path[1], path[2], path[3], 1.8, if i == 2 then ORANGE else BRAID, 5)
 			end
@@ -1025,7 +1031,7 @@ return function(ctx: Common.WorldContext)
 	-- Paroi du fond : plaque signalétique géante de la centrale
 	local plate =
 		Box(decor, "PowerPlate", Vector3.new(80, 16, 0.4), Common.Facing(V(-20, 72, 131.5), -Vector3.zAxis), C.Bg)
-	Props.Sign(plate, "LA CENTRALE", "Alimentation · 12 V · 1200 W", ORANGE, C.Silk)
+	Props.Sign(plate, "ALIMENTATION", "Bloc 1200 W · 12 V · 80 PLUS", ORANGE, C.Silk)
 	for _, x in { -60, 20 } do
 		Props.Decal(
 			decor,

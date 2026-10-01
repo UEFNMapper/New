@@ -81,8 +81,8 @@ Tower.Worlds = {
 	{
 		Index = 1,
 		Id = "PSU",
-		Name = "La Centrale",
-		Component = "Alimentation",
+		Name = "Alimentation",
+		Component = "Bloc d'alimentation",
 		AppSection = "Alimentation",
 		AppSubtitle = "Le mode d'alimentation de ton PC, et ce qui le fait couper sans prévenir.",
 		Primary = "F6AD55",

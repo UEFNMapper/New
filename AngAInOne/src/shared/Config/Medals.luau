@@ -61,7 +61,7 @@ Medals.GoldMinKeys = 0 -- clés USB du monde possédées pour l'or (0 = pas de c
 
 -- Seuils par monde (secondes, mini-jeu du terminal compris).
 Medals.Worlds = table.freeze({
-	-- 1 · La Centrale : ≈ 570 studs, 24 pièges lents (fenêtres ≥ 1,2 s), Scan.
+	-- 1 · Alimentation : ≈ 570 studs, 24 pièges lents (fenêtres ≥ 1,2 s), Scan.
 	table.freeze({ Gold = 105, Silver = 180 }),
 	-- 2 · Memory Lanes : ≈ 510 studs, barrettes qui écrasent (attente), Pop-up Killer.
 	table.freeze({ Gold = 105, Silver = 180 }),
