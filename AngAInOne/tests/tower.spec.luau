@@ -43,6 +43,8 @@ Shim.Globals = {
 				return fakeReplicated
 			elseif name == "CollectionService" then
 				return fakeCollection
+			elseif name == "InsertService" then
+				return Shim.OfflineInsertService() -- modèles 3D introuvables → décor de secours
 			end
 			error(`service non simulé : {name}`)
 		end,
@@ -57,6 +59,8 @@ Shim.Globals = {
 	NumberSequence = roblox.NumberSequence,
 	NumberSequenceKeypoint = roblox.NumberSequenceKeypoint,
 	ColorSequence = roblox.ColorSequence,
+	task = require("@lune/task"),
+	warn = function() end, -- un avertissement par modèle introuvable (vérifié par models.spec)
 }
 
 local Tower = Shim.load("src/shared/Config/Tower.luau")

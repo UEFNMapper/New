@@ -50,6 +50,8 @@ local globals = {
 						instance:AddTag(tag)
 					end,
 				}
+			elseif name == "InsertService" then
+				return Shim.OfflineInsertService() -- modèles 3D introuvables → décor de secours
 			end
 			error(`service non simulé : {name}`)
 		end,
@@ -64,6 +66,8 @@ local globals = {
 	NumberSequence = roblox.NumberSequence,
 	NumberSequenceKeypoint = roblox.NumberSequenceKeypoint,
 	ColorSequence = roblox.ColorSequence,
+	task = require("@lune/task"),
+	warn = function() end, -- un avertissement par modèle introuvable (vérifié par models.spec)
 }
 local cache: { [string]: any } = {}
 local function load(path: string): any

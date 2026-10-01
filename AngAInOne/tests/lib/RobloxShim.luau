@@ -73,6 +73,17 @@ function Shim.Node(path: string): any
 	return makeNode(path)
 end
 
+-- Faux InsertService HORS LIGNE : LoadAsset échoue toujours (pas de Roblox dans Lune). ModelLibrary.Preload
+-- passe alors chaque modèle de Config/ModelAssets en décor de secours, comme avant l'import des IDs :
+-- les specs qui construisent la tour testent toujours la même géométrie.
+function Shim.OfflineInsertService(): any
+	return {
+		LoadAsset = function(_self: any, id: number): any
+			error(`[RobloxShim] InsertService hors ligne : asset {id}`)
+		end,
+	}
+end
+
 function Shim.load(filePath: string): any
 	if moduleCache[filePath] ~= nil then
 		return moduleCache[filePath]

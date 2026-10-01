@@ -59,8 +59,176 @@
   "id": 81041057784711,
   "sha": "00a476550491b4059c24e1c3e1639dbd83d2f392bd67e9baa8c2b0c24571278f"
  },
+ "CpuCooler": {
+  "id": 107547580697296,
+  "sha": "1da5a0f8789e1160c83b48afad7696e5c2ec0d51fa8c17112fccacaf20448eed"
+ },
+ "CpuSocket": {
+  "id": 132750210182970,
+  "sha": "53f3b21d7b16bd188c46a08853905b113e2d073a86ed87b40ca6a0275e6a3adb"
+ },
+ "Desk": {
+  "id": 128811058417837,
+  "sha": "b66ab9f8c5df8c08468ee088e1a9a31339ba90e85110541b6be39c4467f19ecd"
+ },
+ "DeskLamp": {
+  "id": 110673925710291,
+  "sha": "0c9f2673cc131de07d74f13630c83c3e9181b8f6e6a3b9c43b6e9b1ad2501165"
+ },
+ "DimmSlot": {
+  "id": 132332787336018,
+  "sha": "edaec476e4fd838cc91ffc207ae8b6ae0c7f5078f91e5c469994f42577c4b5f0"
+ },
+ "Dusty": {
+  "id": 89491025307755,
+  "sha": "e61a52c0831aceb55465ad0e10049e03695529102acf6dd1131f282d3c68b8f8"
+ },
+ "Fan120": {
+  "id": 140226301232073,
+  "sha": "377a7b3d300d040d116fdc11666eb8ff56c704e6ba7b48ad29fd117a0abdf4ea"
+ },
+ "Fan140": {
+  "id": 115924236673150,
+  "sha": "8c8e877b9f3074b9832761cde3c204199dca31d0a233d5fdae3e0b1efe62a9fb"
+ },
+ "Freezy": {
+  "id": 118803965741228,
+  "sha": "add2ea3ae6222893647ebe3f5b92922ebc961f7561c3e285539bfbf7275e2e51"
+ },
+ "GamingChair": {
+  "id": 100469060820772,
+  "sha": "1d2710030970bae6d0d64ec9b3d9a61ecf289b3fb64728b5196479e32e77e987"
+ },
+ "GiantCursor": {
+  "id": 110976025672563,
+  "sha": "5afda2e048994a36cb01ad36327510488a41b78a2bd0563e65a0507f4f0dc95b"
+ },
+ "GpuCard": {
+  "id": 130176706539121,
+  "sha": "b4352b5dd5175e07d85493a3436832d2f4be37b295b0b9681446e7bbc43c6fce"
+ },
+ "Hand": {
+  "id": 103092859748182,
+  "sha": "e041cc4cf1e50ab5ba3df7352ae1b00437ef310bc32c0b7db4520c960c404a66"
+ },
+ "Headset": {
+  "id": 83313504707900,
+  "sha": "26bca78411aa0505c675740218296c1b075ebde2446659ce629e0801bf63a28f"
+ },
+ "IoShield": {
+  "id": 86151536420460,
+  "sha": "23fe6216db0844668930ac6ec028bb279f6dcc5e63bfabb9f92fe3d8d0ea5170"
+ },
+ "Keyboard": {
+  "id": 76017241297660,
+  "sha": "df637185635f6f0ad80c2d477b4d165e59c611ca4eddfa8962e619f3bdded357"
+ },
+ "Lagz": {
+  "id": 140562742422267,
+  "sha": "b804a37c83c59ae1e787188a4e0d0ba0f6d48fdbf9f1d576ecbc3facfdc82a66"
+ },
+ "LagzHead": {
+  "id": 124078328803592,
+  "sha": "43c506796da020ad6a3422581249483a1b4130099da07d216cf5169758d51aab"
+ },
+ "LagzPortalCore": {
+  "id": 122226966350172,
+  "sha": "333d9b482c37804333c4464205dd3025b419b257ecada5a27d4d85b111bf3e41"
+ },
+ "M2Ssd": {
+  "id": 123876054067748,
+  "sha": "f671d3755f5399b6a611d9a169aa254d3cb3697660b1a8799ddb6f421ac52f8c"
+ },
+ "MicArm": {
+  "id": 73299523458673,
+  "sha": "01e87a5958b5a57dc359f6e7e6d994b117a1da330b5c22cdf8388a4a43bf4d47"
+ },
+ "Miniaturiseur": {
+  "id": 111607535107362,
+  "sha": "03d6f9ab15f0325520094dbed6298242bf65083be4be72b7e53f21a80868dce7"
+ },
+ "Minor": {
+  "id": 137149667906781,
+  "sha": "86ae5d1043b9477ee029589b89efe1f648b9c08e9bdbd1bea64b679347acd9d1"
+ },
+ "Monitor": {
+  "id": 80445677807058,
+  "sha": "689d2a549b980bd26ed845fb9da9f32e5a9c5ee1dcd36d6b1620e8767bc7d0bd"
+ },
+ "Mouse": {
+  "id": 116140452660681,
+  "sha": "8766474a4aba5c14a288e17afd08df3954ffdcc9f09f2cf8ebbdea2765c6f7be"
+ },
  "Mug": {
   "id": 84691755026707,
   "sha": "d1c124424ea8fcea55e1828565643be60225510ead88e6c8052edeb0a359270b"
+ },
+ "NpuChip": {
+  "id": 97903363057469,
+  "sha": "3ae554b300c6a1fc2a8b9e5483a5486ac5ef3d32eed25326ad99e064bf1b787b"
+ },
+ "PcieSlot": {
+  "id": 129377436594664,
+  "sha": "8ab5b435de59e446070386938af58ca1578e1580e78f324f6a2a90b54e163fdc"
+ },
+ "Pickaxe": {
+  "id": 135474481774198,
+  "sha": "389cdc81b81c10793f960dd235bc6ebefa1e87c6d1e1ad719f64b1483d4e0753"
+ },
+ "Plant": {
+  "id": 106407128325014,
+  "sha": "8956e1aac09cb6d29865ca965a07a36f8816a32c29b056ed205c7ad976c9219c"
+ },
+ "PopUp": {
+  "id": 135622184784978,
+  "sha": "b7b0be5d584379223d0887f2465277165fc0120501408749d6b5152709180b2e"
+ },
+ "Psu": {
+  "id": 100351822529314,
+  "sha": "ba86b80dfc6cce622d7ec6f69193bc70e6e2c1dde6ea59db68c29ccc0acd1580"
+ },
+ "PumpReservoir": {
+  "id": 96767696949236,
+  "sha": "bfb69a30dde6b13e75bea080034c0f02231fb836e4f9e596cf941af316066cc1"
+ },
+ "RamStick": {
+  "id": 133108529774258,
+  "sha": "f332347aa63aa590d07f207ab67542cd61b822d5d28810b605207f968b0be8e9"
+ },
+ "SataSsd": {
+  "id": 122513119748704,
+  "sha": "ff27f9d405e66a6514c7c446ce69ab13282c2e6ca5f7b1a183943fcbff8a8a7b"
+ },
+ "ShopKiosk": {
+  "id": 76323443525353,
+  "sha": "a9174ede17ef6a008fa6ddffe634fc64861631559aa2550339b80aa98a97442c"
+ },
+ "Sparky": {
+  "id": 90991455585822,
+  "sha": "d5fede77853591c98dc412021e7d0538ceee86e4f0d1c8240881aa0224062ab2"
+ },
+ "Speaker": {
+  "id": 88840014052728,
+  "sha": "8beedb19688d3dab8dc6ef2cb5ac8a38a8cfeddfdbd1640f7c1444e2b7925559"
+ },
+ "TerminalConsole": {
+  "id": 117851930769782,
+  "sha": "f380eb54a8aa6bc5354d2c7cfde51737b5d8f617883fbc426c0a081ddfdc99c9"
+ },
+ "UsbKey": {
+  "id": 92725206338226,
+  "sha": "42ae48f7dd6bb2e1bdf395477a820afc53042aa16e09db9b2bd801c6b48d23e4"
+ },
+ "VirusBug": {
+  "id": 83291604065355,
+  "sha": "358b0df4156569205b4241a345d754d94c8728f30709b7762bdc715ba6b509c1"
+ },
+ "VrmHeatsink": {
+  "id": 123372156375782,
+  "sha": "cb7ea966443b58d18eeb51594a76c71f4aeb5c0f42a92c961ae452f0406680d3"
+ },
+ "WebcamLight": {
+  "id": 106118324737424,
+  "sha": "d862eaff2b7fa3ff86e03b877a8f92274cf15bd97c9b8e43cfeeb109c9277b32"
  }
 }

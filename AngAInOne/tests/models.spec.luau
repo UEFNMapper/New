@@ -5,9 +5,14 @@ local roblox = require("@lune/roblox")
 -- et partagé avec tower.spec).
 local clientModels = roblox.Instance.new("Folder")
 clientModels.Name = "ClientModels"
+-- Avertissements émis par ModelLibrary (Preload : un par modèle introuvable).
+local warnings: { string } = {}
 Shim.Globals = {
 	game = {
 		GetService = function(_self: any, name: string): any
+			if name == "InsertService" then
+				return Shim.OfflineInsertService()
+			end
 			assert(name == "ReplicatedStorage", `service inattendu : {name}`)
 			return {
 				WaitForChild = function()
@@ -22,6 +27,14 @@ Shim.Globals = {
 	Enum = roblox.Enum,
 	Color3 = roblox.Color3,
 	Instance = roblox.Instance,
+	task = require("@lune/task"),
+	warn = function(...: any)
+		local parts = {}
+		for _, value in { ... } do
+			table.insert(parts, tostring(value))
+		end
+		table.insert(warnings, table.concat(parts, " "))
+	end,
 }
 local ModelLibrary = Shim.load("src/server/World/ModelLibrary.luau")
 local ModelAssets = Shim.load("src/shared/Config/ModelAssets.luau")
@@ -118,6 +131,22 @@ return {
 			Expect.truthy(id > 0, key)
 			Expect.truthy(Fs.isFile(`assets/models/{key}.glb`), `{key}.glb manquant`)
 		end
+	end,
+	["Preload : InsertService hors ligne → chaque modèle introuvable passe en décor de secours"] = function()
+		ModelLibrary.Preload()
+		local expected = 0
+		for key in ModelAssets do
+			Expect.equal(ModelLibrary.Has(key), false, key)
+			expected += 1
+		end
+		Expect.truthy(expected > 0, "ModelAssets est rempli")
+		local reported = 0
+		for _, message in warnings do
+			if string.find(message, "introuvable", 1, true) then
+				reported += 1
+			end
+		end
+		Expect.equal(reported, expected, "un avertissement par modèle introuvable")
 	end,
 
 	["Dress : sans modèle, ne fait rien (primitives intactes)"] = function()
