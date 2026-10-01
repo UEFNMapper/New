@@ -8,6 +8,7 @@ local Create = require(script.Parent.Parent.Create)
 local Style = require(script.Parent.Parent.Style)
 local Panel = require(script.Parent.Parent.Components.Panel)
 local Keycap = require(script.Parent.Parent.Components.Keycap)
+local Widgets = require(script.Parent.Parent.Components.Widgets)
 local App = require(script.Parent.Parent.App)
 
 local New = Create.New
@@ -29,9 +30,9 @@ local GAMES = {
 function ArcadePanel.Mount(layer: Frame)
 	local panel = Panel.new({
 		Name = "ArcadePanel",
-		Title = "ARCADE ANTIVIRUS",
+		Title = "Arcade antivirus",
 		Subtitle = "Entraîne-toi et gagne des Bits !",
-		Size = UDim2.fromScale(0.72, 0.74),
+		Size = UDim2.fromScale(0.8, 0.86),
 		Parent = layer,
 		Accent = Style.Color("AccentCyan"),
 	})
@@ -48,13 +49,7 @@ function ArcadePanel.Mount(layer: Frame)
 		}) :: Instance,
 	})
 	for index, game_ in GAMES do
-		local cell: Frame = New("Frame", {
-			BackgroundTransparency = 0.3,
-			BorderSizePixel = 0,
-			LayoutOrder = index,
-			Tag = { "GlassSunken", "RoundM" },
-			Parent = grid,
-		})
+		local cell = Widgets.Card(UDim2.new(), grid, index)
 		New("TextLabel", {
 			Position = UDim2.fromOffset(14, 10),
 			Size = UDim2.new(1, -28, 0, 30),
@@ -62,7 +57,7 @@ function ArcadePanel.Mount(layer: Frame)
 			Text = game_.Name,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextTruncate = Enum.TextTruncate.AtEnd,
-			Tag = "TextTitle",
+			Tag = "TextHeading",
 			Parent = cell,
 		})
 		New("TextLabel", {

@@ -36,7 +36,7 @@ function Style.Color(name: string): Color3
 end
 
 Style.Fonts = table.freeze({
-	Display = Font.fromEnum(Enum.Font.Michroma),
+	Display = Font.fromEnum(Enum.Font.BuilderSansExtraBold),
 	Regular = Font.fromEnum(Enum.Font.BuilderSans),
 	Medium = Font.fromEnum(Enum.Font.BuilderSansMedium),
 	Bold = Font.fromEnum(Enum.Font.BuilderSansBold),
@@ -68,6 +68,8 @@ Style.Rules = {
 	{ Selector = ".FillGold", Props = { BackgroundColor3 = "$CurrencyBits" } },
 	{ Selector = ".FillSuccess", Props = { BackgroundColor3 = "$Success" } },
 	{ Selector = ".FillWhite", Props = { BackgroundColor3 = "$TextPrimary" } },
+	{ Selector = ".FillAccent", Props = { BackgroundColor3 = "$AppAccent" } },
+	{ Selector = ".FillOutline", Props = { BackgroundColor3 = "$Outline" } },
 
 	{ Selector = ".RoundS::UICorner", Props = { CornerRadius = UDim.new(0, Theme.Radius.S) } },
 	{ Selector = ".RoundM::UICorner", Props = { CornerRadius = UDim.new(0, Theme.Radius.M) } },
@@ -78,15 +80,15 @@ Style.Rules = {
 	{ Selector = ".TextTitle", Props = text(F.Display, T.Title, "TextPrimary") },
 	{ Selector = ".TextHeading", Props = text(F.Bold, T.BodyLarge, "TextPrimary") },
 	{ Selector = ".TextBody", Props = text(F.Medium, T.Body, "TextPrimary") },
-	{ Selector = ".TextMuted", Props = text(F.Medium, T.Caption + 1, "TextMuted") },
+	{ Selector = ".TextMuted", Props = text(F.Medium, T.Body - 2, "TextMuted") },
 	{ Selector = ".TextCaption", Props = text(F.Bold, T.Caption, "TextMuted") },
 	{ Selector = ".TextNumber", Props = text(F.Heavy, T.Title, "TextPrimary") },
 	{ Selector = ".TextBits", Props = text(F.Heavy, T.Title, "CurrencyBits") },
 	{ Selector = ".TextChips", Props = text(F.Heavy, T.BodyLarge, "CurrencyChips") },
 	{ Selector = ".TextKey", Props = text(F.Heavy, T.Body, "TextPrimary") },
 	{ Selector = ".TextKeyDark", Props = text(F.Heavy, T.Body, "BgDeep") },
-	{ Selector = ".TextKeySmall", Props = text(F.Heavy, T.Caption + 1, "TextPrimary") },
-	{ Selector = ".TextKeySmallDark", Props = text(F.Heavy, T.Caption + 1, "BgDeep") },
+	{ Selector = ".TextKeySmall", Props = text(F.Heavy, T.Body - 2, "TextPrimary") },
+	{ Selector = ".TextKeySmallDark", Props = text(F.Heavy, T.Body - 2, "BgDeep") },
 	-- Variantes "Dyn" : police/taille seulement, la couleur est pilotée par le code.
 	{ Selector = ".DynHeading", Props = text(F.Bold, T.BodyLarge) },
 	{ Selector = ".DynBody", Props = text(F.Medium, T.Body) },

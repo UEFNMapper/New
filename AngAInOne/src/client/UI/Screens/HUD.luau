@@ -85,6 +85,10 @@ local menuOpen = false
 local menuToken = 0
 local inRun = false
 local shieldPill: Frame
+local gaugeCard: Frame
+local gaugeStroke: UIStroke
+local gaugeLabel: TextLabel
+local gaugeBar: Widgets.Bar
 local shieldLabel: TextLabel
 local toggleKeys: { [string]: Keycap.Keycap } = {}
 local badges: { [string]: Frame } = {}
@@ -157,6 +161,48 @@ local function buildTopLeft(layer: Frame)
 		TextColor3 = Style.Color("AccentCyan"),
 		Tag = "FontHeavy",
 	}, 18)
+	-- Jauge du monde (RAM au monde 2, chaleur au monde 4) : Controllers/Mechanics via HUD.SetGauge.
+	gaugeCard = New("Frame", {
+		Name = "Gauge",
+		Size = UDim2.fromOffset(200, 60),
+		BackgroundTransparency = Theme.Alpha.Glass,
+		BorderSizePixel = 0,
+		LayoutOrder = 9,
+		Visible = false,
+		Tag = { "Glass", "RoundM" },
+		Parent = column,
+	})
+	gaugeStroke = New("UIStroke", { Color = Style.Color("Outline"), Thickness = 1.5, Parent = gaugeCard })
+	gaugeLabel = label(gaugeCard, {
+		Size = UDim2.new(1, -24, 0, 24),
+		Position = UDim2.fromOffset(12, 6),
+		Text = "",
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Style.Color("TextPrimary"),
+		Tag = "FontHeavy",
+	}, 18)
+	gaugeBar = Widgets.Bar(UDim2.new(1, -24, 0, 12), Style.Color("Success"), gaugeCard)
+	gaugeBar.Root.Position = UDim2.fromOffset(12, 38)
+end
+
+local GAUGE_GRADES: { [string]: string } = { Good = "Success", Warn = "Warning", Bad = "Danger" }
+
+-- Jauge contextuelle du monde : `text` (ex. « RAM 72 % »), `fraction` 0..1, `grade` Good | Warn | Bad ;
+-- `text` nil = jauge cachée.
+function HUD.SetGauge(text: string?, fraction: number, grade: string)
+	if not gaugeCard then
+		return
+	end
+	gaugeCard.Visible = text ~= nil
+	if not text then
+		return
+	end
+	local color = Style.Color(GAUGE_GRADES[grade] or "Success")
+	gaugeLabel.Text = text
+	gaugeLabel.TextColor3 = if grade == "Good" then Style.Color("TextPrimary") else color
+	gaugeStroke.Color = if grade == "Bad" then color else Style.Color("Outline")
+	gaugeBar:SetColor(color)
+	gaugeBar:Set(math.clamp(fraction, 0, 1), false)
 end
 
 -- Pastille de mesure du PC d'Anga (icône + valeur), verre sombre bordé de la couleur de la note.
@@ -458,8 +504,8 @@ local function buildDock(layer: Frame)
 			HorizontalAlignment = Enum.HorizontalAlignment.Center,
 			VerticalAlignment = Enum.VerticalAlignment.Center,
 		}) :: Instance,
+		New("UIStroke", { Color = Style.Color("Outline"), Thickness = 1 }) :: Instance,
 	})
-	Material.RgbEdge(dock, 1.2, 0.4, 20)
 	for index, item in DOCK do
 		local key = Keycap.new({
 			Text = item.Text,
@@ -480,7 +526,7 @@ local function buildDock(layer: Frame)
 			layout.FillDirection = Enum.FillDirection.Vertical
 			layout.Padding = UDim.new(0, 4)
 		end
-		key.Label.Size = UDim2.new(0, 0, 0, 16)
+		key.Label.Size = UDim2.new(0, 0, 0, 18)
 		local limit = key.Label:FindFirstChildOfClass("UISizeConstraint")
 		if limit then
 			limit.MaxSize = Vector2.new(90, math.huge)

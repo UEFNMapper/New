@@ -11,6 +11,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Tower = require(Shared.Config.Tower)
+local Roles = require(Shared.Config.Roles)
 local NumberFormat = require(Shared.Util.NumberFormat)
 local Time = require(Shared.Util.Time)
 
@@ -20,6 +21,7 @@ local Motion = require(script.Parent.Parent.Motion)
 local Panel = require(script.Parent.Parent.Components.Panel)
 local Keycap = require(script.Parent.Parent.Components.Keycap)
 local Widgets = require(script.Parent.Parent.Components.Widgets)
+local Icon = require(script.Parent.Parent.Components.Icon)
 local App = require(script.Parent.Parent.App)
 local Store = require(script.Parent.Parent.Parent.Controllers.Store)
 local Net = require(script.Parent.Parent.Parent.Controllers.Net)
@@ -33,7 +35,6 @@ MenuPanel.OnSettings = nil :: ((music: number, sfx: number, reduced: boolean) ->
 
 local panel: Panel.Panel
 local tab = "Settings"
-local tabKeys: { [string]: Keycap.Keycap } = {}
 local body: Frame
 local settings = { Music = 0.35, Sfx = 0.7, ReducedMotion = false }
 local saveToken = 0
@@ -41,10 +42,11 @@ local saveToken = 0
 local connections: { RBXScriptConnection } = {}
 
 local TABS = {
-	{ Id = "Settings", Text = "Réglages" },
-	{ Id = "Boards", Text = "Classements" },
-	{ Id = "Players", Text = "Joueurs" },
-	{ Id = "Stats", Text = "Stats" },
+	{ Id = "Settings", Text = "Réglages", Icon = "Menu" },
+	{ Id = "Role", Text = "Rôle d'équipe", Icon = "Cpu" },
+	{ Id = "Boards", Text = "Classements", Icon = "Trophy" },
+	{ Id = "Players", Text = "Joueurs", Icon = "Heart" },
+	{ Id = "Stats", Text = "Stats", Icon = "Star" },
 }
 
 local function scheduleSave()
@@ -278,7 +280,7 @@ local function boardColumn(
 			Text = `#{rank}`,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Tag = "FontHeavy",
-			TextSize = 16,
+			TextSize = 18,
 			TextColor3 = Style.Color(if rank <= 3 then "CurrencyBits" else "TextMuted"),
 			Parent = row,
 		})
@@ -324,6 +326,78 @@ local function buildBoards()
 	end)
 end
 
+-- « · Technicien » si le joueur a choisi un rôle (attribut Role, RoleService).
+local function roleSuffix(other: Player): string
+	local role = Roles.ById[other:GetAttribute("Role") :: any]
+	return if role then ` · {role.Name}` else ""
+end
+
+-- Rôles d'équipe (Config/Roles) : un passif chacun, aucun n'est obligatoire.
+local function buildRole()
+	local scroll = Widgets.Scroll(body, 10)
+	local data = Store.Data()
+	local current = if data and type(data.Role) == "string" then data.Role else ""
+	New("TextLabel", {
+		Size = UDim2.new(1, -4, 0, 52),
+		BackgroundTransparency = 1,
+		Text = "Choisis ton rôle dans l'équipe anti-lag. Chacun a un petit bonus ; joue avec tes amis pour tous les avoir dans la partie !",
+		TextWrapped = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		LayoutOrder = 0,
+		Tag = "TextBody",
+		Parent = scroll,
+	})
+	for index, role in Roles.List do
+		local card = Widgets.Card(UDim2.new(1, -4, 0, 84), scroll, index)
+		local tile = New("Frame", {
+			Position = UDim2.fromOffset(12, 12),
+			Size = UDim2.fromOffset(60, 60),
+			BorderSizePixel = 0,
+			Tag = { "GlassSunken", "RoundS" },
+			Parent = card,
+		})
+		local icon = Icon.new(role.Icon, 32, if role.Id == current then "AppAccent" else "TextPrimary")
+		icon.AnchorPoint = Vector2.new(0.5, 0.5)
+		icon.Position = UDim2.fromScale(0.5, 0.5)
+		icon.Parent = tile
+		New("TextLabel", {
+			Position = UDim2.fromOffset(88, 12),
+			Size = UDim2.new(1, -290, 0, 26),
+			BackgroundTransparency = 1,
+			Text = role.Name,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Tag = "TextHeading",
+			Parent = card,
+		})
+		New("TextLabel", {
+			Position = UDim2.fromOffset(88, 40),
+			Size = UDim2.new(1, -290, 0, 40),
+			BackgroundTransparency = 1,
+			Text = role.Passive,
+			TextWrapped = true,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextYAlignment = Enum.TextYAlignment.Top,
+			Tag = "TextMuted",
+			Parent = card,
+		})
+		local chosen = role.Id == current
+		local key = Keycap.new({
+			Text = if chosen then "CHOISI ✓" else "CHOISIR",
+			Variant = if chosen then "Success" else "Primary",
+			Size = UDim2.fromOffset(170, 52),
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -12, 0.5, 0),
+			Small = true,
+			OnClick = function()
+				Net.Fire("ChooseRole", if chosen then "" else role.Id)
+			end,
+			Parent = card,
+		})
+		key:SetEnabled(true)
+	end
+end
+
 local function buildPlayers()
 	local scroll = Widgets.Scroll(body, 10)
 	local me = Players.LocalPlayer.UserId
@@ -352,7 +426,7 @@ local function buildPlayers()
 				Text = `Étape {stageNumber}/{Tower.TOTAL_STAGES} · {world.Name} · 🏆 {if type(wins)
 						== "number"
 					then wins
-					else 0}`,
+					else 0}{roleSuffix(other)}`,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				Tag = "TextMuted",
 				Parent = card,
@@ -429,11 +503,11 @@ local function rebuild()
 			child:Destroy()
 		end
 	end
-	for id, key in tabKeys do
-		key:SetVariant(if id == tab then "Primary" else "Secondary")
-	end
+	panel:SetPage(tab)
 	if tab == "Settings" then
 		buildSettings()
+	elseif tab == "Role" then
+		buildRole()
 	elseif tab == "Boards" then
 		buildBoards()
 	elseif tab == "Players" then
@@ -457,39 +531,25 @@ end
 function MenuPanel.Mount(layer: Frame)
 	panel = Panel.new({
 		Name = "MenuPanel",
-		Title = "MENU",
-		Subtitle = "Réglages, classements et joueurs",
-		Size = UDim2.fromScale(0.78, 0.84),
+		Title = "Menu",
+		Subtitle = "Réglages, classements, joueurs et stats",
+		Size = UDim2.fromScale(0.8, 0.86),
 		Parent = layer,
-		Accent = Style.Color("AccentCyan"),
+		Pages = TABS,
+		OnPage = function(id: string)
+			tab = id
+			rebuild()
+		end,
 	})
-	local tabs: Frame = New("Frame", {
-		Size = UDim2.new(1, 0, 0, 48),
-		BackgroundTransparency = 1,
-		Parent = panel.Body,
-	}, {
-		Create.List(Enum.FillDirection.Horizontal, 8),
-	})
-	for index, info in TABS do
-		tabKeys[info.Id] = Keycap.new({
-			Text = info.Text,
-			Variant = "Secondary",
-			Size = UDim2.fromOffset(150, 44),
-			LayoutOrder = index,
-			Small = true,
-			OnClick = function()
-				tab = info.Id
-				rebuild()
-			end,
-			Parent = tabs,
-		})
-	end
-	body = New("Frame", {
-		Position = UDim2.fromOffset(0, 58),
-		Size = UDim2.new(1, 0, 1, -58),
-		BackgroundTransparency = 1,
-		Parent = panel.Body,
-	})
+	body = panel.Body
+	local shownRole: string? = nil
+	Store.Changed:Connect(function(state: any)
+		local role = state and state.Data and state.Data.Role
+		if panel:IsOpen() and tab == "Role" and role ~= shownRole then
+			shownRole = role
+			rebuild()
+		end
+	end)
 	Store.BoardsChanged:Connect(function()
 		if panel:IsOpen() and tab == "Boards" then
 			rebuild()

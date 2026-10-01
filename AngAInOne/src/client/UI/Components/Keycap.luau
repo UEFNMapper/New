@@ -1,9 +1,10 @@
 --!strict
 --[[
-	Keycap : bouton façon touche de clavier mécanique.
-	Un socle sombre + un capuchon qui s'enfonce à l'appui (et un léger zoom au survol).
-	Variantes : Primary (rouge Anga, CTA unique par écran), Secondary (métal brossé),
-	Ghost (verre), Gold, Success, Cyan.
+	Keycap : le bouton de l'UI, dans le style de l'app AngAInOne (Fluent sombre).
+	Plat, coins 8 px, liseré fin ; un voile s'éclaircit au survol et s'assombrit à l'appui, avec un
+	léger zoom (Motion.Pressable). Variantes : Primary (violet de l'app), Secondary (gris), Ghost
+	(transparent + liseré), Gold (Bits), Success, Cyan. Texte ≥ 18 px de conception (16 en « Small »).
+	Le nom « Keycap » est historique (les boutons étaient des touches de clavier mécanique).
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -12,7 +13,6 @@ local Theme = require(ReplicatedStorage:WaitForChild("Shared").Config.Theme)
 local Create = require(script.Parent.Parent.Create)
 local Style = require(script.Parent.Parent.Style)
 local Motion = require(script.Parent.Parent.Motion)
-local Material = require(script.Parent.Parent.Material)
 local Icon = require(script.Parent.Icon)
 
 local New = Create.New
@@ -39,30 +39,29 @@ export type Props = {
 	LayoutOrder: number?,
 	Parent: Instance?,
 	OnClick: (() -> ())?,
-	Small: boolean?, -- texte compact (listes, onglets) ; couleur claire/foncée selon la variante
+	Small: boolean?, -- texte compact (listes, onglets)
 }
 
 local Keycap = {}
 
--- Son de clic, branché par le contrôleur audio.
+-- Son de clic (branché par Main.client : Audio.Play("Click")).
 Keycap.ClickSound = nil :: (() -> ())?
 
-local VARIANTS: { [string]: { Cap: string, Base: string, Text: string, Brushed: boolean, Alpha: number } } = {
-	Primary = { Cap = "FillBrand", Base = "BrandAngaDark", Text = "TextKey", Brushed = false, Alpha = 0 },
-	Secondary = { Cap = "Metal", Base = "MetalDark", Text = "TextKey", Brushed = true, Alpha = 0 },
-	Ghost = {
-		Cap = "GlassRaised",
-		Base = "SurfaceSunken",
-		Text = "TextKey",
-		Brushed = false,
-		Alpha = Theme.Alpha.Glass,
-	},
-	Gold = { Cap = "FillGold", Base = "AccentAmber", Text = "TextKeyDark", Brushed = false, Alpha = 0 },
-	Success = { Cap = "FillSuccess", Base = "BgDeep", Text = "TextKeyDark", Brushed = false, Alpha = 0 },
-	Cyan = { Cap = "FillCyan", Base = "BgDeep", Text = "TextKeyDark", Brushed = false, Alpha = 0 },
+-- Cap : tag de couleur de fond ; Alpha : transparence du fond ; Stroke : liseré visible ;
+-- Text : tag du libellé (clair ou sombre).
+local VARIANTS: { [string]: { Cap: string, Text: string, Stroke: boolean, Alpha: number } } = {
+	Primary = { Cap = "FillAccent", Text = "TextKey", Stroke = false, Alpha = 0 },
+	Secondary = { Cap = "GlassRaised", Text = "TextKey", Stroke = true, Alpha = 0 },
+	Ghost = { Cap = "GlassRaised", Text = "TextKey", Stroke = true, Alpha = 1 },
+	Gold = { Cap = "FillGold", Text = "TextKeyDark", Stroke = false, Alpha = 0 },
+	Success = { Cap = "FillSuccess", Text = "TextKeyDark", Stroke = false, Alpha = 0 },
+	Cyan = { Cap = "FillCyan", Text = "TextKeyDark", Stroke = false, Alpha = 0 },
 }
+local CAP_TAGS = { "FillAccent", "GlassRaised", "FillGold", "FillSuccess", "FillCyan" }
+local TEXT_TAGS = { "TextKey", "TextKeyDark", "TextKeySmall", "TextKeySmallDark" }
 
-local DEPTH = 4
+local HOVER = 0.9 -- transparence du voile blanc au survol
+local PRESS = 0.75 -- … et du voile noir à l'appui
 
 function Keycap.new(props: Props): Keycap
 	local variantName: string = props.Variant or "Secondary"
@@ -79,27 +78,25 @@ function Keycap.new(props: Props): Keycap
 		LayoutOrder = props.LayoutOrder or 0,
 		Selectable = true,
 	})
-	local base: Frame = New("Frame", {
-		Name = "Base",
-		Size = UDim2.fromScale(1, 1),
-		BorderSizePixel = 0,
-		Tag = "RoundM",
-		Parent = button,
-	})
 	local cap: Frame = New("Frame", {
 		Name = "Cap",
-		Size = UDim2.new(1, 0, 1, -DEPTH),
+		Size = UDim2.fromScale(1, 1),
 		BorderSizePixel = 0,
-		Tag = "RoundM",
+		Tag = "RoundS",
 		Parent = button,
 	})
-	-- Reflet supérieur du capuchon
-	New("Frame", {
-		Name = "Gloss",
-		Size = UDim2.new(1, -8, 0.45, 0),
-		Position = UDim2.fromOffset(4, 3),
+	local stroke: UIStroke = New("UIStroke", {
+		Color = Style.Color("Outline"),
+		Thickness = 1,
+		Transparency = 0,
+		Parent = cap,
+	})
+	-- Voile de survol / d'appui (blanc clair au survol, noir à l'appui)
+	local shade: Frame = New("Frame", {
+		Name = "Shade",
+		Size = UDim2.fromScale(1, 1),
 		BackgroundColor3 = Color3.new(1, 1, 1),
-		BackgroundTransparency = 0.88,
+		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		Tag = "RoundS",
 		Parent = cap,
@@ -115,7 +112,7 @@ function Keycap.new(props: Props): Keycap
 			HorizontalAlignment = Enum.HorizontalAlignment.Center,
 			VerticalAlignment = Enum.VerticalAlignment.Center,
 		}) :: Instance,
-		Create.Padding(4, 10),
+		Create.Padding(4, 12),
 	})
 
 	if props.Icon then
@@ -140,23 +137,11 @@ function Keycap.new(props: Props): Keycap
 		LayoutOrder = 2,
 		Parent = content,
 	})
-	-- Borne la largeur du texte à celle de la touche (sinon AutomaticSize.X empêche la troncature).
-	local labelLimit = Instance.new("UISizeConstraint")
-	labelLimit.Parent = label
+	-- Le libellé ne déborde jamais du bouton (il est tronqué « … » au besoin).
+	local labelLimit: UISizeConstraint = New("UISizeConstraint", { Parent = label })
 	local function limitLabel()
-		local iconWidth = if props.Icon and not props.IconOnly then 28 else 0
-		-- AbsoluteSize inclut les UIScale des ancêtres : on revient en pixels de conception.
-		local cumulative = 1
-		local current: Instance? = button
-		while current do
-			local uiScale = current:FindFirstChildOfClass("UIScale")
-			if uiScale then
-				cumulative *= uiScale.Scale
-			end
-			current = current.Parent
-		end
-		local width = button.AbsoluteSize.X / math.max(cumulative, 0.01)
-		labelLimit.MaxSize = Vector2.new(math.max(width - 24 - iconWidth, 20), math.huge)
+		local width = button.AbsoluteSize.X - 24 - (if props.Icon and not props.IconOnly then 28 else 0)
+		labelLimit.MaxSize = Vector2.new(math.max(width, 20), math.huge)
 	end
 	if props.Size and props.Size.X.Scale == 0 then
 		labelLimit.MaxSize = Vector2.new(
@@ -167,18 +152,15 @@ function Keycap.new(props: Props): Keycap
 		button:GetPropertyChangedSignal("AbsoluteSize"):Connect(limitLabel)
 	end
 
-	local brushed: UIGradient? = nil
-
 	local function applyVariant()
 		local v = VARIANTS[variantName]
-		for _, name in { "FillBrand", "Metal", "GlassRaised", "FillGold", "FillSuccess", "FillCyan" } do
+		for _, name in CAP_TAGS do
 			cap:RemoveTag(name)
 		end
 		cap:AddTag(v.Cap)
-		cap.BackgroundTransparency = if enabled then v.Alpha else 0.45
-		base.BackgroundColor3 = Style.Color(v.Base)
-		base.BackgroundTransparency = if enabled then 0 else 0.5
-		for _, tag in { "TextKey", "TextKeyDark", "TextKeySmall", "TextKeySmallDark" } do
+		cap.BackgroundTransparency = if enabled then v.Alpha else math.max(v.Alpha, 0.5)
+		stroke.Transparency = if v.Stroke then (if enabled then 0 else 0.5) else 1
+		for _, tag in TEXT_TAGS do
 			label:RemoveTag(tag)
 		end
 		local dark = v.Text == "TextKeyDark"
@@ -188,29 +170,40 @@ function Keycap.new(props: Props): Keycap
 			label:AddTag(v.Text)
 		end
 		label.TextTransparency = if enabled then 0 else 0.45
-		if v.Brushed and not brushed then
-			Material.Brushed(cap)
-			brushed = cap:FindFirstChildOfClass("UIGradient")
-		elseif not v.Brushed and brushed then
-			brushed:Destroy()
-			brushed = nil
-		end
 		Style.ApplyTo(cap)
 	end
 	applyVariant()
 
+	local hovering = false
+	local function restShade()
+		if not enabled then
+			shade.BackgroundTransparency = 1
+			return
+		end
+		shade.BackgroundColor3 = Color3.new(1, 1, 1)
+		Motion.Tween(shade, { BackgroundTransparency = if hovering then HOVER else 1 }, Theme.Motion.Fast)
+	end
 	local function press(down: boolean)
 		if not enabled then
 			return
 		end
-		Motion.Tween(
-			cap,
-			{ Position = UDim2.fromOffset(0, if down then DEPTH - 1 else 0) },
-			if down then 0.06 else 0.18
-		)
+		if down then
+			shade.BackgroundColor3 = Color3.new(0, 0, 0)
+			Motion.Tween(shade, { BackgroundTransparency = PRESS }, 0.06)
+		else
+			restShade()
+		end
 	end
 
 	local cleanup = Motion.Pressable(button)
+	button.MouseEnter:Connect(function()
+		hovering = true
+		restShade()
+	end)
+	button.MouseLeave:Connect(function()
+		hovering = false
+		restShade()
+	end)
 	button.MouseButton1Down:Connect(function()
 		press(true)
 		Motion.TrackPress(button, function()
@@ -219,9 +212,6 @@ function Keycap.new(props: Props): Keycap
 		end)
 	end)
 	button.MouseButton1Up:Connect(function()
-		press(false)
-	end)
-	button.MouseLeave:Connect(function()
 		press(false)
 	end)
 	button.Activated:Connect(function()
@@ -258,6 +248,7 @@ function Keycap.new(props: Props): Keycap
 		enabled = value
 		button.Active = value
 		applyVariant()
+		restShade()
 	end
 
 	function self.SetVariant(_self: Keycap, variant: Variant)

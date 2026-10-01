@@ -35,14 +35,13 @@ local ShopPanel = {}
 
 local panel: Panel.Panel
 local tab = "Trail"
-local tabKeys: { [string]: Keycap.Keycap } = {}
 local scroll: ScrollingFrame
 local lastKey = ""
 
 local TABS = {
-	{ Id = "Trail", Text = "Traînées" },
-	{ Id = "DeathFx", Text = "Effets" },
-	{ Id = "Robux", Text = "Robux" },
+	{ Id = "Trail", Text = "Traînées", Icon = "Bolt" },
+	{ Id = "DeathFx", Text = "Effets", Icon = "Star" },
+	{ Id = "Robux", Text = "Robux", Icon = "Chips" },
 }
 
 type Visual = { Kind: "Icon", Icon: string, Color: string } | { Kind: "Swatch", Colors: { string } }
@@ -288,9 +287,7 @@ local function rebuild(force: boolean?)
 			child:Destroy()
 		end
 	end
-	for name, tabKey in tabKeys do
-		tabKey:SetVariant(if name == tab then "Primary" else "Secondary")
-	end
+	panel:SetPage(tab)
 	if tab == "Robux" then
 		buildRobux(state)
 	else
@@ -301,40 +298,18 @@ end
 function ShopPanel.Mount(layer: Frame)
 	panel = Panel.new({
 		Name = "ShopPanel",
-		Title = "BOUTIQUE",
+		Title = "Boutique",
 		Subtitle = "Dépense tes Bits pour avoir du style !",
-		Size = UDim2.fromScale(0.78, 0.84),
+		Size = UDim2.fromScale(0.8, 0.86),
 		Parent = layer,
 		Accent = Style.Color("CurrencyBits"),
+		Pages = TABS,
+		OnPage = function(id: string)
+			tab = id
+			rebuild(true)
+		end,
 	})
-	local tabs: Frame = New("Frame", {
-		Size = UDim2.new(1, 0, 0, 48),
-		BackgroundTransparency = 1,
-		Parent = panel.Body,
-	}, {
-		Create.List(Enum.FillDirection.Horizontal, 8),
-	})
-	for index, info in TABS do
-		tabKeys[info.Id] = Keycap.new({
-			Text = info.Text,
-			Variant = "Secondary",
-			Size = UDim2.fromOffset(150, 44),
-			LayoutOrder = index,
-			Small = true,
-			OnClick = function()
-				tab = info.Id
-				rebuild(true)
-			end,
-			Parent = tabs,
-		})
-	end
-	local holder: Frame = New("Frame", {
-		Position = UDim2.fromOffset(0, 58),
-		Size = UDim2.new(1, 0, 1, -58),
-		BackgroundTransparency = 1,
-		Parent = panel.Body,
-	})
-	scroll = Widgets.Scroll(holder, 10)
+	scroll = Widgets.Scroll(panel.Body, 10)
 	Store.Changed:Connect(function()
 		rebuild(false)
 	end)

@@ -9,35 +9,38 @@
 local Theme = {}
 
 Theme.Colors = table.freeze({
-	BgBase = "0B0F1A",
-	BgDeep = "070A12",
-	Surface = "141A2B",
-	SurfaceRaised = "1B2338",
-	SurfaceSunken = "0E1322",
+	-- Palette de l'app AngAInOne (Fluent sombre) : surfaces plates gris anthracite, texte blanc.
+	BgBase = "1A1A1A",
+	BgDeep = "111111",
+	Surface = "202020",
+	SurfaceRaised = "2B2B2B",
+	SurfaceSunken = "1B1B1B",
 	Stroke = "FFFFFF",
-	TextPrimary = "E8EBF4",
-	TextMuted = "8A93A8",
-	TextDim = "5B6479",
+	Outline = "3A3A3A", -- liseré fin des fenêtres, cartes et boutons
+	TextPrimary = "FFFFFF",
+	TextMuted = "C5C5C5",
+	TextDim = "8F8F8F",
 	BrandAnga = "F0565B",
 	BrandAngaDark = "B83A40",
 	AccentCyan = "4FD1C5",
 	AccentViolet = "8B7CFF",
+	AppAccent = "9B2FD4", -- violet de l'app : boutons principaux, page active
 	AccentAmber = "F6AD55",
 	CurrencyBits = "F6C453",
 	CurrencyChips = "7FDBFF",
-	Success = "68D391",
-	Warning = "F6AD55",
-	Danger = "FC8181",
-	MetalLight = "3A4358",
-	MetalDark = "1A2030",
+	Success = "6CCB5F",
+	Warning = "FCE100",
+	Danger = "FF99A4",
+	MetalLight = "2D2D2D",
+	MetalDark = "262626",
 	Copper = "C8814A",
 	PcbGreen = "0F1F1A",
 })
 
 -- Transparences de référence (0 = opaque).
 Theme.Alpha = table.freeze({
-	Glass = 0.18,
-	GlassStrong = 0.08,
+	Glass = 0.06, -- surfaces presque opaques (style app), un soupçon de transparence sur le HUD
+	GlassStrong = 0.02,
 	StrokeSoft = 0.86,
 	StrokeMedium = 0.7,
 	Overlay = 0.35,
@@ -54,16 +57,17 @@ Theme.Spacing = table.freeze({
 
 Theme.Radius = table.freeze({
 	S = 8,
-	M = 12,
-	L = 18,
+	M = 10,
+	L = 12,
 	Pill = 999,
 })
 
+-- Tailles en pixels de conception (canevas 1280 × 720) : 18 est le minimum lisible sur téléphone.
 Theme.TextSize = table.freeze({
-	Caption = 13,
-	Body = 16,
-	BodyLarge = 18,
-	Title = 22,
+	Caption = 14,
+	Body = 18,
+	BodyLarge = 20,
+	Title = 24,
 	Display = 30,
 	Hero = 44,
 })

@@ -189,9 +189,9 @@ end
 function MissionsPanel.Mount(layer: Frame)
 	panel = Panel.new({
 		Name = "MissionsPanel",
-		Title = "MISSIONS",
+		Title = "Missions",
 		Subtitle = "Des cadeaux à gagner chaque jour !",
-		Size = UDim2.fromScale(0.78, 0.84),
+		Size = UDim2.fromScale(0.8, 0.86),
 		Parent = layer,
 		Accent = Style.Color("AccentViolet"),
 	})

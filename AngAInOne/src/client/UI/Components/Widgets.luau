@@ -193,13 +193,13 @@ function Widgets.Card(size: UDim2, parent: Instance?, layoutOrder: number?): Fra
 	local card: Frame = New("Frame", {
 		Name = "Card",
 		Size = size,
-		BackgroundTransparency = 0.25,
+		BackgroundTransparency = 0,
 		BorderSizePixel = 0,
 		LayoutOrder = layoutOrder or 0,
-		Tag = { "GlassRaised", "RoundM" },
+		Tag = { "GlassRaised", "RoundS" },
 		Parent = parent,
 	}, {
-		New("UIStroke", { Color = Style.Color("Stroke"), Transparency = Theme.Alpha.StrokeSoft, Thickness = 1 }),
+		New("UIStroke", { Color = Style.Color("Outline"), Transparency = 0, Thickness = 1 }),
 	})
 	return card
 end
