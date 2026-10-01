@@ -52,11 +52,12 @@ Lance **Play** (F5). En Studio, un bouton **DEV** (ou **F8**) ouvre un panneau d
 |---|---|---|
 | 1 | Lancer Play (première fois) | Tu apparais minuscule sur le **bureau d'Anga**. Intro en 3 cartes (LAGZ apparaît à la 2ᵉ). Sortie : `[AngAInOne] Serveur prêt.` |
 | 2 | Regarder le lobby | Écran du live « LIVE DANS 59:00 » avec le chat, clavier RGB (on peut sauter sur les touches), tour vitrée, écran de l'app AngAInOne, 3 classements, bornes. En haut à gauche : widget **PC D'ANGA** (3 FPS, 999 ms, 97 °C). |
-| 3 | **JOUER** → Miniaturiseur, passer la ligne de départ | Bannière « MONDE 1 · LA CENTRALE », Anga explique, le chrono ⏱ démarre. |
+| 3 | **JOUER** → Miniaturiseur, passer la ligne de départ | Bannière « MONDE 1 · ALIMENTATION », Anga explique, le chrono ⏱ démarre. |
 | 4 | Atteindre un checkpoint | « Checkpoint 1 ✓ », +Bits, le checkpoint suivant pulse en doré. |
 | 5 | Toucher un piège (rouge) ou tomber | Flash « OUPS ! », réapparition au dernier checkpoint en 1,5 s. |
 | 6 | Attendre 60–120 s dans un monde | Bandeau LAGZ « ⚠ … 3-2-1 », puis l'incident du monde (ex. BLACKOUT au monde 1 : lumière coupée, rails alimentés éteints). |
 | 7 | Ramasser une **clé USB dorée** (chemin difficile) | Effet doré, « 🔑 Clé USB dorée 1/21 », +25 Bits, pastille sous la carte de progression. |
+| 7b | Suivre un panneau **BONUS** (monde 1 : à côté du checkpoint 4) : passer entre les pales du ventilateur, ramasser le **Méga-Bit** au bout | Les pales rouges tuent ; le Méga-Bit (plus gros, plus clair) donne +5 Bits et un toast « Méga-Bit ! » ; il faut retraverser pour revenir. |
 | 8 | Salle du terminal | Le sbire du monde garde le terminal. Prompt **E** → mini-jeu 2D. Réussi : le monde passe en version « nettoyée », le widget du PC gagne des FPS, le portail s'ouvre. |
 | 9 | DEV > aller à l'étape 35 (monde 7) | Arène : LAGZ, phase 1 (lasers + curseur), phase 2 (3 prises à brancher), phase 3 (Firewall boss au terminal). Victoire → « LE LIVE COMMENCE ! », l'écran du lobby passe « EN DIRECT 🔴 ». |
 | 10 | Boutons à droite | **Checkpoint**, **Passer l'étape** (Robux, si configuré), **Lobby** (le bouton devient **CONTINUER · Étape X**). |
@@ -120,6 +121,11 @@ Enchaîne : analyse de types **stricte** contre l'API Roblox (luau-lsp), lint (s
 - la **tour réelle**, construite dans Lune : checkpoints dans l'ordre, **graphe de sauts** (chaque étape est franchissable), terminaux, portails, orbes, clés USB, pièges valides et code couleur, budgets de pièces et de lumières ;
 - le **vrai TrapController** simulé sur la tour (poses, transport, morts) et les 25 pièges (`traps.spec`) ;
 - les **incidents** (planification, horloge FREEZE / LAG), le **boss** (phases, prises), les modèles 3D (convention de nom) ;
+- le **placement des vrais modèles 3D** (`placement.spec`) : la tour est construite avec les modèles simulés par leurs
+  boîtes englobantes (`assets/models/bounds.json`, régénéré par `python3 tools/model_bounds.py`) ; chaque pose doit
+  rester dans la tour, respecter `Fit` / `Height`, et les objets posés au sol toucher leur support ;
+- les **détours « Ventilo bonus »** : un par monde, accroché à un checkpoint, pales mortelles, 7 Bits, sans traverser
+  le décor (dans les deux décors : modèles ou secours) ;
 - les **mini-jeux** : difficulté, conditions de victoire, bots joueurs ;
 - le contrat de la tour (mondes, étapes), les configs, le schéma de données et ses migrations ;
 - le limiteur de fréquence ;
@@ -127,5 +133,13 @@ Enchaîne : analyse de types **stricte** contre l'API Roblox (luau-lsp), lint (s
 - la **validité de chaque nom de propriété** affectée dynamiquement, contrôlée contre l'API Roblox.
 
 Tu as changé l'équilibrage ? `lune run tests/tools/pacing_report.luau` affiche la progression simulée génération par génération.
+
+Tu as déplacé un modèle 3D ou ajouté un détour ? Sans Studio :
+- `lune run tests/tools/PlacementReport.luau [filtre]` : chaque pose (taille obtenue, Fit demandé, part du Fit
+  utilisée par axe, écart avec le support) ;
+- `lune run tests/tools/ExportMap.luau tour.json --models` puis `python3 tests/tools/render_top.py` /
+  `render_iso.py` : rendus avec les modèles (boîtes) à la place du décor de secours ;
+- `lune run tests/tools/BonusSpots.luau [monde]` : directions libres autour de chaque checkpoint pour un
+  détour bonus (`Tower/Bonus.luau`, table `SPECS`).
 
 La même vérification tourne en CI GitHub Actions à chaque push.

@@ -27,7 +27,7 @@ Scénario : [`SCENARIO.md`](SCENARIO.md). Contrat de la tour : `src/shared/Confi
 ### Phase 2 — Contenu 3D (5 agents en parallèle, sur la base de A1 + A2)
 - [x] **B1 · Chambre d'Anga + tour** : lobby sur le bureau (écran du live, clavier RGB, souris,
       micro, tasse, lampe), Miniaturiseur AngAInOne (départ), tour vitrée plus réaliste.
-- [x] **B2 · Mondes 1–2** (Centrale, Memory Lanes) : parcours uniques, pièges signature, décor
+- [x] **B2 · Mondes 1–2** (Alimentation, Memory Lanes) : parcours uniques, pièges signature, décor
       infecté/propre, sbires, clés USB.
 - [x] **B3 · Mondes 3–4** (Data Vault, Cryo Tower).
 - [x] **B4 · Mondes 5–6** (The Core, Render Canyon).
@@ -92,3 +92,16 @@ Tag `UsbKey`, attribut `KeyId` = `W{n}K{i}` (i = 1..3), non collidable, touchabl
 - [x] **V5 · L'app AngAInOne partout** : mondes = pages de l'app, fenêtres de l'app sur les parois,
       morts = « Plantages », intros de terminal façon app, Anga géant ; compagnon = mini-Anga.
 - [x] Relecture indépendante v3 (15 constats corrigés) + test anti-marques.
+
+## v3.1 — Après le premier import des modèles 3D
+- [x] Monde 1 renommé **Alimentation** (« La Centrale » partout : config, plaque, docs).
+- [x] **Placement vérifiable sans Studio** : modèles simulés par leurs boîtes (`tools/model_bounds.py`,
+      `tests/lib/FakeModels.luau`, `IsolatedTower`), `tests/placement.spec.luau`, `PlacementReport`,
+      `ExportMap --models` ; option `Height` de `ModelLibrary.Place` ; plus aucune méthode `Model`
+      réservée à Roblox dans la construction.
+- [x] Corrections trouvées par ces outils : radiateur AIO du monde 4 debout, ventilateur-verrou du monde 6
+      (110 → 22 studs), barrettes RAM au ras de leur slot, faisceaux gainés du monde 1 dans leur plan,
+      ventilateur de l'alimentation à 88 studs.
+- [x] **Détours « Ventilo bonus »** (`Tower/Bonus.luau`) : un par monde, Méga-Bit (5 Bits) + 2 Bits,
+      pales SpinBar, emplacements choisis avec `tests/tools/BonusSpots.luau`.
+- [ ] Vérification en jeu (Studio) : traversée des pales, lisibilité du panneau BONUS, orientations.

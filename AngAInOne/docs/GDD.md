@@ -34,7 +34,7 @@ symptôme : le PC remonte à 144 FPS et **le live commence**.
 
 | # | Monde | Parcours | Pièges signature | Incident | Sbire | Mini-jeu |
 |---|---|---|---|---|---|---|
-| 1 | La Centrale (PSU) | câbles tressés, condensateurs, grille du ventilateur | Surtension, plateformes alimentées, décharges, trampolines | BLACKOUT | Sparky | Scan |
+| 1 | Alimentation (PSU) | câbles tressés, condensateurs, grille du ventilateur | Surtension, plateformes alimentées, décharges, trampolines | BLACKOUT | Sparky | Scan |
 | 2 | Memory Lanes (RAM) | ville de barrettes, canyon | barrettes qui écrasent, pluie d'onglets, fuite mémoire | POP-UP STORM | Pop-Up | Pop-up Killer |
 | 3 | Data Vault (SSD) | damier NAND, baie de disques | dalles corrompues, défragmenteur, tiroirs, pistons | CORRUPTION | Corrupto | Défrag |
 | 4 | Cryo Tower (refroidissement) | radiateur, tube de watercooling, ventilateurs | jets de vapeur, boules de poussière, vent, pales | SURCHAUFFE | Dusty | Firewall |
@@ -70,6 +70,9 @@ Le sbire du monde apparaît sur les cartes d'intro et de résultat. Les 6 jeux s
 - **Boss LAGZ** : survivre aux lasers et au curseur, brancher 3 prises antivirus, Firewall boss.
 - **21 clés USB dorées** cachées sur des chemins difficiles (3 par monde) : Bits, compteur au HUD,
   toutes les clés → traînée USB.
+- **7 détours « Ventilo bonus »** (un par monde, panneau BONUS au pied d'un checkpoint) : une
+  passerelle traverse un ventilateur de boîtier dont les pales mortelles balaient l'ouverture, et finit
+  sur un **Méga-Bit** (5 Bits) + 2 Bits : 7 Bits pour un aller-retour risqué, contre 4 par étape.
 - **Checkpoints**, bouton « Revenir au checkpoint », bouton « Lobby ».
 - **Chrono** de l'ascension + record perso ; **classements** : victoires, meilleur temps, étape max.
 - **Bits** : orbes du parcours, mini-jeux, clés USB. **Boutique** : traînées, effets de mort.

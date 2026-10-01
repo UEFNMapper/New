@@ -681,7 +681,12 @@ return {
 	["TrapController : poses déterministes (Mover, Crusher, SpinBar)"] = function()
 		spawnCharacter()
 		local function near(part: any)
-			local stage = tonumber(string.match(part.Parent.Name, "^Stage(%d+)$"))
+			-- Étape du piège : dossier Stage{s} ou, pour un détour bonus, l'attribut Stage de son Model
+			local stage, node = nil, part.Parent
+			while node and not stage do
+				stage = tonumber(string.match(node.Name, "^Stage(%d+)$")) or node:GetAttribute("Stage")
+				node = node.Parent
+			end
 			local pad = pads[stage]
 			placeFeet(V3.new(pad.CFrame.Position.X, top(pad), pad.CFrame.Position.Z))
 		end
@@ -1042,7 +1047,7 @@ return {
 		Expect.truthy(finishY > gates[Tower.WORLD_COUNT].CFrame.Position.Y + 20, "arrivée après le portail 7")
 	end,
 
-	["Bits : CoinId uniques, 3 à 6 par étape"] = function()
+	["Bits : CoinId uniques, 3 à 6 par étape (hors détours bonus)"] = function()
 		local ids, perStage = {}, {}
 		for _, coin in tagged("Coin") do
 			local id = coin:GetAttribute("CoinId")
@@ -1053,10 +1058,131 @@ return {
 			Expect.equal(coin.CanTouch, true, "Bit touchable")
 			local stage = tonumber(string.match(id, "^S(%d+)C%d+$"))
 			Expect.truthy(stage ~= nil, `format de CoinId : {id}`)
-			perStage[stage] = (perStage[stage] or 0) + 1
+			if coin:GetAttribute("Bonus") ~= true then
+				Expect.equal(coin:GetAttribute("Value"), nil, `Bit ordinaire sans Value : {id}`)
+				perStage[stage] = (perStage[stage] or 0) + 1
+			end
 		end
 		for s = 1, Tower.TOTAL_STAGES do
 			Expect.between(perStage[s] or 0, 3, 6, `Bits de l'étape {s}`)
+		end
+	end,
+
+	["détours bonus : un par monde, sur un checkpoint, ventilateur mortel, 7 Bits, sans collision"] = function()
+		local Bonus = Shim.load("src/server/World/Tower/Bonus.luau")
+		-- Boîte englobante (axes du monde) d'une pièce
+		local function aabb(part: any): (any, any)
+			local cf, size = part.CFrame, part.Size
+			local r, u, l = cf.RightVector, cf.UpVector, cf.LookVector
+			local hx = (math.abs(r.X) * size.X + math.abs(u.X) * size.Y + math.abs(l.X) * size.Z) / 2
+			local hy = (math.abs(r.Y) * size.X + math.abs(u.Y) * size.Y + math.abs(l.Y) * size.Z) / 2
+			local hz = (math.abs(r.Z) * size.X + math.abs(u.Z) * size.Y + math.abs(l.Z) * size.Z) / 2
+			local p = cf.Position
+			return V3.new(p.X - hx, p.Y - hy, p.Z - hz), V3.new(p.X + hx, p.Y + hy, p.Z + hz)
+		end
+		local routes = tagged("BonusRoute")
+		Expect.equal(#routes, Tower.WORLD_COUNT, "un détour par monde")
+		for _, route in routes do
+			local w = route:GetAttribute("World")
+			local stage = route:GetAttribute("Stage")
+			local label = `détour du monde {w}`
+			Expect.truthy(type(w) == "number" and route.Parent == tower[`World{w}`], `{label} : dans World{w}`)
+			Expect.truthy(
+				type(stage) == "number" and stage >= Tower.FirstStage(w) and stage < Tower.TerminalStage(w),
+				`{label} : étape {stage} du monde`
+			)
+			Expect.equal(route:GetAttribute("Bits"), Bonus.TOTAL_BITS, `{label} : Bits annoncés`)
+			-- Départ : la passerelle touche le pad du checkpoint (même hauteur, bord à bord)
+			local pad = nil
+			for _, candidate in tagged("Checkpoint") do
+				if candidate:GetAttribute("Stage") == stage then
+					pad = candidate
+				end
+			end
+			local walk = route:FindFirstChild("BonusWalk")
+			local landing = route:FindFirstChild("BonusLanding")
+			Expect.truthy(pad and walk and landing, `{label} : pad, passerelle et plateforme d'arrivée`)
+			local padTop = pad.CFrame.Position.Y + pad.Size.Y / 2
+			Expect.near(walk.CFrame.Position.Y + walk.Size.Y / 2, padTop, 0.05, `{label} : passerelle au niveau du pad`)
+			Expect.near(
+				landing.CFrame.Position.Y + landing.Size.Y / 2,
+				padTop,
+				0.05,
+				`{label} : arrivée au niveau du pad`
+			)
+			local toWalk = walk.CFrame.Position - pad.CFrame.Position
+			local reach = math.abs(toWalk:Dot(walk.CFrame.LookVector))
+			Expect.truthy(reach - walk.Size.Z / 2 <= 13.5, `{label} : passerelle à portée du pad ({reach})`)
+			Expect.truthy(walk.CanCollide and landing.CanCollide, `{label} : passerelle et arrivée solides`)
+			-- Pales : pièges SpinBar mortels dont l'axe est celui de la passerelle, dans l'ouverture du cadre
+			local blades = 0
+			for _, d in route:GetDescendants() do
+				if d:IsA("BasePart") and d:HasTag("Trap") then
+					Expect.equal(d:GetAttribute("Kind"), "SpinBar", `{label} : piège {d.Name}`)
+					Expect.equal(d:GetAttribute("Axis"), "Z", `{label} : axe des pales`)
+					Expect.truthy(
+						math.abs(d.CFrame.LookVector:Dot(walk.CFrame.LookVector)) > 0.99,
+						`{label} : pales face à la passerelle`
+					)
+					Expect.near(
+						d.CFrame.Position.Y,
+						padTop + Bonus.FAN_LIFT,
+						0.05,
+						`{label} : pales au-dessus de la passerelle`
+					)
+					Expect.equal(d.CanCollide, false, `{label} : pales non solides`)
+					blades += 1
+				end
+			end
+			Expect.between(blades, 1, 2, `{label} : barres de pales`)
+			-- Récompenses : 2 Bits + un Méga-Bit (Value 5), tous Bonus = true, de l'étape du détour
+			local total, mega = 0, 0
+			for _, coin in tagged("Coin") do
+				if coin:GetAttribute("Bonus") == true and coin:GetAttribute("Stage") == stage then
+					local value = coin:GetAttribute("Value") or 1
+					total += value
+					if value > 1 then
+						mega += 1
+						Expect.equal(value, Bonus.MEGA_VALUE, `{label} : Méga-Bit`)
+						Expect.truthy(coin.Size.X > 2.2, `{label} : Méga-Bit plus gros`)
+					end
+					Expect.truthy(
+						(coin.CFrame.Position - landing.CFrame.Position).Magnitude < 40,
+						`{label} : Bit bonus sur le détour`
+					)
+				end
+			end
+			Expect.equal(mega, 1, `{label} : un Méga-Bit`)
+			Expect.equal(total, Bonus.TOTAL_BITS, `{label} : valeur du détour`)
+			-- Dans la tour, et sans collision avec le reste du monde (pad et vide exclus)
+			local others = {}
+			for _, d in tower[`World{w}`]:GetDescendants() do
+				if d:IsA("BasePart") and not d:IsDescendantOf(route) and d.Transparency < 1 then
+					local n = d.Name
+					if n ~= "Void" and n ~= "VoidB" and n ~= "Shelf" and not string.find(n, "^Pcb") then
+						table.insert(others, d)
+					end
+				end
+			end
+			for _, d in route:GetDescendants() do
+				if d:IsA("BasePart") and d.Transparency < 1 then
+					local lo, hi = aabb(d)
+					Expect.truthy(
+						math.max(math.abs(lo.X), math.abs(hi.X), math.abs(lo.Z), math.abs(hi.Z)) <= Common.INNER - 2,
+						`{label} : {d.Name} dans la tour`
+					)
+					for _, other in others do
+						local olo, ohi = aabb(other)
+						local overlap = lo.X < ohi.X - 0.3
+							and hi.X > olo.X + 0.3
+							and lo.Y < ohi.Y - 0.3
+							and hi.Y > olo.Y + 0.3
+							and lo.Z < ohi.Z - 0.3
+							and hi.Z > olo.Z + 0.3
+						Expect.truthy(not overlap, `{label} : {d.Name} traverse {other:GetFullName()}`)
+					end
+				end
+			end
 		end
 	end,
 

@@ -28,6 +28,10 @@ Réponds en français ; identifiants en anglais, commentaires en français.
   L'incident vedette du monde doit avoir un vrai impact sur ton parcours (ex. Powered en BLACKOUT,
   Corrupt en CORRUPTION, Heat/Wind en SURCHAUFFE, pièges figés en FREEZE = fenêtre de passage).
 - 3–6 Bits par étape, **3 clés USB** (`ctx.UsbKey(pos, i)`) sur des chemins facultatifs difficiles.
+- Un **détour « Ventilo bonus »** par monde, construit par `Tower/Bonus.luau` APRÈS le module du monde
+  (table `SPECS` : checkpoint de départ + direction libre) : passerelle, ventilateur à pales SpinBar,
+  2 Bits + Méga-Bit (`ctx.Coin(pos, stage, { Value = 5, Bonus = true })`). Ses Bits (`Bonus = true`) ne
+  comptent pas dans les 3–6. Si tu modifies un monde, garde libre la zone du détour (voir tower.spec).
 - Le **sbire** du monde près du terminal (modèle 3D, voir ci-dessous).
 
 ## Décor : VRAIS modèles 3D (demande explicite du client : « arrête le low poly »)
@@ -52,7 +56,8 @@ non collidable posé dessus/autour.
   client, ni les tests existants ; si un outil manque dans Common, écris-le localement et signale-le.
 - Budgets de TON monde : ≤ 900 BaseParts, ≤ 9 lumières (la tour entière ≤ 8000 / ≤ 90).
 - Vérifie : `./scripts/verify.sh` (stylua deux fois avant), tout doit être vert, notamment le graphe
-  de sauts de `tower.spec`. Rendus de contrôle : `lune run tests/tools/ExportMap.luau` puis
+  de sauts de `tower.spec`. Rendus de contrôle : `lune run tests/tools/ExportMap.luau` (`--models` :
+  avec les vrais modèles 3D simulés) puis
   `python3 tests/tools/render_iso.py --center x,y,z --radius r` (voir `--help`) ; regarde les images
   (Read) et itère jusqu'à ce que ce soit beau et lisible. Joue mentalement chaque étape.
 - Ne commite pas. Rapport final concis (français) : parcours étape par étape, pièges utilisés,

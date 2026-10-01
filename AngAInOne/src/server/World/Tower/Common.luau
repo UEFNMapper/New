@@ -34,6 +34,8 @@
 	- `ctx.TerminalRoom()` appelé une fois (checkpoint TerminalStage(n), terminal, portail, rampe, et
 	  l'arrivée `Finish` sur le toit du monde 7) ; `ctx.Void()` conseillé (vide mortel sous le monde) ;
 	- 3 à 6 Bits par étape (`ctx.Coin`), 3 clés USB (`ctx.UsbKey`, i = 1..3) sur des chemins difficiles ;
+	  un détour « Ventilo bonus » par monde (Tower/Bonus.luau, construit après le module du monde :
+	  ses Bits portent Bonus = true et ne comptent pas dans les 3–6) ;
 	- tout piège passe par `ctx.Trap` (attribut `World` obligatoire), tout danger statique par
 	  `ctx.Hazard` ; ce qui tue est rouge / magenta, les pièges mortels sont non solides.
 	- Budgets de toute la tour : ≤ 8000 BaseParts, ≤ 90 lumières (≈ 900 pièces et 9 lumières par monde).
@@ -108,6 +110,7 @@ local VOID = Color3.fromRGB(128, 20, 90)
 local SAFE = Color3.fromRGB(79, 209, 197)
 local SPRING = Color3.fromRGB(104, 224, 140)
 local BIT = Color3.fromRGB(246, 196, 83)
+local MEGA = Color3.fromRGB(255, 238, 160) -- Méga-Bit des détours bonus
 local USB_GOLD = Color3.fromRGB(255, 200, 64)
 
 Common.Colors = table.freeze({
@@ -656,6 +659,10 @@ export type TerminalSpot = {
 	Door: CFrame, -- bas-centre de la porte d'arrivée (12 × 12), LookVector = vers l'intérieur
 }
 
+-- Options d'un Bit : Value = Bits gagnés (défaut 1 ; Méga-Bit = 5), Bonus = Bit d'un détour bonus
+-- (hors du compte des 3–6 Bits par étape).
+export type CoinOptions = { Value: number?, Bonus: boolean? }
+
 export type WorldContext = {
 	Def: Tower.World, -- définition du monde (Config/Tower)
 	Index: number, -- n (1..7)
@@ -674,8 +681,11 @@ export type WorldContext = {
 	-- Checkpoint `stage` (FirstStage(n) .. TerminalStage(n) - 1) : `cframe` = dessus du pad (12×1×12),
 	-- LookVector = sens de la suite.
 	Checkpoint: (stage: number, cframe: CFrame) -> Part,
+	-- CFrame passé à ctx.Checkpoint(stage) (dessus du pad), ou nil s'il n'est pas encore posé.
+	CheckpointAt: (stage: number) -> CFrame?,
 	-- Bit (tag Coin, CoinId "S{stage}C{i}") ; `stage` par défaut = dernier ctx.Stage(s).
-	Coin: (position: Vector3, stage: number?) -> Part,
+	-- Options : Value (attribut Value si > 1, orbe plus grosse et plus claire), Bonus (attribut Bonus).
+	Coin: (position: Vector3, stage: number?, options: CoinOptions?) -> Part,
 	-- Clé USB dorée (tag UsbKey, KeyId "W{n}K{i}", i = 1..3), non collidable, touchable.
 	UsbKey: (position: Vector3, index: number) -> Part,
 	-- Marque une pièce comme piège : tag Trap, Kind, World = n, attributs ; CanTouch = true.
@@ -725,6 +735,7 @@ function Common.NewContext(tower: Instance, world: Tower.World): (WorldContext, 
 
 	local stages: { [number]: Folder } = {}
 	local coinCounts: { [number]: number } = {}
+	local pads: { [number]: CFrame } = {} -- CFrame de chaque checkpoint posé (ctx.CheckpointAt)
 	local placed: { [number]: boolean } = {}
 	local keys: { [number]: boolean } = {}
 	local current: number? = nil
@@ -768,20 +779,28 @@ function Common.NewContext(tower: Instance, world: Tower.World): (WorldContext, 
 			)
 			assert(not placed[stage], `monde {w} : checkpoint {stage} en double`)
 			placed[stage] = true
+			pads[stage] = cframe
 			return Common.CheckpointPad(stage, cframe.Position, cframe.LookVector)
 		end,
 
-		Coin = function(position: Vector3, stage: number?): Part
+		CheckpointAt = function(stage: number): CFrame?
+			return pads[stage]
+		end,
+
+		Coin = function(position: Vector3, stage: number?, options: CoinOptions?): Part
 			local s = stage or current
 			assert(s ~= nil, `monde {w} : ctx.Coin sans étape (appeler ctx.Stage(s) ou passer stage)`)
 			assert(s >= first and s <= terminalStage, `monde {w} : Bit de l'étape {s} hors du monde`)
 			coinCounts[s] = (coinCounts[s] or 0) + 1
+			local value = math.max(1, math.floor((options and options.Value) or 1))
+			local mega = value > 1
+			local diameter = if mega then 3.2 else 2.2
 			local bit = Build.Decor({
-				Name = "Bit",
+				Name = if mega then "MegaBit" else "Bit",
 				Shape = Enum.PartType.Ball,
-				Size = Vector3.one * 2.2,
+				Size = Vector3.one * diameter,
 				CFrame = CFrame.new(position),
-				Color = BIT,
+				Color = if mega then MEGA else BIT,
 				Material = NEON,
 				CastShadow = false,
 				Tags = { "Coin" },
@@ -790,9 +809,17 @@ function Common.NewContext(tower: Instance, world: Tower.World): (WorldContext, 
 			bit.CanTouch = true
 			bit:SetAttribute("CoinId", `S{s}C{coinCounts[s]}`)
 			bit:SetAttribute("Stage", s)
+			if mega then
+				bit:SetAttribute("Value", value)
+			end
+			if options and options.Bonus then
+				bit:SetAttribute("Bonus", true)
+			end
 			-- Vrai modèle (orbe « Bit », origine au centre) soudé à la sphère, qui reste la pièce touchée
 			-- et animée par le client (WorldFx) ; la sphère primitive devient invisible.
-			if ModelLibrary.Weld("BitCoin", bit, bit.CFrame, { Fit = Vector3.one * 2.2, Anchor = Vector3.zero }) then
+			if
+				ModelLibrary.Weld("BitCoin", bit, bit.CFrame, { Fit = Vector3.one * diameter, Anchor = Vector3.zero })
+			then
 				bit.Transparency = 1
 			end
 			return bit

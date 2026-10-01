@@ -6,6 +6,7 @@
 	- Tower/Shell.luau        coque vitrée de la tour
 	- Tower/Worlds/W{n}.luau  un module par monde : `function(ctx: Common.WorldContext)`
 	- Tower/Common.luau       dimensions, repères, palette, contexte de monde, salle du terminal standard
+	- Tower/Bonus.luau        détours « Ventilo bonus » (un par monde, accroché à un checkpoint)
 	- Tower/Legacy.luau       parcours v1 (anneau de modules) et décor v1, réutilisés par W1..W7
 	- ModelLibrary.luau       vrais modèles 3D (Blender → assets/models/*.glb), avec décor de secours
 
@@ -17,7 +18,10 @@
 	├─ Shell        (Model, Persistent) parois, vitre, ventilateurs de façade
 	└─ World1..7    (Model, Atomic, attribut World)
 	     ├─ Stage{s}   plateformes + pièges (tag Trap, attributs Kind + World + paramètres)
-	     ├─ Coins      orbes « Bit » (tag Coin, attribut CoinId unique "S{s}C{i}")
+	     ├─ Bonus      détour « Ventilo bonus » (tag BonusRoute, attributs World, Stage, Bits) : passerelle,
+	     │             ventilateur à pales SpinBar, Méga-Bit (Value 5) — voir Tower/Bonus.luau
+	     ├─ Coins      orbes « Bit » (tag Coin, attribut CoinId unique "S{s}C{i}" ; Bonus = true et
+	     │             Value > 1 pour ceux des détours)
 	     ├─ UsbKeys    clés USB dorées (tag UsbKey, attribut KeyId "W{n}K{i}"), si le monde en pose
 	     ├─ Terminal   salle du terminal : MinigameTerminal, WorldGate (+ Finish au monde 7)
 	     └─ Decor      composant géant, vide mortel (tag Hazard), panneaux
@@ -45,6 +49,7 @@ local Lobby = require(TowerParts.Lobby)
 local Shell = require(TowerParts.Shell)
 local Cameos = require(TowerParts.Cameos)
 local AppPanels = require(TowerParts.AppPanels)
+local Bonus = require(TowerParts.Bonus)
 local ModelLibrary = require(script.Parent.ModelLibrary)
 
 type WorldBuilder = (ctx: Common.WorldContext) -> ()
@@ -81,6 +86,7 @@ function TowerBuilder.Build(): Folder
 	for i, world in Tower.Worlds do
 		local ctx, finish = Common.NewContext(tower, world)
 		WORLDS[i](ctx)
+		Bonus.Build(ctx) -- détour « Ventilo bonus » accroché à un checkpoint du monde
 		finish()
 	end
 	Cameos.Build(tower) -- LAGZ dans un écran sur les parois de chaque monde (client LagzCameo)

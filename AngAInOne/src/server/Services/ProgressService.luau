@@ -596,8 +596,16 @@ local function indexTower(tower: Folder)
 				end
 				data.RunCoins[id] = true
 				data.Stats.CoinsCollected += 1
-				Wallet.Add(session, RUN.CoinBits, "Coin", true)
-				Wallet.Fx(session, "Coin", { Id = id, Position = part.Position })
+				-- Méga-Bit des détours bonus : attribut Value (défaut 1)
+				local value = math.max(1, math.floor(tonumber(part:GetAttribute("Value")) or 1))
+				local gain = Wallet.Add(session, RUN.CoinBits * value, "Coin", true)
+				Wallet.Fx(session, "Coin", {
+					Id = id,
+					Position = part.Position,
+					Bits = gain,
+					Bonus = part:GetAttribute("Bonus") == true,
+					Mega = value > 1,
+				})
 				GameEvents.CoinCollected:Fire(player)
 			end)
 		end

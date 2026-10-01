@@ -154,9 +154,17 @@ local function onFx(kind: string, payload: any)
 			Dialogue.Say(Tower.Worlds[1].Intro, 6)
 		end)
 	elseif kind == "Coin" then
-		Audio.Play("Collect", 1 + math.random() * 0.15)
+		Audio.Play("Collect", if payload.Mega then 0.85 else 1 + math.random() * 0.15)
 		if typeof(payload.Position) == "Vector3" then
-			burst(payload.Position, { "F6E05E", "FBD38D" }, 10, 8)
+			burst(
+				payload.Position,
+				{ "F6E05E", "FBD38D" },
+				if payload.Mega then 24 else 10,
+				if payload.Mega then 14 else 8
+			)
+		end
+		if payload.Mega then
+			Toasts.Show("Reward", `Méga-Bit ! +{NumberFormat.Compact(payload.Bits or 0)} Bits · Ventilo bonus`)
 		end
 	elseif kind == "UsbKey" then
 		Audio.Play("Unlock")
