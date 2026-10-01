@@ -511,6 +511,21 @@ end
 
 ------------------------------------------------------------------------------------
 
+-- Panneau DEV (Studio) : fixe une jauge pour tester vite ("Ram" en %, "Heat" en °C).
+function Mechanics.DevSet(kind: string, value: number)
+	if kind == "Ram" then
+		ram = math.clamp(value, 0, 100)
+	elseif kind == "Heat" then
+		heat = math.clamp(value, Gauges.HEAT_IDLE, Gauges.HEAT_MAX - 1)
+	end
+end
+
+-- Monde où les jauges tournent en ce moment (0 = aucun : lobby, salle du terminal, monde nettoyé).
+function Mechanics.ActiveWorld(): number
+	local ctx = context()
+	return if ctx.Active then ctx.World else 0
+end
+
 function Mechanics.Start()
 	Interactions.Register("FlushRam", flushRam)
 	Interactions.Register("FanStart", startFan)

@@ -6,6 +6,8 @@
 	- Clear   : réussit le terminal antivirus du monde actuel
 	- Shield  : bouclier de 30 s
 	- Reset   : remet la sauvegarde à zéro
+	- Feature : va tester une nouveauté (Config/DevFeatures, index) : monde encore infecté,
+	  checkpoint, puis position exacte
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -13,6 +15,7 @@ local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Tower = require(Shared.Config.Tower)
+local DevFeatures = require(Shared.Config.DevFeatures)
 local DataSchema = require(Shared.Data.DataSchema)
 local Session = require(script.Parent.Parent.Core.Session)
 local Wallet = require(script.Parent.Parent.Core.Wallet)
@@ -23,7 +26,36 @@ local ShopService = require(script.Parent.ShopService)
 
 local DevService = {}
 
-local COMMANDS = { "Bits", "Stage", "Clear", "Shield", "Reset" }
+local COMMANDS = { "Bits", "Stage", "Clear", "Shield", "Reset", "Feature" }
+
+-- Place le joueur dans le monde de la nouveauté, monde encore infecté, puis à sa position.
+local function goToFeature(session: Session.Session, index: number)
+	local feature = DevFeatures.List[math.floor(index)]
+	if not feature or not feature.World or not feature.Stage then
+		return
+	end
+	local data = session.Data
+	data.Stage = feature.Stage
+	data.BestStage = math.max(data.BestStage, feature.Stage)
+	data.RunStarted = true
+	data.Cleared = feature.World - 1
+	session.Player:SetAttribute("Stage", data.Stage)
+	session.Player:SetAttribute("Cleared", data.Cleared)
+	ProgressService.ToCheckpoint(session)
+	local at = feature.At
+	if at then
+		task.delay(0.8, function()
+			local player = session.Player
+			pcall(function()
+				player:RequestStreamAroundAsync(at, 5)
+			end)
+			local character = player.Character
+			if character and character.Parent then
+				character:PivotTo(CFrame.new(at))
+			end
+		end)
+	end
+end
 
 function DevService.Start()
 	RemoteGuard.On("DevCommand", {
@@ -46,6 +78,8 @@ function DevService.Start()
 			ProgressService.ToCheckpoint(session)
 		elseif command == "Clear" then
 			ProgressService.ClearWorld(session, data.Cleared + 1)
+		elseif command == "Feature" then
+			goToFeature(session, value)
 		elseif command == "Shield" then
 			ShopService.GrantShield(session, 30)
 		elseif command == "Reset" then
