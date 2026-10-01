@@ -13,7 +13,7 @@ return table.freeze({
 	Tagline = "Ton PC. De l'intérieur.",
 	MascotName = "Anga",
 	ChannelName = "AngaTV",
-	AngaImageId = "", -- ex. "rbxassetid://1234567890"
+	AngaImageId = "rbxassetid://79454493746475", -- portrait importé via Open Cloud : python3 tools/upload_models.py --portrait
 
 	-- Logiciel partenaire : l'app AngAInOne (optimisation / maintenance de PC Windows).
 	-- Son interface (gris Fluent + accent violet) est reprise par les écrans du monde.

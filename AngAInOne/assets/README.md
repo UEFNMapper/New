@@ -35,8 +35,12 @@ un groupe, ajoute `ROBLOX_CREATOR_TYPE=Group`). Ne colle jamais la clé dans un 
 
 ```bash
 python3 tools/upload_models.py --dry-run   # liste ce qui serait envoyé
-python3 tools/upload_models.py
+python3 tools/upload_models.py             # modèles 3D → ModelAssets.luau
+python3 tools/upload_models.py --portrait  # portrait d'Anga (Decal) → Branding.AngaImageId
 ```
+
+Le fichier `assets/models/manifest.json` (commité) mémorise l'ID et l'empreinte de chaque modèle
+envoyé : relancer le script ne renvoie que les `.glb` modifiés, en mettant à jour l'asset existant.
 
 **Manuel (Studio)** — Fenêtre *Avatar → Importateur 3D* (ou *Fichier → Importer 3D*), choisir le
 `.glb`, décocher « Ancrer » inutile (le jeu ancre tout), importer, puis clic droit sur le modèle →

@@ -2,19 +2,23 @@
 """
 upload_models.py — envoie assets/models/*.glb sur Roblox (Open Cloud) et remplit
 src/shared/Config/ModelAssets.luau avec les IDs. Ne renvoie que les modèles modifiés.
+Avec --portrait, envoie assets/branding/anga_portrait.png (Decal) et remplit
+Branding.AngaImageId à la place.
 
 Variables d'environnement :
   ROBLOX_API_KEY     clé Open Cloud (permission « Assets : read + write »)
   ROBLOX_CREATOR_ID  ID de l'utilisateur (ou du groupe) propriétaire du jeu
   ROBLOX_CREATOR_TYPE "User" (défaut) ou "Group"
-Usage : python3 tools/upload_models.py [--dry-run]
+Usage : python3 tools/upload_models.py [--dry-run] [--portrait]
 """
-import hashlib, json, os, sys, time, urllib.request, uuid
+import hashlib, json, os, re, sys, time, urllib.request, uuid
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODELS = os.path.join(ROOT, "assets", "models")
 MANIFEST = os.path.join(MODELS, "manifest.json")
 CONFIG = os.path.join(ROOT, "src", "shared", "Config", "ModelAssets.luau")
+PORTRAIT = os.path.join(ROOT, "assets", "branding", "anga_portrait.png")
+BRANDING = os.path.join(ROOT, "src", "shared", "Config", "Branding.luau")
 API = "https://apis.roblox.com/assets/v1"
 
 
@@ -24,16 +28,17 @@ def request(method, url, key, body=None, headers=None):
         return json.loads(resp.read().decode() or "{}")
 
 
-def upload(path, name, key, creator_id, creator_type, existing_id=None):
+def upload(path, name, key, creator_id, creator_type, existing_id=None,
+           asset_type="Model", content_type="model/gltf-binary", description="AngAInOne — modèle 3D"):
     boundary = uuid.uuid4().hex
-    meta = {"assetType": "Model", "displayName": f"AngAInOne {name}", "description": "AngAInOne — modèle 3D"}
+    meta = {"assetType": asset_type, "displayName": f"AngAInOne {name}", "description": description}
     creator = {"userId": creator_id} if creator_type == "User" else {"groupId": creator_id}
     if not existing_id:
         meta["creationContext"] = {"creator": creator}
     parts = [
         f"--{boundary}\r\nContent-Disposition: form-data; name=\"request\"\r\n\r\n{json.dumps(meta)}\r\n".encode(),
-        f"--{boundary}\r\nContent-Disposition: form-data; name=\"fileContent\"; filename=\"{name}.glb\"\r\n"
-        f"Content-Type: model/gltf-binary\r\n\r\n".encode(),
+        f"--{boundary}\r\nContent-Disposition: form-data; name=\"fileContent\"; filename=\"{os.path.basename(path)}\"\r\n"
+        f"Content-Type: {content_type}\r\n\r\n".encode(),
         open(path, "rb").read(),
         f"\r\n--{boundary}--\r\n".encode(),
     ]
@@ -63,6 +68,25 @@ def write_config(ids):
     open(CONFIG, "w", encoding="utf-8").write(text)
 
 
+def write_branding(asset_id):
+    text = open(BRANDING, encoding="utf-8").read()
+    new, n = re.subn(r'AngaImageId = "[^"]*"', f'AngaImageId = "rbxassetid://{asset_id}"', text, count=1)
+    if n != 1:
+        raise RuntimeError("AngaImageId introuvable dans Branding.luau")
+    open(BRANDING, "w", encoding="utf-8").write(new)
+
+
+def upload_portrait(key, creator, creator_type, dry):
+    print("→ Anga (portrait, Decal)")
+    if dry:
+        return
+    asset_id = upload(PORTRAIT, "Anga portrait", key, int(creator), creator_type,
+                      asset_type="Decal", content_type="image/png",
+                      description="AngAInOne — portrait de la mascotte Anga")
+    write_branding(asset_id)
+    print(f"AngaImageId = rbxassetid://{asset_id} dans Branding.luau")
+
+
 def main():
     dry = "--dry-run" in sys.argv
     key = os.environ.get("ROBLOX_API_KEY")
@@ -70,6 +94,9 @@ def main():
     creator_type = os.environ.get("ROBLOX_CREATOR_TYPE", "User")
     if not dry and (not key or not creator):
         sys.exit("ROBLOX_API_KEY et ROBLOX_CREATOR_ID sont nécessaires (ou --dry-run).")
+    if "--portrait" in sys.argv:
+        upload_portrait(key, creator, creator_type, dry)
+        return
     manifest = json.load(open(MANIFEST)) if os.path.exists(MANIFEST) else {}
     ids = {name: entry["id"] for name, entry in manifest.items() if entry.get("id")}
     for file in sorted(os.listdir(MODELS)):

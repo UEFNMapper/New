@@ -37,8 +37,8 @@ L'éclairage (Future, lumière de jour à travers la vitre du boîtier, Atmosphe
 ## 2. À configurer avant la publication
 
 1. **Game Passes et Developer Products** : crée-les sur le [Creator Dashboard](https://create.roblox.com/dashboard/creations) avec les prix de la grille, puis colle leurs IDs dans [`src/shared/Config/Products.luau`](src/shared/Config/Products.luau). Un ID à `0` = article masqué et refusé par le serveur.
-2. **Logo / mascotte Anga** : importe ton image (Asset Manager > Importer), copie l'ID et colle-le dans [`src/shared/Config/Branding.luau`](src/shared/Config/Branding.luau) (`AngaImageId = "rbxassetid://…"`). Sinon, un monogramme « A » rouge s'affiche.
-3. **Modèles 3D** : importe les `.glb` de `assets/models/` (automatique avec `tools/upload_models.py`, ou à la main dans Studio) — voir [`assets/README.md`](assets/README.md). Sans eux, le jeu affiche un décor de secours en blocs.
+2. **Logo / mascotte Anga** : déjà importé (`python3 tools/upload_models.py --portrait`), l'ID est dans [`src/shared/Config/Branding.luau`](src/shared/Config/Branding.luau) (`AngaImageId`). Pour changer d'image, remplace `assets/branding/anga_portrait.png` et relance la commande, ou colle un autre `rbxassetid://…`. Vide, un monogramme « A » rouge s'affiche.
+3. **Modèles 3D** : déjà importés sur Roblox (IDs dans `src/shared/Config/ModelAssets.luau`). Après avoir modifié un `.glb`, relance `tools/upload_models.py` (ou importe à la main dans Studio) — voir [`assets/README.md`](assets/README.md). Sans ID, le jeu affiche un décor de secours en blocs.
 4. **Groupe Roblox** (optionnel) : `GroupId` dans [`src/shared/Config/GameConfig.luau`](src/shared/Config/GameConfig.luau) pour le bonus de groupe (+5 %).
 5. **Questionnaire de maturité** du contenu (Creator Dashboard) : « Minimal ».
 

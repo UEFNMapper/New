@@ -38,7 +38,9 @@ Scénario : [`SCENARIO.md`](SCENARIO.md). Contrat de la tour : `src/shared/Confi
 - [x] Pipeline : `assets/blender/common.py`, `ModelLibrary` (décor de secours), `tools/upload_models.py`
 - [x] **M1 · Matériel PC** (24) · **M2 · Chambre d'Anga** (16) · **M3 · Personnages et objets** (15)
 - [x] Placement des modèles dans le lobby, les 7 mondes, les terminaux et les collectibles (décor de secours sinon)
-- [ ] Import sur Roblox (Open Cloud ou Studio) puis vérification des orientations en jeu
+- [x] Import sur Roblox (Open Cloud) : 58 modèles + portrait d'Anga, IDs dans `ModelAssets.luau`,
+      `Branding.luau` et `assets/models/manifest.json`
+- [ ] Vérification des orientations et des tailles en jeu (Studio)
 
 ### Phase 3 — Intégration (chef de projet)
 - [x] Fusion, clés USB (serveur + HUD + récompenses), relecture indépendante (11 corrections),
