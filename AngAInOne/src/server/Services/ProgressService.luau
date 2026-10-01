@@ -320,6 +320,17 @@ local function onFinish(session: Session.Session)
 	for _ in data.UsbKeys do
 		keys += 1
 	end
+	-- Test de perf (UI/Screens/Moments, Util/PerfTest) : Bits ramassés pendant CETTE ascension (valeur
+	-- des orbes, Méga-Bits compris) sur le total disponible dans la tour.
+	local coins, coinsTotal = 0, 0
+	for _, part in CollectionService:GetTagged("Coin") do
+		local id = part:GetAttribute("CoinId")
+		local value = math.max(1, math.floor(tonumber(part:GetAttribute("Value")) or 1))
+		coinsTotal += value
+		if type(id) == "string" and data.RunCoins[id] then
+			coins += value
+		end
+	end
 	Wallet.Fx(session, "Victory", {
 		Time = time,
 		Record = record,
@@ -331,6 +342,8 @@ local function onFinish(session: Session.Session)
 		Deaths = data.RunDeaths,
 		Keys = keys,
 		KeysTotal = Tower.WORLD_COUNT * Tower.USB_KEYS_PER_WORLD,
+		Coins = coins,
+		CoinsTotal = coinsTotal,
 	})
 	DataSchema.ResetRun(data)
 	-- La tour reste NETTOYÉE (décor, PC à 144 FPS, live, LAGZ vaincu) jusqu'à la prochaine

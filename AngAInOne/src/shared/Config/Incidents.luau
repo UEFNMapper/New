@@ -57,6 +57,15 @@ local list: { IncidentDef } = {
 		Duration = 7,
 		Color = "FF4E34",
 	},
+	{
+		-- Le classique : une mise à jour qui s'impose en pleine partie (voile bleu, pourcentage,
+		-- « ne pas éteindre ») ; les pièges, eux, ne s'arrêtent pas.
+		Kind = "Update",
+		Title = "MISE À JOUR !",
+		Warning = "Mise à jour en cours : ne pas éteindre votre ordinateur !",
+		Duration = 5,
+		Color = "0078D7",
+	},
 }
 
 local byKind: { [string]: IncidentDef } = {}

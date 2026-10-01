@@ -33,6 +33,16 @@ export type World = {
 	Minion: string, -- le sbire de LAGZ qui garde le terminal
 	Incident: string, -- incident vedette de LAGZ dans ce monde (Incidents.Kinds ; "Any" = tous)
 	Cleaned: string, -- ce que dit Anga quand le monde est nettoyé
+	-- Conseil « vraie vie » du monde (une phrase, affichée sur un panneau de la salle du terminal et dit
+	-- par Anga après le nettoyage) et le raccourci correspondant dans la vraie app AngAInOne.
+	Tip: string,
+	AppTip: string,
+}
+
+-- Conseil de la fin de l'ascension (écran « Test de perf »).
+Tower.VictoryTip = {
+	Tip = "Avant de changer de PC, mesure le tien, applique tes réglages, puis remesure : tu sauras ce qui a vraiment servi.",
+	AppTip = "Le Test de perf d'AngAInOne est intégré : deux minutes et demie, un score, et il compare avec ta mesure précédente.",
 }
 
 -- Types de pièges animés côté client (voir TrapController) : tag "Trap" + attribut Kind.
@@ -90,11 +100,13 @@ Tower.Worlds = {
 		Tint = "FFF3E6",
 		Traps = { "Zapper", "Bounce", "SpinBar" },
 		Minigame = "Scan",
-		Intro = "Le virus a coupé le courant ! Évite les décharges électriques et saute sur les condensateurs.",
+		Intro = "LAGZ s'est propagé à tout le parc ! Ici, il a coupé le courant : évite les décharges et saute sur les condensateurs.",
 		Symptom = "Le PC s'éteint tout seul (coupures de courant)",
 		Minion = "Sparky",
 		Incident = "Blackout",
 		Cleaned = "Le courant est revenu ! Le PC ne s'éteint plus tout seul.",
+		Tip = "Plein de programmes se lancent tout seuls au démarrage et ralentissent le PC : Ctrl+Maj+Échap → onglet Démarrage → désactive ce que tu n'utilises pas tous les jours.",
+		AppTip = "La page Démarrage d'AngAInOne liste tout ce qui se lance au boot, un interrupteur par programme.",
 	},
 	{
 		Index = 2,
@@ -113,6 +125,8 @@ Tower.Worlds = {
 		Minion = "Pop-Up",
 		Incident = "Popups",
 		Cleaned = "La mémoire est libérée ! Plus d'onglets fantômes.",
+		Tip = "30 onglets ouverts pendant que tu joues, ça mange ta RAM : ferme ce qui ne sert pas avant de lancer une partie.",
+		AppTip = "Le bouton « Libérer la RAM » du Tableau de bord la vide d'un clic, et l'app dessine tes barrettes dans leurs emplacements pour vérifier qu'elles sont bien placées.",
 	},
 	{
 		Index = 3,
@@ -131,6 +145,8 @@ Tower.Worlds = {
 		Minion = "Corrupto",
 		Incident = "Corruption",
 		Cleaned = "Les fichiers sont réparés ! Le disque est tout propre.",
+		Tip = "Vide la Corbeille de temps en temps et range tes téléchargements : c'est souvent là que dorment des dizaines de Go oubliés.",
+		AppTip = "La page Disques affiche, d'un clic sur « Analyser », ce qui prend la place, dossier par dossier.",
 	},
 	{
 		Index = 4,
@@ -149,6 +165,8 @@ Tower.Worlds = {
 		Minion = "Dusty",
 		Incident = "Overheat",
 		Cleaned = "Les ventilateurs respirent enfin ! Le PC refroidit.",
+		Tip = "La poussière, c'est l'ennemi n° 1 : une ou deux fois par an, PC éteint et débranché, un coup de bombe d'air sec dans les ventilos.",
+		AppTip = "Pour la poussière, il faut ton bras ; mais AngAInOne surveille tes températures en direct et te prévient quand ça chauffe.",
 	},
 	{
 		Index = 5,
@@ -167,6 +185,8 @@ Tower.Worlds = {
 		Minion = "Minor",
 		Incident = "Lag",
 		Cleaned = "Le mineur est parti ! Le processeur souffle.",
+		Tip = "Désinstalle les jeux et applis que tu n'ouvres plus (Paramètres → Applications) : moins de programmes en fond, plus de place sur le disque.",
+		AppTip = "Les presets d'Optimisations appliquent des dizaines de réglages d'un coup, et tout reste réversible.",
 	},
 	{
 		Index = 6,
@@ -185,6 +205,8 @@ Tower.Worlds = {
 		Minion = "Freezy",
 		Incident = "Freeze",
 		Cleaned = "Fini les freezes ! L'image est fluide.",
+		Tip = "Mets à jour le pilote de ta carte graphique de temps en temps, uniquement depuis le site officiel du fabricant.",
+		AppTip = "La page Pilotes GPU te dit qu'une mise à jour existe, la télécharge et l'installe, avec un nettoyage complet de l'ancien pilote.",
 	},
 	{
 		Index = 7,
@@ -203,6 +225,8 @@ Tower.Worlds = {
 		Minion = "LAGZ",
 		Incident = "Any",
 		Cleaned = "LAGZ est vaincu ! Le PC tourne à 144 FPS !",
+		Tip = "Un écran bleu une fois, pas de panique ; s'il revient souvent : pilotes et Windows à jour, température vérifiée, et note le code d'erreur affiché.",
+		AppTip = "La page Plantages retrouve chaque écran bleu toute seule et l'explique en français, avec quoi faire.",
 	},
 } :: { World }
 

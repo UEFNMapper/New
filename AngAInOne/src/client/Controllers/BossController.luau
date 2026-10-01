@@ -489,17 +489,17 @@ end
 local function onPhase(previous: number, current: number)
 	if current == PHASE.Lasers and previous == PHASE.Idle then
 		Audio.Play("Error", 0.7)
-		lagzSays("Tu oses entrer dans MON arène ? Chargement de ta défaite : 99 % !")
+		lagzSays("Tu oses entrer dans MON arène ? IRQL_NOT_LESS_OR_EQUAL ! Chargement de ta défaite : 99 % !")
 		angaSays("Cours ! Saute par-dessus ses lasers et ne reste jamais sous le curseur !", 0.5)
 	elseif current == PHASE.Plugs then
 		Audio.Play("Zap", 0.7)
-		lagzSays("Grrr ! Mon sol se fragmente… et voilà mes virus !")
+		lagzSays("MEMORY_MANAGEMENT ! Mon sol se fragmente… et voilà mes virus !")
 		angaSays("Branche les 3 prises antivirus pour casser son bouclier !", 0.5)
 	elseif current == PHASE.Terminal and previous == PHASE.Plugs then
 		shieldPop = os.clock()
 		Audio.Play("Unlock")
 		Toasts.Show("Success", "Bouclier de LAGZ détruit !")
-		lagzSays("Mon bouclier ! NOOOON !")
+		lagzSays("CRITICAL_PROCESS_DIED ?! Mon bouclier ! NOOOON !")
 		angaSays("Son bouclier est tombé ! Fonce au terminal final, derrière lui !", 0.5)
 	elseif current == PHASE.Idle and BossLogic.Fighting(previous) then
 		lagzSays(pick({
@@ -513,7 +513,9 @@ local function onPhase(previous: number, current: number)
 		for _, lagz in lagzes do
 			spawnDebris(lagz.Rest.Position + Vector3.new(0, 5, 0))
 		end
-		lagzSays("Non… mon lag… il s'en vaaa…")
+		-- L'écran bleu se « dumpe », et la page Plantages de l'app l'analyse (constat / coupable / quoi faire)
+		lagzSays("Non… mon lag… il s'en vaaa… *dump de mémoire*")
+		angaSays("Plantages l'a analysé : coupable = LAGZ. Quoi faire : nettoyé. Le parc est sauvé !", 3.5)
 	end
 end
 

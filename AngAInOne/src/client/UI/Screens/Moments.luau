@@ -34,6 +34,7 @@ local PcHealth = require(Shared.Util.PcHealth)
 local Technician = require(Shared.Util.Technician)
 local AppPages = require(Shared.Util.AppPages)
 local OptimisationReport = require(Shared.Util.OptimisationReport)
+local PerfTest = require(Shared.Util.PerfTest)
 local Medals = require(Shared.Config.Medals)
 local TimeUtil = require(Shared.Util.Time)
 
@@ -1345,6 +1346,203 @@ end
 -- Fin : « LE LIVE COMMENCE ! » — le stream d'Anga démarre et le chat fête le joueur, puis le
 -- Rapport AngAInOne (bouton, ou tout seul après quelques secondes). `medal` : payload
 -- WorldCleared du monde 7 (sa médaille est montrée dans le rapport, pas en carte).
+------------------------------------------------------------------------------------
+-- Test de perf (fin d'ascension) : l'hexagone de la vraie app — mascotte au centre, quatre petits
+-- hexagones (Processeur, Carte graphique, Mémoire, Stockage), score global, emblème, et le pseudo
+-- du joueur en néon. Puis le rapport.
+------------------------------------------------------------------------------------
+
+local PERF_AUTO_NEXT = 12 -- s avant de passer au rapport tout seul
+
+-- Contour d'hexagone (6 arêtes) centré en (cx, cy) px dans `parent`, rayon `radius` (sommets en haut/bas).
+local function hexOutline(parent: Instance, cx: number, cy: number, radius: number, thickness: number, color: Color3)
+	local apothem = radius * math.sqrt(3) / 2
+	for k = 0, 5 do
+		local angle = math.rad(k * 60) -- normale de l'arête (sommets à ±30° de la verticale)
+		New("Frame", {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromOffset(cx + apothem * math.sin(angle), cy - apothem * math.cos(angle)),
+			Size = UDim2.fromOffset(radius + thickness, thickness),
+			Rotation = k * 60,
+			BackgroundColor3 = color,
+			BorderSizePixel = 0,
+			Parent = parent,
+		})
+	end
+end
+
+-- Petit hexagone de score : contour, nombre, libellé et détail dessous.
+local function scoreHex(parent: Instance, cx: number, cy: number, axis: PerfTest.Axis, accent: Color3)
+	local radius = 58
+	local fill: Frame = New("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromOffset(cx, cy),
+		Size = UDim2.fromOffset(radius * 1.7, radius * 1.7),
+		BackgroundColor3 = A.Card,
+		BorderSizePixel = 0,
+		Parent = parent,
+	}, { Create.Corner(radius) :: Instance })
+	hexOutline(parent, cx, cy, radius, 3, accent)
+	local good = axis.Score >= 75
+	New("TextLabel", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromOffset(cx, cy - 6),
+		Size = UDim2.fromOffset(radius * 1.5, 40),
+		BackgroundTransparency = 1,
+		Text = tostring(axis.Score),
+		TextSize = 34,
+		FontFace = F.Heavy,
+		TextColor3 = if good then A.Good elseif axis.Score >= 50 then A.Text else A.Warn,
+		Parent = parent,
+	})
+	New("TextLabel", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromOffset(cx, cy + 22),
+		Size = UDim2.fromOffset(radius * 1.6, 18),
+		BackgroundTransparency = 1,
+		Text = "/100",
+		TextSize = 18,
+		FontFace = F.Medium,
+		TextColor3 = A.Dim,
+		Parent = parent,
+	})
+	New("TextLabel", {
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.fromOffset(cx, cy + radius + 8),
+		Size = UDim2.fromOffset(170, 22),
+		BackgroundTransparency = 1,
+		Text = axis.Label,
+		TextSize = 18,
+		FontFace = F.Bold,
+		TextColor3 = A.Text,
+		Parent = parent,
+	})
+	New("TextLabel", {
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.fromOffset(cx, cy + radius + 30),
+		Size = UDim2.fromOffset(190, 18),
+		BackgroundTransparency = 1,
+		Text = axis.Detail,
+		TextSize = 18,
+		FontFace = F.Medium,
+		TextColor3 = A.Dim,
+		Parent = parent,
+	})
+	return fill
+end
+
+local function showPerfTest(payload: any, medal: any?, onDone: () -> ())
+	local result = PerfTest.Build({
+		Time = if type(payload.Time) == "number" then payload.Time else nil,
+		Deaths = if type(payload.Deaths) == "number" then payload.Deaths else nil,
+		Coins = if type(payload.Coins) == "number" then payload.Coins else nil,
+		CoinsTotal = if type(payload.CoinsTotal) == "number" then payload.CoinsTotal else nil,
+		Keys = if type(payload.Keys) == "number" then payload.Keys else nil,
+		KeysTotal = if type(payload.KeysTotal) == "number" then payload.KeysTotal else nil,
+	})
+	local accent = Color3.fromHex(Branding.PartnerApp.Accent)
+	local screen: Frame = fullscreen("PerfTest", "Backdrop", 1)
+	Motion.Tween(screen, { BackgroundTransparency = 0.35 }, 0.4)
+	local window = appWindow(screen, Vector2.new(1180, 600), 260, {}, "Test de perf")
+	local finished = false
+	local function finish()
+		if finished then
+			return
+		end
+		finished = true
+		window.Root.Visible = false
+		fadeOut(screen, 0.3)
+		onDone()
+	end
+	window.Close.Activated:Connect(function()
+		click()
+		finish()
+	end)
+
+	-- Barre latérale : emblème, score global, puis la médaille du dernier monde
+	local side = window.Side
+	local emblemCard = card(side, UDim2.fromOffset(10, 72), UDim2.new(1, -20, 0, 206), A.Card)
+	text(emblemCard, "Ton emblème", 20, F.Bold, A.Text, { Position = UDim2.fromOffset(16, 12) })
+	text(emblemCard, result.Emblem, 34, F.Heavy, accent, { Position = UDim2.fromOffset(16, 44) })
+	text(emblemCard, `{result.Score} / 100`, 26, F.Heavy, A.Text, { Position = UDim2.fromOffset(16, 92) })
+	text(emblemCard, result.EmblemHint, 18, F.Medium, A.Dim, {
+		Position = UDim2.fromOffset(16, 132),
+		Size = UDim2.new(1, -32, 0, 64),
+		TextWrapped = true,
+		TextYAlignment = Enum.TextYAlignment.Top,
+	})
+	if medal then
+		medalBox(side, medal, 290)
+	end
+
+	-- Page : titre, hexagones
+	local main = window.Main
+	pageHeader(main, "Test de perf", "Ton PC vu de l'intérieur : score de l'ascension, comme dans l'app.", 28)
+	local mainWidth = 1180 - 260
+	local cx, cy = mainWidth / 2, 300
+	local big = 118
+	New("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromOffset(cx, cy),
+		Size = UDim2.fromOffset(big * 1.75, big * 1.75),
+		BackgroundColor3 = accent,
+		BackgroundTransparency = 0.82,
+		BorderSizePixel = 0,
+		Parent = main,
+	}, { Create.Corner(big) :: Instance })
+	hexOutline(main, cx, cy, big, 4, accent)
+	local avatar = Widgets.Avatar(120, main)
+	avatar.AnchorPoint = Vector2.new(0.5, 0.5)
+	avatar.Position = UDim2.fromOffset(cx, cy - 14)
+	-- Pseudo en néon (couleur d'accent, contour), comme le Test de perf de l'app
+	New("TextLabel", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromOffset(cx, cy + 72),
+		Size = UDim2.fromOffset(big * 1.9, 32),
+		BackgroundTransparency = 1,
+		Text = Players.LocalPlayer.DisplayName,
+		TextSize = 26,
+		FontFace = F.Heavy,
+		TextColor3 = accent:Lerp(Color3.new(1, 1, 1), 0.35),
+		TextStrokeColor3 = accent,
+		TextStrokeTransparency = 0,
+		TextScaled = true,
+		Parent = main,
+	})
+	local spots = {
+		{ cx - 300, cy - 110 },
+		{ cx + 300, cy - 110 },
+		{ cx - 300, cy + 90 },
+		{ cx + 300, cy + 90 },
+	}
+	for index, axis in result.Axes do
+		local spot = spots[index]
+		local fill = scoreHex(main, spot[1], spot[2], axis, accent)
+		Motion.Pop(fill, 0.1 + index * 0.08)
+	end
+	-- Conseil « vraie vie » de la fin (Tower.VictoryTip)
+	local tip = Tower.VictoryTip
+	if tip then
+		text(main, `💡 {tip.Tip}  ·  {tip.AppTip}`, 18, F.Medium, A.Dim, {
+			AnchorPoint = Vector2.new(0, 1),
+			Position = UDim2.new(0, 24, 1, -92),
+			Size = UDim2.new(1, -48, 0, 44),
+			TextWrapped = true,
+			TextYAlignment = Enum.TextYAlignment.Bottom,
+		})
+	end
+	Keycap.new({
+		Text = "VOIR MON RAPPORT",
+		Variant = "Primary",
+		Size = UDim2.fromOffset(340, TOUCH),
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, -16),
+		OnClick = finish,
+		Parent = main,
+	})
+	task.delay(PERF_AUTO_NEXT, finish)
+end
+
 function Moments.Victory(payload: any, medal: any?)
 	-- L'écran final passe devant tout : plus de bannière ni de carte en attente.
 	Moments.ClearQueue()
@@ -1527,7 +1725,10 @@ function Moments.Victory(payload: any, medal: any?)
 		opened = true
 		liveCard.Visible = false
 		fadeOut(screen, 0.4)
-		showReport(data, medal)
+		-- Test de perf (hexagone de l'app), puis le rapport d'optimisation
+		showPerfTest(data, medal, function()
+			showReport(data, medal)
+		end)
 	end
 	Keycap.new({
 		Text = "VOIR MON RAPPORT",

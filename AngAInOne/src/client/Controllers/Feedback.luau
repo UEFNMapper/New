@@ -218,6 +218,11 @@ local function onFx(kind: string, payload: any)
 				"Anga",
 				CLEARED_LINE_EXPIRES
 			)
+			-- Le conseil « vraie vie » du monde, par l'assistant de l'app (Tower.Tip) : une phrase utile
+			-- pour le vrai PC du joueur (voir le panneau de la salle du terminal pour le raccourci).
+			if def and def.Tip ~= "" then
+				Dialogue.Say(`💡 {def.Tip}`, 7, "AIO", CLEARED_LINE_EXPIRES + 10)
+			end
 		end)
 		-- Médaille du monde : carte « Rapport du monde » après la bannière (file des moments).
 		-- Monde 7 : la victoire suit de près ; la médaille ira dans le rapport de victoire.

@@ -276,6 +276,46 @@ function Props.Sign(
 	return gui
 end
 
+--[[
+	Panneau de texte long (conseil, consigne) : petit titre en haut, corps sur plusieurs lignes
+	(TextScaled + retour à la ligne). Même usage que Props.Sign ; `body` peut faire deux phrases.
+]]
+function Props.Notice(part: BasePart, title: string, body: string, color: Color3, face: Enum.NormalId?): SurfaceGui
+	local gui = Instance.new("SurfaceGui")
+	gui.Name = "Notice"
+	gui.Face = face or Enum.NormalId.Front
+	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	gui.PixelsPerStud = 10
+	gui.LightInfluence = 0
+	gui.Brightness = 1.3
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Name = "Title"
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Size = UDim2.fromScale(0.92, 0.2)
+	titleLabel.Position = UDim2.fromScale(0.04, 0.04)
+	titleLabel.Text = title
+	titleLabel.TextScaled = true
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.TextColor3 = color
+	titleLabel.Font = Enum.Font.GothamBlack
+	titleLabel.Parent = gui
+	local bodyLabel = Instance.new("TextLabel")
+	bodyLabel.Name = "Body"
+	bodyLabel.BackgroundTransparency = 1
+	bodyLabel.Size = UDim2.fromScale(0.92, 0.7)
+	bodyLabel.Position = UDim2.fromScale(0.04, 0.26)
+	bodyLabel.Text = body
+	bodyLabel.TextScaled = true
+	bodyLabel.TextWrapped = true
+	bodyLabel.TextXAlignment = Enum.TextXAlignment.Left
+	bodyLabel.TextYAlignment = Enum.TextYAlignment.Top
+	bodyLabel.TextColor3 = C.White
+	bodyLabel.Font = Enum.Font.GothamMedium
+	bodyLabel.Parent = gui
+	gui.Parent = part
+	return gui
+end
+
 ------------------------------------------------------------------------------------
 -- Ventilateur
 ------------------------------------------------------------------------------------

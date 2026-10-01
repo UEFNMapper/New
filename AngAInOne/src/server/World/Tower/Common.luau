@@ -530,6 +530,12 @@ function Common.House(fr: Frame, y: number, climb: number, opts: HouseOptions): 
 		Box(model, "ScreenBezel", Vector3.new(19, 11, 0.6), screenCf * CFrame.new(0, 0, 0.4), C.Black, METAL)
 		local screen = Box(model, "Screen", Vector3.new(18, 10, 0.3), screenCf, C.Bg, Enum.Material.Glass)
 		Props.Sign(screen, "ANTIVIRUS", `Mini-jeu : {world.Minigame}`, SAFE, C.White)
+		-- Conseil « vraie vie » du monde et son raccourci dans la vraie app (Tower.Tip / AppTip), sur
+		-- le mur du fond à gauche de l'écran : ce que le joueur repart en ayant appris pour son propre PC.
+		local tipCf = facing(P(fr, -2.5, y + 10, -43.2), fr.R)
+		Box(model, "TipBezel", Vector3.new(9.6, 10.6, 0.6), tipCf * CFrame.new(0, 0, 0.4), C.Black, METAL)
+		local tip = Box(model, "TipPanel", Vector3.new(9, 10, 0.3), tipCf, C.Bg)
+		Props.Notice(tip, "💡 CONSEIL VRAIE VIE", `{world.Tip}\n\nRaccourci AngAInOne : {world.AppTip}`, s.Primary)
 		-- Portail d'énergie : traversable côté serveur, rendu solide par le client tant que verrouillé
 		local gsize, gcf = span(fr, 29.1, 29.9, y, doorTop, -44, -32)
 		local gate = Build.Part({

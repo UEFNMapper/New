@@ -91,6 +91,7 @@ local ARTICLE: { [string]: string } = {
 	Popups = "une",
 	Corruption = "une",
 	Overheat = "une",
+	Update = "une",
 }
 
 local HINT: { [string]: string } = {
@@ -100,6 +101,7 @@ local HINT: { [string]: string } = {
 	Popups = "Touche les ✕ pour fermer les pubs !",
 	Corruption = "Les dalles corrompues sont inversées !",
 	Overheat = "Toutes les bouches de chaleur soufflent !",
+	Update = "Ne pas éteindre votre ordinateur… les pièges, eux, continuent !",
 }
 
 local LETHAL: { [string]: boolean } = {
@@ -249,6 +251,65 @@ local function freezeEffect(): Effect
 		Stop = function()
 			fadeAndDestroy(root, 0.4)
 			clearTint()
+		end,
+	}
+end
+
+------------------------------------------------------------------------------------
+-- MISE À JOUR (Windows Update surprise : voile bleu, pourcentage qui grimpe, « ne pas éteindre »)
+------------------------------------------------------------------------------------
+
+local function updateEffect(duration: number): Effect
+	local root = screenRoot("Update")
+	wash(root, Color3.fromHex("0078D7"), 0.42)
+	local face: TextLabel = New("TextLabel", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.3),
+		Size = UDim2.fromOffset(160, 120),
+		BackgroundTransparency = 1,
+		Text = ":(",
+		TextScaled = true,
+		TextColor3 = Color3.new(1, 1, 1),
+		Font = Enum.Font.GothamBold,
+		Parent = root,
+	})
+	local line: TextLabel = New("TextLabel", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.new(0.8, 0, 0, 44),
+		BackgroundTransparency = 1,
+		Text = "Mise à jour en cours… 0 %",
+		TextScaled = true,
+		TextColor3 = Color3.new(1, 1, 1),
+		Font = Enum.Font.GothamMedium,
+		Parent = root,
+	})
+	New("TextLabel", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.58),
+		Size = UDim2.new(0.8, 0, 0, 30),
+		BackgroundTransparency = 1,
+		Text = "Ne pas éteindre votre ordinateur.",
+		TextScaled = true,
+		TextColor3 = Color3.new(1, 1, 1),
+		TextTransparency = 0.2,
+		Font = Enum.Font.Gotham,
+		Parent = root,
+	})
+	Audio.Play("Toast", 0.8)
+	local shown = -1
+	return {
+		Update = function(elapsed: number, _dt: number)
+			-- Le pourcentage avance par paliers irréguliers, comme le vrai
+			local percent = math.clamp(math.floor(100 * elapsed / math.max(duration, 0.1) / 7) * 7, 0, 100)
+			if percent ~= shown then
+				shown = percent
+				line.Text = `Mise à jour en cours… {percent} %`
+			end
+			face.TextTransparency = if Motion.IsReduced() then 0 else 0.1 + 0.1 * math.sin(elapsed * 3)
+		end,
+		Stop = function()
+			fadeAndDestroy(root, 0.3)
 		end,
 	}
 end
@@ -1057,6 +1118,9 @@ local function startEffect(active: Current, layer: Frame)
 		effect = corruptionEffect()
 	elseif kind == "Overheat" then
 		effect = overheatEffect()
+	elseif kind == "Update" then
+		local def = Incidents.ByKind[kind]
+		effect = updateEffect(if def then def.Duration else 5)
 	end
 	active.Effect = effect
 end

@@ -37,11 +37,15 @@ Story.LagzWorld = {
 -- LAGZ quand il lance un incident.
 Story.LagzIncident = {
 	Freeze = { "FREEZE ! Plus personne ne bouge !", "Pause ! Hé… pourquoi toi tu bouges encore ?" },
-	Lag = { "Lag, lag, LAG ! Tout va ramer !", "999 de ping ! Bonne chance, hé hé !" },
+	Lag = { "Lag, lag, LAG ! Des à-coups partout : ton 1 % low va pleurer !", "999 de ping ! Bonne chance, hé hé !" },
 	Blackout = { "Clic ! J'éteins la lumière !", "Oups, j'ai marché sur la prise ! Hé hé !" },
 	Popups = { "Des pubs gratuites pour tout le monde !", "Clique ici ! Non, là ! Non, LÀ !" },
 	Corruption = { "Pixels roses partout ! C'est joli, non ?", "Oups ! J'ai inversé les dalles !" },
 	Overheat = { "On monte le chauffage à fond !", "Ça chauffe, ça chauffe ! Mouahaha !" },
+	Update = {
+		"Mise à jour ! 0 %… NE PAS ÉTEINDRE ! Mouahaha !",
+		"Redémarrage dans 5 secondes… ou pas. Hé hé !",
+	},
 }
 
 -- LAGZ qui surgit de son écran sur une paroi du monde (Controllers/LagzCameo), 2 par monde.
