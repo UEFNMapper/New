@@ -62,11 +62,18 @@ Lance **Play** (F5). En Studio, un bouton **DEV** (ou **F8**) ouvre un panneau d
 | 7d | Dans une salle de terminal : lire le panneau **💡 CONSEIL VRAIE VIE** ; monde 5 : appliquer deux fois la **pâte thermique** ; monde 6 : **RGB = +10 FPS** | Le conseil du monde et son raccourci AngAInOne ; le processeur disparaît sous la pâte ; 10 s plus rapide. |
 | 7e | Nettoyer un monde, puis regarder la bulle grise de l'assistant | Après « Le portail est ouvert », l'assistant de l'app dit le conseil « vraie vie » du monde. |
 | 7f | Finir la tour | Après « LE LIVE COMMENCE », l'écran **Test de perf** : hexagone, 4 scores, emblème, ton pseudo en néon ; puis le rapport. |
+| 7g | Monde 2 : courir sans s'arrêter, puis appuyer sur un gros bouton rouge **Libérer la RAM** | Jauge « 💾 RAM » à gauche ; au-delà de 70 %, la marche ralentit (pas les sauts) ; le bouton la remet à 0 %, puis recharge 12 s. |
+| 7h | Monde 4 : courir longtemps, puis s'arrêter près d'un ventilateur ; relancer un **ventilateur encrassé** ; monter sur le **ventilo propulseur** à côté du checkpoint 17 | Jauge « 🌡 CPU » ; à 100 °C, arrêt thermique (retour au checkpoint) ; le ventilateur relancé tourne et rafraîchit ; le propulseur envoie sur une corniche à 3 Bits (dont un Méga-Bit). |
+| 7i | Monde 5 : maintenir **Désinstaller** sur un bloatware | Le bloc disparaît (pour toi), toast + Bits la première fois. Terminal du monde 5 : mini-jeu **Tri des fichiers**. |
+| 7j | Monde 6 avant le nettoyage | De brefs artefacts colorés à l'écran ; rien avec « Réduire les animations ». |
+| 7k | Salles du terminal des mondes 1 et 7 : choisir un panneau de l'**enquête** | Mauvais choix : indice de l'assistant ; bon choix : confettis, +25 / +40 Bits, une seule fois. |
+| 7l | Lobby : la touche **Suppr** devant le portail, puis **F10** dans le BIOS ; les touches du **Stream Deck** | Salle bleue du BIOS avec le QR code ; retour dans la chambre ; pet, confettis, mode lent. |
+| 7m | Menu > **Rôle d'équipe** : choisir un rôle | Toast + réplique d'Anga ; le rôle apparaît dans la page Joueurs des autres. |
 | 8 | Salle du terminal | Le sbire du monde garde le terminal. Prompt **E** → mini-jeu 2D. Réussi : le monde passe en version « nettoyée », le widget du PC gagne des FPS, le portail s'ouvre. |
 | 9 | DEV > aller à l'étape 35 (monde 7) | Arène : LAGZ, phase 1 (lasers + curseur), phase 2 (3 prises à brancher), phase 3 (Firewall boss au terminal). Victoire → « LE LIVE COMMENCE ! », l'écran du lobby passe « EN DIRECT 🔴 ». |
 | 10 | Boutons à droite | **Checkpoint**, **Passer l'étape** (Robux, si configuré), **Lobby** (le bouton devient **CONTINUER · Étape X**). |
-| 11 | Dock **Boutique** / **Missions** | Traînées et effets (Bits) ; calendrier 7 jours + 3 missions du jour. |
-| 12 | Borne **Arcade** | 6 mini-jeux (Scan, Pop-up Killer, Défrag, Firewall, Memory, Dodge). |
+| 11 | Dock **Boutique** / **Missions** / **Menu** | Fenêtres au style de l'app (gris anthracite, accent violet, fil d'Ariane « AngAInOne › … », pages à gauche ; onglets en haut sur téléphone). Traînées et effets (Bits) ; calendrier 7 jours + 3 missions du jour. |
+| 12 | Borne **Arcade** | 8 mini-jeux (Scan, Firewall, Memory, Dodge, Pop-up Killer, Défrag, Tri des fichiers, Défense du CPU). |
 | 13 | Quitter puis relancer | Tout est sauvegardé (étape, chrono, clés USB, mondes nettoyés). |
 | 14 | 2 joueurs (Test > Clients et serveurs) | Même tour, pas de bousculade ; chacun voit ses mondes infectés/nettoyés et son propre combat de boss. |
 | 15 | Émulateur de téléphone | HUD lisible, ✕ des pop-ups et boutons confortables au doigt. |

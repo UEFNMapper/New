@@ -111,3 +111,18 @@ Tag `UsbKey`, attribut `KeyId` = `W{n}K{i}` (i = 1..3), non collidable, touchabl
 - [ ] Vérification en jeu (Studio) : traversée des pales, lisibilité des panneaux (BONUS, CONSEIL),
       écran Test de perf sur téléphone, easter eggs.
 - [ ] IDs des badges à créer sur create.roblox.com et à coller dans `Config/Badges.luau`.
+
+## v3.2 — Gameplay façon PC, menus de l'app (voir [`SCENARIO.md`](SCENARIO.md) §9)
+- [x] **Menus refaits au style de l'app** : fenêtre plate, fil d'Ariane, pages à gauche (onglets sur
+      téléphone), boutons plats, cartes à liseré, textes ≥ 18 px de conception.
+- [x] **Mécaniques par monde** : enquêtes (1 et 7), RAM (2), chaleur + ventilateurs à relancer +
+      ventilo propulseur (4), bloatware (5), artefacts GPU (6) ; jauge contextuelle du HUD.
+- [x] **Mini-jeux** : Tri des fichiers (terminal du monde 5), Défense du CPU (arcade).
+- [x] **BIOS caché** (touche Suppr, QR code anga.tv), **Stream Deck** interactif, **rôles d'équipe**
+      (version légère : un passif chacun).
+- [x] Tests : `mechanics.spec`, `gauges.spec`, `newgames.spec`, BIOS dans `tower.spec` ; outil
+      `tests/tools/FreeBoxes.luau` (volumes libres pour une nouvelle mécanique).
+- [ ] Vérification en jeu (Studio) : ressenti du ralentissement de RAM et de la chaleur, lisibilité des
+      panneaux d'enquête, téléport du BIOS avec le streaming, menus sur téléphone.
+- [ ] Coop à 4 rôles obligatoires avec objectifs partagés, jauges partagées, tour de défense 3D à
+      plusieurs (idées du guide, pas encore faites).

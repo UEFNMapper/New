@@ -80,6 +80,7 @@ nouveaux**, un **incident vedette**, un **sbire** qui garde le terminal, et une 
   impulsion électrique court le long des câbles : sauter au bon moment), **Plateformes alimentées**
   (solides seulement quand le courant passe, au rythme d'un voyant).
 - **Incident vedette** : BLACKOUT. **Sbire** : Sparky. **Mini-jeu** : Scan.
+- **Mécanique** : l'**enquête du Démarrage** dans la salle du terminal (voir §9).
 - Anga : « Le courant saute ! Marche sur les plateformes quand elles sont allumées. »
 
 ### Monde 2 · Memory Lanes (RAM) — « Mémoire saturée, 200 onglets ouverts »
@@ -89,6 +90,7 @@ nouveaux**, un **incident vedette**, un **sbire** qui garde le terminal, et une 
   fenêtres de navigateur tombent en rafale et restent un instant comme plateformes), **Fuite
   mémoire** (un flot de données violet MONTE derrière toi : section de grimpe chronométrée).
 - **Incident vedette** : POP-UP STORM. **Sbire** : Pop-Up. **Mini-jeu** : Pop-up Killer (nouveau).
+- **Mécanique** : la **jauge de RAM** se remplit et ralentit la marche ; gros boutons « Libérer la RAM ».
 
 ### Monde 3 · Data Vault (SSD) — « Fichiers corrompus »
 - **Parcours** : une **grande grille de cellules NAND** (damier en hauteur), façon labyrinthe à
@@ -103,6 +105,8 @@ nouveaux**, un **incident vedette**, un **sbire** qui garde le terminal, et une 
 - **Pièges** : vent des ventilateurs, glace glissante, **Boules de poussière** qui roulent,
   **Jets de vapeur** (bouches de chaleur), pales.
 - **Incident vedette** : SURCHAUFFE. **Sbire** : Dusty. **Mini-jeu** : Firewall.
+- **Mécanique** : la **jauge de chaleur** (arrêt thermique à 100 °C), les ventilateurs à relancer et le
+  **ventilo propulseur** qui fait décoller jusqu'à une corniche à Bits bonus.
 
 ### Monde 5 · The Core (CPU) — « Processeur à 100 %, un crypto-mineur ! »
 - **Parcours** : une **spirale** qui monte autour du ventirad à caloducs, puis un sprint sur la
@@ -110,7 +114,8 @@ nouveaux**, un **incident vedette**, un **sbire** qui garde le terminal, et une 
 - **Pièges** : lasers, **Pioches du mineur** (pendules géants), **Plateformes en latence**
   (elles se déplacent avec un temps de retard, par à-coups), **Roue de chargement** (anneau de
   plateformes qui tourne comme l'icône de chargement).
-- **Incident vedette** : LAG SPIKE. **Sbire** : Minor. **Mini-jeu** : Scan (difficile).
+- **Incident vedette** : LAG SPIKE. **Sbire** : Minor. **Mini-jeu** : **Tri des fichiers** (nouveau).
+- **Mécanique** : trois **bloatware** bloquent le chemin, à désinstaller.
 
 ### Monde 6 · Render Canyon (GPU) — « Écran figé, artefacts »
 - **Parcours** : un canyon **le long de la carte graphique**, entre ses 3 ventilateurs géants,
@@ -118,12 +123,14 @@ nouveaux**, un **incident vedette**, un **sbire** qui garde le terminal, et une 
 - **Pièges** : pales géantes, lasers de rendu, **Pixels morts** (le sol s'éteint en vagues),
   **Pont de chargement** (un pont qui se remplit comme une barre de progression… et parfois bloque).
 - **Incident vedette** : FREEZE. **Sbire** : Freezy. **Mini-jeu** : Memory.
+- **Mécanique** : de brefs **artefacts graphiques** tant que la carte graphique est infectée.
 
 ### Monde 7 · Neural Nexus (Puce IA) — Le repaire de LAGZ
 - **Parcours** : plateformes flottantes autour du cerveau holographique, puis l'**arène du boss**.
 - **Pièges** : virus patrouilleurs, **Curseur géant** (une main-curseur qui vient cliquer là où tu
   te trouves), **Pare-feu mobiles** (murs percés qui avancent), un peu de tout.
 - **Incidents** : tous, plus souvent.
+- **Mécanique** : l'**enquête des Sessions de jeu** dans la salle du terminal (voir §9).
 - **BOSS LAGZ** (3 phases, 1 à 2 min) :
   1. LAGZ tire des lasers et envoie le curseur géant : survivre en courant autour de l'arène.
   2. Le sol se fragmente (plateformes qui s'effacent) et des virus sortent : atteindre les 3
@@ -138,7 +145,9 @@ On apparaît **sur le bureau d'Anga**, minuscule, devant la tour PC géante à p
 - l'**écran d'Anga** affiche « LIVE DANS 59:00 » et le chat qui s'impatiente ;
 - le **Miniaturiseur AngAInOne** (le portail de départ, pad JOUER) ;
 - l'écran de l'app AngAInOne (progression du joueur), les classements, la boutique, l'arcade ;
-- décor : clavier mécanique RGB, souris, tasse, micro de stream, lampe, câbles.
+- décor : clavier mécanique RGB, souris, tasse, micro de stream, lampe, câbles ;
+- le **Stream Deck** : trois touches font quelque chose (pet du mini-Anga, confettis, mode lent) ;
+- la **touche Suppr** posée devant le portail : elle ouvre le **BIOS caché** (voir §8).
 
 ## 7. Difficulté et rejouabilité
 
@@ -182,4 +191,41 @@ l'app **détecte, diagnostique et répare** : jamais « enlève les virus », ja
 | Monde 6, salle du terminal | **RGB = +10 FPS** (« Activer ») | +10 de vitesse de marche pendant 10 s, levier arc-en-ciel |
 | Monde 7, salle du terminal | **L'escargot « Wi-Fi de l'hôtel »** | transporte les paquets (ping 999), on peut monter dessus |
 | Monde 7, toit de la salle | **AngATV, le dev caché** (« Parler ») | « Tu m'as trouvé. Le PC est entre de bonnes mains. » |
+| Lobby, devant le portail | **La touche Suppr** (« Entrer dans le BIOS ») | salle bleue « Setup Utility » au-dessus de la chambre : note du BIOS, « À faire d'abord », QR code géant de l'app (anga.tv), F10 pour sortir |
+| Lobby, Stream Deck | **Trois touches** | « Pet ! » (le mini-Anga est content), confettis, mode lent 6 s (« un PC sans SSD ») |
+
+## 9. Les mécaniques « PC » et les rôles d'équipe
+
+Chaque monde a maintenant une mécanique qui reprend **un vrai problème de PC** et la façon dont
+l'app le règle. Serveur : `World/Tower/Mechanics.luau` (et `PuzzleService`) ; client :
+`Controllers/Mechanics.luau` ; logique pure testée : `Util/Gauges.luau`, `Config/Puzzles.luau`.
+
+| Monde | Mécanique | Comment ça marche | Ce qu'on apprend |
+|---|---|---|---|
+| 1 · Alimentation | **Enquête du Démarrage** | Cinq panneaux façon page Démarrage (impact, éditeur). Un seul n'a rien à faire là (« RAM_download_2go.exe », éditeur inconnu) : le désactiver rapporte 25 Bits une fois. Mauvais choix : l'assistant donne un indice. | Regarder l'éditeur et l'impact avant de laisser un programme se lancer avec le PC. |
+| 2 · Memory Lanes | **RAM saturée** | La jauge se remplit en ≈ 45 s ; au-delà de 70 %, la marche **au sol** ralentit (jusqu'à × 0,6, les sauts gardent leur portée). Trois gros boutons « Libérer la RAM » la vident (12 s de recharge chacun). | Fermer ce qui tourne pour rien (onglets, applis) libère la mémoire. |
+| 4 · Cryo Tower | **Surchauffe** | La chaleur monte en courant (40 → 100 °C en 30 s de course sans pause), baisse à l'arrêt, vite près d'un ventilateur qui tourne : les 3 géants, et 4 ventilateurs **encrassés à relancer**. À 100 °C : arrêt thermique, retour au checkpoint. Bonus : le **ventilo propulseur** près du checkpoint 17. | La poussière bouche les ventilos ; un PC qui chauffe se coupe pour se protéger. |
+| 5 · The Core | **Bloatware** | Trois programmes inutiles (« Barre d'outils Super-Recherche », « Optimiseur 3000 GRATUIT », « Coupons Express Assistant ») bloquent le chemin : appui maintenu « Désinstaller ». Ils se réinstallent à la prochaine ascension (c'est leur spécialité). | Désinstaller ce qu'on n'a pas choisi d'installer. |
+| 5 · The Core | **Tri des fichiers** (terminal) | Garder, Corbeille ou Quarantaine ; un programme déguisé gardé coûte deux vies. | Lire l'extension complète : « photo.jpg.exe » n'est pas une photo. |
+| 6 · Render Canyon | **Artefacts GPU** | De brefs rectangles colorés et une teinte à l'écran tant que le monde est infecté (rien avec « Réduire les animations »). | Les artefacts sont un symptôme de carte graphique ou de pilote. |
+| 7 · Neural Nexus | **Enquête des Sessions de jeu** | Six panneaux : le programme qui a fait ramer la partie, et qui l'a lancé. On remonte la chaîne jusqu'au vrai coupable (« lagz_miner.exe »), 40 Bits une fois. | Le programme qui rame n'est pas toujours le coupable : regarder qui l'a lancé. |
+| Arcade | **Défense du CPU** | Des virus remontent trois bus vers le processeur ; on pose des antivirus avec l'énergie. | Version 2D, jouable seul, du mode « tour de défense » du guide. |
+
+Les jauges sont propres à chaque joueur, en pause dans la salle du terminal, pendant un mini-jeu,
+et une fois le monde nettoyé. Une jauge contextuelle s'affiche à gauche du HUD (« 💾 RAM 72 % »,
+« 🌡 CPU 81 °C »).
+
+**Rôles d'équipe** (`Config/Roles.luau`, `RoleService`, page « Rôle d'équipe » du menu) : chacun a
+un seul passif, aucun n'est obligatoire et aucun ne rend une ascension « assistée ».
+
+| Rôle | Passif |
+|---|---|
+| Technicien | Les jauges RAM et chaleur montent 25 % moins vite. |
+| Nettoyeur | +10 % de Bits à chaque terminal antivirus nettoyé. |
+| Enquêteur | Enquêtes et bloatware désinstallés rapportent le double. |
+| Service | +1 Bit à chaque checkpoint atteint. |
+
+**Pas encore fait** (idées du guide) : la coop à 4 rôles **obligatoires** avec objectifs partagés,
+les jauges **partagées** entre joueurs, et le mode « tour de défense » en 3D à plusieurs. Ce qui
+existe : les rôles en version légère (passifs), et la défense en mini-jeu 2D à l'arcade.
 

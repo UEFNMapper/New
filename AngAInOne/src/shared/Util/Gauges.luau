@@ -6,8 +6,8 @@
 	  RAM_SLOW_FROM, le joueur ralentit (jusqu'à RAM_MIN_FACTOR à 100 %). Les boutons géants
 	  « Libérer la RAM » la vident d'un coup (cooldown par bouton).
 	- Chaleur (monde 4, Cryo Tower) : le CPU chauffe quand on court, refroidit à l'arrêt, plus vite
-	  près d'un ventilateur relancé ; à HEAT_MAX, plantage thermique (mort « Overheat »).
-	Le client applique ces valeurs (Controllers/Gauges) ; tout est testé dans tests/gauges.spec.luau.
+	  près d'un ventilateur qui tourne ; à HEAT_MAX, arrêt thermique (mort « ThermalShutdown »).
+	Le client applique ces valeurs (Controllers/Mechanics) ; tout est testé dans tests/gauges.spec.luau.
 ]]
 
 local Gauges = {}
@@ -15,14 +15,14 @@ local Gauges = {}
 -- RAM (en %)
 Gauges.RAM_FILL_PER_SECOND = 2.2 -- 0 → 100 % en ≈ 45 s
 Gauges.RAM_SLOW_FROM = 70 -- en dessous : vitesse normale
-Gauges.RAM_MIN_FACTOR = 0.55 -- vitesse à 100 %
+Gauges.RAM_MIN_FACTOR = 0.6 -- vitesse de marche au sol à 100 % (les sauts gardent leur portée)
 Gauges.RAM_FLUSH_COOLDOWN = 12 -- s, par bouton
 
 -- Chaleur (en °C)
 Gauges.HEAT_IDLE = 40
 Gauges.HEAT_WARN = 85
 Gauges.HEAT_MAX = 100
-Gauges.HEAT_RUN_PER_SECOND = 2.6 -- en mouvement : 40 → 100 en ≈ 23 s de course continue
+Gauges.HEAT_RUN_PER_SECOND = 2.0 -- en mouvement : 40 → 100 en 30 s de course continue
 Gauges.HEAT_REST_PER_SECOND = 9 -- à l'arrêt
 Gauges.HEAT_COOL_PER_SECOND = 22 -- près d'un ventilateur relancé (zone fraîche)
 Gauges.COOL_ZONE_RADIUS = 14 -- studs
