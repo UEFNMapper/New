@@ -468,7 +468,11 @@ local INTROS: { { Action: string, Task: string, Detail: string } } = {
 		Task = "CPU 97 °C · GPU 91 °C",
 		Detail = "Dusty bouche les ventilos.",
 	},
-	{ Action = "Lancer le test", Task = "3 FPS · objectif 144 FPS", Detail = "Minor fait tourner son crypto-mineur." },
+	{
+		Action = "Lancer le tri",
+		Task = "1 284 fichiers en vrac · 3 FPS",
+		Detail = "Minor cache son mineur parmi tes fichiers : trie-les.",
+	},
 	{
 		Action = "Télécharger et extraire",
 		Task = `Étape 1 — Préparer l'installation`,
@@ -478,7 +482,8 @@ local INTROS: { { Action: string, Task: string, Detail: string } } = {
 }
 
 -- Page d'un mini-jeu pour la borne d'arcade (quand le jeu n'est pas celui du monde du niveau).
-local KIND_WORLD: { [string]: number } = { Scan = 1, Popup = 2, Defrag = 3, Firewall = 4, Dodge = 5, Memory = 6 }
+local KIND_WORLD: { [string]: number } =
+	{ Scan = 1, Popup = 2, Defrag = 3, Firewall = 4, Dodge = 5, Memory = 6, Tri = 5, Defense = 5 }
 
 -- Monde (page de l'app) d'une intro : celui du niveau si c'est son mini-jeu, sinon celui du jeu.
 function AppPages.IntroWorld(kind: string, level: number): number

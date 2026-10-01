@@ -25,6 +25,8 @@ local GAMES = {
 	{ Kind = "Dodge", Name = "Dodge", Rule = "Évite les virus en sautant !", Icon = "Star" },
 	{ Kind = "Popup", Name = "Pop-up Killer", Rule = "Ferme les pubs avant que la RAM explose !", Icon = "Close" },
 	{ Kind = "Defrag", Name = "Défrag", Rule = "Regroupe les blocs de chaque fichier !", Icon = "Check" },
+	{ Kind = "Tri", Name = "Tri des fichiers", Rule = "Garder, Corbeille ou Quarantaine ?", Icon = "Download" },
+	{ Kind = "Defense", Name = "Défense du CPU", Rule = "Pose des antivirus sur les bus !", Icon = "Cpu" },
 }
 
 function ArcadePanel.Mount(layer: Frame)
@@ -42,8 +44,8 @@ function ArcadePanel.Mount(layer: Frame)
 		Parent = panel.Body,
 	}, {
 		New("UIGridLayout", {
-			-- 3 colonnes x 2 lignes : 2 espacements de 12 px à répartir sur 3 cases.
-			CellSize = UDim2.new(1 / 3, -8, 0.5, -6),
+			-- 4 colonnes x 2 lignes : 3 espacements de 12 px à répartir sur 4 cases.
+			CellSize = UDim2.new(1 / 4, -9, 0.5, -6),
 			CellPadding = UDim2.fromOffset(12, 12),
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}) :: Instance,

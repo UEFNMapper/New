@@ -529,7 +529,8 @@ function Common.House(fr: Frame, y: number, climb: number, opts: HouseOptions): 
 		local screenCf = facing(P(fr, 12, y + 12, -43.2), fr.R)
 		Box(model, "ScreenBezel", Vector3.new(19, 11, 0.6), screenCf * CFrame.new(0, 0, 0.4), C.Black, METAL)
 		local screen = Box(model, "Screen", Vector3.new(18, 10, 0.3), screenCf, C.Bg, Enum.Material.Glass)
-		Props.Sign(screen, "ANTIVIRUS", `Mini-jeu : {world.Minigame}`, SAFE, C.White)
+		local gameName = Tower.MinigameNames[world.Minigame] or world.Minigame
+		Props.Sign(screen, "ANTIVIRUS", `Mini-jeu : {gameName}`, SAFE, C.White)
 		-- Conseil « vraie vie » du monde et son raccourci dans la vraie app (Tower.Tip / AppTip), sur
 		-- le mur du fond à gauche de l'écran : ce que le joueur repart en ayant appris pour son propre PC.
 		local tipCf = facing(P(fr, -2.5, y + 10, -43.2), fr.R)

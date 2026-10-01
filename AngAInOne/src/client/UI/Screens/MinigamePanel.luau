@@ -77,6 +77,8 @@ local GAMES: { [string]: Common.Game } = {
 	Dodge = require(Minigames.Dodge),
 	Popup = require(Minigames.Popup),
 	Defrag = require(Minigames.Defrag),
+	Tri = require(Minigames.Tri),
+	Defense = require(Minigames.Defense),
 }
 
 local BACK_ACTION = "AngAInOneMinigameBack"

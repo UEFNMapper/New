@@ -712,11 +712,12 @@ return {
 	end,
 
 	["config : Pop-up Killer et Défrag enregistrés"] = function()
-		for _, kind in { "Scan", "Firewall", "Memory", "Dodge", "Popup", "Defrag" } do
+		for _, kind in { "Scan", "Firewall", "Memory", "Dodge", "Popup", "Defrag", "Tri", "Defense" } do
 			Expect.truthy(table.find(Tower.MinigameKinds, kind) ~= nil, `{kind} dans MinigameKinds`)
 			Expect.truthy(GameConfig.Minigame.MinSeconds[kind] ~= nil, `MinSeconds de {kind}`)
 		end
-		Expect.equal(#Tower.MinigameKinds, 6)
+		Expect.equal(#Tower.MinigameKinds, 8)
+		Expect.equal(Tower.Worlds[5].Minigame, "Tri", "tri des fichiers au monde 5")
 		Expect.equal(Tower.Worlds[2].Minigame, "Popup")
 		Expect.equal(Tower.Worlds[3].Minigame, "Defrag")
 		Expect.equal(Tower.Worlds[7].Minigame, "Firewall", "le combat final est un Firewall")

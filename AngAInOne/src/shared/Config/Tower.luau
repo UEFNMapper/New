@@ -78,6 +78,18 @@ Tower.TrapKinds = {
 }
 
 -- Mini-jeux 2D des terminaux antivirus (voir UI/Minigames).
+-- Nom affiché de chaque mini-jeu (écran du terminal, page de l'app).
+Tower.MinigameNames = table.freeze({
+	Scan = "Scan antivirus",
+	Firewall = "Pare-feu",
+	Memory = "Mémoire",
+	Dodge = "Transfert",
+	Popup = "Pop-up Killer",
+	Defrag = "Défrag",
+	Tri = "Tri des fichiers",
+	Defense = "Défense du CPU",
+})
+
 Tower.MinigameKinds = {
 	"Scan", -- tape les virus qui surgissent dans la grille avant qu'ils disparaissent
 	"Firewall", -- déplace le pare-feu et tire sur les virus qui tombent
@@ -85,6 +97,8 @@ Tower.MinigameKinds = {
 	"Dodge", -- guide le paquet de données entre les virus
 	"Popup", -- Pop-up Killer : ferme les pubs (✕) avant que la RAM soit pleine, pas les faux boutons
 	"Defrag", -- Défrag : échange les blocs pour regrouper chaque fichier
+	"Tri", -- tri des fichiers : Garder, Corbeille ou Quarantaine (programmes déguisés)
+	"Defense", -- défense du CPU : antivirus sur les bus de données (arcade)
 }
 
 Tower.Worlds = {
@@ -179,7 +193,7 @@ Tower.Worlds = {
 		Secondary = "FBD38D",
 		Tint = "FFFBEA",
 		Traps = { "Laser", "Heat", "Mover" },
-		Minigame = "Scan",
+		Minigame = "Tri",
 		Intro = "Le processeur surchauffe ! Lasers et bouches de chaleur partout. Observe avant de courir.",
 		Symptom = "Processeur à 100 % : un crypto-mineur !",
 		Minion = "Minor",

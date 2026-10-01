@@ -69,7 +69,7 @@ Medals.Worlds = table.freeze({
 	table.freeze({ Gold = 115, Silver = 190 }),
 	-- 4 · Cryo Tower : ≈ 475 studs, vent et pales (on attend les rafales), Firewall.
 	table.freeze({ Gold = 115, Silver = 190 }),
-	-- 5 · The Core : ≈ 515 studs, plateformes en latence (lentes), Scan.
+	-- 5 · The Core : ≈ 515 studs, plateformes en latence (lentes), bloatware, Tri des fichiers.
 	table.freeze({ Gold = 120, Silver = 200 }),
 	-- 6 · Render Canyon : ≈ 500 studs, 93 pièges (pixels morts, ponts de chargement), Memory.
 	table.freeze({ Gold = 125, Silver = 210 }),

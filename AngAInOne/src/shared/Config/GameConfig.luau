@@ -30,7 +30,16 @@ GameConfig.Run = table.freeze({
 GameConfig.Minigame = table.freeze({
 	-- Popup / Defrag : sous la victoire la plus rapide mesurée par les joueurs simulés
 	-- (tests/minigames.spec : popup ~6,5 s avec l'astuce des faux boutons, défrag ~3,6 s).
-	MinSeconds = table.freeze({ Scan = 8, Firewall = 8, Memory = 5, Dodge = 8, Popup = 5, Defrag = 3 }),
+	MinSeconds = table.freeze({
+		Scan = 8,
+		Firewall = 8,
+		Memory = 5,
+		Dodge = 8,
+		Popup = 5,
+		Defrag = 3,
+		Tri = 4,
+		Defense = 10,
+	}),
 	MaxSeconds = 420, -- depuis le dernier essai (RÉESSAYER relance le chrono) : au-delà, partie abandonnée
 	TerminalDistance = 24, -- distance max au terminal pour lancer le mini-jeu
 	WorldBits = 20, -- + 5 par monde
