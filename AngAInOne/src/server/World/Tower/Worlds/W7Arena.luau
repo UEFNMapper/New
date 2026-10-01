@@ -441,6 +441,7 @@ function Arena.Build(ctx: Common.WorldContext)
 	local signCf = CFrame.lookAt(CENTER + Vector3.new(0, 26, 34), CENTER + Vector3.new(0, 26, 0))
 	local sign = Box(decor, "ArenaSign", Vector3.new(30, 6, 0.4), signCf, C.Bg, METAL)
 	Props.Sign(sign, "REPAIRE DE LAGZ", "Survis · branche les 3 prises · terminal final", style.Primary, C.White)
+	ctx.Infected(sign) -- sinon il cache le panneau de victoire, juste derrière
 	local clean = Box(decor, "ArenaSignClean", Vector3.new(30.4, 6.4, 0.3), signCf * CFrame.new(0, 0, 0.3), C.Bg, METAL)
 	Props.Sign(clean, "LE PC TOURNE À 144 FPS !", "LAGZ est vaincu · le live peut commencer", SAFE, C.White)
 	ctx.Cleaned(clean)

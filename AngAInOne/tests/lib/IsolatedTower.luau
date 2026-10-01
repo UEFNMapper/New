@@ -29,6 +29,9 @@ local CFrame = setmetatable({ lookAt = lookAt }, { __index = roblox.CFrame })
 export type Options = {
 	Models: boolean?, -- installe les modèles simulés (tous, ou `Keys`)
 	Keys: { string }?,
+	-- L'import Roblox arrive tourné (ex. demi-tour) : ModelLibrary doit le recalibrer.
+	ImportRotation: any?,
+	ImportScale: number?, -- l'import arrive mis à l'échelle (1 unité du fichier = ImportScale studs)
 	Observe: ((ModelLibrary: any) -> ())?,
 	-- Retouches de modules juste après leur chargement, par chemin (ex. neutraliser Tower/Bonus).
 	Patch: { [string]: (module: any) -> () }?,
@@ -122,7 +125,12 @@ function IsolatedTower.Build(options: Options?): Built
 	end
 	local ModelLibrary = load("src/server/World/ModelLibrary.luau")
 	if opts.Models then
-		FakeModels.Install(ModelLibrary, opts.Keys)
+		FakeModels.ImportRotation = opts.ImportRotation
+		FakeModels.ImportScale = opts.ImportScale
+		local ok, err = pcall(FakeModels.Install, ModelLibrary, opts.Keys)
+		FakeModels.ImportRotation = nil
+		FakeModels.ImportScale = nil
+		assert(ok, err)
 	end
 	if opts.Observe then
 		opts.Observe(ModelLibrary)

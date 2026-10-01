@@ -211,8 +211,8 @@ local function biosRoom(tower: Instance)
 	local qrWall = Box(
 		folder,
 		"BiosQr",
-		Vector3.new(22, 22, 0.3),
-		facing(at + Vector3.new(-W / 2 + 0.6, 12, 0), Vector3.xAxis),
+		Vector3.new(18, 18, 0.3),
+		facing(at + Vector3.new(-W / 2 + 0.6, 10.5, 0), Vector3.xAxis),
 		Color3.new(1, 1, 1),
 		SMOOTH
 	)
@@ -240,8 +240,8 @@ local function biosRoom(tower: Instance)
 	local qrSign = Box(
 		folder,
 		"BiosQrSign",
-		Vector3.new(22, 3, 0.3),
-		facing(at + Vector3.new(-W / 2 + 0.6, 25.2, 0), Vector3.xAxis),
+		Vector3.new(20, 3, 0.3),
+		facing(at + Vector3.new(-W / 2 + 0.6, 21.6, 0), Vector3.xAxis), -- (sous le plafond, à 24)
 		BIOS_GREY,
 		SMOOTH
 	)
@@ -400,7 +400,8 @@ local function corbeille(ctx: Common.WorldContext, folder: Instance, fr: Common.
 	})
 	bin.CanCollide = true
 	Box(folder, "BinRim", Vector3.new(9.6, 0.6, 9.6), cf * CFrame.new(0, 9, 0), C.MetalLight, METAL)
-	local plate = Box(folder, "BinSign", Vector3.new(7, 2.4, 0.3), cf * CFrame.new(0, 11.4, 0), C.Bg, SMOOTH)
+	-- Étiquette au-dessus des fichiers qui dépassent (ils la cachaient)
+	local plate = Box(folder, "BinSign", Vector3.new(7, 2.4, 0.3), cf * CFrame.new(0, 16.6, 0), C.Bg, SMOOTH)
 	Props.Sign(plate, "CORBEILLE", "3 éléments · vider ?", ctx.Style.Primary, C.White)
 	-- Fichiers célèbres qui dépassent de la corbeille
 	type File = { Name: string, Color: Color3, Yaw: number }
@@ -415,7 +416,7 @@ local function corbeille(ctx: Common.WorldContext, folder: Instance, fr: Common.
 			folder,
 			"File",
 			Vector3.new(4.2, 5.4, 0.25),
-			cf * CFrame.new((index - 2) * 2.2, 10.2, (index - 2) * 0.8) * tilt,
+			cf * CFrame.new((index - 2) * 2.2, 11.8, (index - 2) * 0.8) * tilt, -- bas dans la corbeille, nom au-dessus du rebord
 			file.Color,
 			SMOOTH
 		)

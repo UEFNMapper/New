@@ -908,6 +908,8 @@ end
 
 -- Fenêtre au coucher de soleil : ciel en dégradé autoéclairé, soleil, silhouettes d'immeubles,
 -- cadre, croisillons, appui, rideaux. `cf` = centre sur le mur, LookVector = vers la pièce.
+-- Tout est posé DEVANT le mur (z local < 0) : ciel contre le mur, soleil (disque) puis immeubles
+-- devant le ciel, cadre en saillie (le ciel était enfoncé dans le mur : on ne voyait que le cadre).
 function RoomProps.Window(parent: Instance, cf: CFrame, width: number, height: number): Model
 	local model = Build.Model("Window", parent)
 	local frameColor = Color3.fromRGB(236, 232, 226)
@@ -915,7 +917,7 @@ function RoomProps.Window(parent: Instance, cf: CFrame, width: number, height: n
 		model,
 		"WindowSky",
 		Vector3.new(width, height, 2),
-		cf * CFrame.new(0, 0, 6),
+		cf * CFrame.new(0, 0, -1.5),
 		Color3.fromRGB(255, 150, 110),
 		NEON
 	)
@@ -929,16 +931,16 @@ function RoomProps.Window(parent: Instance, cf: CFrame, width: number, height: n
 	gradient.Color = ColorSequence.new(Color3.fromRGB(96, 70, 170), Color3.fromRGB(255, 150, 90))
 	gradient.Rotation = 90
 	gradient.Parent = bg
-	-- Soleil bas sur l'horizon, immeubles en ombre chinoise
-	local sun = ball(
-		model,
-		"WindowSun",
-		height * 0.28,
-		cf * CFrame.new(width * 0.18, -height * 0.18, 4.5),
-		Color3.fromRGB(255, 196, 120),
-		NEON
-	)
-	sun.Transparency = 0.05
+	-- Soleil bas sur l'horizon (disque plaqué sur le ciel), immeubles en ombre chinoise devant
+	local sun = Build.Cylinder({
+		Name = "WindowSun",
+		Size = Vector3.new(0.6, height * 0.28, height * 0.28),
+		CFrame = cf * CFrame.new(width * 0.18, -height * 0.18, -3) * CFrame.Angles(0, math.pi / 2, 0),
+		Color = Color3.fromRGB(255, 196, 120),
+		Material = NEON,
+		Parent = model,
+	})
+	sun.CastShadow = false
 	local skyline = {
 		{ -0.42, 0.2, 0.3 },
 		{ -0.25, 0.14, 0.42 },
@@ -953,7 +955,7 @@ function RoomProps.Window(parent: Instance, cf: CFrame, width: number, height: n
 			model,
 			"Skyline",
 			Vector3.new(w, h, 1),
-			cf * CFrame.new(width * b[1], -height / 2 + h / 2, 3.5),
+			cf * CFrame.new(width * b[1], -height / 2 + h / 2, -4.5),
 			Color3.fromRGB(58, 40, 86)
 		)
 	end
@@ -969,21 +971,21 @@ function RoomProps.Window(parent: Instance, cf: CFrame, width: number, height: n
 			{ 0, height * 0.12, width, 14 },
 		}
 	do
-		Box(model, "WindowFrame", Vector3.new(bar[3], bar[4], 16), cf * CFrame.new(bar[1], bar[2], 0), frameColor)
+		Box(model, "WindowFrame", Vector3.new(bar[3], bar[4], 16), cf * CFrame.new(bar[1], bar[2], -8), frameColor)
 	end
-	Box(model, "WindowSill", Vector3.new(width + 80, 16, 60), cf * CFrame.new(0, -height / 2 - t - 8, -20), frameColor)
+	Box(model, "WindowSill", Vector3.new(width + 80, 16, 60), cf * CFrame.new(0, -height / 2 - t - 8, -30), frameColor)
 	-- Rideaux et tringle
 	for _, side in { -1, 1 } do
 		Box(
 			model,
 			"Curtain",
 			Vector3.new(width * 0.24, height + 200, 20),
-			cf * CFrame.new(side * (width / 2 + width * 0.1), -40, -30),
+			cf * CFrame.new(side * (width / 2 + width * 0.1), -40, -38),
 			Color3.fromRGB(92, 58, 150),
 			FABRIC
 		)
 	end
-	Rod(model, "CurtainRod", cf * CFrame.new(0, height / 2 + 80, -30), width * 1.7, 12, C.Nickel, METAL)
+	Rod(model, "CurtainRod", cf * CFrame.new(0, height / 2 + 80, -38), width * 1.7, 12, C.Nickel, METAL)
 	return model
 end
 
@@ -1016,8 +1018,14 @@ function RoomProps.NeonSign(
 	color: Color3
 ): Model
 	local model = Build.Model("NeonSign", parent)
-	local plate =
-		Box(model, "NeonSignPlate", Vector3.new(width, height, 1), cf * CFrame.new(0, 0, 4), Color3.fromRGB(20, 20, 26))
+	-- Plaque entre le mur et les tubes (elle était à 4 studs DERRIÈRE `cf` : dans le mur, texte invisible)
+	local plate = Box(
+		model,
+		"NeonSignPlate",
+		Vector3.new(width, height, 1),
+		cf * CFrame.new(0, 0, 0.4),
+		Color3.fromRGB(20, 20, 26)
+	)
 	plate.Transparency = 0.4
 	local gui = surface(plate, Enum.NormalId.Front, 500 / width, 0)
 	gui.Brightness = 2.5

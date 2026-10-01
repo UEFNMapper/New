@@ -8,6 +8,8 @@ local luau = require("@lune/luau")
 local Shim = require("./lib/RobloxShim")
 local Expect = require("./lib/Expect")
 local PacingSim = require("./lib/PacingSim")
+local FakeModels = require("./lib/FakeModels")
+local PlayRoute = require("./lib/PlayRoute")
 local IsolatedTower = require("./lib/IsolatedTower")
 local roblox = require("@lune/roblox")
 
@@ -27,6 +29,8 @@ for _, file in files do
 					Expect = Expect,
 					PacingSim = PacingSim,
 					IsolatedTower = IsolatedTower, -- tour construite à part, avec modèles 3D simulés
+					FakeModels = FakeModels, -- modèles 3D simulés (assets/models/bounds.json)
+					PlayRoute = PlayRoute, -- parties simulées (ce que voit et atteint le joueur)
 					Fs = fs,
 					Vector3 = roblox.Vector3,
 				},

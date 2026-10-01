@@ -230,6 +230,60 @@ return {
 		Expect.truthy(sticks >= 4, `barrettes : {sticks}`)
 	end,
 
+	["import Roblox tourné (demi-tour, quart de tour) ou agrandi : la tour posée est identique, pièce par pièce"] = function()
+		local variants = {
+			{ Turn = roblox.CFrame.Angles(0, math.pi, 0), Scale = 1 },
+			{ Turn = roblox.CFrame.Angles(0, -math.pi / 2, 0), Scale = 1 },
+			{ Turn = roblox.CFrame.Angles(0, math.pi, 0), Scale = 3.57 }, -- mètres glTF -> studs
+		}
+		for _, variant in variants do
+			local turned = {}
+			IsolatedTower.Build({
+				Models = true,
+				ImportRotation = variant.Turn,
+				ImportScale = variant.Scale,
+				Observe = function(ModelLibrary)
+					local realPlace = ModelLibrary.Place
+					ModelLibrary.Place = function(key, cframe, parent, options, fallback)
+						local placed = realPlace(key, cframe, parent, options, fallback)
+						if placed and ModelLibrary.Has(key) then
+							table.insert(turned, { Key = key, Model = placed })
+						end
+						return placed
+					end
+				end,
+			})
+			Expect.equal(#turned, #records, "même nombre de modèles posés")
+			local worst, where = 0, ""
+			for i, rec in records do
+				local other = turned[i]
+				Expect.equal(other.Key, rec.Key, `pose {i}`)
+				local want: { [string]: { any } } = {}
+				for _, part in rec.Model:GetDescendants() do
+					if part:IsA("BasePart") then
+						local list = want[part.Name] or {}
+						table.insert(list, part)
+						want[part.Name] = list
+					end
+				end
+				for _, part in other.Model:GetDescendants() do
+					if part:IsA("BasePart") then
+						local best = math.huge
+						for _, ref in want[part.Name] or {} do
+							local lo, hi = IsolatedTower.Bounds(ref)
+							local lo2, hi2 = IsolatedTower.Bounds(part)
+							best = math.min(best, (lo - lo2).Magnitude + (hi - hi2).Magnitude)
+						end
+						if best > worst then
+							worst, where = best, `{rec.Key} {part:GetFullName()}`
+						end
+					end
+				end
+			end
+			Expect.truthy(worst < 0.05, `écart max {worst} ({where})`)
+		end
+	end,
+
 	["façades : chaque modèle regarde dans le sens voulu par sa pose (LookVector = avant)"] = function()
 		-- Pièce repère de l'AVANT (ou de l'ARRIÈRE : Back = true) de chaque modèle, d'après assets/models/bounds.json
 		local MARKERS: { [string]: { Part: string, Back: boolean?, From: string? } } = {

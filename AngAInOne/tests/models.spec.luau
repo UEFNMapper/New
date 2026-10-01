@@ -95,7 +95,112 @@ local function primitives(): (any, any, any)
 	return folder, floor, decor
 end
 
+-- Centres des pièces (par nom, triés) relatifs au centre de la boîte, après préparation.
+local function signature(model: any): { [string]: { any } }
+	local x0, y0, z0, x1, y1, z1 = math.huge, math.huge, math.huge, -math.huge, -math.huge, -math.huge
+	for _, part in model:GetDescendants() do
+		if part:IsA("BasePart") then
+			local p = part.CFrame.Position
+			x0, y0, z0 = math.min(x0, p.X), math.min(y0, p.Y), math.min(z0, p.Z)
+			x1, y1, z1 = math.max(x1, p.X), math.max(y1, p.Y), math.max(z1, p.Z)
+		end
+	end
+	local center = V3.new((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2)
+	local out: { [string]: { any } } = {}
+	for _, part in model:GetDescendants() do
+		if part:IsA("BasePart") then
+			local list = out[part.Name] or {}
+			table.insert(list, part.CFrame.Position - center)
+			out[part.Name] = list
+		end
+	end
+	return out
+end
+
 return {
+	["calibration : un modèle importé tourné (180°, 90°, couché) revient dans le repère de son fichier"] = function()
+		local turns = {
+			{ Name = "demi-tour (avant glTF +Z -> Roblox -Z)", CFrame = CF.Angles(0, math.pi, 0) },
+			{ Name = "quart de tour", CFrame = CF.Angles(0, math.pi / 2, 0) },
+			{ Name = "couché (Y <-> Z)", CFrame = CF.Angles(-math.pi / 2, 0, 0) },
+		}
+		local checked, symmetric = 0, {}
+		for _, key in FakeModels.Keys() do
+			local straight = FakeModels.Build(key)
+			ModelLibrary._ResetCalibration()
+			local rotation = ModelLibrary._Calibration(straight, key)
+			Expect.equal(rotation, nil, `{key} : import droit, rien à corriger`)
+			for _, turn in turns do
+				local turned = FakeModels.Build(key, turn.CFrame)
+				local found = ModelLibrary._Calibration(turned, key)
+				if not found then
+					table.insert(symmetric, `{key} ({turn.Name})`)
+					continue
+				end
+				-- Après correction, chaque pièce retrouve sa place (au centre de boîte près)
+				local undone = Instance.new("Model")
+				for _, part in turned:GetChildren() do
+					local copy = part:Clone()
+					copy.CFrame = found:Inverse() * part.CFrame
+					copy.Parent = undone
+				end
+				local want, got = signature(straight), signature(undone)
+				for name, list in want do
+					for i, position in list do
+						local other = got[name] and got[name][i]
+						Expect.truthy(
+							other and (other - position).Magnitude < 0.05 + 0.002 * position.Magnitude,
+							`{key} ({turn.Name}) : pièce {name} mal replacée`
+						)
+					end
+				end
+				checked += 1
+			end
+		end
+		-- Les modèles symétriques (pièces) ne se distinguent pas seuls : le consensus les règle (test suivant).
+		print(`    calibration : {checked} imports tournés corrigés ; symétriques : {#symmetric}`)
+		Expect.truthy(checked >= 58 * 2, `imports corrigés : {checked}`)
+	end,
+
+	["calibration : un modèle symétrique prend la rotation des autres (consensus de l'import)"] = function()
+		local half = CF.Angles(0, math.pi, 0)
+		ModelLibrary._ResetCalibration()
+		local ambiguousKeys = {}
+		for _, key in FakeModels.Keys() do
+			local _, sure = ModelLibrary._Calibration(FakeModels.Build(key, half), key)
+			if not sure then
+				table.insert(ambiguousKeys, key)
+			end
+		end
+		Expect.truthy(#ambiguousKeys > 0 and #ambiguousKeys < 20, `modèles ambigus : {#ambiguousKeys}`)
+		-- Les modèles nets d'abord (comme Preload) : ils fixent le consensus « demi-tour »
+		for _, key in FakeModels.Keys() do
+			if not table.find(ambiguousKeys, key) then
+				ModelLibrary._SetTemplate(key, FakeModels.Build(key, half))
+				ModelLibrary._SetTemplate(key, nil)
+			end
+		end
+		for _, key in ambiguousKeys do
+			local found = ModelLibrary._Calibration(FakeModels.Build(key, half), key)
+			Expect.truthy(found ~= nil, `{key} : rotation du consensus appliquée`)
+			if found then
+				local x = found:VectorToWorldSpace(V3.new(1, 0, 0))
+				local z = found:VectorToWorldSpace(V3.new(0, 0, 1))
+				Expect.truthy(x.X < -0.99 and z.Z < -0.99, `{key} : demi-tour attendu`)
+			end
+		end
+		-- Import droit : le consensus reste « rien à corriger »
+		ModelLibrary._ResetCalibration()
+		for _, key in FakeModels.Keys() do
+			ModelLibrary._SetTemplate(key, FakeModels.Build(key))
+			ModelLibrary._SetTemplate(key, nil)
+		end
+		for _, key in ambiguousKeys do
+			Expect.equal(ModelLibrary._Calibration(FakeModels.Build(key), key), nil, `{key} : import droit`)
+		end
+		ModelLibrary._ResetCalibration()
+	end,
+
 	["ModelLibrary : matériau, couleur et pièces qui tournent lus dans le nom"] = function()
 		local blade = roblox.Instance.new("Part")
 		blade.Name = "Blades__SmoothPlastic__2A2D38__Spin"

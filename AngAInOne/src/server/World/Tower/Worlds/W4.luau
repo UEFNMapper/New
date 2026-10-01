@@ -940,12 +940,13 @@ return function(ctx: Common.WorldContext)
 			end
 			ctx.Infected(dust)
 		end
-		-- Thermomètre : 97 °C (infecté) / 65 °C (propre)
-		local hot = Box(decor, "Thermo", Vector3.new(0.3, 16, 40), CFrame.new(-131.5, base + 64, 0), C.Bg)
+		-- Thermomètre : 97 °C (infecté) / 65 °C (propre), sous la fenêtre de l'app « Verdict » (même paroi :
+		-- à base + 64, il était dessous)
+		local hot = Box(decor, "Thermo", Vector3.new(0.3, 16, 40), CFrame.new(-131.5, base + 40, 0), C.Bg)
 		hot.Transparency = 1
 		Props.Sign(hot, "97 °C", "SURCHAUFFE", Color3.fromRGB(255, 120, 96), C.White, Enum.NormalId.Right)
 		ctx.Infected(hot)
-		local cold = Box(decor, "Thermo", Vector3.new(0.3, 16, 40), CFrame.new(-131.5, base + 64, 0), C.Bg)
+		local cold = Box(decor, "Thermo", Vector3.new(0.3, 16, 40), CFrame.new(-131.5, base + 40, 0), C.Bg)
 		cold.Transparency = 1
 		Props.Sign(cold, "65 °C", "Cryo Tower au frais", BLUE, C.White, Enum.NormalId.Right)
 		ctx.Cleaned(cold)

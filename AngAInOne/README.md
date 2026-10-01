@@ -135,7 +135,13 @@ Enchaîne : analyse de types **stricte** contre l'API Roblox (luau-lsp), lint (s
 - les **incidents** (planification, horloge FREEZE / LAG), le **boss** (phases, prises), les modèles 3D (convention de nom) ;
 - le **placement des vrais modèles 3D** (`placement.spec`) : la tour est construite avec les modèles simulés par leurs
   boîtes englobantes (`assets/models/bounds.json`, régénéré par `python3 tools/model_bounds.py`) ; chaque pose doit
-  rester dans la tour, respecter `Fit` / `Height`, et les objets posés au sol toucher leur support ;
+  rester dans la tour, respecter `Fit` / `Height`, et les objets posés au sol toucher leur support ; la tour
+  construite avec un **import Roblox tourné** (demi-tour, quart de tour) ou agrandi est identique, pièce par pièce
+  (calibration de `ModelLibrary` : voir plus bas) ;
+- les **parties simulées** (`playaudit.spec`, `tests/lib/PlayRoute.luau`) : un joueur explore toutes les plateformes
+  atteignables de chaque étape, les salles du terminal, le lobby et le BIOS ; chaque panneau / fenêtre / écran doit être
+  lisible depuis un point de vue (de face, à portée, sans obstacle, face pas collée à une pièce), chaque modèle à façade
+  (écran, visage) doit montrer son avant, chaque prompt (y compris ceux des épreuves) doit être atteignable ;
 - les **détours « Ventilo bonus »** : un par monde, accroché à un checkpoint, pales mortelles, 7 Bits, sans traverser
   le décor (dans les deux décors : modèles ou secours) ;
 - les **mini-jeux** : difficulté, conditions de victoire, bots joueurs ;
@@ -147,11 +153,19 @@ Enchaîne : analyse de types **stricte** contre l'API Roblox (luau-lsp), lint (s
 Tu as changé l'équilibrage ? `lune run tests/tools/pacing_report.luau` affiche la progression simulée génération par génération.
 
 Tu as déplacé un modèle 3D ou ajouté un détour ? Sans Studio :
+- `lune run tests/tools/PlayAudit.luau` : ce que le joueur simulé ne voit pas ou n'atteint pas (panneau tourné vers
+  un mur, caché, collé ; modèle de dos ; prompt hors de portée), avec la raison ; `AUDIT_DEBUG=<nom>` détaille une cible ;
 - `lune run tests/tools/PlacementReport.luau [filtre]` : chaque pose (taille obtenue, Fit demandé, part du Fit
   utilisée par axe, écart avec le support) ;
 - `lune run tests/tools/ExportMap.luau tour.json --models` puis `python3 tests/tools/render_top.py` /
   `render_iso.py` : rendus avec les modèles (boîtes) à la place du décor de secours ;
 - `lune run tests/tools/BonusSpots.luau [monde]` : directions libres autour de chaque checkpoint pour un
   détour bonus (`Tower/Bonus.luau`, table `SPECS`).
+
+**Orientation des modèles 3D à l'import.** L'import Roblox d'un `.glb` peut tourner le modèle (le glTF a son avant
+en +Z, Roblox en -Z) : c'est la cause la plus probable de la borne du terminal vue de dos en jeu. `ModelLibrary` compare donc chaque asset
+chargé à la signature de son fichier (`World/ModelSignatures.luau`, généré par `python3 tools/model_bounds.py` :
+centre de chaque pièce) et annule la rotation trouvée ; un modèle symétrique prend la rotation constatée sur les autres.
+Toute la mise en place (`ORIENT`, `ORIGIN`, tests de façade) reste écrite dans le repère du fichier.
 
 La même vérification tourne en CI GitHub Actions à chaque push.

@@ -44,8 +44,14 @@ function FakeModels.Size(key: string): (any, any)
 		roblox.Vector3.new(entry.min[1], entry.min[2], entry.min[3])
 end
 
--- Construit le modèle simulé (une Part par noeud-maillage, boîtes englobantes).
-function FakeModels.Build(key: string): any
+-- Rotation simulée de l'import Roblox (tests : un asset tourné doit être recalibré par ModelLibrary).
+FakeModels.ImportRotation = nil :: any?
+-- Échelle simulée de l'import (ex. 1 unité du fichier = 2 studs).
+FakeModels.ImportScale = nil :: number?
+
+-- Construit le modèle simulé (une Part par noeud-maillage, boîtes englobantes). `rotation` (ou
+-- FakeModels.ImportRotation) : l'asset arrive tourné autour du centre de sa boîte, comme après un import.
+function FakeModels.Build(key: string, rotation: any?): any
 	local entry = data()[key]
 	assert(entry, `modèle inconnu : {key}`)
 	local model = roblox.Instance.new("Model")
@@ -66,6 +72,25 @@ function FakeModels.Build(key: string): any
 		)
 		part.Anchored = true
 		part.Parent = model
+	end
+	local unit = FakeModels.ImportScale
+	if unit and unit ~= 1 then
+		for _, part in model:GetChildren() do
+			part.Size *= unit
+			part.CFrame = part.CFrame.Rotation + part.CFrame.Position * unit
+		end
+	end
+	local turn = rotation or FakeModels.ImportRotation
+	if turn then
+		local k = unit or 1
+		local center = roblox.CFrame.new(
+			(entry.min[1] + entry.max[1]) / 2 * k + 3,
+			(entry.min[2] + entry.max[2]) / 2 * k - 1,
+			(entry.min[3] + entry.max[3]) / 2 * k + 5
+		) -- (+ un décalage : l'import peut aussi déplacer le modèle)
+		for _, part in model:GetChildren() do
+			part.CFrame = center * turn * part.CFrame
+		end
 	end
 	return model
 end

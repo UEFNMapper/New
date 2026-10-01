@@ -122,6 +122,12 @@ Tag `UsbKey`, attribut `KeyId` = `W{n}K{i}` (i = 1..3), non collidable, touchabl
   (M1), RAM saturée (M2), Bloatware (M3), surchauffe (M4), Défense du CPU en 3D (M5), pilote GPU +
   écran (M6), enquête des Sessions avant le boss (M7) ; panneaux au style de l'app ; menu DEV.
 - [x] **Étape 0 « L'intrusion »** : le bureau du PC, free_robux_generator.exe, prévention.
+- [x] **Calibration de l'import des modèles 3D** : l'asset chargé est remis dans le repère de son fichier
+  (borne du terminal, bornes du lobby, écrans, personnages n'ont plus le dos tourné quel que soit l'import).
+- [x] **Parties simulées** (`playaudit.spec`, `tools/PlayAudit.luau`) et corrections trouvées : fenêtre du lobby
+  (ciel enfoncé dans le mur), enseigne « AngaTV » (plaque dans le mur), QR du BIOS (titre dans le plafond),
+  étiquette de la Corbeille (cachée par les fichiers), thermomètre M4 (sous une fenêtre de l'app), panneau de
+  l'arène M7 (cachait le panneau de victoire), panneaux des boutons RAM (de dos, penchés vers le sol).
 - [ ] Épreuves **en coop** (une épreuve partagée par la salle, rôles obligatoires) ; jauges partagées.
 - [ ] Équilibrer les épreuves et les médailles avec la télémétrie (temps réels en jeu).
 - [x] **BIOS caché** (touche Suppr, QR code anga.tv), **Stream Deck** interactif, **rôles d'équipe**

@@ -28,6 +28,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local ModelAssets = require(Shared.Config.ModelAssets)
+local ModelSignatures = require(script.Parent.ModelSignatures)
 
 local ModelLibrary = {}
 
@@ -149,11 +150,146 @@ local function bounds(root: Instance): (Vector3?, Vector3?)
 	return Vector3.new(x0, y0, z0), Vector3.new(x1, y1, z1)
 end
 
+--[[
+	Calibration à l'import : l'import Roblox d'un .glb peut tourner le modèle (le glTF a son avant en +Z,
+	Roblox en -Z). Toute la mise en place (ORIENT, ORIGIN, Anchor, tests de façade) est écrite dans le
+	repère du FICHIER : on compare donc les centres des pièces de l'asset chargé à ceux du fichier
+	(ModelSignatures, généré par tools/model_bounds.py) pour les 24 rotations à angle droit, et on
+	annule la rotation trouvée. Égalité (modèle symétrique) ou doute : rien n'est touché.
+]]
+local ROTATIONS: { CFrame } = {}
+do
+	local axes = { Vector3.xAxis, -Vector3.xAxis, Vector3.yAxis, -Vector3.yAxis, Vector3.zAxis, -Vector3.zAxis }
+	for _, x in axes do
+		for _, y in axes do
+			if math.abs(x:Dot(y)) < 0.5 then
+				table.insert(ROTATIONS, CFrame.fromMatrix(Vector3.zero, x, y)) -- identité en premier
+			end
+		end
+	end
+end
+
+-- Rotations détectées sans ambiguïté (identité comprise) : l'import Roblox traite tous les fichiers
+-- de la même façon, donc un modèle symétrique (une seule pièce, puce carrée…) prend la rotation la
+-- plus fréquente parmi les autres (« consensus »).
+local tally: { [number]: number } = {}
+
+local function consensus(): number?
+	local best, count = nil, 0
+	for index, n in tally do
+		if n > count or (n == count and best and index < best) then
+			best, count = index, n
+		end
+	end
+	return best
+end
+
+--[[
+	Rotation (repère fichier -> asset chargé) à annuler, ou nil ; `sure` : la meilleure rotation est
+	unique. Erreurs RMS (identité, meilleure) en fraction de la diagonale du modèle. Modèle
+	ambigu : la rotation du consensus si elle colle aussi bien que la meilleure.
+	TESTS : exposée par ModelLibrary._Calibration.
+]]
+local function calibration(model: Instance, key: string): (CFrame?, boolean, number, number)
+	local signature = ModelSignatures[key]
+	local lo, hi = bounds(model)
+	if not signature or not lo or not hi then
+		return nil, false, 0, 0
+	end
+	local diag = (hi - lo).Magnitude
+	local refDiag = signature.Size.Magnitude
+	if diag < 1e-4 or refDiag < 1e-4 then
+		return nil, false, 0, 0
+	end
+	local center = (lo + hi) / 2
+	local byName: { [string]: { Vector3 } } = {}
+	local all: { Vector3 } = {}
+	for _, descendant in model:GetDescendants() do
+		if descendant:IsA("BasePart") then
+			local rel = (descendant.CFrame.Position - center) / diag
+			local list = byName[descendant.Name] or {}
+			table.insert(list, rel)
+			byName[descendant.Name] = list
+			table.insert(all, rel)
+		end
+	end
+	local errors: { number } = {}
+	local bestIndex, bestErr = 1, math.huge
+	for index, rotation in ROTATIONS do
+		local total = 0
+		for _, part in signature.Parts do
+			local expected = rotation * (part.Center / refDiag)
+			local nearest = math.huge
+			local candidates: { Vector3 } = byName[part.Name] or all
+			for _, rel in candidates do
+				nearest = math.min(nearest, (rel - expected).Magnitude)
+			end
+			total += nearest * nearest
+		end
+		errors[index] = math.sqrt(total / math.max(#signature.Parts, 1))
+		if errors[index] < bestErr - 1e-6 then
+			bestIndex, bestErr = index, errors[index]
+		end
+	end
+	if bestErr > 0.08 then
+		return nil, false, errors[1], bestErr -- rien ne colle : asset inattendu, on n'y touche pas
+	end
+	local ties = 0
+	for _, e in errors do
+		if e - bestErr < 0.02 then
+			ties += 1
+		end
+	end
+	if ties == 1 then
+		return if bestIndex == 1 then nil else ROTATIONS[bestIndex], true, errors[1], bestErr
+	end
+	local prior = consensus()
+	if prior and prior ~= 1 and errors[prior] - bestErr < 0.02 then
+		return ROTATIONS[prior], false, errors[1], bestErr
+	end
+	return nil, false, errors[1], bestErr
+end
+
+local function calibrate(model: Model, key: string)
+	local rotation, sure = calibration(model, key)
+	if sure then
+		local index = if rotation then table.find(ROTATIONS, rotation) or 1 else 1
+		tally[index] = (tally[index] or 0) + 1
+	end
+	local lo, hi = bounds(model)
+	local signature = ModelSignatures[key]
+	if lo and hi and signature and signature.Size.Magnitude > 1e-4 then
+		-- Échelle de l'import (1 = 1 unité du fichier par stud) : Scale, ORIGIN et Anchor sont en
+		-- unités du fichier, Place les ramène à la taille réelle de l'asset.
+		local ratio = (hi - lo).Magnitude / signature.Size.Magnitude
+		if math.abs(ratio - 1) > 0.01 then
+			model:SetAttribute("ImportScale", ratio)
+		end
+	end
+	if not rotation or not lo or not hi then
+		return
+	end
+	local pivot = CFrame.new((lo + hi) / 2)
+	local undo = pivot * rotation:Inverse() * pivot:Inverse()
+	for _, descendant in model:GetDescendants() do
+		if descendant:IsA("BasePart") then
+			descendant.CFrame = undo * descendant.CFrame
+		end
+	end
+end
+
+-- Un modèle est-il ambigu (sa rotation dépendra du consensus) ? Préparé après les autres (Preload).
+local function ambiguous(model: Instance, key: string): boolean
+	local _, sure = calibration(model, key)
+	return not sure
+end
+
 local function prepare(asset: Instance, key: string): Model?
 	local model = asset:FindFirstChildWhichIsA("Model") or (if asset:IsA("Model") then asset else nil)
 	if not model then
 		return nil
 	end
+	calibrate(model, key) -- d'abord : le modèle revient dans le repère de son fichier
 	local fix = ORIENT[key]
 	if fix then
 		-- Rotation de toutes les pièces autour du centre de la boîte englobante (équivalent de
@@ -167,6 +303,16 @@ local function prepare(asset: Instance, key: string): Model?
 				end
 			end
 		end
+	end
+	-- Pivot neutre, aligné sur l'AVANT du modèle (LookVector = avant), au centre de sa boîte : un
+	-- PivotTo / ScaleTo côté client (processus de la Défense du CPU) ne dépend plus de l'orientation
+	-- interne d'une pièce importée.
+	local plo, phi = bounds(model)
+	if plo and phi then
+		if model.PrimaryPart then
+			model.PrimaryPart = nil -- (pièce principale posée par l'import)
+		end
+		model.WorldPivot = CFrame.new((plo + phi) / 2)
 	end
 	for _, descendant in model:GetDescendants() do
 		if descendant:IsA("BasePart") then
@@ -209,6 +355,9 @@ local function publishForClient(key: string, template: Model)
 	end
 end
 
+local deferred: { { Key: string, Asset: Instance } } = {}
+local settled = false -- Preload terminé : un modèle ambigu arrivé en retard prend le consensus courant
+
 -- Charge tous les modèles référencés (en parallèle). À appeler avant de construire la tour.
 -- Attend au plus 20 s ; un modèle plus lent reste utilisable ensuite (et publié pour le client).
 function ModelLibrary.Preload()
@@ -225,6 +374,13 @@ function ModelLibrary.Preload()
 				local ok, asset = pcall(function(): Instance
 					return InsertService:LoadAsset(id)
 				end)
+				local raw = if ok and asset then (asset:FindFirstChildWhichIsA("Model") or asset) else nil
+				if raw and not settled and ambiguous(raw, key) then
+					-- symétrique : attend le consensus des autres modèles (fin de Preload)
+					table.insert(deferred, { Key = key, Asset = asset :: Instance })
+					pending -= 1
+					return
+				end
 				local model = if ok and asset then prepare(asset, key) else nil
 				if model then
 					model.Name = key
@@ -242,11 +398,31 @@ function ModelLibrary.Preload()
 	while pending > 0 and os.clock() < deadline do
 		task.wait(0.05)
 	end
+	settled = true
+	for _, item in deferred do
+		local model = prepare(item.Asset, item.Key)
+		if model then
+			model.Name = item.Key
+			templates[item.Key] = model
+			publishForClient(item.Key, model)
+		end
+	end
+	table.clear(deferred)
 end
 
 function ModelLibrary.Has(key: string): boolean
 	local template: Model? = templates[key]
 	return template ~= nil
+end
+
+-- TESTS UNIQUEMENT : rotation détectée sur un modèle brut (avant préparation) et erreurs RMS.
+function ModelLibrary._Calibration(model: Instance, key: string): (CFrame?, boolean, number, number)
+	return calibration(model, key)
+end
+
+-- TESTS UNIQUEMENT : oublie les rotations détectées (consensus).
+function ModelLibrary._ResetCalibration()
+	table.clear(tally)
 end
 
 -- TESTS UNIQUEMENT (tests/models.spec.luau) : simule un modèle importé (`model` passe par la même
@@ -307,7 +483,9 @@ function ModelLibrary.Place(
 	model.Name = opts.Name or key
 	-- Échelle : Fit (plus grande échelle qui tient dans la boîte) prime sur Scale
 	local lo, hi = bounds(model)
-	local scale = opts.Scale or 1
+	local importScale = model:GetAttribute("ImportScale")
+	local unit = if type(importScale) == "number" and importScale > 0 then importScale else 1
+	local scale = (opts.Scale or 1) / unit
 	local from = cframe.Position
 	if lo and hi then
 		local size = hi - lo
@@ -333,7 +511,7 @@ function ModelLibrary.Place(
 		-- Point posé sur `cframe` : centre de la base de la boîte, ou origine d'export + Anchor
 		from = Vector3.new((lo.X + hi.X) / 2, lo.Y, (lo.Z + hi.Z) / 2)
 		if opts.Anchor then
-			from += (ORIGIN[key] or Vector3.zero) + opts.Anchor
+			from += ((ORIGIN[key] or Vector3.zero) + opts.Anchor) * unit
 		end
 	end
 	local spin = if opts.Spin == nil then true else opts.Spin

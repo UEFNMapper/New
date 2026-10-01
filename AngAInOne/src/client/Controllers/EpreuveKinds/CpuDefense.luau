@@ -34,7 +34,10 @@ local function virusModel(parent: Instance, tough: boolean): View
 			part.CanTouch = false
 		end
 		copy.Parent = model
-		body = copy.PrimaryPart or (copy:FindFirstChildWhichIsA("BasePart", true) :: BasePart)
+		-- Pivot du gabarit (aligné sur son avant par ModelLibrary) : pas de PrimaryPart, dont
+		-- l'orientation interne retournerait le processus.
+		model.WorldPivot = copy:GetPivot()
+		body = copy:FindFirstChildWhichIsA("BasePart", true) :: BasePart
 	else
 		body = Fx.Part({
 			Name = "Body",
@@ -63,7 +66,9 @@ local function virusModel(parent: Instance, tough: boolean): View
 			}, model)
 		end
 	end
-	model.PrimaryPart = body
+	if not (bug and bug:IsA("Model")) then
+		model.PrimaryPart = body -- secours en primitives : le corps est déjà orienté vers -Z
+	end
 	model.Parent = parent
 	return { Model = model, Body = body }
 end

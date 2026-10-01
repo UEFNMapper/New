@@ -42,9 +42,10 @@ local DANGER = Color3.fromHex("FF5A5F")
 
 -- Emplacements (centre du dessus du palier) : palier d'arrivée, fin du bus de données, finale.
 Mechanics.RAM_BUTTONS = {
-	{ Stage = 6, At = Vector3.new(91, 110, -71) }, -- SlotLanding (x 82..94, z -80..-68)
-	{ Stage = 7, At = Vector3.new(-29, 130.5, 51.5) }, -- BusJunction avant l'ascenseur (z 46..54)
-	{ Stage = 10, At = Vector3.new(91, 169, -11) }, -- BusJunction de la finale (x 80..94)
+	-- Face : vers le centre de la plateforme (là où se tient le joueur qui lit le panneau)
+	{ Stage = 6, At = Vector3.new(91, 110, -71), Face = Vector3.new(-3, 0, -3) }, -- SlotLanding (x 82..94, z -80..-68)
+	{ Stage = 7, At = Vector3.new(-29, 130.5, 51.5), Face = Vector3.new(-3, 0, -1.5) }, -- BusJunction (z 46..54)
+	{ Stage = 10, At = Vector3.new(91, 169, -11), Face = Vector3.new(-4, 0, -3) }, -- BusJunction de la finale (x 80..94)
 }
 
 local function ramButtons(ctx: Common.WorldContext, parent: Instance)
@@ -75,7 +76,7 @@ local function ramButtons(ctx: Common.WorldContext, parent: Instance)
 			folder,
 			"RamButtonSign",
 			Vector3.new(5.6, 2.2, 0.3),
-			facing(at + Vector3.new(0, 3.4, 0), Vector3.zAxis) * CFrame.Angles(math.rad(-15), 0, 0),
+			facing(at + Vector3.new(0, 3.4, 0), spot.Face) * CFrame.Angles(math.rad(15), 0, 0), -- penché vers le haut
 			APP_CARD,
 			SMOOTH
 		)

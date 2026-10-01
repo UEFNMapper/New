@@ -90,6 +90,39 @@ for f in sorted(os.listdir(MODELS)):
                       "tris": sum(p["tris"] for p in parts), "parts": parts}
 json.dump(result, open(OUT, "w"), indent=0, sort_keys=True)
 print(f"{len(result)} modèles → {os.path.relpath(OUT, ROOT)}")
+
+# Signatures pour ModelLibrary (calibration à l'import) : centre de chaque pièce, relatif au centre de
+# la boîte du modèle, en unités modélisées (axes du fichier). Le serveur compare l'asset chargé à ces
+# centres pour annuler une rotation appliquée par l'import Roblox (voir ModelLibrary.calibrate).
+SIGNATURES = os.path.join(ROOT, "src", "server", "World", "ModelSignatures.luau")
+def num(v):
+    return f"{v:.2f}".rstrip("0").rstrip(".") if abs(v) >= 0.005 else "0"
+lines = [
+    "--!strict",
+    "-- GÉNÉRÉ par tools/model_bounds.py (ne pas modifier à la main) : centre de chaque pièce des modèles",
+    "-- 3D (assets/models/*.glb), relatif au centre de la boîte du modèle, axes du fichier. Sert à",
+    "-- ModelLibrary pour remettre un asset importé dans le repère du fichier (calibration).",
+    "",
+    "export type Signature = { Size: Vector3, Parts: { { Name: string, Center: Vector3 } } }",
+    "",
+    "local V = Vector3.new",
+    "return table.freeze({",
+]
+for key in sorted(result):
+    entry = result[key]
+    lo, hi = entry["min"], entry["max"]
+    c = [(lo[i] + hi[i]) / 2 for i in range(3)]
+    lines.append(f"\t{key} = {{")
+    lines.append(f"\t\tSize = V({', '.join(num(v) for v in entry['size'])}),")
+    lines.append("\t\tParts = {")
+    for part in entry["parts"]:
+        pc = [(part["min"][i] + part["max"][i]) / 2 - c[i] for i in range(3)]
+        lines.append(f"\t\t\t{{ Name = \"{part['name']}\", Center = V({', '.join(num(v) for v in pc)}) }},")
+    lines.append("\t\t},")
+    lines.append("\t},")
+lines.append("} :: { [string]: Signature })")
+open(SIGNATURES, "w", encoding="utf-8").write("\n".join(lines) + "\n")
+print(f"signatures → {os.path.relpath(SIGNATURES, ROOT)}")
 if "--list" in sys.argv:
     for k, v in result.items():
         print(f"{k:16s} {v['size'][0]:7.2f} x {v['size'][1]:7.2f} x {v['size'][2]:7.2f}  min y {v['min'][1]:7.2f}  pièces {len(v['parts']):2d}  tris {v['tris']:6d}")
