@@ -1,0 +1,66 @@
+{
+ "AioDrone": {
+  "id": 130995608173007,
+  "sha": "ce91fe74847e92b7a61eec1a23470d0a6695915c53907fffb8b19230d3807563"
+ },
+ "AioRadiator": {
+  "id": 100473315683288,
+  "sha": "a52b21536df481b8fd2eaead6e7fb1994bdc46fae62a370330bb1f28bdde573f"
+ },
+ "Anga": {
+  "id": 75553420446427,
+  "sha": "3ac2a143df5bea3432c9f385fd21da5ba9fc3c8aa68570b26657c2e547586967"
+ },
+ "ArcadeCabinet": {
+  "id": 135149158295782,
+  "sha": "299d97c0ae5910241637d473d1284eb5843a7a20be939845308d14262cdaaa5f"
+ },
+ "BitCoin": {
+  "id": 100222133281876,
+  "sha": "8b22ea1ed555acef71cd406c4234283fb87d48cc1213471018bcd2fbab21a8cb"
+ },
+ "CableBraided24": {
+  "id": 86375393114214,
+  "sha": "46cfc5d3d569a5d744ef8f47448b3ccb2aa013b6eb47e0886ca8a48fe237463d"
+ },
+ "CableSleeved8": {
+  "id": 118660076016761,
+  "sha": "96c5d639854281f7665fa10cd2c0b40a07189df91d90000740a4816a7c86ea39"
+ },
+ "Capacitor": {
+  "id": 109035799869167,
+  "sha": "90b5f136dfce4d423ca720ccad6e5c2a2d7a59327f6cf440e79cadedf556b4b2"
+ },
+ "CapacitorBig": {
+  "id": 71643410414831,
+  "sha": "4737a27070ad649753669787ab0228230001d89c98cf04899ba4bc3c607a1c3e"
+ },
+ "CaseFrame": {
+  "id": 87220284320929,
+  "sha": "fa5673cee151649ec2d153ada30e81d6028c93ab3c98a53eb7dc570a747bbd1a"
+ },
+ "ChipsetHeatsink": {
+  "id": 129985061786477,
+  "sha": "02d76cbffd6a73df2c8b58f68d205f31eed188d574eb75c2c6703a0651a76545"
+ },
+ "Choke": {
+  "id": 128880783306514,
+  "sha": "38dd6441c7486430fc70c28eb653de20263028cffd84990c69b0fc1a9e1a3a16"
+ },
+ "ChokeRow": {
+  "id": 135560336905974,
+  "sha": "a0e0d4c4096f0934f036bd2e26b6db61e453aff3b0e21cd527b9dda82171b69f"
+ },
+ "Corrupto": {
+  "id": 89726505676149,
+  "sha": "a75b4bd76fd93f4b0ed60a069760bf7612969b7a45d01dff4988f5efd2f63fba"
+ },
+ "CpuChip": {
+  "id": 81041057784711,
+  "sha": "00a476550491b4059c24e1c3e1639dbd83d2f392bd67e9baa8c2b0c24571278f"
+ },
+ "Mug": {
+  "id": 84691755026707,
+  "sha": "d1c124424ea8fcea55e1828565643be60225510ead88e6c8052edeb0a359270b"
+ }
+}
