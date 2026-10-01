@@ -70,6 +70,11 @@ Le sbire du monde apparaît sur les cartes d'intro et de résultat. Les 6 jeux s
 - **Boss LAGZ** : survivre aux lasers et au curseur, brancher 3 prises antivirus, Firewall boss.
 - **21 clés USB dorées** cachées sur des chemins difficiles (3 par monde) : Bits, compteur au HUD,
   toutes les clés → traînée USB.
+- **Conseils « vraie vie »** par monde (panneau de la salle du terminal + bulle de l'assistant de l'app),
+  **Test de perf** en hexagone à la fin (4 scores, emblème, pseudo en néon), **boss façon écran bleu**,
+  incident **« Mise à jour »**, **badges** par monde et **easter eggs** de l'univers AngAinOne
+  (câble HDMI, le Service, Corbeille, pâte thermique, RGB = +10 FPS, escargot Wi-Fi, dev caché) :
+  voir `docs/SCENARIO.md` §8.
 - **7 détours « Ventilo bonus »** (un par monde, panneau BONUS au pied d'un checkpoint) : une
   passerelle traverse un ventilateur de boîtier dont les pales mortelles balaient l'ouverture, et finit
   sur un **Méga-Bit** (5 Bits) + 2 Bits : 7 Bits pour un aller-retour risqué, contre 4 par étape.

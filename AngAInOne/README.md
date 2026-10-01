@@ -58,6 +58,10 @@ Lance **Play** (F5). En Studio, un bouton **DEV** (ou **F8**) ouvre un panneau d
 | 6 | Attendre 60–120 s dans un monde | Bandeau LAGZ « ⚠ … 3-2-1 », puis l'incident du monde (ex. BLACKOUT au monde 1 : lumière coupée, rails alimentés éteints). |
 | 7 | Ramasser une **clé USB dorée** (chemin difficile) | Effet doré, « 🔑 Clé USB dorée 1/21 », +25 Bits, pastille sous la carte de progression. |
 | 7b | Suivre un panneau **BONUS** (monde 1 : à côté du checkpoint 4) : passer entre les pales du ventilateur, ramasser le **Méga-Bit** au bout | Les pales rouges tuent ; le Méga-Bit (plus gros, plus clair) donne +5 Bits et un toast « Méga-Bit ! » ; il faut retraverser pour revenir. |
+| 7c | Dans le lobby : brancher le **câble HDMI** derrière la tour, parler dix fois au **Service**, regarder le mur **néon** derrière le spawn | Ding + « Avez-vous essayé de le rebrancher ? » ; le Service répond « Avez-vous essayé de redémarrer ? » puis redémarre lui-même ; ton pseudo en néon violet. |
+| 7d | Dans une salle de terminal : lire le panneau **💡 CONSEIL VRAIE VIE** ; monde 5 : appliquer deux fois la **pâte thermique** ; monde 6 : **RGB = +10 FPS** | Le conseil du monde et son raccourci AngAInOne ; le processeur disparaît sous la pâte ; 10 s plus rapide. |
+| 7e | Nettoyer un monde, puis regarder la bulle grise de l'assistant | Après « Le portail est ouvert », l'assistant de l'app dit le conseil « vraie vie » du monde. |
+| 7f | Finir la tour | Après « LE LIVE COMMENCE », l'écran **Test de perf** : hexagone, 4 scores, emblème, ton pseudo en néon ; puis le rapport. |
 | 8 | Salle du terminal | Le sbire du monde garde le terminal. Prompt **E** → mini-jeu 2D. Réussi : le monde passe en version « nettoyée », le widget du PC gagne des FPS, le portail s'ouvre. |
 | 9 | DEV > aller à l'étape 35 (monde 7) | Arène : LAGZ, phase 1 (lasers + curseur), phase 2 (3 prises à brancher), phase 3 (Firewall boss au terminal). Victoire → « LE LIVE COMMENCE ! », l'écran du lobby passe « EN DIRECT 🔴 ». |
 | 10 | Boutons à droite | **Checkpoint**, **Passer l'étape** (Robux, si configuré), **Lobby** (le bouton devient **CONTINUER · Étape X**). |

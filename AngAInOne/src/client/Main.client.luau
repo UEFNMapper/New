@@ -171,7 +171,7 @@ step("Ambience", function()
 	load(Controllers.Ambience).Start()
 end)
 -- TowerGlow : la coque s'allume monde par monde ; LagzCameo : LAGZ surgit de ses écrans.
-for _, name in { "WorldState", "Story", "StreamMonitor", "TowerGlow", "LagzCameo" } do
+for _, name in { "WorldState", "Story", "StreamMonitor", "TowerGlow", "LagzCameo", "NeonName", "ChillIdle" } do
 	step(name, function()
 		local controller = load(Controllers:FindFirstChild(name) :: Instance)
 		if controller then

@@ -104,4 +104,10 @@ Tag `UsbKey`, attribut `KeyId` = `W{n}K{i}` (i = 1..3), non collidable, touchabl
       ventilateur de l'alimentation à 88 studs.
 - [x] **Détours « Ventilo bonus »** (`Tower/Bonus.luau`) : un par monde, Méga-Bit (5 Bits) + 2 Bits,
       pales SpinBar, emplacements choisis avec `tests/tools/BonusSpots.luau`.
-- [ ] Vérification en jeu (Studio) : traversée des pales, lisibilité du panneau BONUS, orientations.
+- [x] **Orientation des modèles** : personnages, drone et alimentation retournés au chargement
+      (`ORIENT`), ventilateur du ventirad vers -Z, pubs du monde 7 vers le parcours ; test « façades ».
+- [x] **Guide AngAinOne × Roblox** (docs/SCENARIO.md §8) : conseils « vraie vie » + raccourcis app,
+      vocabulaire, boss écran bleu, incident Mise à jour, écran Test de perf, badges, 9 easter eggs.
+- [ ] Vérification en jeu (Studio) : traversée des pales, lisibilité des panneaux (BONUS, CONSEIL),
+      écran Test de perf sur téléphone, easter eggs.
+- [ ] IDs des badges à créer sur create.roblox.com et à coller dans `Config/Badges.luau`.

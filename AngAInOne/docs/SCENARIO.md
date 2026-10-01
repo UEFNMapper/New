@@ -147,3 +147,39 @@ On apparaît **sur le bureau d'Anga**, minuscule, devant la tour PC géante à p
 - **Clés USB dorées** : 3 par monde (21), cachées sur des **chemins difficiles** facultatifs.
   Toutes les clés d'un monde → une traînée ; les 21 → titre « Anti-Lag Légendaire ».
 - **Chrono** et classements ; incidents différents à chaque passage.
+
+## 8. Fidèle à la vraie app, et des clins d'œil (guide « AngAinOne × Roblox »)
+
+Tout ce qui suit vient du guide de l'univers AngAinOne (vocabulaire, pages de l'app, easter eggs) ;
+l'app **détecte, diagnostique et répare** : jamais « enlève les virus », jamais de faux lien.
+
+- **Conseils « vraie vie »** : chaque monde porte un conseil d'une phrase (`Tower.Tip`) et le raccourci
+  correspondant dans l'app (`Tower.AppTip`) : panneau « 💡 CONSEIL VRAIE VIE » dans la salle du
+  terminal, puis dit par l'assistant de l'app (bulle « AIO ») après le nettoyage. La fin de l'ascension
+  a le sien (`Tower.VictoryTip`).
+- **Vocabulaire de l'app** dans les répliques : *le parc* (tous les PC des utilisateurs), *les à-coups*
+  et le *1 % low* (pic de LAG), *le coupable* (analyse du boss), *le Service* (le PNJ du lobby).
+- **Boss façon écran bleu** : les phases de LAGZ s'annoncent par des codes d'erreur
+  (`IRQL_NOT_LESS_OR_EQUAL`, `MEMORY_MANAGEMENT`, `CRITICAL_PROCESS_DIED`) ; vaincu, il se « dumpe » et
+  la page Plantages l'analyse (« coupable = LAGZ, quoi faire : nettoyé »).
+- **Incident « Mise à jour »** (monde 7) : voile bleu, `:(`, pourcentage qui grimpe, « ne pas éteindre
+  votre ordinateur » pendant 5 s ; les pièges continuent.
+- **Écran de fin = Test de perf** : hexagone avec la mascotte, quatre petits hexagones (Processeur =
+  vitesse, Carte graphique = chutes, Mémoire = Bits ramassés, Stockage = clés USB), score sur 100,
+  emblème (Rodage, Solide, Élite, Titan) et le pseudo du joueur en néon ; puis le rapport.
+- **Badges** (`Config/Badges.luau`, `AwardsService`) : un par monde nettoyé et un pour la victoire,
+  IDs à créer sur le site puis à coller (0 = désactivé).
+
+### Easter eggs (`World/Tower/EasterEggs.luau`, réactions dans `Controllers/Interactions`)
+| Où | Quoi | Réaction |
+|---|---|---|
+| Lobby, derrière la tour | **Le câble HDMI débranché** (« Brancher ») | ding, « Avez-vous essayé de le rebrancher ? » |
+| Lobby, près des bornes | **Le Service**, support qui ne dort jamais (« Parler ») | « Avez-vous essayé de redémarrer ? » ; à la 10e fois il redémarre lui-même |
+| Lobby, derrière le spawn | **Le pseudo en néon** | ton pseudo Roblox en néon violet (`NeonName`) |
+| Monde 3, salle du terminal | **La Corbeille** | `devoirs_finaux_VRAIMENT_FINAL_v3.docx`, `screenshot_win_ranked.png`, `RAM_download_2go.exe` (le virus) |
+| Monde 4 | **0 °C** | immobile 2 minutes → bloc de glace, « idle = température minimale » |
+| Monde 5, salle du terminal | **La pâte thermique** (« Appliquer ») | une fois : parfait ; deux fois : le processeur disparaît sous la pâte |
+| Monde 6, salle du terminal | **RGB = +10 FPS** (« Activer ») | +10 de vitesse de marche pendant 10 s, levier arc-en-ciel |
+| Monde 7, salle du terminal | **L'escargot « Wi-Fi de l'hôtel »** | transporte les paquets (ping 999), on peut monter dessus |
+| Monde 7, toit de la salle | **AngATV, le dev caché** (« Parler ») | « Tu m'as trouvé. Le PC est entre de bonnes mains. » |
+
