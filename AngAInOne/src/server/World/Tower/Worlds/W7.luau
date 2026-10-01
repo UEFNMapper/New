@@ -237,7 +237,8 @@ return function(ctx: Common.WorldContext)
 		end
 	end
 
-	-- Fenêtre de pub (décor infecté) : modèle PopUp, ou cadre blanc + bandeau + ✕.
+	-- Fenêtre de pub (décor infecté) : modèle PopUp, ou cadre blanc + bandeau + ✕. Avant (texte,
+	-- panneau du secours) = LookVector de `cf` : `yaw` tourne la fenêtre vers le parcours.
 	local function popup(position: Vector3, yaw: number)
 		local cf = CFrame.new(position) * CFrame.Angles(0, yaw, 0)
 		local placed = ModelLibrary.Place("PopUp", cf, decor, { Fit = Vector3.new(9, 8, 3) }, function()
@@ -447,9 +448,9 @@ return function(ctx: Common.WorldContext)
 	ctx.Lamp(brain, style.Primary, 1.4, 60)
 
 	-- Pubs de LAGZ qui flottent dans la tour (infecté)
-	popup(Vector3.new(34, base + 30, 44), math.rad(200))
-	popup(Vector3.new(-40, base + 54, -44), math.rad(40))
-	popup(Vector3.new(44, base + 70, -52), math.rad(-30))
+	popup(Vector3.new(34, base + 30, 44), math.rad(20))
+	popup(Vector3.new(-40, base + 54, -44), math.rad(220))
+	popup(Vector3.new(44, base + 70, -52), math.rad(150))
 
 	--------------------------------------------------------------------------------
 	-- Étape 31 · Axones : virus en travers des ponts, paquets de données (Mover)
@@ -552,7 +553,7 @@ return function(ctx: Common.WorldContext)
 	do
 		ctx.Coin(p, 33)
 	end
-	popup(Vector3.new(-116, y + 14, -40), math.rad(90))
+	popup(Vector3.new(-116, y + 14, -40), math.rad(270))
 	ctx.Lamp(Vector3.new(-96, y + 26, -60), HOLO, 1.2, 60)
 	ctx.Checkpoint(33, Common.Facing(Vector3.new(-102, y + 14, 2), Vector3.new(1, 0, 0)))
 

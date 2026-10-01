@@ -229,6 +229,100 @@ return {
 		Expect.truthy(sticks >= 4, `barrettes : {sticks}`)
 	end,
 
+	["façades : chaque modèle regarde dans le sens voulu par sa pose (LookVector = avant)"] = function()
+		-- Pièce repère de l'AVANT (ou de l'ARRIÈRE : Back = true) de chaque modèle, d'après assets/models/bounds.json
+		local MARKERS: { [string]: { Part: string, Back: boolean?, From: string? } } = {
+			Anga = { Part = "Mouth" },
+			Lagz = { Part = "Eyes" },
+			Sparky = { Part = "Pupil" },
+			PopUp = { Part = "Text", From = "Frame" }, -- fenêtre plate : texte devant le cadre
+			Corrupto = { Part = "White" },
+			Dusty = { Part = "EyeWhite" },
+			Minor = { Part = "Screen" },
+			Freezy = { Part = "Dark" },
+			Monitor = { Part = "Screen" },
+			Speaker = { Part = "Cone" },
+			ArcadeCabinet = { Part = "Screen" },
+			ShopKiosk = { Part = "Glass" },
+			TerminalConsole = { Part = "Keys" },
+			DeskLamp = { Part = "Shade" },
+			WebcamLight = { Part = "Lens" },
+			Miniaturiseur = { Part = "Screen" },
+			Keyboard = { Part = "Cable", Back = true },
+			Mouse = { Part = "Cable", Back = true },
+			GamingChair = { Part = "Upholstery", Back = true },
+			LagzHead = { Part = "Eyes", Back = true }, -- Cameos : LookVector vers la paroi, avant +Z vers le parcours
+		}
+		local function front(model: any, partName: string, fromName: string?): any?
+			local lo, hi = IsolatedTower.Bounds(model)
+			local center = (lo + hi) / 2
+			if fromName then
+				for _, part in model:GetDescendants() do
+					if part:IsA("BasePart") and part.Name == fromName then
+						center = part.CFrame.Position
+					end
+				end
+			end
+			for _, part in model:GetDescendants() do
+				if part:IsA("BasePart") and part.Name == partName then
+					local d = part.CFrame.Position - center
+					local flat = roblox.Vector3.new(d.X, 0, d.Z)
+					return if flat.Magnitude > 0.05 then flat.Unit else nil
+				end
+			end
+			return nil
+		end
+		local checked = 0
+		for _, rec in records do
+			local marker = MARKERS[rec.Key]
+			if not marker then
+				continue
+			end
+			local dir = front(rec.Model, marker.Part, marker.From)
+			Expect.truthy(dir ~= nil, `{rec.Key} : pièce repère {marker.Part}`)
+			local look = rec.CFrame.LookVector
+			local along = dir:Dot(roblox.Vector3.new(look.X, 0, look.Z).Unit)
+			local label = `{rec.Key} ({rec.Model:GetFullName()}) : avant·LookVector = {along}`
+			if marker.Back then
+				Expect.truthy(along < -0.5, label)
+			else
+				Expect.truthy(along > 0.5, label)
+			end
+			checked += 1
+		end
+		Expect.truthy(checked >= 20, `façades vérifiées : {checked}`)
+
+		-- Sens voulus par le scénario
+		for _, rec in records do
+			local lo, hi = IsolatedTower.Bounds(rec.Model)
+			local center = (lo + hi) / 2
+			if rec.Key == "Anga" and rec.Model.Name == "GiantAnga" then
+				local toTower = roblox.Vector3.new(-center.X, 0, -center.Z).Unit
+				Expect.truthy(front(rec.Model, "Mouth"):Dot(toTower) > 0.8, "l'Anga géant regarde la tour")
+			elseif rec.Key == "Lagz" then
+				Expect.truthy(front(rec.Model, "Eyes").Z < -0.8, "LAGZ regarde l'entrée de l'arène (-Z)")
+			elseif rec.Key == "CpuCooler" then
+				local fan = front(rec.Model, "Rotor")
+				Expect.truthy(fan and fan.Z < -0.8, `ventirad {rec.Model:GetFullName()} : ventilateur vers -Z`)
+			elseif rec.Key == "GpuCard" then
+				local fan = front(rec.Model, "Fan2")
+				Expect.truthy(fan and fan.X > 0.8, "carte graphique : ventilateurs vers l'est (+X)")
+			elseif rec.Key == "PopUp" and rec.Model.Parent and rec.Model.Parent.Name == "Decor" then
+				local inward = roblox.Vector3.new(-center.X, 0, -center.Z).Unit
+				Expect.truthy(
+					front(rec.Model, "Text", "Frame"):Dot(inward) > 0.3,
+					`pub {rec.Model:GetFullName()} tournée vers le parcours`
+				)
+			elseif rec.Key == "LagzHead" then
+				local inward = roblox.Vector3.new(-center.X, 0, -center.Z).Unit
+				Expect.truthy(
+					front(rec.Model, "Eyes"):Dot(inward) > 0.5,
+					`tête de LAGZ {rec.Model:GetFullName()} vers le parcours`
+				)
+			end
+		end
+	end,
+
 	["détours bonus : le cadre de ventilateur est centré sur la passerelle, 24 studs de haut"] = function()
 		local frames = 0
 		for _, route in tower:GetDescendants() do

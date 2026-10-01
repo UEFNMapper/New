@@ -67,7 +67,11 @@ Tant qu'un modèle n'a pas d'ID, le jeu construit son **décor de secours** en b
 
 ## Catalogue
 
-Personnages : face avant vers −Y dans Blender. Chambre d'Anga : façade vers +Y Blender (= LookVector −Z Roblox). Planches : `previews/_sheet_*.png`.
+Personnages, drone et bloc d'alimentation : face avant vers −Y dans Blender (= +Z Roblox) ; `ModelLibrary` leur
+fait faire demi-tour au chargement (table `ORIENT`), si bien que pour TOUT modèle posé, **l'avant = le LookVector**
+du `cframe` de `Place` (seule exception : `LagzHead`, posé face +Z par `Cameos`). Chambre d'Anga : façade vers +Y
+Blender (= LookVector −Z Roblox), rien à retourner. `tests/placement.spec.luau` (« façades ») vérifie chaque pose
+avec une pièce repère (yeux, écran, câble…). Planches : `previews/_sheet_*.png`.
 
 | Clé | Famille | Utilisé dans | État |
 |---|---|---|---|

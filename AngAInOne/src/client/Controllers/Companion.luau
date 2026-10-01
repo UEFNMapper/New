@@ -74,7 +74,8 @@ local RIDER_HEIGHT = 2.3 -- hauteur de mini-Anga (studs)
 local DRONE_WIDTH = 1.9 -- diamètre du drone (studs)
 local GUIDE_LINE_COOLDOWN = 45
 local ACCENT = Color3.fromHex("8B7CFF")
--- Les modèles regardent vers +Z Roblox (−Y Blender) : demi-tour pour que l'avant = LookVector.
+-- Les primitives de secours sont construites face +Z : demi-tour pour que l'avant = LookVector.
+-- (Les modèles importés arrivent déjà retournés par ModelLibrary : table ORIENT, avant = LookVector.)
 local FLIP = CFrame.Angles(0, math.pi, 0)
 
 type Piece = { Part: BasePart, Offset: CFrame, Spin: boolean }
@@ -139,7 +140,7 @@ end
 	Met un modèle à l'échelle (hauteur `fitHeight` OU largeur `fitWidth`) et renvoie ses pièces avec
 	leur décalage par rapport au centre de sa base (avant = LookVector), et sa hauteur finale.
 ]]
-local function collect(root: Instance, fitHeight: number?, fitWidth: number?): ({ Piece }, number)
+local function collect(root: Instance, fitHeight: number?, fitWidth: number?, flip: boolean): ({ Piece }, number)
 	local parts: { BasePart } = {}
 	for _, node in root:GetDescendants() do
 		if node:IsA("BasePart") then
@@ -162,7 +163,7 @@ local function collect(root: Instance, fitHeight: number?, fitWidth: number?): (
 		prepare(part)
 		table.insert(pieces, {
 			Part = part,
-			Offset = FLIP * CFrame.new((cf.Position - from) * scale) * cf.Rotation,
+			Offset = (if flip then FLIP else CFrame.identity) * CFrame.new((cf.Position - from) * scale) * cf.Rotation,
 			Spin = part:GetAttribute("SpinPart") == true,
 		})
 	end
@@ -323,17 +324,15 @@ local function buildRig(): Rig
 	local folder = ReplicatedStorage:FindFirstChild("ClientModels")
 	local angaTemplate = if folder then folder:FindFirstChild("Anga") else nil
 	local droneTemplate = if folder then folder:FindFirstChild("AioDrone") else nil
-	local droneModel: Model = if droneTemplate and droneTemplate:IsA("Model")
-		then droneTemplate:Clone()
-		else fallbackDrone()
-	local riderModel: Model = if angaTemplate and angaTemplate:IsA("Model")
-		then angaTemplate:Clone()
-		else fallbackAnga()
+	local droneImported = droneTemplate ~= nil and droneTemplate:IsA("Model")
+	local angaImported = angaTemplate ~= nil and angaTemplate:IsA("Model")
+	local droneModel: Model = if droneImported and droneTemplate then droneTemplate:Clone() else fallbackDrone()
+	local riderModel: Model = if angaImported and angaTemplate then angaTemplate:Clone() else fallbackAnga()
 
 	local model = Instance.new("Model")
 	model.Name = "AngaCompanion"
-	local drone = collect(droneModel, nil, DRONE_WIDTH)
-	local rider, riderHeight = collect(riderModel, RIDER_HEIGHT, nil)
+	local drone = collect(droneModel, nil, DRONE_WIDTH, not droneImported)
+	local rider, riderHeight = collect(riderModel, RIDER_HEIGHT, nil, not angaImported)
 	droneModel.Parent = model
 	riderModel.Parent = model
 

@@ -33,11 +33,30 @@ local ModelLibrary = {}
 
 local templates: { [string]: Model } = {}
 
--- Modèles exportés couchés : rotation appliquée une fois au chargement pour les redresser
--- (axes Roblox : Blender X -> X, Blender Z -> Y, Blender Y -> -Z). Voir assets/README.md.
+-- Rotation appliquée une fois au chargement (axes Roblox : Blender X -> X, Blender Z -> Y,
+-- Blender Y -> -Z ; voir assets/README.md), pour que TOUT modèle posé avec `cframe` ait son avant
+-- vers le LookVector (-Z local) et soit debout :
+-- - les meubles de la chambre sont exportés ainsi (façade +Y Blender) : rien à faire ;
+-- - les personnages, le drone et le bloc d'alimentation sont modélisés face -Y Blender (= +Z
+--   Roblox) : demi-tour. Sans lui, sbires, LAGZ et l'Anga géant tournaient le dos au joueur ;
+-- - LagzHead reste face +Z : Cameos et le client LagzCameo le posent et l'animent ainsi ;
+-- - modèles couchés : redressés (et le ventilateur du ventirad amené vers -Z, sa « face avant »).
+local ABOUT_FACE = CFrame.Angles(0, math.pi, 0)
 local ORIENT: { [string]: CFrame } = {
-	CpuCooler = CFrame.Angles(0, 0, math.rad(90)), -- haut du ventirad vers +X -> +Y
+	-- haut du ventirad vers +X -> +Y, puis son ventilateur (-X) -> -Z
+	CpuCooler = CFrame.Angles(0, -math.pi / 2, 0) * CFrame.Angles(0, 0, math.rad(90)),
 	GpuCard = CFrame.Angles(math.rad(90), 0, 0), -- carte à plat -> debout, ventilateurs vers +Z
+	Psu = ABOUT_FACE, -- panneau modulaire (face avant) exporté vers +Z -> -Z
+	Anga = ABOUT_FACE,
+	AioDrone = ABOUT_FACE,
+	Lagz = ABOUT_FACE,
+	Sparky = ABOUT_FACE,
+	PopUp = ABOUT_FACE,
+	Corrupto = ABOUT_FACE,
+	Dusty = ABOUT_FACE,
+	Minor = ABOUT_FACE,
+	Freezy = ABOUT_FACE,
+	VirusBug = ABOUT_FACE,
 }
 
 --[[
