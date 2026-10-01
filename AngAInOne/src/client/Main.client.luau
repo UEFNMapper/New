@@ -195,6 +195,15 @@ step("Interactions", function()
 	Interactions.Start()
 	load(Screens.ArcadePanel).OnPlay = Interactions.PlayArcade
 end)
+-- Vitesse de marche (base serveur + effets locaux), puis les mécaniques « PC » des mondes :
+-- RAM (monde 2), chaleur et ventilateurs (4), bloatware (5), artefacts GPU (6), enquêtes (1, 7),
+-- BIOS caché et Stream Deck du lobby.
+step("SpeedControl", function()
+	load(Controllers.SpeedControl).Start()
+end)
+step("Mechanics", function()
+	load(Controllers.Mechanics).Start()
+end)
 
 -- Premier état : réglages sauvegardés + histoire d'Anga à la première visite
 step("État initial", function()

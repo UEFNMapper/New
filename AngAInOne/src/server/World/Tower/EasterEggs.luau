@@ -101,6 +101,206 @@ end
 -- spawn à (-30, 0.6, -290), bornes vers (-150, -250).
 local SPAWN = Vector3.new(-30, 0.6, -290)
 
+------------------------------------------------------------------------------------
+-- Le BIOS caché : une salle bleue et grise façon « Setup Utility », cachée au-dessus de la chambre d'Anga,
+-- où l'on entre par la touche Suppr posée devant le portail (comme au démarrage d'un vrai PC).
+-- Note du BIOS, « À faire d'abord », et le QR code géant de la page BIOS de l'app (anga.tv).
+-- Entrée / sortie : téléport côté client (Interactions : actions Bios / BiosExit).
+------------------------------------------------------------------------------------
+
+-- QR code de https://anga.tv (version 1, 21 × 21) : 1 = module noir.
+local QR = {
+	"111111101010101111111",
+	"100000100011001000001",
+	"101110101100101011101",
+	"101110101101101011101",
+	"101110101000101011101",
+	"100000100111001000001",
+	"111111101010101111111",
+	"000000000001000000000",
+	"111100101111010011101",
+	"000101001101011111111",
+	"101011110100010001011",
+	"101110011100100101010",
+	"100110101111001011001",
+	"000000001011101010000",
+	"111111100100000010000",
+	"100000100111110111111",
+	"101110100101000010110",
+	"101110101100101100010",
+	"101110101011101100100",
+	"100000101110111110001",
+	"111111101001011011100",
+}
+
+-- Centre au sol de la salle : AU-DESSUS du plafond de la chambre (y 1700), hors de vue ; jamais
+-- sous le lobby (le serveur ramène au spawn tout joueur sous GameConfig.Run.FallKillBelow).
+EasterEggs.BIOS_AT = Vector3.new(1300, 1900, -1850)
+EasterEggs.BIOS_SPAWN = EasterEggs.BIOS_AT + Vector3.new(0, 3, 18) -- où l'on arrive (face aux panneaux)
+EasterEggs.BIOS_KEY_AT = Vector3.new(-150, 0.6, -170) -- la touche Suppr, devant le portail
+
+local BIOS_BLUE = Color3.fromRGB(0, 0, 168)
+local BIOS_DEEP = Color3.fromRGB(0, 0, 120)
+local BIOS_GREY = Color3.fromRGB(190, 190, 190)
+
+local function biosPanel(parent: Instance, cf: CFrame, size: Vector3, title: string, body: string)
+	local plate = Box(parent, "BiosPanel", size, cf, BIOS_GREY, SMOOTH)
+	Props.Notice(plate, title, body, BIOS_BLUE)
+	return plate
+end
+
+local function biosRoom(tower: Instance)
+	local lobby = tower:FindFirstChild("Lobby")
+	if not lobby then
+		return
+	end
+	local folder = Build.Folder("Bios", lobby)
+	local at = EasterEggs.BIOS_AT
+	local W, H, D = 70, 24, 60
+	local function slab(size: Vector3, offset: Vector3, color: Color3)
+		return Build.Part({
+			Name = "BiosWall",
+			Size = size,
+			CFrame = CFrame.new(at + offset),
+			Color = color,
+			Material = SMOOTH,
+			Parent = folder,
+		})
+	end
+	slab(Vector3.new(W, 2, D), Vector3.new(0, -1, 0), BIOS_DEEP)
+	slab(Vector3.new(W, 2, D), Vector3.new(0, H + 1, 0), BIOS_BLUE)
+	slab(Vector3.new(W, H, 2), Vector3.new(0, H / 2, -D / 2 - 1), BIOS_BLUE)
+	slab(Vector3.new(W, H, 2), Vector3.new(0, H / 2, D / 2 + 1), BIOS_BLUE)
+	slab(Vector3.new(2, H, D), Vector3.new(-W / 2 - 1, H / 2, 0), BIOS_BLUE)
+	slab(Vector3.new(2, H, D), Vector3.new(W / 2 + 1, H / 2, 0), BIOS_BLUE)
+	Build.Neon({
+		Name = "BiosLight",
+		Size = Vector3.new(W - 10, 0.4, 1),
+		CFrame = CFrame.new(at + Vector3.new(0, H - 0.5, 0)),
+		Color = BIOS_GREY,
+		Parent = folder,
+	})
+	Common.Lamp(folder, at + Vector3.new(0, H - 3, 0), BIOS_GREY, 1.4, 90)
+	-- Bandeau du haut : « AngAInOne BIOS Setup Utility »
+	local back = facing(at + Vector3.new(0, 0, -D / 2 + 0.6), Vector3.zAxis)
+	local banner =
+		Box(folder, "BiosBanner", Vector3.new(W - 6, 3.4, 0.3), back * CFrame.new(0, H - 2.5, 0), BIOS_GREY, SMOOTH)
+	Props.Sign(
+		banner,
+		"AngAInOne BIOS Setup Utility · v1.0",
+		"Suppr au démarrage · F10 : Save & Exit",
+		BIOS_BLUE,
+		BIOS_BLUE
+	)
+	-- Note et liste « À faire d'abord » (page BIOS de l'app)
+	biosPanel(
+		folder,
+		back * CFrame.new(-18, 11, 0),
+		Vector3.new(26, 14, 0.3),
+		"NOTE DU BIOS : 92 / 100",
+		"À faire d'abord :\n1. Mettre à jour le BIOS, uniquement avec le fichier du site officiel de la carte mère.\n2. Jamais pendant un orage, jamais en coupant le courant au milieu.\n3. XMP / EXPO activé : ta RAM tourne à sa vraie vitesse."
+	)
+	biosPanel(
+		folder,
+		back * CFrame.new(18, 11, 0),
+		Vector3.new(26, 14, 0.3),
+		"RACCOURCI AngAInOne",
+		"La page BIOS te dit si ton BIOS est à jour, donne le lien officiel, les étapes, et un bouton pour redémarrer directement dans le BIOS. Scanne le QR code pour l'app."
+	)
+	-- Le QR code géant (SurfaceGui : une case par module)
+	local qrWall = Box(
+		folder,
+		"BiosQr",
+		Vector3.new(22, 22, 0.3),
+		facing(at + Vector3.new(-W / 2 + 0.6, 12, 0), Vector3.xAxis),
+		Color3.new(1, 1, 1),
+		SMOOTH
+	)
+	local gui = Instance.new("SurfaceGui")
+	gui.Name = "Qr"
+	gui.Face = Enum.NormalId.Front
+	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	gui.PixelsPerStud = 10
+	gui.LightInfluence = 0
+	gui.Brightness = 1.2
+	gui.Parent = qrWall
+	local n = #QR
+	for row, line in QR do
+		for col = 1, n do
+			if string.sub(line, col, col) == "1" then
+				local cell = Instance.new("Frame")
+				cell.BorderSizePixel = 0
+				cell.BackgroundColor3 = Color3.new(0, 0, 0)
+				cell.Position = UDim2.fromScale(0.06 + 0.88 * (col - 1) / n, 0.06 + 0.88 * (row - 1) / n)
+				cell.Size = UDim2.fromScale(0.88 / n + 0.002, 0.88 / n + 0.002)
+				cell.Parent = gui
+			end
+		end
+	end
+	local qrSign = Box(
+		folder,
+		"BiosQrSign",
+		Vector3.new(22, 3, 0.3),
+		facing(at + Vector3.new(-W / 2 + 0.6, 25.2, 0), Vector3.xAxis),
+		BIOS_GREY,
+		SMOOTH
+	)
+	Props.Sign(qrSign, "Scanne-moi avec ton téléphone", "anga.tv · l'app AngAInOne", BIOS_BLUE, BIOS_BLUE)
+	-- Sortie : la touche F10 (Save & Exit)
+	local exitKey = Box(
+		folder,
+		"BiosExitKey",
+		Vector3.new(8, 1.2, 8),
+		CFrame.new(at + Vector3.new(0, 0.6, D / 2 - 8)),
+		BIOS_GREY,
+		SMOOTH
+	)
+	Props.Sign(exitKey, "F10", "Save & Exit", BIOS_BLUE, BIOS_BLUE, Enum.NormalId.Top)
+	local exitPrompt = Build.Prompt(exitKey, "Quitter le BIOS", "F10 · Save & Exit", "BiosExit", 12)
+	exitPrompt:SetAttribute("To", EasterEggs.BIOS_KEY_AT + Vector3.new(0, 3, 6))
+	folder:SetAttribute("Spawn", EasterEggs.BIOS_SPAWN)
+end
+
+-- La touche Suppr, posée sur le bureau devant le portail.
+local function biosEntry(folder: Instance)
+	local key = Box(
+		folder,
+		"BiosKey",
+		Vector3.new(6, 1.2, 6),
+		CFrame.new(EasterEggs.BIOS_KEY_AT),
+		Color3.fromRGB(43, 43, 43),
+		SMOOTH
+	)
+	Props.Sign(key, "Suppr", "BIOS", VIOLET, C.White, Enum.NormalId.Top)
+	local prompt = Build.Prompt(key, "Entrer dans le BIOS", "Touche Suppr", "Bios", 10)
+	prompt:SetAttribute("To", EasterEggs.BIOS_SPAWN)
+end
+
+-- Le Stream Deck d'Anga : trois touches font une action débile (le client s'en charge).
+local function streamDeckKeys(lobby: Instance)
+	local deck = lobby:FindFirstChild("StreamDeck", true)
+	if not deck then
+		return
+	end
+	local keys = {}
+	for _, part in deck:GetChildren() do
+		if part.Name == "StreamDeckKey" and part:IsA("BasePart") then
+			table.insert(keys, part)
+		end
+	end
+	table.sort(keys, function(a: BasePart, b: BasePart): boolean
+		return a.CFrame.Position.X < b.CFrame.Position.X
+	end)
+	local actions = { { "Pet", "Pet !" }, { "Confetti", "Confettis" }, { "Slow", "Mode lent" } }
+	for index, action in actions do
+		local key = keys[index * 4]
+		if key then
+			local prompt = Build.Prompt(key, action[2], "Stream Deck", "Deck", 10)
+			prompt:SetAttribute("Deck", action[1])
+		end
+	end
+end
+
 function EasterEggs.BuildLobby(tower: Instance)
 	local lobby = tower:FindFirstChild("Lobby")
 	if not lobby then
@@ -175,6 +375,11 @@ function EasterEggs.BuildLobby(tower: Instance)
 			)
 		end
 	end
+
+	-- 4. La touche Suppr (entrée du BIOS caché), le BIOS lui-même, et les touches du Stream Deck
+	biosEntry(folder)
+	biosRoom(tower)
+	streamDeckKeys(lobby)
 end
 
 ------------------------------------------------------------------------------------

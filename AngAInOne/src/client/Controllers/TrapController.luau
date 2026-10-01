@@ -367,6 +367,12 @@ local function die(cause: string)
 	end
 end
 
+-- Mort décidée par une autre mécanique (jauge de chaleur à 100 °C au monde 4 : arrêt thermique).
+-- Même chemin qu'un piège : bouclier respecté, une seule mort par vie, ReportDeath + OnDeath.
+function TrapController.Kill(cause: string)
+	die(cause)
+end
+
 Common.CueHandler = function(cue: string, trap: Trap)
 	local callback = TrapController.OnCue
 	if callback then

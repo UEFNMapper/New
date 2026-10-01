@@ -14,6 +14,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameConfig = require(Shared.Config.GameConfig)
 local Tower = require(Shared.Config.Tower)
+local Roles = require(Shared.Config.Roles)
 local Session = require(script.Parent.Parent.Core.Session)
 local Wallet = require(script.Parent.Parent.Core.Wallet)
 local GameEvents = require(script.Parent.Parent.Core.GameEvents)
@@ -77,7 +78,9 @@ local function onEnd(session: Session.Session, world: number, success: boolean, 
 		return -- déjà nettoyé (ex. étape passée pendant la partie) : pas de double récompense
 	end
 	session.Data.MinigamesWon += 1
-	local bits = Wallet.Add(session, CFG.WorldBits + CFG.WorldBitsPerWorld * world, "Minigame", true)
+	-- Rôle Nettoyeur (Config/Roles) : +10 % sur chaque terminal nettoyé.
+	local base = (CFG.WorldBits + CFG.WorldBitsPerWorld * world) * Roles.CleanFactor(session.Data.Role)
+	local bits = Wallet.Add(session, math.floor(base + 0.5), "Minigame", true)
 	local payload: { [string]: any } = { World = world, Bits = bits, Score = score }
 	if medal then
 		-- Médaille du monde (carte de médaille côté client, après le moment « monde nettoyé »).

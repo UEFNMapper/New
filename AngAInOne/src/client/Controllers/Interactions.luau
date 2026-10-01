@@ -26,6 +26,7 @@ local App = require(script.Parent.Parent.UI.App)
 local Toasts = require(script.Parent.Parent.UI.Screens.Toasts)
 local Dialogue = require(script.Parent.Parent.UI.Screens.Dialogue)
 local Audio = require(script.Parent.Audio)
+local SpeedControl = require(script.Parent.SpeedControl)
 local MinigamePanel = require(script.Parent.Parent.UI.Screens.MinigamePanel)
 
 local Interactions = {}
@@ -224,16 +225,10 @@ local function rgbSwitch(prompt: ProximityPrompt)
 		Toasts.Show("Boost", "Le RGB est déjà au maximum. Patience.")
 		return
 	end
-	local character = Players.LocalPlayer.Character
-	local humanoid = if character then character:FindFirstChildOfClass("Humanoid") else nil
-	if not humanoid then
-		return
-	end
 	rgbUntil = os.clock() + 10
 	Audio.Play("PowerOn", 1.1)
 	Toasts.Show("Boost", "RGB activé : +10 FPS ! (en vitesse de marche, pendant 10 s)")
-	local base = humanoid.WalkSpeed
-	humanoid.WalkSpeed = base + 10
+	SpeedControl.SetBonus("Rgb", 10)
 	local lever = if prompt.Parent and prompt.Parent.Parent
 		then prompt.Parent.Parent:FindFirstChild("RgbLever")
 		else nil
@@ -245,9 +240,7 @@ local function rgbSwitch(prompt: ProximityPrompt)
 		tick += 1
 		task.wait(0.1)
 	end
-	if humanoid.Parent and humanoid.WalkSpeed == base + 10 then
-		humanoid.WalkSpeed = base
-	end
+	SpeedControl.SetBonus("Rgb", nil)
 end
 
 -- AngATV, le dev caché sur le toit du dernier monde
@@ -279,6 +272,12 @@ local HANDLERS: { [string]: (prompt: ProximityPrompt) -> () } = {
 		App.Open("Missions")
 	end,
 }
+
+-- Ajoute (ou remplace) le traitement d'une action de prompt : pour les contrôleurs de mécaniques
+-- (World/Tower/Mechanics : RAM, ventilateurs, enquêtes, bloatware) et des easter eggs du lobby.
+function Interactions.Register(action: string, handler: (prompt: ProximityPrompt) -> ())
+	HANDLERS[action] = handler
+end
 
 function Interactions.Start()
 	ProximityPromptService.PromptTriggered:Connect(function(prompt: ProximityPrompt)

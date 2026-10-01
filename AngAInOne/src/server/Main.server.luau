@@ -20,6 +20,8 @@ local ORDER = {
 	"BossService", -- après ProgressService (arène construite), avant DataService
 	"ShopService",
 	"MonetizationService",
+	"RoleService", -- rôles coop (passifs lus par MinigameService, PuzzleService, ProgressService)
+	"PuzzleService", -- enquêtes et bloatware (World/Tower/Mechanics)
 	"MinigameService",
 	"MissionService",
 	"LeaderboardService",

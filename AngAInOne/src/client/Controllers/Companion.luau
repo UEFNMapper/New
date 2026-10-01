@@ -841,6 +841,12 @@ local function onFx(kind: string, payload: any)
 	end
 end
 
+-- Réaction ponctuelle demandée par un autre contrôleur (Stream Deck : « Pet ! », enquête réussie…).
+function Companion.React(mood: string, seconds: number?)
+	local duration = seconds or (CompanionLogic.DURATION :: any)[mood] or 2
+	reactions[mood] = os.clock() + duration
+end
+
 local function trackCheckpoints()
 	local function add(instance: Instance)
 		local stage = instance:GetAttribute("Stage")

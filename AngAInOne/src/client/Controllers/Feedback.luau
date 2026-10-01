@@ -267,6 +267,18 @@ local function onFx(kind: string, payload: any)
 	end
 end
 
+-- Confettis aux couleurs de l'app autour du joueur (Stream Deck, enquêtes réussies…).
+function Feedback.Confetti(position: Vector3?, count: number?)
+	local at = position
+	if not at then
+		local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+		at = if root and root:IsA("BasePart") then root.Position else nil
+	end
+	if at then
+		burst(at + Vector3.new(0, 2, 0), { "9B2FD4", "F6C453", "4FD1C5", "F0565B", "FFFFFF" }, count or 60, 22)
+	end
+end
+
 function Feedback.Start()
 	Net.On("Fx", onFx)
 	Net.On("Notify", function(kind: string, text: string)

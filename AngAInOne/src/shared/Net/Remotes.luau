@@ -29,6 +29,9 @@ local CLIENT_TO_SERVER = {
 	"ClaimMission", -- (id: string)
 	"IntroSeen", -- ()
 	"SaveSettings", -- (music: number, sfx: number, reducedMotion: boolean)
+	"PuzzleAnswer", -- (world: number, item: string) enquête de la salle du terminal (Config/Puzzles)
+	"Uninstall", -- (world: number, index: number) désinstaller un bloatware (monde 5)
+	"ChooseRole", -- (role: string) rôle coop (Config/Roles), "" = aucun
 	"DevCommand", -- (command: string, value: number) STUDIO UNIQUEMENT, ignoré en ligne
 }
 

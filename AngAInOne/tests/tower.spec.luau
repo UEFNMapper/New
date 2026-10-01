@@ -64,6 +64,7 @@ Shim.Globals = {
 }
 
 local Tower = Shim.load("src/shared/Config/Tower.luau")
+local GameConfig = Shim.load("src/shared/Config/GameConfig.luau")
 local TowerBuilder = Shim.load("src/server/World/TowerBuilder.luau")
 local Common = Shim.load("src/server/World/Tower/Common.luau") -- même instance que celle de TowerBuilder
 Shim.Globals = {}
@@ -922,7 +923,8 @@ return {
 		Expect.equal(#tagged("TitleHologram"), 1, "TitleHologram")
 		local actions = {}
 		for _, d in lobby:GetDescendants() do
-			if d:IsA("ProximityPrompt") then
+			-- Le BIOS caché est une salle à part (on y entre par téléport) : testé plus bas.
+			if d:IsA("ProximityPrompt") and not d:FindFirstAncestor("Bios") then
 				local action = d:GetAttribute("Action")
 				actions[action] = (actions[action] or 0) + 1
 				Expect.truthy(d.Parent:IsA("BasePart"), `prompt {action} sur une pièce`)
@@ -1603,6 +1605,62 @@ return {
 		Expect.equal(#blocked, 0, "écran du live caché :\n      " .. table.concat(blocked, "\n      "))
 	end,
 
+	["lobby : BIOS caché (touche Suppr, salle fermée, QR code, F10 pour sortir)"] = function()
+		local lobby = tower.Lobby
+		local bios = lobby:FindFirstChild("Bios")
+		Expect.truthy(bios, "dossier Bios")
+		-- La touche Suppr est dans le lobby ouvert (donc à hauteur de joueur et à portée : tests ci-dessus)
+		local entry: any, exit: any = nil, nil
+		for _, d in lobby:GetDescendants() do
+			if d:IsA("ProximityPrompt") then
+				if d:GetAttribute("Action") == "Bios" then
+					entry = d
+				elseif d:GetAttribute("Action") == "BiosExit" then
+					exit = d
+				end
+			end
+		end
+		Expect.truthy(entry and not entry:FindFirstAncestor("Bios"), "touche Suppr hors de la salle")
+		Expect.truthy(exit and exit:FindFirstAncestor("Bios"), "touche F10 dans la salle")
+		-- Les deux prompts portent leur destination (téléport côté client)
+		local toBios, toLobby = entry:GetAttribute("To"), exit:GetAttribute("To")
+		Expect.truthy(typeof(toBios) == "Vector3" and typeof(toLobby) == "Vector3", "destinations")
+		-- La salle : un sol sous l'arrivée, des murs tout autour, le plafond au-dessus
+		local lo = V3.new(math.huge, math.huge, math.huge)
+		local hi = -lo
+		local walls = 0
+		for _, part in (bios :: Instance):GetDescendants() do
+			if part:IsA("BasePart") and part.Name == "BiosWall" then
+				walls += 1
+				local p = part.CFrame.Position
+				lo = lo:Min(p - part.Size / 2)
+				hi = hi:Max(p + part.Size / 2)
+				Expect.truthy(part.CanCollide, "murs du BIOS solides")
+			end
+		end
+		Expect.equal(walls, 6, "sol, plafond et 4 murs")
+		local function inside(v: any): boolean
+			return v.X > lo.X and v.X < hi.X and v.Y > lo.Y + 1 and v.Y < hi.Y - 1 and v.Z > lo.Z and v.Z < hi.Z
+		end
+		Expect.truthy(inside(toBios), "l'arrivée est dans la salle")
+		Expect.truthy(inside(exit.Parent.CFrame.Position), "la touche F10 est dans la salle")
+		Expect.truthy(not inside(toLobby) and toLobby.Y > -5 and toLobby.Y < 10, "la sortie ramène dans la chambre")
+		Expect.truthy(lo.Y > 1700, "la salle est cachée au-dessus du plafond de la chambre")
+		Expect.truthy(toBios.Y > GameConfig.Run.FallKillBelow, "jamais sous la limite de chute du serveur")
+		-- Le QR code : une grille de cases noires sur un mur blanc (version 1 = 21 × 21 modules)
+		local qr = (bios :: Instance):FindFirstChild("BiosQr")
+		local gui = qr and qr:FindFirstChild("Qr")
+		Expect.truthy(gui and gui:IsA("SurfaceGui"), "SurfaceGui du QR code")
+		local cells = 0
+		for _, cell in (gui :: Instance):GetChildren() do
+			if cell:IsA("Frame") then
+				cells += 1
+			end
+		end
+		Expect.between(cells, 180, 300, "modules noirs du QR code")
+		Expect.truthy(inside((qr :: BasePart).CFrame.Position), "QR code dans la salle")
+	end,
+
 	["lobby : tout est accessible à pied depuis le spawn (pad 0, bornes, Anga, clavier)"] = function()
 		local lobby = tower.Lobby
 		local spawn = lobby.LobbySpawn
@@ -1649,7 +1707,7 @@ return {
 		local padTop = V3.new(pads[0].CFrame.Position.X, top(pads[0]), pads[0].CFrame.Position.Z)
 		Expect.truthy(reached(padTop, 0, 0.05), "pad 0 (Miniaturiseur) inaccessible depuis le spawn")
 		for _, d in lobby:GetDescendants() do
-			if d:IsA("ProximityPrompt") then
+			if d:IsA("ProximityPrompt") and not d:FindFirstAncestor("Bios") then
 				local holder = d.Parent.CFrame.Position
 				Expect.truthy(
 					reached(holder, d.MaxActivationDistance - 4, 8),

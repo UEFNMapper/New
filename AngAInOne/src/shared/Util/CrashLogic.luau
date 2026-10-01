@@ -26,6 +26,7 @@ local LABELS: { [string]: string } = {
 	Pendulum = "Pioche du mineur",
 	Cursor = "Curseur géant",
 	FirewallWall = "Pare-feu",
+	ThermalShutdown = "Arrêt thermique (100 °C)",
 	Void = "Chute dans le vide",
 	Hazard = "Court-circuit",
 }

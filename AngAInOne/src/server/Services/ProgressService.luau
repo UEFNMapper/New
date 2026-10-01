@@ -21,6 +21,7 @@ local CollectionService = game:GetService("CollectionService")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameConfig = require(Shared.Config.GameConfig)
 local Tower = require(Shared.Config.Tower)
+local Roles = require(Shared.Config.Roles)
 local DataSchema = require(Shared.Data.DataSchema)
 local MedalLogic = require(Shared.Util.MedalLogic)
 local Session = require(script.Parent.Parent.Core.Session)
@@ -235,7 +236,8 @@ local function advanceTo(session: Session.Session, stage: number, skipped: boole
 		data.BestStage = stage
 	end
 	if not skipped then
-		Wallet.Add(session, RUN.CheckpointBits, "Checkpoint", true)
+		-- Rôle Service (Config/Roles) : +1 Bit par checkpoint.
+		Wallet.Add(session, RUN.CheckpointBits + Roles.CheckpointBits(data.Role), "Checkpoint", true)
 	end
 	local world = Tower.WorldOf(stage)
 	Wallet.Fx(session, "Checkpoint", {
