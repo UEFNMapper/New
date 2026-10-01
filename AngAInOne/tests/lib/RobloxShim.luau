@@ -93,6 +93,7 @@ function Shim.load(filePath: string): any
 		script = makeNode(filePath),
 		-- Types de données Roblox (fournis par Lune) pour les modules de géométrie partagés.
 		Vector3 = roblox.Vector3,
+		Vector2 = roblox.Vector2,
 		CFrame = roblox.CFrame,
 		Color3 = roblox.Color3,
 		require = function(target: any)

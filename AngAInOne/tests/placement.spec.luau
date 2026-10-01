@@ -219,7 +219,8 @@ return {
 	["monde 2 : les barrettes RAM mesurent 84 studs et touchent leur slot"] = function()
 		local sticks = 0
 		for _, rec in records do
-			if rec.Key == "RamStick" then
+			-- (les barrettes de l'épreuve de la salle du terminal sont à l'échelle du joueur)
+			if rec.Key == "RamStick" and not rec.Model:FindFirstAncestor("Epreuve") then
 				local lo, hi = IsolatedTower.Bounds(rec.Model)
 				Expect.near(hi.Y - lo.Y, 84, 0.5, "hauteur de la barrette")
 				Expect.near(lo.Y - Common.BAND, 4, 0.5, "bas de la barrette au dessus du slot (4)")
@@ -304,7 +305,8 @@ return {
 			elseif rec.Key == "CpuCooler" then
 				local fan = front(rec.Model, "Rotor")
 				Expect.truthy(fan and fan.Z < -0.8, `ventirad {rec.Model:GetFullName()} : ventilateur vers -Z`)
-			elseif rec.Key == "GpuCard" then
+			elseif rec.Key == "GpuCard" and not rec.Model:FindFirstAncestor("Epreuve") then
+				-- (la carte de l'épreuve du monde 6 est posée à plat sur un banc de test)
 				local fan = front(rec.Model, "Fan2")
 				Expect.truthy(fan and fan.X > 0.8, "carte graphique : ventilateurs vers l'est (+X)")
 			elseif rec.Key == "PopUp" and rec.Model.Parent and rec.Model.Parent.Name == "Decor" then

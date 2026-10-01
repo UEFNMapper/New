@@ -1,9 +1,6 @@
 --!strict
 --[[
 	Mechanics : les mécaniques « PC » de chaque monde, posées APRÈS le parcours (comme Bonus) :
-	- Monde 1 et 7 · ENQUÊTES (Config/Puzzles) : une rangée de panneaux dans la salle du terminal, façon
-	  page Démarrage / Sessions de jeu de l'app. Prompt « Désactiver » / « Quarantaine » sur chacun
-	  (Action "Puzzle", attributs World + Item) ; le serveur (PuzzleService) vérifie la réponse.
 	- Monde 2 · RAM SATURÉE : la jauge de RAM du joueur se remplit (client, Util/Gauges) et le ralentit
 	  au sol ; trois gros boutons « Libérer la RAM » (Action "FlushRam") la vident.
 	- Monde 4 · SURCHAUFFE : la jauge de chaleur monte quand on court ; à 100 °C, arrêt thermique.
@@ -11,93 +8,33 @@
 	  encrassés à relancer (Action "FanStart", attribut NeedsStart). Plus le VENTILO PROPULSEUR : un
 	  ventilateur couché (piège Bounce) à côté du checkpoint 17 qui fait décoller jusqu'à une corniche
 	  à Bits bonus.
-	- Monde 5 · BLOATWARE : trois programmes inutiles bloquent le passage (solides) ; prompt maintenu
-	  « Désinstaller » (Action "Uninstall", attributs World + Index) : le client les retire localement,
-	  le serveur donne quelques Bits la première fois.
+	- Monde 5 · PROCESSUS EN FOND : trois processus inutiles (Gestionnaire des tâches) bloquent le
+	  passage (solides) ; prompt maintenu « Fin de tâche » (Action "Uninstall", attributs World + Index) :
+	  le client les retire localement, le serveur donne quelques Bits la première fois.
+	Les épreuves des salles du terminal sont dans Tower/Epreuves.
 	Les zones et prompts sont dans World{n}.Mechanics (attribut Stage sur chaque sous-dossier).
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
-local Tower = require(Shared.Config.Tower)
-local Puzzles = require(Shared.Config.Puzzles)
 local Gauges = require(Shared.Util.Gauges)
 local Build = require(script.Parent.Parent.Build)
 local Props = require(script.Parent.Parent.Props)
+local AppBoard = require(script.Parent.Parent.AppBoard)
 local Common = require(script.Parent.Common)
 
 local Mechanics = {}
 
 local C = Props.C
 local Box = Props.Box
-local P = Common.P
 local facing = Common.Facing
 local NEON = Enum.Material.Neon
 local METAL = Enum.Material.Metal
 local SMOOTH = Enum.Material.SmoothPlastic
 
-local APP_ACCENT = Color3.fromHex("9B2FD4")
 local APP_CARD = Color3.fromHex("2B2B2B")
 local DANGER = Color3.fromHex("FF5A5F")
-
-------------------------------------------------------------------------------------
--- Enquêtes (mondes 1 et 7)
-------------------------------------------------------------------------------------
-
-Mechanics.PANEL_SPACING = 4.4
-Mechanics.PANEL_SIZE = Vector3.new(4, 5.4, 0.3)
-
-local function puzzleRoom(ctx: Common.WorldContext, parent: Instance)
-	local puzzle = Puzzles.ForWorld(ctx.Index)
-	if not puzzle then
-		return
-	end
-	local folder = Build.Folder("Puzzle", parent)
-	folder:SetAttribute("Stage", Tower.TerminalStage(ctx.Index))
-	local fr, y = ctx.Terminal.Frame, ctx.Terminal.Floor
-	local count = #puzzle.Items
-	local first = -4
-	-- Bandeau de la page (comme le titre d'une page de l'app)
-	local middle = first + Mechanics.PANEL_SPACING * (count - 1) / 2
-	local header = Box(
-		folder,
-		"PuzzleHeader",
-		Vector3.new(Mechanics.PANEL_SPACING * count, 2.4, 0.3),
-		facing(P(fr, middle, y + 9.4, 6.6), -fr.R),
-		APP_CARD,
-		SMOOTH
-	)
-	Props.Sign(
-		header,
-		`{puzzle.Title} · {puzzle.Subtitle}`,
-		"Enquête AngAInOne : trouve le coupable",
-		APP_ACCENT,
-		C.White
-	)
-	for index, item in puzzle.Items do
-		local u = first + Mechanics.PANEL_SPACING * (index - 1)
-		local cf = facing(P(fr, u, y + 2.2 + Mechanics.PANEL_SIZE.Y / 2, 6.6), -fr.R)
-		local panel = Box(folder, "PuzzlePanel", Mechanics.PANEL_SIZE, cf, APP_CARD, SMOOTH)
-		panel:AddTag("PuzzlePanel")
-		panel:SetAttribute("World", ctx.Index)
-		panel:SetAttribute("Item", item.Id)
-		Props.Notice(panel, item.Name, table.concat(item.Lines, "\n"), APP_ACCENT)
-		-- Interrupteur (levier) sous le panneau, comme le bouton Activé / Désactivé de la page
-		local lever =
-			Box(folder, "PuzzleLever", Vector3.new(1.6, 0.8, 0.4), cf * CFrame.new(0, -3.3, 0), C.Black, SMOOTH)
-		Build.Neon({
-			Name = "PuzzleLed",
-			Size = Vector3.new(0.6, 0.4, 0.2),
-			CFrame = lever.CFrame * CFrame.new(-0.4, 0, -0.25),
-			Color = Color3.fromHex("6CCB5F"),
-			Parent = folder,
-		})
-		local prompt = Build.Prompt(panel, puzzle.Action, item.Name, "Puzzle", 8)
-		prompt:SetAttribute("World", ctx.Index)
-		prompt:SetAttribute("Item", item.Id)
-	end
-end
 
 ------------------------------------------------------------------------------------
 -- Monde 2 : gros boutons « Libérer la RAM »
@@ -142,7 +79,12 @@ local function ramButtons(ctx: Common.WorldContext, parent: Instance)
 			APP_CARD,
 			SMOOTH
 		)
-		Props.Sign(sign, "LIBÉRER LA RAM", "appuie pour vider la mémoire", APP_ACCENT, C.White)
+		AppBoard.Build(sign, {
+			Page = "Mémoire",
+			Title = "Libérer la RAM",
+			Subtitle = "Appuie sur le bouton rouge : la mémoire se vide",
+			Scale = 1.2,
+		})
 		local prompt = Build.Prompt(cap, "Libérer la RAM", "Mémoire saturée", "FlushRam", 10)
 		prompt:SetAttribute("Index", index)
 		prompt:SetAttribute("World", ctx.Index)
@@ -327,7 +269,12 @@ local function launchFan(ctx: Common.WorldContext, parent: Instance)
 		APP_CARD,
 		SMOOTH
 	)
-	Props.Sign(sign, "VENTILO PROPULSEUR", "monte dessus · atterris sur la corniche", APP_ACCENT, C.White)
+	AppBoard.Build(sign, {
+		Page = "Ventilateurs",
+		Title = "Ventilo propulseur",
+		Subtitle = "Monte dessus · atterris sur la corniche",
+		Scale = 1.2,
+	})
 	-- Bits bonus sur la corniche (Méga-Bit au centre) et zone fraîche du ventilateur
 	local ledge = spec.Ledge
 	local cz = (ledge.Z0 + ledge.Z1) / 2
@@ -362,24 +309,24 @@ end
 Mechanics.BLOATWARE = {
 	{
 		Stage = 21,
-		Name = "Barre d'outils Super-Recherche",
-		Detail = "s'installe toute seule · 0 utilité",
+		Name = "SuperRecherche_svc.exe",
+		Detail = "CPU 34 % · barre d'outils installée en cachette",
 		Center = Vector3.new(-16, 418.5, -77), -- passerelle VRM (lane x -20.5..-11.5)
 		Size = Vector3.new(10, 8, 2.5),
 		Look = -Vector3.zAxis,
 	},
 	{
 		Stage = 24,
-		Name = "Optimiseur 3000 GRATUIT",
-		Detail = "« ton PC est lent ! » (c'est lui)",
+		Name = "Optimiseur3000.exe",
+		Detail = "CPU 41 % · « ton PC est lent ! » (c'est lui)",
 		Center = Vector3.new(12, 464, -47), -- grille de broches (x 4..20)
 		Size = Vector3.new(17, 8, 2.5),
 		Look = Vector3.zAxis,
 	},
 	{
 		Stage = 25,
-		Name = "Coupons Express Assistant",
-		Detail = "pop-up · traqueur · lance au démarrage",
+		Name = "CouponsExpress.exe",
+		Detail = "CPU 18 % · pop-up et traqueur en fond",
 		-- seuil devant la porte (z -96..-80) ; 8 de haut : on ne saute pas par-dessus (saut 7,2), et le
 		-- dessus reste sous la bande du vide du monde 6 (test « vide »)
 		Center = Vector3.new(75.75, 484, -88),
@@ -411,8 +358,8 @@ local function bloatware(ctx: Common.WorldContext, parent: Instance)
 		block:SetAttribute("Program", spec.Name)
 		Props.Notice(
 			block,
-			`📦 {spec.Name}`,
-			`{spec.Detail}\n\nInstallation : 99 %\nDésinstaller ? Oui, évidemment.`,
+			`⚙ {spec.Name}`,
+			`{spec.Detail}\n\nGestionnaire des tâches : ce processus n'a rien à faire là.`,
 			DANGER
 		)
 		Build.Neon({
@@ -422,7 +369,7 @@ local function bloatware(ctx: Common.WorldContext, parent: Instance)
 			Color = DANGER,
 			Parent = folder,
 		})
-		local prompt = Build.Prompt(block, "Désinstaller", spec.Name, "Uninstall", 12)
+		local prompt = Build.Prompt(block, "Fin de tâche", spec.Name, "Uninstall", 12)
 		prompt.HoldDuration = 0.8
 		prompt:SetAttribute("World", ctx.Index)
 		prompt:SetAttribute("Index", index)
@@ -433,14 +380,10 @@ end
 
 function Mechanics.Build(ctx: Common.WorldContext)
 	local w = ctx.Index
-	if not (Puzzles.ForWorld(w) or w == 2 or w == 4 or w == 5) then
+	if not (w == 2 or w == 4 or w == 5) then
 		return
 	end
 	local folder = Build.Folder("Mechanics", ctx.Model)
-	if Puzzles.ForWorld(w) then
-		local room = ctx.Model:FindFirstChild("Terminal")
-		puzzleRoom(ctx, room or folder)
-	end
 	if w == 2 then
 		ramButtons(ctx, folder)
 	elseif w == 4 then

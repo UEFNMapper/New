@@ -9,8 +9,8 @@
 	  (ventilateurs géants, ventilateurs relancés). À 100 °C : arrêt thermique (mort, retour au checkpoint).
 	- Monde 6 · artefacts GPU : tant que le monde est infecté, de brefs artefacts graphiques (désactivés
 	  avec « Réduire les animations »).
-	- Monde 1 et 7 · enquêtes : PuzzleAnswer au serveur, indice ou victoire en retour (Fx "Puzzle").
-	- Monde 5 · bloatware : désinstallé localement (prompt maintenu), Bits la première fois (Fx).
+	- Monde 5 · processus en fond : « Fin de tâche » en local (prompt maintenu), Bits la première fois (Fx).
+	Les épreuves des salles du terminal : Controllers/Epreuves.
 	- Rôle Technicien (Config/Roles) : les jauges montent 25 % moins vite.
 	Les jauges sont en pause dans la salle du terminal, pendant un mini-jeu, et une fois le monde nettoyé.
 ]]
@@ -24,7 +24,6 @@ local TweenService = game:GetService("TweenService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Tower = require(Shared.Config.Tower)
-local Puzzles = require(Shared.Config.Puzzles)
 local Roles = require(Shared.Config.Roles)
 local Gauges = require(Shared.Util.Gauges)
 
@@ -59,7 +58,6 @@ local lastFlush: { [number]: number } = {}
 local startedFans: { [number]: boolean } = {}
 local spinning: { { Hub: BasePart, Blades: { { Part: BasePart, Offset: CFrame } } } } = {}
 local removedBloat: { [number]: { Part: BasePart, Size: Vector3, Transparency: number } } = {}
-local introShown: { [number]: boolean } = {}
 local nextGlitch = os.clock() + 6
 local glitchSaid = false
 local deckUntil = 0
@@ -330,13 +328,6 @@ local function startFan(prompt: ProximityPrompt)
 	end
 end
 
-local function answerPuzzle(prompt: ProximityPrompt)
-	local world, item = prompt:GetAttribute("World"), prompt:GetAttribute("Item")
-	if type(world) == "number" and type(item) == "string" then
-		Net.Fire("PuzzleAnswer", world, item)
-	end
-end
-
 local function uninstall(prompt: ProximityPrompt)
 	local index = promptIndex(prompt)
 	local world = prompt:GetAttribute("World")
@@ -349,7 +340,7 @@ local function uninstall(prompt: ProximityPrompt)
 	block.CanCollide = false
 	Audio.Play("Collect", 0.7)
 	local program = block:GetAttribute("Program")
-	Toasts.Show("Success", `Désinstallé : {if type(program) == "string" then program else "bloatware"} 🗑`)
+	Toasts.Show("Success", `Fin de tâche : {if type(program) == "string" then program else "processus"} ✓`)
 	TweenService:Create(block, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
 		Size = block.Size * Vector3.new(1, 0.05, 1),
 		Transparency = 1,
@@ -439,43 +430,12 @@ end
 -- Retours du serveur
 ------------------------------------------------------------------------------------
 
-local function findItem(world: number, id: string): Puzzles.Item?
-	local puzzle = Puzzles.ForWorld(world)
-	if not puzzle then
-		return nil
-	end
-	for _, item in puzzle.Items do
-		if item.Id == id then
-			return item
-		end
-	end
-	return nil
-end
-
 local function onFx(kind: string, payload: any)
 	if type(payload) ~= "table" then
 		return
 	end
-	if kind == "Puzzle" then
-		local puzzle = Puzzles.ForWorld(payload.World)
-		if not puzzle then
-			return
-		end
-		if payload.Already then
-			Toasts.Show("Success", "Enquête déjà résolue ✓ Le coupable est hors d'état de nuire.")
-		elseif payload.Ok then
-			Audio.Play("Achievement")
-			Feedback.Confetti(nil, 60)
-			Toasts.Show("Milestone", `🔎 Enquête résolue : +{payload.Bits or 0} Bits`)
-			Dialogue.Say(puzzle.Success, 6, "AIO")
-			Companion.React("Celebrate", 3)
-		else
-			Audio.Play("Error")
-			local item = findItem(payload.World, payload.Item)
-			Dialogue.Say(if item and item.Hint then item.Hint else "Pas lui… Regarde mieux les indices.", 4, "AIO")
-		end
-	elseif kind == "Uninstalled" then
-		Toasts.Show("Reward", `Bloatware désinstallé : +{payload.Bits or 0} Bits (une fois pour toutes)`)
+	if kind == "Uninstalled" then
+		Toasts.Show("Reward", `Processus arrêté : +{payload.Bits or 0} Bits (une fois pour toutes)`)
 	elseif kind == "Role" then
 		local role = Roles.ById[payload.Id]
 		if role then
@@ -493,20 +453,6 @@ local function onState(state: any)
 		return
 	end
 	restoreBloatware(data)
-	for _, world in { 1, Tower.WORLD_COUNT } do
-		local puzzle = Puzzles.ForWorld(world)
-		if
-			puzzle
-			and not introShown[world]
-			and data.Stage == Tower.TerminalStage(world)
-			and not (data.Puzzles and data.Puzzles[`W{world}`])
-		then
-			introShown[world] = true
-			task.delay(2.5, function()
-				Dialogue.Say(puzzle.Intro, 6, "AIO")
-			end)
-		end
-	end
 end
 
 ------------------------------------------------------------------------------------
@@ -529,7 +475,6 @@ end
 function Mechanics.Start()
 	Interactions.Register("FlushRam", flushRam)
 	Interactions.Register("FanStart", startFan)
-	Interactions.Register("Puzzle", answerPuzzle)
 	Interactions.Register("Uninstall", uninstall)
 	Interactions.Register("Bios", function(prompt: ProximityPrompt)
 		teleport(prompt, "BIOS Setup Utility. Ici, on ne touche à rien sans savoir. F10 pour sortir.")

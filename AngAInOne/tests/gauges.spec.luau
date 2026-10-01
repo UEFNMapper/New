@@ -1,6 +1,5 @@
--- Jauges de PC (Util/Gauges) et enquêtes (Config/Puzzles) : logique pure.
+-- Jauges de PC (Util/Gauges) : logique pure.
 local Gauges = Shim.load("src/shared/Util/Gauges.luau")
-local Puzzles = Shim.load("src/shared/Config/Puzzles.luau")
 
 return {
 	["RAM : se remplit en ≈ 45 s, ralentit seulement au-delà du seuil, jamais sous le facteur minimal"] = function()
@@ -52,34 +51,5 @@ return {
 			h = Gauges.HeatStep(h, 0.4, false, false)
 		end
 		Expect.truthy(h < Gauges.HEAT_MAX, "avec des pauses, pas de plantage")
-	end,
-
-	["Enquêtes : une par monde 1 et 7, un seul coupable, indices sur les autres, mondes sans enquête"] = function()
-		Expect.equal(#Puzzles.List, 2)
-		for _, puzzle in Puzzles.List do
-			local culprits = 0
-			local ids = {}
-			for _, item in puzzle.Items do
-				Expect.truthy(not ids[item.Id], `id en double : {item.Id}`)
-				ids[item.Id] = true
-				Expect.equal(#item.Lines, 2, `{item.Name} : deux lignes`)
-				if item.Culprit then
-					culprits += 1
-				else
-					Expect.truthy(item.Hint and #item.Hint > 10, `{item.Name} : indice`)
-				end
-			end
-			Expect.equal(culprits, 1, `monde {puzzle.World} : un coupable`)
-			Expect.truthy(puzzle.Bits > 0 and #puzzle.Intro > 10 and #puzzle.Success > 10, "textes")
-			Expect.truthy(#puzzle.Items >= 5 and #puzzle.Items <= 6, "5 ou 6 panneaux (un mur de salle)")
-		end
-		Expect.equal(Puzzles.ForWorld(3), nil)
-		local ok, item = Puzzles.Check(1, "virus")
-		Expect.equal(ok, true)
-		Expect.equal(item and item.Name, "RAM_download_2go.exe")
-		local wrong, wrongItem = Puzzles.Check(7, "browser")
-		Expect.equal(wrong, false)
-		Expect.truthy(wrongItem and wrongItem.Hint, "indice sur le mauvais panneau")
-		Expect.equal(Puzzles.Check(7, "inconnu"), false)
 	end,
 }

@@ -27,6 +27,7 @@ local LABELS: { [string]: string } = {
 	Cursor = "Curseur géant",
 	FirewallWall = "Pare-feu",
 	ThermalShutdown = "Arrêt thermique (100 °C)",
+	Lava = "Lave (surchauffe)",
 	Void = "Chute dans le vide",
 	Hazard = "Court-circuit",
 }

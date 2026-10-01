@@ -26,21 +26,22 @@ symptôme : le PC remonte à 144 FPS et **le live commence**.
    de piège par étape, la 5ᵉ combine tout. On meurt → dernier checkpoint. Aucun game over.
 3. **Incidents de LAGZ** (toutes les 60–120 s, annoncés 3 s avant) : FREEZE, LAG SPIKE, BLACKOUT,
    POP-UP STORM, CORRUPTION, SURCHAUFFE — ils changent vraiment les pièges du monde.
-4. **Terminal antivirus** (salle sûre, gardée par le sbire du monde) : mini-jeu 2D. Réussi → le
-   monde passe de « infecté » à « nettoyé », le portail s'ouvre, le PC gagne des FPS.
+4. **Salle du terminal** (salle sûre, gardée par le sbire du monde) : une **épreuve 3D** tirée du
+   guide (docs/SCENARIO.md §10). Réussie → le monde passe de « infecté » à « nettoyé », le portail
+   s'ouvre, le PC gagne des FPS.
 5. **Monde 7 → boss LAGZ** en 3 phases, puis la fin « LE LIVE COMMENCE ! ». Chrono, records.
 
 ## 3. Les 7 mondes (config : `src/shared/Config/Tower.luau`, construction : `World/Tower/Worlds/W{n}.luau`)
 
-| # | Monde | Parcours | Pièges signature | Incident | Sbire | Mini-jeu |
+| # | Monde | Parcours | Pièges signature | Incident | Sbire | Épreuve de la salle |
 |---|---|---|---|---|---|---|
-| 1 | Alimentation (PSU) | câbles tressés, condensateurs, grille du ventilateur | Surtension, plateformes alimentées, décharges, trampolines | BLACKOUT | Sparky | Scan |
-| 2 | Memory Lanes (RAM) | ville de barrettes, canyon | barrettes qui écrasent, pluie d'onglets, fuite mémoire | POP-UP STORM | Pop-Up | Pop-up Killer |
-| 3 | Data Vault (SSD) | damier NAND, baie de disques | dalles corrompues, défragmenteur, tiroirs, pistons | CORRUPTION | Corrupto | Défrag |
-| 4 | Cryo Tower (refroidissement) | radiateur, tube de watercooling, ventilateurs | jets de vapeur, boules de poussière, vent, pales | SURCHAUFFE | Dusty | Firewall |
-| 5 | The Core (CPU) | spirale du ventirad, broches du socket | pioches, plateformes en latence, roues de chargement | LAG SPIKE | Minor | Scan |
-| 6 | Render Canyon (GPU) | canyon de la carte graphique, piste de pixels | pixels morts, ponts de chargement, pales géantes | FREEZE | Freezy | Memory |
-| 7 | Neural Nexus (puce IA) | cerveau holographique, arène | curseur géant, pare-feu mobiles, virus | tous | LAGZ | Firewall boss |
+| 1 | Alimentation (PSU) | câbles tressés, condensateurs, grille du ventilateur | Surtension, plateformes alimentées, décharges, trampolines | BLACKOUT | Sparky | Le Démarrage infecté |
+| 2 | Memory Lanes (RAM) | ville de barrettes, canyon | barrettes qui écrasent, pluie d'onglets, fuite mémoire | POP-UP STORM | Pop-Up | La RAM saturée |
+| 3 | Data Vault (SSD) | damier NAND, baie de disques | dalles corrompues, défragmenteur, tiroirs, pistons | CORRUPTION | Corrupto | L'invasion du Bloatware |
+| 4 | Cryo Tower (refroidissement) | radiateur, tube de watercooling, ventilateurs | jets de vapeur, boules de poussière, vent, pales | SURCHAUFFE | Dusty | La surchauffe |
+| 5 | The Core (CPU) | spirale du ventirad, broches du socket | pioches, plateformes en latence, roues de chargement | LAG SPIKE | Minor | Défense du CPU (3D) |
+| 6 | Render Canyon (GPU) | canyon de la carte graphique, piste de pixels | pixels morts, ponts de chargement, pales géantes | FREEZE | Freezy | La carte graphique corrompue |
+| 7 | Neural Nexus (puce IA) | cerveau holographique, arène | curseur géant, pare-feu mobiles, virus | tous | LAGZ | Enquête des Sessions, puis Firewall boss |
 
 25 types de pièges (tag `Trap`, attribut `Kind`, liste dans `Tower.luau`). Tout ce qui tue est
 **rouge / magenta** et prévenu avant de s'activer. Les pièges sont animés côté client avec l'horloge
@@ -49,7 +50,7 @@ du serveur **de leur monde** (`TrapClock` : le FREEZE la fige, le LAG SPIKE la f
 
 **Difficulté** : écarts ≤ 6,5 studs, fenêtres sûres ≥ 1,2 s au monde 1 → ≥ 0,8 s au monde 7.
 
-## 4. Mini-jeux 2D antivirus
+## 4. Mini-jeux 2D antivirus (arcade, et Firewall boss au monde 7)
 
 | Mini-jeu | But |
 |---|---|

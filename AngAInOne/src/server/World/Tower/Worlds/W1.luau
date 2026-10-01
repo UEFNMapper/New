@@ -1056,7 +1056,8 @@ return function(ctx: Common.WorldContext)
 	-- Sbire : Sparky garde le terminal (dans la salle, près de l'écran)
 	------------------------------------------------------------------------------------
 
-	local sparkyCf = CFrame.lookAt(V(110, 88, -112), V(84, 86, -90))
+	-- Au-dessus de l'écran du fond (salle : u 12, v -40, +20) : la salle reste libre pour l'épreuve.
+	local sparkyCf = CFrame.lookAt(V(100, 100, -128), V(88, 100, -88))
 	ModelLibrary.Place("Sparky", sparkyCf * CFrame.new(0, -3, 0), room, { Scale = 1.6 }, function(): Instance?
 		return sparkyFallback(sparkyCf, room)
 	end)

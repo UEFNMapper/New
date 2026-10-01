@@ -118,6 +118,12 @@ Tag `UsbKey`, attribut `KeyId` = `W{n}K{i}` (i = 1..3), non collidable, touchabl
 - [x] **Mécaniques par monde** : enquêtes (1 et 7), RAM (2), chaleur + ventilateurs à relancer +
       ventilo propulseur (4), bloatware (5), artefacts GPU (6) ; jauge contextuelle du HUD.
 - [x] **Mini-jeux** : Tri des fichiers (terminal du monde 5), Défense du CPU (arcade).
+- [x] **Épreuves 3D des salles du terminal** (guide « AngAinOne × Roblox ») : Démarrage infecté
+  (M1), RAM saturée (M2), Bloatware (M3), surchauffe (M4), Défense du CPU en 3D (M5), pilote GPU +
+  écran (M6), enquête des Sessions avant le boss (M7) ; panneaux au style de l'app ; menu DEV.
+- [x] **Étape 0 « L'intrusion »** : le bureau du PC, free_robux_generator.exe, prévention.
+- [ ] Épreuves **en coop** (une épreuve partagée par la salle, rôles obligatoires) ; jauges partagées.
+- [ ] Équilibrer les épreuves et les médailles avec la télémétrie (temps réels en jeu).
 - [x] **BIOS caché** (touche Suppr, QR code anga.tv), **Stream Deck** interactif, **rôles d'équipe**
       (version légère : un passif chacun).
 - [x] Tests : `mechanics.spec`, `gauges.spec`, `newgames.spec`, BIOS dans `tower.spec` ; outil

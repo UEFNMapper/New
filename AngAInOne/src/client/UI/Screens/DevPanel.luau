@@ -21,6 +21,7 @@ local Keycap = require(script.Parent.Parent.Components.Keycap)
 local App = require(script.Parent.Parent.App)
 local Toasts = require(script.Parent.Toasts)
 local MinigamePanel = require(script.Parent.MinigamePanel)
+local Moments = require(script.Parent.Moments)
 local Store = require(script.Parent.Parent.Parent.Controllers.Store)
 local Net = require(script.Parent.Parent.Parent.Controllers.Net)
 
@@ -68,7 +69,32 @@ local function mechanics(): any
 	return if ok then module else nil
 end
 
+-- Contrôleur des épreuves (chargé après l'UI).
+local function epreuves(): any
+	local ok, module = pcall(function()
+		return require(script.Parent.Parent.Parent.Controllers.Epreuves) :: any
+	end)
+	return if ok then module else nil
+end
+
 local CLIENT_ACTIONS: { [string]: () -> () } = {
+	Intrusion = function()
+		App.Close()
+		Moments.Intrusion(function()
+			Moments.Intro(function() end)
+		end)
+	end,
+	Investigation = function()
+		local e = epreuves()
+		if
+			e
+			and not e.Start(7, function()
+				Toasts.Show("Success", "[DEV] Enquête terminée : en jeu, la quarantaine lance le Firewall boss.")
+			end)
+		then
+			Toasts.Show("Info", "[DEV] Va d'abord dans la salle du monde 7 (Aller au sommet).")
+		end
+	end,
 	Bios = function()
 		local root = lobby()
 		local bios = if root then root:FindFirstChild("Bios") else nil
@@ -196,6 +222,16 @@ function DevPanel.Mount(layer: Frame)
 				end
 			else
 				Net.Fire("DevCommand", "Feature", index)
+				local world = feature.World
+				if feature.Epreuve and world then
+					-- Lancement automatique une fois arrivé devant la borne
+					task.delay(2, function()
+						local e = epreuves()
+						if e and not e.IsRunning() then
+							e.Start(world)
+						end
+					end)
+				end
 			end
 			if client ~= "Roles" and client ~= "Ram90" and client ~= "Heat90" then
 				panel.Visible = false

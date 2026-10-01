@@ -12,6 +12,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Tower = require(Shared.Config.Tower)
@@ -31,18 +32,31 @@ local COMMANDS = { "Bits", "Stage", "Clear", "Shield", "Reset", "Feature" }
 -- Place le joueur dans le monde de la nouveauté, monde encore infecté, puis à sa position.
 local function goToFeature(session: Session.Session, index: number)
 	local feature = DevFeatures.List[math.floor(index)]
-	if not feature or not feature.World or not feature.Stage then
+	if not feature or not feature.World then
 		return
 	end
+	local stage = feature.Stage or Tower.TerminalStage(feature.World)
 	local data = session.Data
-	data.Stage = feature.Stage
-	data.BestStage = math.max(data.BestStage, feature.Stage)
+	data.Stage = stage
+	data.BestStage = math.max(data.BestStage, stage)
 	data.RunStarted = true
 	data.Cleared = feature.World - 1
 	session.Player:SetAttribute("Stage", data.Stage)
 	session.Player:SetAttribute("Cleared", data.Cleared)
 	ProgressService.ToCheckpoint(session)
 	local at = feature.At
+	if feature.Epreuve then
+		-- Devant la borne de la salle (u 12, v -31 dans le repère de l'épreuve)
+		local tower = Workspace:FindFirstChild("Tower")
+		local model = if tower then tower:FindFirstChild(`World{feature.World}`) else nil
+		local folder = if model then model:FindFirstChild("Epreuve", true) else nil
+		local origin = if folder then folder:GetAttribute("Origin") else nil
+		local axisF = if folder then folder:GetAttribute("AxisF") else nil
+		local axisR = if folder then folder:GetAttribute("AxisR") else nil
+		if typeof(origin) == "Vector3" and typeof(axisF) == "Vector3" and typeof(axisR) == "Vector3" then
+			at = origin + axisF * 12 + axisR * -30 + Vector3.new(0, 3.5, 0)
+		end
+	end
 	if at then
 		task.delay(0.8, function()
 			local player = session.Player

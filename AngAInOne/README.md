@@ -1,6 +1,6 @@
 # AngAInOne — Deathrun dans la tour PC
 
-**Opération Anti-Lag.** Une heure avant le live d'Anga, son PC rame : le virus **LAGZ** l'a infecté. L'app AngAInOne te miniaturise et tu grimpes la tour géante, composant par composant, en survivant aux pièges (câbles sous tension, barrettes qui écrasent, pioches du crypto-mineur, pixels morts…) et aux **incidents** de LAGZ (freeze, lag, blackout, pop-ups…). À la fin de chaque monde, un **terminal antivirus** (mini-jeu 2D) nettoie le monde ; tout en haut, le **combat contre LAGZ**. Solo ou à plusieurs.
+**Opération Anti-Lag.** Une heure avant le live d'Anga, son PC rame : le virus **LAGZ** l'a infecté. L'app AngAInOne te miniaturise et tu grimpes la tour géante, composant par composant, en survivant aux pièges (câbles sous tension, barrettes qui écrasent, pioches du crypto-mineur, pixels morts…) et aux **incidents** de LAGZ (freeze, lag, blackout, pop-ups…). À la fin de chaque monde, la salle du terminal propose une **épreuve 3D** tirée du guide (Démarrage infecté, RAM saturée, Bloatware, surchauffe, Défense du CPU, pilote GPU, enquête) qui nettoie le monde ; tout en haut, le **combat contre LAGZ**. Solo ou à plusieurs.
 
 - Scénario : [`docs/SCENARIO.md`](docs/SCENARIO.md) · Game design : [`docs/GDD.md`](docs/GDD.md) · Feuille de route : [`docs/ROADMAP.md`](docs/ROADMAP.md)
 - Vrais modèles 3D (Blender → Roblox) : [`assets/README.md`](assets/README.md)
@@ -50,7 +50,7 @@ Lance **Play** (F5). En Studio, un bouton **DEV** (ou **F8**) ouvre un panneau d
 
 | # | Action | Résultat attendu |
 |---|---|---|
-| 1 | Lancer Play (première fois) | Tu apparais minuscule sur le **bureau d'Anga**. Intro en 3 cartes (LAGZ apparaît à la 2ᵉ). Sortie : `[AngAInOne] Serveur prêt.` |
+| 1 | Lancer Play (première fois) | Tu apparais minuscule sur le **bureau d'Anga**. D'abord l'**étape 0 « L'intrusion »** (le bureau du PC : clique free_robux_generator.exe, LAGZ s'installe, rappel « générateur de Robux = piège », bouton Passer), puis l'intro en 3 cartes (LAGZ apparaît à la 2ᵉ). Sortie : `[AngAInOne] Serveur prêt.` |
 | 2 | Regarder le lobby | Écran du live « LIVE DANS 59:00 » avec le chat, clavier RGB (on peut sauter sur les touches), tour vitrée, écran de l'app AngAInOne, 3 classements, bornes. En haut à gauche : widget **PC D'ANGA** (3 FPS, 999 ms, 97 °C). |
 | 3 | **JOUER** → Miniaturiseur, passer la ligne de départ | Bannière « MONDE 1 · ALIMENTATION », Anga explique, le chrono ⏱ démarre. |
 | 4 | Atteindre un checkpoint | « Checkpoint 1 ✓ », +Bits, le checkpoint suivant pulse en doré. |
@@ -64,12 +64,13 @@ Lance **Play** (F5). En Studio, un bouton **DEV** (ou **F8**) ouvre un panneau d
 | 7f | Finir la tour | Après « LE LIVE COMMENCE », l'écran **Test de perf** : hexagone, 4 scores, emblème, ton pseudo en néon ; puis le rapport. |
 | 7g | Monde 2 : courir sans s'arrêter, puis appuyer sur un gros bouton rouge **Libérer la RAM** | Jauge « 💾 RAM » à gauche ; au-delà de 70 %, la marche ralentit (pas les sauts) ; le bouton la remet à 0 %, puis recharge 12 s. |
 | 7h | Monde 4 : courir longtemps, puis s'arrêter près d'un ventilateur ; relancer un **ventilateur encrassé** ; monter sur le **ventilo propulseur** à côté du checkpoint 17 | Jauge « 🌡 CPU » ; à 100 °C, arrêt thermique (retour au checkpoint) ; le ventilateur relancé tourne et rafraîchit ; le propulseur envoie sur une corniche à 3 Bits (dont un Méga-Bit). |
-| 7i | Monde 5 : maintenir **Désinstaller** sur un bloatware | Le bloc disparaît (pour toi), toast + Bits la première fois. Terminal du monde 5 : mini-jeu **Tri des fichiers**. |
+| 7i | Monde 5 : maintenir **Fin de tâche** sur un processus en fond | Le bloc disparaît (pour toi), toast + Bits la première fois. |
 | 7j | Monde 6 avant le nettoyage | De brefs artefacts colorés à l'écran ; rien avec « Réduire les animations ». |
 | 7k | Salles du terminal des mondes 1 et 7 : choisir un panneau de l'**enquête** | Mauvais choix : indice de l'assistant ; bon choix : confettis, +25 / +40 Bits, une seule fois. |
 | 7l | Lobby : la touche **Suppr** devant le portail, puis **F10** dans le BIOS ; les touches du **Stream Deck** | Salle bleue du BIOS avec le QR code ; retour dans la chambre ; pet, confettis, mode lent. |
 | 7m | Menu > **Rôle d'équipe** : choisir un rôle | Toast + réplique d'Anga ; le rôle apparaît dans la page Joueurs des autres. |
-| 8 | Salle du terminal | Le sbire du monde garde le terminal. Prompt **E** → mini-jeu 2D. Réussi : le monde passe en version « nettoyée », le widget du PC gagne des FPS, le portail s'ouvre. |
+| 8 | Salle du terminal | Le sbire du monde garde le terminal. Prompt **E** → **épreuve 3D** du monde (carte en haut : étapes, statut, barre, « Abandonner » ; voir docs/SCENARIO.md §10). Réussie : le monde passe en version « nettoyée », le widget du PC gagne des FPS, le portail s'ouvre. Mort, sortie de la salle ou abandon : épreuve ratée, à relancer. Monde 7 : l'enquête, puis le Firewall boss. |
+| 8b | Menu **DEV** → « Épreuve 1 … 7 » | Téléport devant la borne du monde (encore infecté) et lancement de l'épreuve ; « Étape 0 : l'intrusion + intro » rejoue la scène du bureau. |
 | 9 | DEV > aller à l'étape 35 (monde 7) | Arène : LAGZ, phase 1 (lasers + curseur), phase 2 (3 prises à brancher), phase 3 (Firewall boss au terminal). Victoire → « LE LIVE COMMENCE ! », l'écran du lobby passe « EN DIRECT 🔴 ». |
 | 10 | Boutons à droite | **Checkpoint**, **Passer l'étape** (Robux, si configuré), **Lobby** (le bouton devient **CONTINUER · Étape X**). |
 | 11 | Dock **Boutique** / **Missions** / **Menu** | Fenêtres au style de l'app (gris anthracite, accent violet, fil d'Ariane « AngAInOne › … », pages à gauche ; onglets en haut sur téléphone). Traînées et effets (Bits) ; calendrier 7 jours + 3 missions du jour. |

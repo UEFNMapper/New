@@ -774,7 +774,8 @@ return function(ctx: Common.WorldContext)
 	-- Sbire : Pop-Up garde le terminal (dans la salle, près de l'écran)
 	------------------------------------------------------------------------------------
 
-	local popCf = CFrame.lookAt(V(110, 88, 112), V(88, 86, 84))
+	-- Au-dessus de l'écran du fond (salle : u 12, v -40, +20) : la salle reste libre pour l'épreuve.
+	local popCf = CFrame.lookAt(V(128, 100, 100), V(88, 100, 88))
 	ModelLibrary.Place("PopUp", popCf * CFrame.new(0, -3, 0), room, { Scale = 1.6 }, function(): Instance?
 		return popUpFallback(popCf, room)
 	end)

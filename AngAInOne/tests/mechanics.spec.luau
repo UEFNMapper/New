@@ -10,7 +10,6 @@ local JUMP = 7.2
 local built = IsolatedTower.Build({ Models = false })
 local tower = built.Tower
 local Tower = built.Load("src/shared/Config/Tower.luau")
-local Puzzles = built.Load("src/shared/Config/Puzzles.luau")
 local Roles = built.Load("src/shared/Config/Roles.luau")
 local Mechanics = built.Load("src/server/World/Tower/Mechanics.luau")
 local DataSchema = built.Load("src/shared/Data/DataSchema.luau")
@@ -48,71 +47,6 @@ local function supportUnder(root: any, p: any, tolerance: number, except: any?):
 end
 
 return {
-	["enquêtes : un seul coupable, un indice pour chaque innocent, textes FR sans marque"] = function()
-		for _, puzzle in Puzzles.List do
-			local culprits = 0
-			for _, item in puzzle.Items do
-				if item.Culprit then
-					culprits += 1
-				else
-					Expect.truthy(type(item.Hint) == "string" and #item.Hint > 10, `indice de {item.Id}`)
-				end
-				Expect.truthy(#item.Lines >= 1, `lignes de {item.Id}`)
-				Expect.truthy(#item.Id <= 24, "id court (RemoteGuard.String(24))")
-			end
-			Expect.equal(culprits, 1, `un coupable au monde {puzzle.World}`)
-			Expect.truthy(puzzle.Bits > 0 and puzzle.Bits <= 60, "récompense raisonnable")
-		end
-	end,
-
-	["enquêtes : un panneau par programme dans la salle du terminal, tourné vers la salle, à portée"] = function()
-		for _, puzzle in Puzzles.List do
-			local room = world(puzzle.World):FindFirstChild("Terminal")
-			Expect.truthy(room, `salle du monde {puzzle.World}`)
-			local list = prompts(room, "Puzzle")
-			Expect.equal(#list, #puzzle.Items, `panneaux du monde {puzzle.World}`)
-			local console = room:FindFirstChild("MinigameTerminal", true)
-			local pad = nil
-			for _, d in tower:GetDescendants() do
-				if
-					d:IsA("BasePart")
-					and d:HasTag("Checkpoint")
-					and d:GetAttribute("Stage") == Tower.TerminalStage(puzzle.World)
-				then
-					pad = d
-				end
-			end
-			Expect.truthy(console and pad, "console et pad de la salle")
-			local floorY = pad.CFrame.Position.Y + pad.Size.Y / 2
-			local seen = {}
-			for _, prompt in list do
-				local panel = prompt.Parent
-				Expect.truthy(panel:HasTag("PuzzlePanel"), "panneau tagué (PuzzleService)")
-				Expect.equal(prompt:GetAttribute("World"), puzzle.World)
-				local item = prompt:GetAttribute("Item")
-				Expect.equal(panel:GetAttribute("Item"), item)
-				seen[item] = true
-				Expect.between(prompt.MaxActivationDistance, 8, 16, "distance du prompt")
-				local p = panel.CFrame.Position
-				Expect.between(p.Y - floorY, 2, 8, "panneau à hauteur de joueur")
-				local floor = room:FindFirstChild("Floor", true)
-				local lp = floor.CFrame:PointToObjectSpace(p)
-				Expect.truthy(
-					math.abs(lp.X) < floor.Size.X / 2 - 1 and math.abs(lp.Z) < floor.Size.Z / 2 - 1,
-					"panneau dans la salle (au-dessus du plancher)"
-				)
-				Expect.truthy(
-					panel.CFrame.LookVector:Dot((pad.CFrame.Position - p).Unit) > 0.3,
-					"face tournée vers la salle"
-				)
-				Expect.equal(panel.CanCollide, false, "décor : ne bloque pas la salle")
-			end
-			for _, it in puzzle.Items do
-				Expect.truthy(seen[it.Id], `panneau {it.Id}`)
-			end
-		end
-	end,
-
 	["RAM (monde 2) : trois boutons « Libérer la RAM » posés sur des paliers, avant chaque grande montée"] = function()
 		local list = prompts(world(2), "FlushRam")
 		Expect.equal(#list, #Mechanics.RAM_BUTTONS, "boutons")
@@ -214,7 +148,7 @@ return {
 		Expect.equal(coins, 3, "Bits de la corniche")
 	end,
 
-	["bloatware (monde 5) : bloque tout le passage, posé sur le chemin, trop haut pour sauter, désinstallable"] = function()
+	["processus en fond (monde 5) : bloque tout le passage, posé sur le chemin, trop haut pour sauter, « Fin de tâche »"] = function()
 		local w5 = world(5)
 		local list = prompts(w5, "Uninstall")
 		Expect.equal(#list, #Mechanics.BLOATWARE, "bloatware")

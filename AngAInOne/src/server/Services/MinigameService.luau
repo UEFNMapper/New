@@ -15,6 +15,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameConfig = require(Shared.Config.GameConfig)
 local Tower = require(Shared.Config.Tower)
 local Roles = require(Shared.Config.Roles)
+local Epreuves = require(Shared.Config.Epreuves)
 local Session = require(script.Parent.Parent.Core.Session)
 local Wallet = require(script.Parent.Parent.Core.Wallet)
 local GameEvents = require(script.Parent.Parent.Core.GameEvents)
@@ -29,7 +30,8 @@ local CFG = GameConfig.Minigame
 
 local function durationOk(kind: string, startedAt: number): boolean
 	local elapsed = os.clock() - startedAt
-	local minimum = (CFG.MinSeconds :: any)[kind] or 8
+	local epreuve = Epreuves.ByKind[kind]
+	local minimum = (CFG.MinSeconds :: any)[kind] or (if epreuve then epreuve.MinSeconds else 8)
 	return elapsed >= minimum and elapsed <= CFG.MaxSeconds
 end
 
@@ -52,7 +54,9 @@ local function onStart(session: Session.Session, world: number)
 		)
 		return
 	end
-	session.Minigame = { World = world, Kind = def.Minigame, StartedAt = os.clock() }
+	-- Mondes 1 à 6 : l'épreuve 3D de la salle (Config/Epreuves) remplace le mini-jeu 2D.
+	local kind = if Epreuves.ClearsWorld(world) then Epreuves.ByWorld[world].Kind else def.Minigame
+	session.Minigame = { World = world, Kind = kind, StartedAt = os.clock() }
 end
 
 local function onEnd(session: Session.Session, world: number, success: boolean, score: number)

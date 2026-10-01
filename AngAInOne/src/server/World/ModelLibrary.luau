@@ -87,7 +87,7 @@ local ORIGIN: { [string]: Vector3 } = {
 local failed: { [string]: boolean } = {}
 
 -- Modèles recopiés dans ReplicatedStorage.ClientModels pour le client (voir publishForClient).
-local CLIENT_MODELS = { "Anga", "AioDrone" }
+local CLIENT_MODELS = { "Anga", "AioDrone", "VirusBug" } -- VirusBug : processus de la Défense du CPU
 
 local MATERIALS: { [string]: Enum.Material } = {
 	SmoothPlastic = Enum.Material.SmoothPlastic,

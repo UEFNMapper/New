@@ -205,6 +205,13 @@ function HUD.SetGauge(text: string?, fraction: number, grade: string)
 	gaugeBar:Set(math.clamp(fraction, 0, 1), false)
 end
 
+-- Pendant une épreuve (UI/Screens/EpreuveHud), sa carte prend la place de la carte de progression.
+function HUD.SetProgressVisible(visible: boolean)
+	if progressCard then
+		progressCard.Visible = visible
+	end
+end
+
 -- Pastille de mesure du PC d'Anga (icône + valeur), verre sombre bordé de la couleur de la note.
 local function perfChip(key: string, iconKind: string, order: number)
 	local chip: Frame = New("Frame", {

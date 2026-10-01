@@ -4,8 +4,8 @@
 
 	Temps d'un monde (« split ») : du moment où l'on ENTRE dans le monde (ligne de départ pour le
 	monde 1, portail ouvert = terminal précédent réussi pour les suivants) jusqu'au terminal
-	antivirus du monde réussi. Il comprend donc le parcours des 5 étapes, le mini-jeu du terminal
-	et, au monde 7, le combat contre LAGZ. Chrono de l'ascension (RunElapsed) : arrêté au lobby et
+	antivirus du monde réussi. Il comprend donc le parcours des 5 étapes, l'épreuve 3D de la salle du
+	terminal (Config/Epreuves) et, au monde 7, l'enquête puis le combat contre LAGZ. Chrono de l'ascension (RunElapsed) : arrêté au lobby et
 	hors connexion, comme le chrono principal.
 
 	Règles (généreuses : public 8–14 ans) :
@@ -28,7 +28,7 @@
 
 	Estimation des seuils : chemin des checkpoints mesuré sur la tour construite (≈ 475–570 studs en
 	ligne droite par monde, ≈ 650 studs réels à 16 studs/s ≈ 40 s de course pure), plus l'attente
-	des pièges (plus nombreux à partir du monde 3), le mini-jeu (~20–40 s) et le terminal.
+	des pièges (plus nombreux à partir du monde 3), l'épreuve de la salle (~30–50 s) et le terminal.
 	À affiner avec la télémétrie en jeu réel (voir ROADMAP : équilibrage).
 ]]
 
@@ -59,23 +59,23 @@ Medals.GoldMaxDeaths = 2
 Medals.SilverMaxDeaths = 6
 Medals.GoldMinKeys = 0 -- clés USB du monde possédées pour l'or (0 = pas de condition)
 
--- Seuils par monde (secondes, mini-jeu du terminal compris).
+-- Seuils par monde (secondes, épreuve de la salle du terminal comprise).
 Medals.Worlds = table.freeze({
-	-- 1 · Alimentation : ≈ 570 studs, 24 pièges lents (fenêtres ≥ 1,2 s), Scan.
-	table.freeze({ Gold = 105, Silver = 180 }),
-	-- 2 · Memory Lanes : ≈ 510 studs, barrettes qui écrasent (attente), Pop-up Killer.
-	table.freeze({ Gold = 105, Silver = 180 }),
-	-- 3 · Data Vault : ≈ 485 studs mais 85 pièges (dalles corrompues, disparition), Défrag.
-	table.freeze({ Gold = 115, Silver = 190 }),
-	-- 4 · Cryo Tower : ≈ 475 studs, vent et pales (on attend les rafales), Firewall.
-	table.freeze({ Gold = 115, Silver = 190 }),
-	-- 5 · The Core : ≈ 515 studs, plateformes en latence (lentes), bloatware, Tri des fichiers.
-	table.freeze({ Gold = 120, Silver = 200 }),
-	-- 6 · Render Canyon : ≈ 500 studs, 93 pièges (pixels morts, ponts de chargement), Memory.
-	table.freeze({ Gold = 125, Silver = 210 }),
-	-- 7 · Neural Nexus : ≈ 525 studs + combat contre LAGZ (25 s de lasers, 3 prises,
+	-- 1 · Alimentation : ≈ 570 studs, 24 pièges lents (fenêtres ≥ 1,2 s), épreuve Démarrage.
+	table.freeze({ Gold = 120, Silver = 205 }),
+	-- 2 · Memory Lanes : ≈ 510 studs, barrettes qui écrasent (attente), épreuve RAM.
+	table.freeze({ Gold = 120, Silver = 205 }),
+	-- 3 · Data Vault : ≈ 485 studs mais 85 pièges (dalles corrompues, disparition), épreuve Bloatware.
+	table.freeze({ Gold = 130, Silver = 215 }),
+	-- 4 · Cryo Tower : ≈ 475 studs, vent et pales (on attend les rafales), épreuve Surchauffe.
+	table.freeze({ Gold = 130, Silver = 215 }),
+	-- 5 · The Core : ≈ 515 studs, plateformes en latence (lentes), Défense du CPU.
+	table.freeze({ Gold = 135, Silver = 225 }),
+	-- 6 · Render Canyon : ≈ 500 studs, 93 pièges (pixels morts, ponts de chargement), épreuve Pilote.
+	table.freeze({ Gold = 140, Silver = 235 }),
+	-- 7 · Neural Nexus : ≈ 525 studs + enquête + combat contre LAGZ (25 s de lasers, 3 prises,
 	-- Firewall boss 36 PV) : bien plus long.
-	table.freeze({ Gold = 240, Silver = 360 }),
+	table.freeze({ Gold = 260, Silver = 390 }),
 } :: { WorldRule })
 
 -- Règle d'un monde (seuils par défaut si le monde n'est pas listé).

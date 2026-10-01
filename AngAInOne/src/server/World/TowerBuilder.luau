@@ -53,6 +53,7 @@ local AppPanels = require(TowerParts.AppPanels)
 local Bonus = require(TowerParts.Bonus)
 local EasterEggs = require(TowerParts.EasterEggs)
 local Mechanics = require(TowerParts.Mechanics)
+local Epreuves = require(TowerParts.Epreuves)
 local ModelLibrary = require(script.Parent.ModelLibrary)
 
 type WorldBuilder = (ctx: Common.WorldContext) -> ()
@@ -92,7 +93,8 @@ function TowerBuilder.Build(): Folder
 		WORLDS[i](ctx)
 		Bonus.Build(ctx) -- détour « Ventilo bonus » accroché à un checkpoint du monde
 		EasterEggs.BuildWorld(ctx) -- clins d'œil dans la salle du terminal (Corbeille, pâte thermique…)
-		Mechanics.Build(ctx) -- mécaniques « PC » : enquêtes, RAM, chaleur et ventilateurs, bloatware
+		Mechanics.Build(ctx) -- mécaniques « PC » du parcours : RAM, chaleur et ventilateurs, processus en fond
+		Epreuves.Build(ctx) -- l'épreuve 3D de la salle du terminal (Config/Epreuves)
 		finish()
 	end
 	Cameos.Build(tower) -- LAGZ dans un écran sur les parois de chaque monde (client LagzCameo)

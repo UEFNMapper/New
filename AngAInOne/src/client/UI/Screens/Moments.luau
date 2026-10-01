@@ -3,6 +3,8 @@
 	Moments : les instants forts du deathrun, courts et passables. L'histoire passe par l'IMAGE et
 	par l'app partenaire AngAInOne (Windows 11 Fluent sombre : fond 202020, cartes 2B2B2B, accent
 	violet, barre latérale avec l'avatar du joueur) — docs/AUDIT_V3.md C1 à C3.
+	- Étape 0 « L'intrusion » (première visite, avant l'intro) : le bureau du PC d'Anga, le clic sur
+	  free_robux_generator.exe, LAGZ s'installe ; rappel « générateur de Robux = piège »
 	- Intro (première visite) : « Mode Intervention », une mission acceptée DANS l'app, en 3 étapes
 	  (le PC rame, LAGZ le coupable, ta mission) ; le joueur devient Technicien·ne n° XXXX
 	- En-tête de monde : la page de l'app du monde (titre + sous-titre gris, Util/AppPages)
@@ -617,6 +619,274 @@ local function introStep(body: Frame, step: number, onNext: () -> (), onAccept: 
 		accept.TextSize = 24
 		accept.FontFace = F.Heavy
 		Motion.Pop(accept, 0.1)
+	end
+end
+
+------------------------------------------------------------------------------------
+-- Étape 0 « L'intrusion » (guide de l'univers) : le bureau du PC d'Anga, hier soir. Quelqu'un a
+-- ouvert free_robux_generator.exe : le joueur rejoue le clic, voit LAGZ s'installer, et retient
+-- qu'un « générateur de Robux gratuits » est toujours un piège. Passable à tout moment.
+------------------------------------------------------------------------------------
+
+local DESKTOP_ICONS = {
+	{ Glyph = "🖥", Label = "Ce PC" },
+	{ Glyph = "🗑", Label = "Corbeille" },
+	{ Glyph = "🎬", Label = "Rediffs du live" },
+	{ Glyph = "📁", Label = "Montage" },
+	{ Glyph = "🎁", Label = "free_robux_generator.exe", Bait = true },
+}
+
+local INSTALL_LINES = {
+	"Recherche de Robux… 0 trouvé",
+	"Ajout au démarrage du PC…",
+	"Copie dans la RAM…",
+	"Ouverture de la porte à LAGZ…",
+}
+
+function Moments.Intrusion(onDone: () -> ())
+	local root: Frame = New("Frame", {
+		Name = "Intrusion",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = Color3.fromRGB(18, 14, 34),
+		BorderSizePixel = 0,
+		Active = true,
+		Parent = layer,
+	}, {
+		New("UIGradient", {
+			Rotation = 120,
+			Color = ColorSequence.new(Color3.fromRGB(46, 26, 84), Color3.fromRGB(12, 12, 24)),
+		}) :: Instance,
+	})
+	local finished = false
+	local function close()
+		if finished then
+			return
+		end
+		finished = true
+		fadeOut(root, 0.35)
+		task.delay(0.35, onDone)
+	end
+
+	-- Légende en haut : on rejoue la scène d'hier soir
+	local caption = card(root, UDim2.new(0.5, -330, 0, 24), UDim2.fromOffset(660, 92), A.Surface)
+	New("UIStroke", { Color = A.Stroke, Parent = caption })
+	text(caption, "Étape 0 — L'intrusion", 26, F.Bold, A.Text, {
+		Position = UDim2.fromOffset(20, 10),
+		Size = UDim2.new(1, -40, 0, 32),
+	})
+	local sub = text(
+		caption,
+		"Hier soir, 23 h 47, sur le PC d'Anga… Quelqu'un a cliqué sur un fichier.",
+		MIN_TEXT,
+		F.Regular,
+		A.Dim,
+		{
+			Position = UDim2.fromOffset(20, 48),
+			Size = UDim2.new(1, -40, 0, 34),
+			TextWrapped = true,
+		}
+	)
+
+	-- Icônes du bureau (colonne de gauche, comme un vrai bureau)
+	local icons: Frame = New("Frame", {
+		Position = UDim2.fromOffset(28, 140),
+		Size = UDim2.new(0, 150, 1, -230),
+		BackgroundTransparency = 1,
+		Parent = root,
+	}, { Create.List(Enum.FillDirection.Vertical, 6) :: Instance })
+	local bait: TextButton? = nil
+	for i, icon in DESKTOP_ICONS do
+		local button: TextButton = New("TextButton", {
+			Size = UDim2.fromOffset(150, 104),
+			BackgroundColor3 = WHITE,
+			BackgroundTransparency = 1,
+			AutoButtonColor = false,
+			Text = "",
+			LayoutOrder = i,
+			Parent = icons,
+		}, { Create.Corner(8) :: Instance })
+		text(button, icon.Glyph, 44, F.Regular, A.Text, {
+			Position = UDim2.fromOffset(0, 4),
+			Size = UDim2.new(1, 0, 0, 52),
+			TextXAlignment = Enum.TextXAlignment.Center,
+		})
+		text(button, icon.Label, MIN_TEXT, F.Medium, A.Text, {
+			Position = UDim2.fromOffset(0, 58),
+			Size = UDim2.new(1, 0, 0, 44),
+			TextWrapped = true,
+			TextXAlignment = Enum.TextXAlignment.Center,
+			TextYAlignment = Enum.TextYAlignment.Top,
+		})
+		if icon.Bait then
+			bait = button
+		else
+			button.Activated:Connect(function()
+				Motion.Pop(button, 0.08)
+			end)
+		end
+	end
+
+	-- Barre des tâches + horloge
+	local taskbar: Frame = New("Frame", {
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.fromScale(0, 1),
+		Size = UDim2.new(1, 0, 0, 52),
+		BackgroundColor3 = Color3.fromRGB(28, 28, 32),
+		BorderSizePixel = 0,
+		Parent = root,
+	})
+	local start = card(taskbar, UDim2.new(0.5, -20, 0, 6), UDim2.fromOffset(40, 40), A.Accent)
+	text(start, "A", 22, F.Heavy, WHITE, {
+		Size = UDim2.fromScale(1, 1),
+		TextXAlignment = Enum.TextXAlignment.Center,
+	})
+	text(taskbar, "23:47", MIN_TEXT, F.Medium, A.Text, {
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -20, 0, 0),
+		Size = UDim2.fromOffset(90, 52),
+		TextXAlignment = Enum.TextXAlignment.Right,
+	})
+
+	appButton(root, "Passer", false, UDim2.new(1, -184, 1, -52 - TOUCH - 16), UDim2.fromOffset(160, TOUCH), close)
+
+	-- Indice à côté du fichier piégé
+	local hint = pill(root, "← Rejoue le clic d'hier soir", A.Accent, WHITE)
+	hint.Position = UDim2.fromOffset(190, 140 + 4 * 110 + 34)
+	task.spawn(function()
+		while hint.Parent do
+			if not Motion.IsReduced() then
+				Motion.Tween(hint, { Position = hint.Position + UDim2.fromOffset(8, 0) }, 0.4)
+				task.wait(0.45)
+				Motion.Tween(hint, { Position = hint.Position - UDim2.fromOffset(8, 0) }, 0.4)
+			end
+			task.wait(0.45)
+		end
+	end)
+
+	-- Le faux installeur, puis LAGZ
+	local function shake(frame: GuiObject, base: UDim2, seconds: number)
+		if Motion.IsReduced() then
+			return
+		end
+		local stop = os.clock() + seconds
+		while os.clock() < stop and frame.Parent do
+			frame.Position = base + UDim2.fromOffset(math.random(-6, 6), math.random(-4, 4))
+			task.wait(0.04)
+		end
+		frame.Position = base
+	end
+
+	local function play()
+		hint:Destroy()
+		local base = UDim2.new(0.5, -230, 0.5, -110)
+		local window = card(root, base, UDim2.fromOffset(460, 220), A.Surface)
+		New("UIStroke", { Color = A.Stroke, Parent = window })
+		text(window, "🎁  free_robux_generator.exe", MIN_TEXT, F.Bold, A.Text, {
+			Position = UDim2.fromOffset(16, 10),
+			Size = UDim2.new(1, -32, 0, 26),
+		})
+		local line = text(window, "Génération de Robux gratuits…", 20, F.Medium, A.Text, {
+			Position = UDim2.fromOffset(16, 64),
+			Size = UDim2.new(1, -32, 0, 28),
+		})
+		local track = card(window, UDim2.fromOffset(16, 110), UDim2.new(1, -32, 0, 14), A.CardHi)
+		local fill = card(track, UDim2.new(), UDim2.fromScale(0, 1), A.Accent)
+		local percent = text(window, "0 %", MIN_TEXT, F.Medium, A.Dim, {
+			Position = UDim2.fromOffset(16, 134),
+			Size = UDim2.new(1, -32, 0, 24),
+		})
+		Motion.Pop(window, 0.08)
+		for i, value in INSTALL_LINES do
+			if finished then
+				return
+			end
+			line.Text = value
+			local ratio = i / #INSTALL_LINES
+			Motion.Tween(fill, { Size = UDim2.fromScale(ratio, 1) }, 0.6)
+			percent.Text = `{math.floor(ratio * 100)} %`
+			if i == #INSTALL_LINES then
+				fill.BackgroundColor3 = A.Bad
+				line.TextColor3 = A.Bad
+			end
+			task.wait(0.8)
+		end
+		if finished then
+			return
+		end
+		-- Glitch : écran rouge, fenêtre qui tremble, LAGZ apparaît
+		Motion.Tween(root, { BackgroundColor3 = Color3.fromRGB(90, 10, 24) }, 0.15)
+		shake(window, base, 0.6)
+		window:Destroy()
+		local face = Lagz.Face(150, root)
+		face.AnchorPoint = Vector2.new(0.5, 0.5)
+		face.Position = UDim2.fromScale(0.5, 0.42)
+		Motion.Pop(face, 0.3)
+		text(root, "LAGZ : « Merci pour le clic ! Ce PC est à MOI. »", 26, F.Heavy, Lagz.Color, {
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.new(0.5, 0, 0.42, 92),
+			Size = UDim2.fromOffset(720, 34),
+			TextXAlignment = Enum.TextXAlignment.Center,
+		})
+		task.spawn(function()
+			shake(face, face.Position, 1.2)
+		end)
+		Motion.Tween(root, { BackgroundColor3 = Color3.fromRGB(26, 10, 30) }, 0.8)
+		sub.Text = "Pas de Robux. Juste LAGZ, caché dans le démarrage. Depuis, le PC rame."
+		-- Message de prévention (public jeune)
+		local lesson = card(root, UDim2.new(0.5, -330, 0.42, 140), UDim2.fromOffset(660, 74), A.Surface)
+		New("UIStroke", { Color = A.Warn, Parent = lesson })
+		text(lesson, "⚠  Un « générateur de Robux gratuits », c'est TOUJOURS un piège.", 20, F.Bold, A.Warn, {
+			Position = UDim2.fromOffset(18, 8),
+			Size = UDim2.new(1, -36, 0, 28),
+		})
+		text(lesson, "Ne lance jamais un fichier inconnu : demande à un adulte.", MIN_TEXT, F.Regular, A.Text, {
+			Position = UDim2.fromOffset(18, 38),
+			Size = UDim2.new(1, -36, 0, 26),
+		})
+		Motion.Pop(lesson, 0.1)
+		task.wait(1)
+		if finished then
+			return
+		end
+		local suite = appButton(
+			root,
+			"RÉPARER LE PC  →",
+			true,
+			UDim2.new(0.5, -170, 0.42, 232),
+			UDim2.fromOffset(340, TOUCH),
+			close
+		)
+		suite.TextSize = 24
+		Motion.Pop(suite, 0.12)
+	end
+
+	local trap = bait
+	if trap then
+		local glow = New("UIStroke", {
+			Color = A.Warn,
+			Thickness = 2,
+			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+			Parent = trap,
+		}) :: UIStroke
+		trap.BackgroundTransparency = 0.9
+		task.spawn(function()
+			while glow.Parent and not finished do
+				Motion.Tween(glow, { Transparency = 0.7 }, 0.5)
+				task.wait(0.55)
+				Motion.Tween(glow, { Transparency = 0 }, 0.5)
+				task.wait(0.55)
+			end
+		end)
+		local played = false
+		trap.Activated:Connect(function()
+			if played or finished then
+				return
+			end
+			played = true
+			click()
+			glow:Destroy()
+			task.spawn(play)
+		end)
 	end
 end
 

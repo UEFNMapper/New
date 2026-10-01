@@ -28,8 +28,12 @@ local Dialogue = require(script.Parent.Parent.UI.Screens.Dialogue)
 local Audio = require(script.Parent.Audio)
 local SpeedControl = require(script.Parent.SpeedControl)
 local MinigamePanel = require(script.Parent.Parent.UI.Screens.MinigamePanel)
+local Epreuves = require(script.Parent.Epreuves)
 
 local Interactions = {}
+
+-- Monde 7 : l'enquête est faite pour cette session (une revanche du boss ne la redemande pas).
+local investigated = false
 
 -- Rappels de fin de partie : `send(success, score)` part une seule fois par essai (victoire
 -- tout de suite, sinon à la fermeture) ; `restart()` rouvre l'envoi pour un nouvel essai.
@@ -72,6 +76,22 @@ function Interactions.PlayTerminal(world: number)
 	local boss = world == BossLogic.WORLD
 	if boss and Players.LocalPlayer:GetAttribute("BossPhase") ~= BossLogic.Phase.Terminal then
 		Toasts.Show("Info", "Le bouclier de LAGZ protège ce terminal : branche d'abord les 3 prises antivirus !")
+		return
+	end
+	-- L'épreuve 3D de la salle (Config/Epreuves) remplace le mini-jeu 2D ; au monde 7, l'enquête
+	-- désigne d'abord le coupable, puis la quarantaine se joue au Firewall boss.
+	if Epreuves.IsRunning() then
+		return
+	end
+	if Epreuves.Has(world) and not boss then
+		Epreuves.Start(world)
+		return
+	end
+	if Epreuves.Has(world) and boss and not investigated then
+		Epreuves.Start(world, function()
+			investigated = true
+			Interactions.PlayTerminal(world)
+		end)
 		return
 	end
 	Net.Fire("MinigameStart", world)

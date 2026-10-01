@@ -89,6 +89,8 @@ step("Dialogue", function()
 end)
 step("HUD", function()
 	HUD.Mount(App.Layers.Hud)
+	-- Carte de l'épreuve en cours (à la place de la carte de progression pendant une épreuve)
+	load(Screens.EpreuveHud).Mount(App.Layers.Hud)
 end)
 step("Toasts", function()
 	Toasts.Mount(App.Layers.Toasts)
@@ -161,8 +163,12 @@ end)
 step("IncidentController", function()
 	local IncidentController = load(Controllers.IncidentController)
 	local MinigamePanel = load(Screens.MinigamePanel)
+	local Epreuves = load(Controllers.Epreuves)
 	if MinigamePanel and MinigamePanel.IsPlaying then
-		IncidentController.IsBusy = MinigamePanel.IsPlaying
+		-- Pas d'incident pendant un mini-jeu ni pendant une épreuve de salle
+		IncidentController.IsBusy = function(): boolean
+			return MinigamePanel.IsPlaying() or (Epreuves ~= nil and Epreuves.IsRunning())
+		end
 	end
 	IncidentController.Start(App.Layers.Overlays)
 end)
@@ -184,8 +190,11 @@ step("Companion", function()
 	local Companion = load(Controllers.Companion)
 	local MinigamePanel = load(Screens.MinigamePanel)
 	if Companion then
+		local Epreuves = load(Controllers.Epreuves)
 		if MinigamePanel and MinigamePanel.IsPlaying then
-			Companion.IsBusy = MinigamePanel.IsPlaying
+			Companion.IsBusy = function(): boolean
+				return MinigamePanel.IsPlaying() or (Epreuves ~= nil and Epreuves.IsRunning())
+			end
 		end
 		Companion.Start()
 	end
@@ -204,6 +213,10 @@ end)
 step("Mechanics", function()
 	load(Controllers.Mechanics).Start()
 end)
+-- Épreuves 3D des salles du terminal (Config/Epreuves)
+step("Epreuves", function()
+	load(Controllers.Epreuves).Init()
+end)
 
 -- Premier état : réglages sauvegardés + histoire d'Anga à la première visite
 step("État initial", function()
@@ -219,8 +232,11 @@ step("État initial", function()
 		if not introShown and not state.Data.IntroSeen then
 			introShown = true
 			step("Intro", function()
-				Moments.Intro(function()
-					Net.Fire("IntroSeen")
+				-- Étape 0 « L'intrusion » (le clic sur le faux générateur), puis la mission dans l'app
+				Moments.Intrusion(function()
+					Moments.Intro(function()
+						Net.Fire("IntroSeen")
+					end)
 				end)
 			end)
 		end
