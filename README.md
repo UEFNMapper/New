@@ -1,5 +1,9 @@
 # Bot Discord — accès à distance
 
+> Ce dépôt contient aussi **[`trailer-uefn/`](trailer-uefn/)** : un logiciel qui monte
+> automatiquement des trailers UEFN (coupes sur le rythme, bandeaux, carte de fin avec le
+> code de l'île) et génère les miniatures de l'île.
+
 Ce dépôt sert de pont entre l'instance **Oracle Cloud** (où le bot tourne 24h/24)
 et le travail à distance depuis un téléphone.
 
