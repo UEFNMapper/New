@@ -6,8 +6,20 @@ Tu donnes tes vidéos de gameplay (une longue ou plusieurs petites), le logiciel
   noirs, les chargements et les passages figés ;
 - il **détecte le tempo de la musique** et coupe **pile sur les temps** ;
 - il construit un trailer avec la structure des trailers UEFN qui marchent ;
-- il ajoute **bandeaux jaunes, gros titres, flashs, zooms, secousses** ;
-- il termine par une **carte de fin** : nom de la map, « PLAY NOW », code de l'île ;
+- il monte **image par image**, comme un monteur After Effects. Il ajoute :
+  - des **transitions zoom** avec flou radial et aberration chromatique ;
+  - des **whip pans** avec flou de bouge ;
+  - des **flashs** surexposés ;
+  - des **rampes de vitesse** (accéléré puis normal, avec flou de mouvement) ;
+  - un **ralenti cinéma** à l'ouverture, avec bandes noires ;
+  - des **secousses** sur les impacts ;
+- il anime les textes :
+  - le **titre** arrive en force sur le drop, sur fond de lignes de vitesse ;
+  - les **bandeaux** se déploient puis le texte glisse dedans ;
+  - une carte **PLAY NOW!** pulse sur le beat ;
+- il ajoute des **bruitages** générés par le logiciel : montée avant le drop, impacts, whoosh
+  sur les transitions ;
+- il termine par une **carte de fin** animée : nom de la map, « PLAY NOW! », code de l'île ;
 - en bonus, il génère **3 miniatures 1920×1080** prêtes pour l'île.
 
 Tout tourne sur ton PC, sans abonnement ni envoi de tes vidéos sur Internet.
@@ -20,7 +32,7 @@ suivent la même formule, que le logiciel reproduit :
 
 | Moment | Durée | Ce qu'on voit |
 |---|---|---|
-| Ouverture | 2 à 4 s | Le plus beau plan, mentions légales, logo « Created in Fortnite » |
+| Ouverture | 2 à 4 s | Le plan le plus fort, mentions légales, logo de l'équipe |
 | Sections | 3 à 8 s chacune | Une fonctionnalité par section, avec son **bandeau jaune en bas à gauche** (« MINE ORES », « FIGHT BOSS », « UNLOCK ALL 22 TOOLS »...) et plusieurs plans de 1 à 2 s |
 | Climax (optionnel) | 1 à 2 s | Gros texte central (« THE ADVENTURE BEGINS »), coupes très rapides |
 | Fin | 3 à 5 s | Key art + nom de la map + **code de l'île en très gros** |
@@ -93,11 +105,15 @@ Toutes les options : `python trailer.py --help`. Les principales :
 | `--duree` | Durée visée en secondes (défaut : 30). Elle est arrondie à la mesure pour finir sur le temps |
 | `--rythme lent\|normal\|rapide` | Longueur moyenne des plans : 2,6 s, 1,8 s ou 1,1 s |
 | `--image-fin` | Ton key art pour la carte de fin (et la 1re miniature) |
-| `--logo` | PNG affiché pendant l'ouverture (ex. badge officiel « Created in Fortnite ») |
+| `--logo` | PNG affiché pendant l'ouverture (ton logo de studio ; le logo Fortnite est interdit par Epic) |
 | `--couleur` | Couleur des bandeaux (défaut `#FFD400`, le jaune des références) |
 | `--vertical` | Format 9:16 : le gameplay est au centre, sur un fond flou |
-| `--volume-jeu` | Son du jeu sous la musique, de 0 à 1 (défaut 0.35) |
-| `--sans-mentions` | Retire la ligne « not affiliated with... Epic Games » |
+| `--volume-jeu` | Son du jeu sous la musique, de 0 à 1 (défaut 0.3) |
+| `--intensite doux\|normal\|max` | Force des zooms, flashs et secousses |
+| `--sans-bruitages` | Pas de whoosh, d'impacts ni de montée |
+| `--version-ile` | Version propre pour la page de l'île : sans textes ni effets forts |
+| `--appel` | Texte de la carte d'appel et de la fin (défaut « PLAY NOW! ») |
+| `--sans-mentions` | Retire la ligne « This is not sponsored, endorsed, or administered by Epic Games, Inc. » (à garder : les règles d'Epic l'exigent sur la promo) |
 
 Le trailer et les miniatures sont enregistrés dans le même dossier (par défaut `trailer/`).
 
@@ -143,22 +159,32 @@ Format produit : PNG 1920×1080, la taille demandée pour les îles Fortnite.
 ## Comment ça marche
 
 ```
-vidéos ──► analyse image par image (6 ips) : mouvement, couleur, netteté, son, changements de plan
-musique ─► flux spectral ► tempo (autocorrélation) ► grille des temps ► début des mesures ► drop
+vidéos ──► analyse (6 ips) : mouvement, couleur, netteté, son, changements de plan
+musique ─► flux spectral ► tempo ► grille des temps ► début des mesures ► drop
                 │
                 ▼
-     plan de montage sur la grille musicale :
-     ouverture (1-2 mesures) │ sections (coupes de 1, 2 ou 4 temps) │ climax │ carte de fin
+     réalisation sur la grille musicale (une mesure = 4 temps) :
+     ouverture ralentie ─► DROP : titre + flash + impact ─► sections avec bandeaux
+     ─► final nerveux (une coupe par temps) ─► carte PLAY NOW! ─► carte de fin
                 │
                 ▼
-     rendu ffmpeg plan par plan (zoom, flash, secousse, étalonnage)
-     ► assemblage ► textes animés ► mixage musique + son du jeu ► normalisation à -14 LUFS
+     compositeur image par image (OpenCV) : lecture des clips avec rampes de vitesse,
+     caméra (poussée, recul, dérive), transitions, étalonnage, textes animés, flashs
+                │
+                ▼
+     encodage H.264 ─► mixage musique + bruitages + son du jeu ─► -14 LUFS (2 passes)
 ```
+
+Les images tombent 25 ms avant le temps musical : l'œil perçoit alors la coupe « pile »
+sur le beat.
 
 | Fichier | Rôle |
 |---|---|
 | `trailer_uefn/analyse.py` | Notation des moments de gameplay, détection du tempo et du drop |
-| `trailer_uefn/montage.py` | Plan de montage et rendu final |
+| `trailer_uefn/montage.py` | Réalisation : structure, choix des plans, transitions, textes, bruitages |
+| `trailer_uefn/rendu.py` | Compositeur image par image et animation des textes |
+| `trailer_uefn/effets.py` | Courbes d'animation, flous zoom / bouge, flash, aberration, étalonnage |
+| `trailer_uefn/sfx.py` | Bruitages générés et mixage audio |
 | `trailer_uefn/textes.py` | Bandeaux, titres, carte de fin |
 | `trailer_uefn/miniature.py` | Miniatures |
 | `trailer_uefn/musique_auto.py` | Piste de secours générée |
@@ -175,3 +201,15 @@ police de Fortnite, qui n'est pas libre. Elle a la même allure : condensée, gr
 - Le tempo est supposé constant, ce qui est le cas de presque toutes les musiques de trailer.
 - Le rendu prend quelques minutes (compte environ 2 à 5 fois la durée du trailer en 60 ips
   sur un PC récent). L'option `--fps 30` va deux fois plus vite.
+- Les bruitages sont synthétisés. Pour un rendu encore plus pro, des banques gratuites
+  existent (Kenney, Freesound en licence CC0).
+
+## Règles d'Epic à respecter (promo d'une île)
+
+- Mets la mention « This is not sponsored, endorsed, or administered by Epic Games, Inc. »
+  (le logiciel l'ajoute par défaut).
+- N'utilise pas le logo Fortnite et ne laisse pas croire à un partenariat avec Epic.
+- Mets toujours le code de l'île.
+- Pour la vidéo de la page de l'île (Discover) : 15 à 30 s, 1920×1080, -14 LUFS,
+  musique sous licence. La case « Version île » produit une version sans textes
+  ni effets forts.

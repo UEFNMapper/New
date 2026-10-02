@@ -101,8 +101,11 @@ def lancer_rendu(donnees):
             format="vertical" if o.get("vertical") else "horizontal",
             fps=60 if o.get("fps60", True) else 30, accent=o.get("couleur", "#FFD400"),
             mentions=MENTIONS_EPIC if o.get("mentions", True) else "",
-            volume_jeu=float(o.get("volume_jeu", 0.35)), badge=o.get("badge", "").strip(),
-            miniatures=3,
+            volume_jeu=float(o.get("volume_jeu", 0.3)), badge=o.get("badge", "").strip(),
+            miniatures=3, appel=o.get("appel", "PLAY NOW!").strip(),
+            intensite={"doux": 0.6, "normal": 1.0, "max": 1.4}.get(o.get("intensite"), 1.0),
+            bruitages=bool(o.get("bruitages", True)),
+            profil="ile" if o.get("version_ile") else "reseaux",
         )
         horodatage = datetime.now().strftime("%Y-%m-%d_%Hh%M")
         dossier = SORTIES / nom_sur(f"{horodatage} {opts.titre or 'trailer'}")

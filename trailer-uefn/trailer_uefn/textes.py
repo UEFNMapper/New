@@ -124,3 +124,35 @@ def _couvrir(img, largeur, hauteur):
                      Image.LANCZOS)
     x, y = (img.width - largeur) // 2, (img.height - hauteur) // 2
     return img.crop((x, y, x + largeur, y + hauteur))
+
+
+# ------------------------------------------------- sprites pour le compositeur
+
+def vers_bgra(img):
+    """Image Pillow -> tableau BGRA pour OpenCV."""
+    import numpy as np
+    arr = np.asarray(img.convert("RGBA"))
+    return np.ascontiguousarray(arr[..., [2, 1, 0, 3]])
+
+
+def bandeau_morceaux(texte, hauteur_ecran, accent="#FFD400", encre="#111111"):
+    """Fond et texte d'un bandeau, separes pour l'animation (la boite s'ouvre, le texte glisse)."""
+    taille = int(hauteur_ecran * 0.056)
+    f = police(taille)
+    texte = texte.upper()
+    x0, y0, x1, y1 = f.getbbox(texte)
+    pad_x, pad_y = int(taille * 0.5), int(taille * 0.24)
+    w, h = x1 - x0 + 2 * pad_x, y1 - y0 + 2 * pad_y
+    ombre = max(4, int(taille * 0.1))
+    boite = Image.new("RGBA", (w + ombre, h + ombre), (0, 0, 0, 0))
+    d = ImageDraw.Draw(boite)
+    rayon = int(taille * 0.12)
+    d.rounded_rectangle((ombre, ombre, w + ombre - 1, h + ombre - 1), radius=rayon, fill=(0, 0, 0, 150))
+    r, g, b = couleur_rgb(accent)
+    # Liseré plus sombre en bas pour donner du relief
+    d.rounded_rectangle((0, 0, w - 1, h - 1), radius=rayon,
+                        fill=(int(r * 0.72), int(g * 0.72), int(b * 0.72), 255))
+    d.rounded_rectangle((0, 0, w - 1, h - 1 - max(3, h // 10)), radius=rayon, fill=(r, g, b, 255))
+    txt = Image.new("RGBA", (x1 - x0 + 4, y1 - y0 + 4), (0, 0, 0, 0))
+    ImageDraw.Draw(txt).text((2 - x0, 2 - y0), texte, font=f, fill=couleur_rgb(encre))
+    return boite, txt

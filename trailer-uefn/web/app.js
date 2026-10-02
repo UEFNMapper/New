@@ -10,6 +10,7 @@ const etat = {
   logo: null,
   textes: [],
   rythme: "normal",
+  intensite: "normal",
   format: "horizontal",
   couleur: "#FFD400",
   tache: null,
@@ -78,7 +79,7 @@ function decalerTeinte(hex, decalage) {
 
 const MEMO = "trailer-studio-reglages";
 function sauver() {
-  const valeurs = { rythme: etat.rythme, format: etat.format, couleur: etat.couleur, textes: etat.textes };
+  const valeurs = { rythme: etat.rythme, intensite: etat.intensite, format: etat.format, couleur: etat.couleur, textes: etat.textes };
   $$("[data-memo]").forEach((el) => { valeurs[el.id] = el.type === "checkbox" ? el.checked : el.value; });
   try { localStorage.setItem(MEMO, JSON.stringify(valeurs)); } catch { /* stockage indisponible */ }
 }
@@ -89,7 +90,8 @@ function restaurer() {
     if (!(el.id in valeurs)) return;
     if (el.type === "checkbox") el.checked = !!valeurs[el.id]; else el.value = valeurs[el.id];
   });
-  if (valeurs.rythme) choisirSegment(valeurs.rythme);
+  if (valeurs.rythme) choisirSegment("rythme", valeurs.rythme);
+  if (valeurs.intensite) choisirSegment("intensite", valeurs.intensite);
   if (valeurs.format) choisirFormat(valeurs.format);
   if (valeurs.couleur) choisirCouleur(valeurs.couleur);
   if (Array.isArray(valeurs.textes)) { etat.textes = valeurs.textes; dessinerPuces(); }
@@ -256,12 +258,12 @@ function brancherTuile(cle, type) {
 
 // --------------------------------------------------------------- reglages
 
-function choisirSegment(valeur) {
-  const boutons = $$("#rythme button");
+function choisirSegment(groupe, valeur) {
+  const boutons = $$(`#${groupe} button`);
   const i = Math.max(0, boutons.findIndex((b) => b.dataset.valeur === valeur));
   boutons.forEach((b, j) => b.classList.toggle("actif", j === i));
-  $("#rythme").style.setProperty("--i", i);
-  etat.rythme = boutons[i].dataset.valeur;
+  $(`#${groupe}`).style.setProperty("--i", i);
+  etat[groupe] = boutons[i].dataset.valeur;
 }
 
 function choisirFormat(valeur) {
@@ -307,6 +309,8 @@ function majApercu() {
   $("#mock-bandeau").textContent = (premiere || "FIGHT BOSS").toUpperCase();
   $("#mock-titre").textContent = (titre || "Ma map").toUpperCase();
   $("#mock-code").textContent = code || "1234-5678-9012";
+  $("#mock-appel").textContent = ($("#appel").value.trim() || "PLAY NOW!").toUpperCase();
+  $("#mock-appel").hidden = !$("#appel").value.trim();
 
   const voirFin = $("#ecran").classList.contains("voir-fin");
   const image = voirFin && etat.image_fin ? etat.image_fin.url : etat.clips.find((c) => c.apercu)?.apercu;
@@ -328,6 +332,7 @@ function majApercu() {
   $("#bouton-creer").disabled = !pret;
   $("#note-creer").textContent = !etat.clips.length ? "Ajoute au moins une vidéo pour commencer."
     : charge ? "Envoi des fichiers en cours…"
+    : !titre && !$("#version_ile").checked ? "Astuce : écris le nom de ta map pour le titre animé et la carte de fin."
     : `Environ ${Math.max(1, Math.round(($("#duree").value * ($("#fps60").checked ? 4 : 2)) / 60))} min de rendu · tout reste sur ton PC`;
 }
 
@@ -336,7 +341,8 @@ function majApercu() {
 async function creer() {
   const options = {
     titre: $("#titre").value, code: $("#code").value, accroche: $("#accroche").value,
-    final: $("#final").value, badge: $("#badge").value,
+    final: $("#final").value, badge: $("#badge").value, appel: $("#appel").value,
+    intensite: etat.intensite, bruitages: $("#bruitages").checked, version_ile: $("#version_ile").checked,
     textes: etat.clips.length === 1 ? etat.textes : [],
     duree: Number($("#duree").value), rythme: etat.rythme, vertical: etat.format === "vertical",
     fps60: $("#fps60").checked, mentions: $("#mentions").checked, couleur: etat.couleur,
@@ -457,8 +463,10 @@ function demarrer() {
   $("#etiquettes").addEventListener("click", () => $("#saisie-etiquette").focus());
 
   // Reglages
-  $("#rythme").style.setProperty("--n", 3);
-  $$("#rythme button").forEach((b) => b.addEventListener("click", () => { choisirSegment(b.dataset.valeur); sauver(); }));
+  for (const groupe of ["rythme", "intensite"]) {
+    $(`#${groupe}`).style.setProperty("--n", 3);
+    $$(`#${groupe} button`).forEach((b) => b.addEventListener("click", () => { choisirSegment(groupe, b.dataset.valeur); sauver(); }));
+  }
   $$("#format button").forEach((b) => b.addEventListener("click", () => { choisirFormat(b.dataset.valeur); sauver(); }));
   $$("#couleurs button").forEach((b) => b.addEventListener("click", () => { choisirCouleur(b.dataset.valeur); sauver(); }));
   $("#couleur-libre").addEventListener("input", (e) => { choisirCouleur(e.target.value); sauver(); });

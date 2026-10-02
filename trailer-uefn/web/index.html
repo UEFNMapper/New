@@ -32,7 +32,7 @@
         coupe sur le beat et ajoute bandeaux, effets et carte de fin avec le code de ton île.</p>
       <ul class="atouts">
         <li><svg class="ic"><use href="#i-onde"/></svg>Coupes calées sur le rythme</li>
-        <li><svg class="ic"><use href="#i-texte"/></svg>Bandeaux animés</li>
+        <li><svg class="ic"><use href="#i-texte"/></svg>Zooms, flashs &amp; whip pans</li>
         <li><svg class="ic"><use href="#i-image"/></svg>Miniatures 1920×1080</li>
         <li><svg class="ic"><use href="#i-cadenas"/></svg>100 % sur ton PC</li>
       </ul>
@@ -105,6 +105,10 @@
               <input type="text" id="final" placeholder="THE ADVENTURE BEGINS" maxlength="40" data-memo>
             </label>
             <label class="champ">
+              <span>Appel à jouer <em>· carte + fin</em></span>
+              <input type="text" id="appel" placeholder="PLAY NOW!" value="PLAY NOW!" maxlength="24" data-memo>
+            </label>
+            <label class="champ">
               <span>Badge des miniatures</span>
               <input type="text" id="badge" placeholder="NEW" maxlength="12" data-memo>
             </label>
@@ -166,6 +170,16 @@
             </div>
 
             <div class="reglage">
+              <div class="reglage-tete"><span>Intensité des effets</span></div>
+              <div class="segments" id="intensite" role="radiogroup">
+                <button type="button" data-valeur="doux">Doux</button>
+                <button type="button" data-valeur="normal" class="actif">Normal</button>
+                <button type="button" data-valeur="max">Max</button>
+                <span class="segments-curseur"></span>
+              </div>
+            </div>
+
+            <div class="reglage">
               <div class="reglage-tete"><span>Format</span></div>
               <div class="formats" id="format">
                 <button type="button" data-valeur="horizontal" class="actif">
@@ -191,13 +205,15 @@
             </div>
 
             <div class="reglage">
-              <div class="reglage-tete"><span>Son du jeu sous la musique</span><output id="valeur-volume">35 %</output></div>
-              <input type="range" id="volume" min="0" max="100" step="5" value="35" data-memo>
+              <div class="reglage-tete"><span>Son du jeu sous la musique</span><output id="valeur-volume">30 %</output></div>
+              <input type="range" id="volume" min="0" max="100" step="5" value="30" data-memo>
             </div>
 
             <div class="interrupteurs">
               <label class="interrupteur"><input type="checkbox" id="fps60" checked data-memo><span class="piste"></span><span><strong>60 images/s</strong><small>Plus fluide, rendu 2× plus long</small></span></label>
-              <label class="interrupteur"><input type="checkbox" id="mentions" checked data-memo><span class="piste"></span><span><strong>Mentions Epic</strong><small>« Not affiliated with Epic Games »</small></span></label>
+              <label class="interrupteur"><input type="checkbox" id="mentions" checked data-memo><span class="piste"></span><span><strong>Mentions Epic</strong><small>Exigées par les règles d'Epic</small></span></label>
+              <label class="interrupteur"><input type="checkbox" id="bruitages" checked data-memo><span class="piste"></span><span><strong>Bruitages</strong><small>Whoosh, impacts, montée avant le drop</small></span></label>
+              <label class="interrupteur"><input type="checkbox" id="version_ile" data-memo><span class="piste"></span><span><strong>Version île Fortnite</strong><small>Sans textes ni effets forts</small></span></label>
             </div>
           </div>
         </section>
@@ -218,11 +234,11 @@
               <div class="ecran-fond" id="ecran-fond"></div>
               <div class="vue vue-section actif">
                 <span class="mock-bandeau" id="mock-bandeau">FIGHT BOSS</span>
-                <span class="mock-mentions">This content is not affiliated with Epic Games, Inc.</span>
+                <span class="mock-mentions">This is not sponsored, endorsed, or administered by Epic Games, Inc.</span>
               </div>
               <div class="vue vue-fin">
                 <span class="mock-titre" id="mock-titre">MA MAP</span>
-                <span class="mock-appel">PLAY NOW</span>
+                <span class="mock-appel" id="mock-appel">PLAY NOW!</span>
                 <span class="mock-code" id="mock-code">1234-5678-9012</span>
               </div>
             </div>

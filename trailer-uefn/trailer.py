@@ -25,7 +25,7 @@ def main():
                    help="bandeaux des sections separes par |, ex. \"MINE ORES|FIGHT BOSS\"")
     p.add_argument("--accroche", default="", help="gros texte pendant l'ouverture")
     p.add_argument("--final", default="", help="gros texte avant la fin, ex. \"THE ADVENTURE BEGINS\"")
-    p.add_argument("--appel", default="PLAY NOW", help="texte au-dessus du code (vide = aucun)")
+    p.add_argument("--appel", default="PLAY NOW!", help="appel a jouer (carte + fin ; vide = aucun)")
     p.add_argument("--musique", default="", help="mp3/wav ; sans, une piste est generee")
     p.add_argument("--duree", type=float, default=30, help="duree visee en secondes (defaut 30)")
     p.add_argument("--rythme", choices=sorted(RYTHMES), default="normal")
@@ -36,7 +36,12 @@ def main():
     p.add_argument("--image-fin", default="", help="visuel de la carte de fin (key art)")
     p.add_argument("--mentions", default=MENTIONS_EPIC, help="mentions legales de l'ouverture")
     p.add_argument("--sans-mentions", action="store_true")
-    p.add_argument("--volume-jeu", type=float, default=0.35, help="son du jeu sous la musique (0 a 1)")
+    p.add_argument("--volume-jeu", type=float, default=0.3, help="son du jeu sous la musique (0 a 1)")
+    p.add_argument("--intensite", choices=("doux", "normal", "max"), default="normal",
+                   help="force des zooms, flashs et secousses")
+    p.add_argument("--sans-bruitages", action="store_true", help="pas de whoosh / impacts")
+    p.add_argument("--version-ile", action="store_true",
+                   help="version propre pour la page de l'ile : sans textes ni effets forts")
     p.add_argument("--miniatures", type=int, default=3, help="nombre de miniatures (0 = aucune)")
     p.add_argument("--badge", default="", help="pastille sur les miniatures, ex. NEW ou UPDATE")
     p.add_argument("--miniatures-seulement", action="store_true",
@@ -52,6 +57,8 @@ def main():
         fps=a.fps, accent=a.couleur, logo=a.logo, image_fin=a.image_fin,
         mentions="" if a.sans_mentions else a.mentions, volume_jeu=a.volume_jeu,
         miniatures=a.miniatures, badge=a.badge,
+        intensite={"doux": 0.6, "normal": 1.0, "max": 1.4}[a.intensite],
+        bruitages=not a.sans_bruitages, profil="ile" if a.version_ile else "reseaux",
     )
     try:
         if a.miniatures_seulement:
