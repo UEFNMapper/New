@@ -428,8 +428,16 @@ def _assembler(segments, calques, plan_global, opts, musique_chemin, sortie, dos
                  str(sortie)])
 
 
-def creer_trailer(chemins_clips, sortie, opts, journal=print, garder_travail=False):
-    """Point d'entree : analyse, planifie et rend le trailer. Renvoie le chemin produit."""
+def creer_trailer(chemins_clips, sortie, opts, journal=print, garder_travail=False,
+                  progression=None):
+    """Point d'entree : analyse, planifie et rend le trailer. Renvoie le chemin produit.
+
+    progression(fraction, etape) est appelee au fil du travail (fraction entre 0 et 1).
+    """
+    def avancer(fraction, etape):
+        if progression:
+            progression(min(1.0, fraction), etape)
+
     ff.verifier_ffmpeg()
     sortie = Path(sortie)
     sortie.parent.mkdir(parents=True, exist_ok=True)
@@ -439,12 +447,14 @@ def creer_trailer(chemins_clips, sortie, opts, journal=print, garder_travail=Fal
     journal("1/5 Analyse du gameplay...")
     # On accepte des chemins (fichiers / dossiers) ou des Clip deja etiquetes (interface)
     clips = [c for c in chemins_clips if isinstance(c, Clip)] or lister_clips(chemins_clips)
-    for c in clips:
+    for i, c in enumerate(clips):
+        avancer(0.15 * i / len(clips), "Analyse du gameplay")
         c.analyse = analyser_clip(c.chemin, journal)
     noter_clips([c.analyse for c in clips])
 
     dossier = Path(tempfile.mkdtemp(prefix="trailer_uefn_"))
     try:
+        avancer(0.15, "Analyse de la musique")
         journal("2/5 Analyse de la musique...")
         chemin_musique = opts.musique
         if not chemin_musique:
@@ -452,6 +462,7 @@ def creer_trailer(chemins_clips, sortie, opts, journal=print, garder_travail=Fal
             chemin_musique = musique_auto.generer(dossier / "musique.wav", opts.duree + 15)
         musique = analyser_musique(chemin_musique, journal)
 
+        avancer(0.2, "Plan de montage")
         journal("3/5 Plan de montage...")
         plan_global = planifier(clips, musique, opts, journal)
         plans = plan_global["plans"]
@@ -469,16 +480,19 @@ def creer_trailer(chemins_clips, sortie, opts, journal=print, garder_travail=Fal
             # Positions en images exactes pour ne pas deriver par rapport aux temps de la musique
             n = round((p.debut + p.duree) * opts.fps) - round(p.debut * opts.fps)
             seg = dossier / f"plan_{i:03d}.mkv"
+            avancer(0.22 + 0.63 * i / len(plans), f"Rendu des plans ({i + 1}/{len(plans)})")
             rendre_plan(p, n, seg, opts)
             segments.append(seg)
             journal(f"  plan {i + 1}/{len(plans)}")
 
+        avancer(0.85, "Textes, musique et export final")
         journal("5/5 Textes, musique et export final...")
         calques = _calques(plan_global, opts, dossier)
         _assembler(segments, calques, plan_global, opts, chemin_musique, sortie, dossier)
         journal(f"Trailer pret : {sortie} ({plan_global['duree']:.1f} s)")
 
         if opts.miniatures:
+            avancer(0.95, "Miniatures")
             journal("Bonus : miniatures...")
             generer_miniatures([c.analyse for c in clips], sortie.parent, opts.titre or "",
                                opts.accent, opts.badge or None, opts.miniatures,
@@ -488,4 +502,5 @@ def creer_trailer(chemins_clips, sortie, opts, journal=print, garder_travail=Fal
             journal(f"  fichiers de travail conserves dans {dossier}")
         else:
             shutil.rmtree(dossier, ignore_errors=True)
+    avancer(1.0, "Termine")
     return sortie

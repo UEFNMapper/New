@@ -36,21 +36,32 @@ plutôt que sur du gameplay : c'est ce qui fait la différence côté qualité p
 3. Télécharge ce dossier `trailer-uefn` (bouton **Code › Download ZIP** sur GitHub), puis dézippe-le.
 
 Ensuite, double-clique sur **`lancer.bat`**. La première fois, il installe deux modules
-Python (numpy et Pillow), puis la fenêtre s'ouvre.
+Python (numpy et Pillow). Puis **Trailer Studio s'ouvre dans ton navigateur**. Laisse la
+petite fenêtre noire ouverte pendant que tu travailles : c'est le moteur.
 
 Sur macOS ou Linux : installe ffmpeg (`brew install ffmpeg` ou `sudo apt install ffmpeg`),
 puis lance `./lancer.sh`.
 
 ## Utilisation
 
-### Avec la fenêtre
+### Avec Trailer Studio (l'interface)
 
-1. **Ajouter...** ou **Dossier...** pour charger tes vidéos.
-2. Double-clique sur une vidéo pour écrire son bandeau (ex. `FIGHT BOSS`). Les vidéos qui ont
-   le même bandeau forment une seule section. Les boutons Monter et Descendre règlent l'ordre.
-3. Remplis le nom de la map et le code de l'île.
-4. Choisis une musique (fortement conseillé, voir plus bas).
-5. **Créer le trailer + miniatures**, puis choisis où enregistrer.
+L'interface s'affiche dans ton navigateur, mais elle tourne entièrement sur ton PC
+(adresse `127.0.0.1`). Tes vidéos ne sont envoyées sur aucun site.
+
+1. **Glisse tes vidéos** dans la zone « Ton gameplay ». Chaque clip apparaît en carte avec
+   son aperçu et sa durée. Écris son bandeau sous l'image (ex. `FIGHT BOSS`) ; s'il est nommé
+   `01_FIGHT BOSS.mp4`, c'est déjà rempli. Glisse les cartes pour changer l'ordre.
+2. Remplis le nom de la map et le code de l'île (les tirets se mettent tout seuls).
+3. Dépose ta **musique** : son tempo (BPM) et son drop sont détectés tout de suite.
+   Ajoute si tu veux ton key art et ton logo.
+4. Règle la durée, le rythme, le format (16:9 ou 9:16) et la couleur des bandeaux.
+   L'**aperçu** à droite montre le rendu des bandeaux et de la carte de fin.
+5. **Générer le trailer** : suis l'avancement, puis regarde le résultat, télécharge la
+   vidéo et les miniatures, ou ouvre le dossier.
+
+Chaque trailer est rangé dans `trailers/<date> <nom de la map>/`. Tes réglages sont
+mémorisés d'une fois sur l'autre.
 
 ### En ligne de commande
 
@@ -151,7 +162,8 @@ musique ─► flux spectral ► tempo (autocorrélation) ► grille des temps �
 | `trailer_uefn/textes.py` | Bandeaux, titres, carte de fin |
 | `trailer_uefn/miniature.py` | Miniatures |
 | `trailer_uefn/musique_auto.py` | Piste de secours générée |
-| `interface.py` / `trailer.py` | Fenêtre graphique / ligne de commande |
+| `studio.py` + `web/` | Trailer Studio : serveur local + interface web |
+| `trailer.py` | Ligne de commande |
 
 La police **Anton** (licence libre SIL OFL, fichier `polices/OFL-Anton.txt`) remplace la
 police de Fortnite, qui n'est pas libre. Elle a la même allure : condensée, grasse, en majuscules.

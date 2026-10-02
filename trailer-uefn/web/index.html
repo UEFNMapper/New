@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trailer Studio</title>
+  <meta name="color-scheme" content="dark">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23FFD400'/%3E%3Cstop offset='1' stop-color='%23FF6B2C'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='9' fill='url(%23g)'/%3E%3Cpath d='M12 9.5v13l10.5-6.5z' fill='%23111'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/web/app.css">
+</head>
+<body>
+  <div class="fond" aria-hidden="true">
+    <span class="halo halo-1"></span><span class="halo halo-2"></span><span class="halo halo-3"></span>
+    <span class="grille"></span>
+  </div>
+
+  <header class="barre">
+    <a class="marque" href="/">
+      <span class="marque-logo"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></svg></span>
+      <span class="marque-nom">Trailer Studio</span>
+      <span class="pastille">UEFN</span>
+    </a>
+    <div class="etat-systeme" id="etat-systeme"><span class="point"></span><span>Vérification…</span></div>
+  </header>
+
+  <main class="page">
+    <section class="intro">
+      <div class="intro-texte">
+      <p class="surtitre"><svg class="ic"><use href="#i-eclat"/></svg> Montage automatique</p>
+      <h1>Ton gameplay.<br><span class="degrade">Un trailer qui claque.</span></h1>
+      <p class="chapo">Dépose tes clips, choisis une musique : le studio repère les meilleurs moments,
+        coupe sur le beat et ajoute bandeaux, effets et carte de fin avec le code de ton île.</p>
+      <ul class="atouts">
+        <li><svg class="ic"><use href="#i-onde"/></svg>Coupes calées sur le rythme</li>
+        <li><svg class="ic"><use href="#i-texte"/></svg>Bandeaux animés</li>
+        <li><svg class="ic"><use href="#i-image"/></svg>Miniatures 1920×1080</li>
+        <li><svg class="ic"><use href="#i-cadenas"/></svg>100 % sur ton PC</li>
+      </ul>
+      </div>
+
+      <div class="vitrine" aria-hidden="true">
+        <div class="vitrine-ecran">
+          <div class="plans"><span class="plan p1"></span><span class="plan p2"></span><span class="plan p3"></span><span class="plan p4"></span></div>
+          <span class="vitrine-flash"></span>
+          <span class="vitrine-bandeau b1">MINE ORES</span>
+          <span class="vitrine-bandeau b2">UPGRADE YOUR ARMY</span>
+          <span class="vitrine-bandeau b3">FIGHT BOSS</span>
+          <span class="vitrine-fin"><b>PLAY NOW</b><i>6522-7216-3724</i></span>
+          <span class="vitrine-rec"><span></span>128 BPM</span>
+        </div>
+        <div class="vitrine-piste">
+          <div class="onde" id="onde"></div>
+          <div class="pistes-clips"><span style="--l:22%"></span><span style="--l:28%"></span><span style="--l:18%"></span><span style="--l:32%"></span></div>
+          <span class="tete-lecture"></span>
+        </div>
+      </div>
+    </section>
+
+    <div class="disposition">
+      <div class="colonne">
+        <!-- 01 Gameplay -->
+        <section class="carte" id="etape-clips">
+          <header class="carte-tete">
+            <span class="numero">01</span>
+            <div>
+              <h2>Ton gameplay</h2>
+              <p>Un clip par fonctionnalité, c'est l'idéal. Le texte du bandeau s'affiche pendant sa section.</p>
+            </div>
+            <span class="compteur" id="compteur-clips" hidden></span>
+          </header>
+          <label class="depot" id="depot-clips">
+            <input type="file" accept="video/*,.mkv" multiple hidden id="entree-clips">
+            <span class="depot-icone"><svg class="ic"><use href="#i-envoi"/></svg></span>
+            <span class="depot-titre">Glisse tes vidéos ici</span>
+            <span class="depot-sous">ou <u>parcours tes fichiers</u> · MP4, MOV, MKV…</span>
+          </label>
+          <ol class="clips" id="liste-clips"></ol>
+          <p class="astuce" id="astuce-ordre" hidden><svg class="ic"><use href="#i-poignee"/></svg>Glisse les cartes pour changer l'ordre des sections.</p>
+        </section>
+
+        <!-- 02 Ta map -->
+        <section class="carte">
+          <header class="carte-tete">
+            <span class="numero">02</span>
+            <div>
+              <h2>Ta map</h2>
+              <p>Ces textes apparaissent sur la carte de fin et les miniatures.</p>
+            </div>
+          </header>
+          <div class="champs">
+            <label class="champ large">
+              <span>Nom de la map</span>
+              <input type="text" id="titre" placeholder="Drone Mining Simulator" maxlength="60" data-memo>
+            </label>
+            <label class="champ">
+              <span>Code de l'île</span>
+              <input type="text" id="code" placeholder="1234-5678-9012" inputmode="numeric" maxlength="14" data-memo class="code">
+            </label>
+            <label class="champ">
+              <span>Accroche <em>· début</em></span>
+              <input type="text" id="accroche" placeholder="CAN YOU SURVIVE?" maxlength="40" data-memo>
+            </label>
+            <label class="champ">
+              <span>Texte final <em>· avant la fin</em></span>
+              <input type="text" id="final" placeholder="THE ADVENTURE BEGINS" maxlength="40" data-memo>
+            </label>
+            <label class="champ">
+              <span>Badge des miniatures</span>
+              <input type="text" id="badge" placeholder="NEW" maxlength="12" data-memo>
+            </label>
+            <div class="champ large" id="bloc-textes" hidden>
+              <span>Bandeaux <em>· une seule vidéo : ils sont répartis dans le temps</em></span>
+              <div class="etiquettes" id="etiquettes">
+                <input type="text" id="saisie-etiquette" placeholder="Ajoute un bandeau puis Entrée (ex. FIGHT BOSS)" maxlength="32">
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 03 Style -->
+        <section class="carte">
+          <header class="carte-tete">
+            <span class="numero">03</span>
+            <div>
+              <h2>Style &amp; son</h2>
+              <p>Une musique énergique avec un vrai « drop » donne les meilleurs résultats.</p>
+            </div>
+          </header>
+
+          <div class="tuiles">
+            <label class="tuile" id="tuile-musique" data-type="musique">
+              <input type="file" accept="audio/*" hidden>
+              <span class="tuile-icone"><svg class="ic"><use href="#i-musique"/></svg></span>
+              <span class="tuile-texte"><strong>Musique</strong><small>Sinon, piste générée</small></span>
+              <button type="button" class="tuile-retirer" aria-label="Retirer"><svg class="ic"><use href="#i-croix"/></svg></button>
+            </label>
+            <label class="tuile" id="tuile-image_fin" data-type="image">
+              <input type="file" accept="image/*" hidden>
+              <span class="tuile-icone"><svg class="ic"><use href="#i-image"/></svg></span>
+              <span class="tuile-texte"><strong>Key art</strong><small>Carte de fin + miniature</small></span>
+              <button type="button" class="tuile-retirer" aria-label="Retirer"><svg class="ic"><use href="#i-croix"/></svg></button>
+            </label>
+            <label class="tuile" id="tuile-logo" data-type="image">
+              <input type="file" accept="image/png" hidden>
+              <span class="tuile-icone"><svg class="ic"><use href="#i-logo"/></svg></span>
+              <span class="tuile-texte"><strong>Logo</strong><small>PNG, pendant l'ouverture</small></span>
+              <button type="button" class="tuile-retirer" aria-label="Retirer"><svg class="ic"><use href="#i-croix"/></svg></button>
+            </label>
+          </div>
+
+          <div class="reglages">
+            <div class="reglage">
+              <div class="reglage-tete"><span>Durée</span><output id="valeur-duree">30 s</output></div>
+              <input type="range" id="duree" min="15" max="60" step="5" value="30" data-memo>
+              <div class="graduations"><span>15 s</span><span>30 s</span><span>45 s</span><span>60 s</span></div>
+            </div>
+
+            <div class="reglage">
+              <div class="reglage-tete"><span>Rythme des coupes</span></div>
+              <div class="segments" id="rythme" role="radiogroup">
+                <button type="button" data-valeur="lent">Posé</button>
+                <button type="button" data-valeur="normal" class="actif">Normal</button>
+                <button type="button" data-valeur="rapide">Nerveux</button>
+                <span class="segments-curseur"></span>
+              </div>
+            </div>
+
+            <div class="reglage">
+              <div class="reglage-tete"><span>Format</span></div>
+              <div class="formats" id="format">
+                <button type="button" data-valeur="horizontal" class="actif">
+                  <span class="forme forme-h"></span><span><strong>16:9</strong><small>X, YouTube, île</small></span>
+                </button>
+                <button type="button" data-valeur="vertical">
+                  <span class="forme forme-v"></span><span><strong>9:16</strong><small>TikTok, Shorts</small></span>
+                </button>
+              </div>
+            </div>
+
+            <div class="reglage">
+              <div class="reglage-tete"><span>Couleur des bandeaux</span></div>
+              <div class="couleurs" id="couleurs">
+                <button type="button" style="--c:#FFD400" data-valeur="#FFD400" class="actif" aria-label="Jaune"></button>
+                <button type="button" style="--c:#FF7A1A" data-valeur="#FF7A1A" aria-label="Orange"></button>
+                <button type="button" style="--c:#FF3D7F" data-valeur="#FF3D7F" aria-label="Rose"></button>
+                <button type="button" style="--c:#A970FF" data-valeur="#A970FF" aria-label="Violet"></button>
+                <button type="button" style="--c:#2FD3FF" data-valeur="#2FD3FF" aria-label="Cyan"></button>
+                <button type="button" style="--c:#3EE07A" data-valeur="#3EE07A" aria-label="Vert"></button>
+                <label class="couleur-libre" aria-label="Couleur personnalisée"><input type="color" id="couleur-libre" value="#FFD400"></label>
+              </div>
+            </div>
+
+            <div class="reglage">
+              <div class="reglage-tete"><span>Son du jeu sous la musique</span><output id="valeur-volume">35 %</output></div>
+              <input type="range" id="volume" min="0" max="100" step="5" value="35" data-memo>
+            </div>
+
+            <div class="interrupteurs">
+              <label class="interrupteur"><input type="checkbox" id="fps60" checked data-memo><span class="piste"></span><span><strong>60 images/s</strong><small>Plus fluide, rendu 2× plus long</small></span></label>
+              <label class="interrupteur"><input type="checkbox" id="mentions" checked data-memo><span class="piste"></span><span><strong>Mentions Epic</strong><small>« Not affiliated with Epic Games »</small></span></label>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Apercu -->
+      <aside class="colonne-laterale">
+        <section class="carte apercu-carte">
+          <header class="apercu-tete">
+            <h2>Aperçu</h2>
+            <div class="onglets" id="onglets-apercu">
+              <button type="button" class="actif" data-vue="section">Section</button>
+              <button type="button" data-vue="fin">Fin</button>
+            </div>
+          </header>
+          <div class="ecran-cadre">
+            <div class="ecran" id="ecran">
+              <div class="ecran-fond" id="ecran-fond"></div>
+              <div class="vue vue-section actif">
+                <span class="mock-bandeau" id="mock-bandeau">FIGHT BOSS</span>
+                <span class="mock-mentions">This content is not affiliated with Epic Games, Inc.</span>
+              </div>
+              <div class="vue vue-fin">
+                <span class="mock-titre" id="mock-titre">MA MAP</span>
+                <span class="mock-appel">PLAY NOW</span>
+                <span class="mock-code" id="mock-code">1234-5678-9012</span>
+              </div>
+            </div>
+          </div>
+
+          <dl class="resume">
+            <div><dt>Clips</dt><dd id="resume-clips">—</dd></div>
+            <div><dt>Gameplay</dt><dd id="resume-gameplay">—</dd></div>
+            <div><dt>Musique</dt><dd id="resume-musique">Générée</dd></div>
+            <div><dt>Sortie</dt><dd id="resume-sortie">1920×1080 · 60 i/s</dd></div>
+          </dl>
+
+          <button type="button" class="bouton-principal" id="bouton-creer" disabled>
+            <svg class="ic"><use href="#i-eclat"/></svg><span>Générer le trailer</span>
+          </button>
+          <p class="note" id="note-creer">Ajoute au moins une vidéo pour commencer.</p>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <!-- Rendu en cours / resultat -->
+  <div class="voile" id="voile" hidden>
+    <div class="modale" id="modale-rendu">
+      <div class="anneau">
+        <svg viewBox="0 0 120 120">
+          <defs><linearGradient id="g-anneau" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--accent)"/><stop offset="1" stop-color="#FF6B2C"/></linearGradient></defs>
+          <circle cx="60" cy="60" r="52" class="anneau-fond"/>
+          <circle cx="60" cy="60" r="52" class="anneau-plein" id="anneau-plein"/>
+        </svg>
+        <span class="anneau-valeur" id="anneau-valeur">0 %</span>
+      </div>
+      <h3 id="rendu-etape">Préparation…</h3>
+      <p class="rendu-temps" id="rendu-temps">0:00 écoulé</p>
+      <details class="journal"><summary>Voir le détail</summary><pre id="journal"></pre></details>
+    </div>
+
+    <div class="modale modale-resultat" id="modale-resultat" hidden>
+      <header class="resultat-tete">
+        <div>
+          <p class="surtitre succes"><svg class="ic"><use href="#i-valide"/></svg> Trailer prêt</p>
+          <h3 id="resultat-titre">Ton trailer</h3>
+        </div>
+        <button type="button" class="bouton-icone" id="fermer-resultat" aria-label="Fermer"><svg class="ic"><use href="#i-croix"/></svg></button>
+      </header>
+      <video id="video-resultat" controls playsinline></video>
+      <div class="actions">
+        <a class="bouton-principal petit" id="telecharger-video" download><svg class="ic"><use href="#i-telecharger"/></svg><span>Télécharger</span></a>
+        <button type="button" class="bouton-secondaire" id="ouvrir-dossier"><svg class="ic"><use href="#i-dossier"/></svg><span>Ouvrir le dossier</span></button>
+        <button type="button" class="bouton-secondaire" id="nouvelle-version"><svg class="ic"><use href="#i-refaire"/></svg><span>Nouvelle version</span></button>
+      </div>
+      <h4>Miniatures <small>Clique pour télécharger</small></h4>
+      <div class="miniatures" id="miniatures"></div>
+    </div>
+
+    <div class="modale modale-erreur" id="modale-erreur" hidden>
+      <span class="erreur-icone"><svg class="ic"><use href="#i-alerte"/></svg></span>
+      <h3>Le rendu a échoué</h3>
+      <p id="erreur-message"></p>
+      <button type="button" class="bouton-secondaire" id="fermer-erreur">Revenir aux réglages</button>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-envoi" viewBox="0 0 24 24"><path d="M12 16V4m0 0-4.5 4.5M12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+      <symbol id="i-eclat" viewBox="0 0 24 24"><path d="M12 3l1.9 5.6L19.5 10.5l-5.6 1.9L12 18l-1.9-5.6L4.5 10.5l5.6-1.9zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></symbol>
+      <symbol id="i-onde" viewBox="0 0 24 24"><path d="M3 12h2m2-5v10m4-13v16m4-11v6m4-9v12m2-6h0"/></symbol>
+      <symbol id="i-texte" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h7"/></symbol>
+      <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-5-9 9"/></symbol>
+      <symbol id="i-cadenas" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
+      <symbol id="i-musique" viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></symbol>
+      <symbol id="i-logo" viewBox="0 0 24 24"><path d="M12 3 4 7v5c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V7z"/><path d="m9 12 2 2 4-4"/></symbol>
+      <symbol id="i-croix" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+      <symbol id="i-poignee" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="18" r="1.2"/></symbol>
+      <symbol id="i-valide" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.7 2.7L16 9.8"/></symbol>
+      <symbol id="i-telecharger" viewBox="0 0 24 24"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M4 19h16"/></symbol>
+      <symbol id="i-dossier" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+      <symbol id="i-refaire" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></symbol>
+      <symbol id="i-alerte" viewBox="0 0 24 24"><path d="M12 3 2 20h20zM12 10v4m0 3h0"/></symbol>
+      <symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 4v16M17 4v16M3 9h4m10 0h4M3 15h4m10 0h4"/></symbol>
+    </defs>
+  </svg>
+
+  <script src="/web/app.js" type="module"></script>
+</body>
+</html>

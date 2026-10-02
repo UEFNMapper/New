@@ -10,7 +10,7 @@ if errorlevel 1 goto sans_ffmpeg
 echo Installation des modules Python (premiere fois seulement)...
 python -m pip install --quiet --disable-pip-version-check -r requirements.txt
 if errorlevel 1 goto erreur
-python interface.py
+python studio.py
 if errorlevel 1 goto erreur
 exit /b 0
 
