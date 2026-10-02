@@ -326,7 +326,7 @@ class Compositeur:
     # ------------------------------------------------------------- textes
     def _texte(self, img, txt, t):
         tau, reste = t - txt.debut, txt.fin - t
-        W, H = self.m.largeur, self.m.hauteur
+        H = self.m.hauteur
         g = txt.genre
         if g == "bandeau":
             boite, texte = txt.sprite, txt.sprite_2
